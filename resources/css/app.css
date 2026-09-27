@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+/* Global Dashboard */
+@import "./dashboard.css";
+@import "./dashboard/stores.css";
+@import "./dashboard/toast.css";
+@import "./dashboard/ui-system.css";
+@import "./dashboard/templates.css";
+@import "./dashboard/template-library-v2.css";
+@import "./dashboard/generator.css";
+
+/* Mobile */
+@import "./dashboard/mobile-sidebar.css";
+
+/* Settings — dipisahkan */
+@import "./dashboard/settings/general.css";
+@import "./dashboard/settings/openai.css";

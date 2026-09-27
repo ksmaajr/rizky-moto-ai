@@ -1,0 +1,14 @@
+RMS Mobile Sidebar V5 behavior
+
+Mobile behavior is now intentionally:
+
+1. Tap hamburger -> sidebar opens.
+2. Tap Settings parent -> Settings submenu opens; sidebar STAYS OPEN.
+3. Tap General/OpenAI API -> workspace changes; sidebar CLOSES.
+4. Tap Stores/Templates/Generator -> workspace changes; sidebar stays open
+   according to the existing top-level navigation behavior.
+5. Tap outside -> sidebar closes.
+6. Tap drawer handle -> sidebar closes.
+
+The key change is that Livewire no longer assumes every request should keep
+the drawer open. Keep-open and close are explicit events.

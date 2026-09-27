@@ -1,0 +1,2 @@
+// Add this inside your existing auth middleware group in routes/web.php
+Route::livewire('/stores', 'pages::stores')->name('stores');

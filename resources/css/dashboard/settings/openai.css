@@ -1,0 +1,145 @@
+        /* =========================================================
+           SETTINGS SIDEBAR + OPENAI CONFIG UI
+           ========================================================= */
+        .rms-settings-nav{position:relative}
+        .rms-settings-chevron{margin-left:auto;display:grid;place-items:center;width:22px;height:22px;color:#a1a1aa;transition:transform .22s ease,color .22s ease}
+        .rms-settings-chevron svg{width:15px;height:15px}
+        .rms-settings-chevron.is-open{transform:rotate(180deg);color:#18181b}
+        .rms-settings-subnav{display:grid;gap:4px;margin:3px 0 5px 19px;padding:2px 0 2px 13px;border-left:1px solid rgba(228,228,231,.9)}
+        .rms-settings-subnav[x-cloak]{display:none!important}
+        .rms-settings-subitem{position:relative;display:flex;align-items:center;gap:9px;width:100%;min-height:48px;padding:7px 10px;border:1px solid transparent;border-radius:11px;background:transparent;color:#71717a;text-align:left;cursor:pointer;transition:background .2s ease,border-color .2s ease,color .2s ease,transform .2s ease}
+        .rms-settings-subitem:hover{background:rgba(244,244,245,.78);color:#27272a}
+        .rms-settings-subitem.active{background:#fff;border-color:#e4e4e7;color:#18181b;box-shadow:0 7px 20px rgba(24,24,27,.06)}
+        .rms-settings-subline{position:absolute;left:-14px;width:2px;height:20px;border-radius:99px;background:transparent;transition:background .2s ease,height .2s ease}
+        .rms-settings-subitem.active .rms-settings-subline{height:27px;background:#ef2b2f}
+        .rms-settings-subicon{display:grid;place-items:center;width:27px;height:27px;flex:0 0 27px;border-radius:8px;background:#f4f4f5;color:#71717a}
+        .rms-settings-subicon svg{width:14px;height:14px}
+        .rms-settings-subitem.active .rms-settings-subicon{background:#fff0f0;color:#ef2b2f}
+        .rms-settings-ai{font-size:8px;font-weight:900;letter-spacing:.04em;background:#18181b;color:#fff}
+        .rms-settings-subcopy{min-width:0;display:grid;gap:2px}
+        .rms-settings-subcopy strong{font-size:10px;line-height:1.2;font-weight:750}
+        .rms-settings-subcopy small{font-size:8px;line-height:1.25;color:#a1a1aa;white-space:nowrap}
+        .rms-settings-status-dot{width:6px;height:6px;margin-left:auto;flex:0 0 6px;border-radius:999px;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.10)}
+        .rms-settings-workspace{position:fixed;inset:0;z-index:900;display:grid;place-items:center;padding:110px 34px 34px;background:rgba(244,244,245,.92);backdrop-filter:blur(14px)}
+        .rms-settings-page{width:min(1120px,100%);max-height:calc(100vh - 145px);overflow:auto}
+        .rms-settings-page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:30px;margin-bottom:22px}
+        .rms-settings-page-head h1{margin:7px 0 5px;font-size:34px;line-height:1.05;letter-spacing:-.045em;font-weight:850;color:#18181b}
+        .rms-settings-page-head p{margin:0;max-width:660px;color:#71717a;font-size:13px;line-height:1.55}
+        .rms-settings-head-badge{display:flex;align-items:center;gap:8px;padding:9px 12px;border:1px solid #e4e4e7;border-radius:999px;background:#fff;color:#71717a;font-size:9px;font-weight:800;letter-spacing:.08em;white-space:nowrap}
+        .rms-settings-head-badge i{width:6px;height:6px;border-radius:999px;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.1)}
+        .rms-api-settings-card,.rms-general-settings-card{border:1px solid #e4e4e7;border-radius:22px;background:#fff;box-shadow:0 20px 60px rgba(24,24,27,.08);overflow:hidden}
+        .rms-api-settings-card-head{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:24px 26px}
+        .rms-api-settings-brand{display:flex;align-items:center;gap:13px}
+        .rms-api-settings-mark{display:grid;place-items:center;width:48px;height:48px;border-radius:15px;background:#18181b;color:#fff;font-size:11px;font-weight:900;box-shadow:0 9px 22px rgba(24,24,27,.16)}
+        .rms-api-settings-brand div{display:grid;gap:3px}
+        .rms-api-settings-brand span{font-size:8px;color:#ef2b2f;font-weight:850;letter-spacing:.14em}
+        .rms-api-settings-brand strong{font-size:18px;line-height:1.1;color:#18181b}
+        .rms-api-settings-brand small{font-size:10px;color:#a1a1aa}
+        .rms-api-connection-badge{display:flex;align-items:center;gap:7px;padding:8px 11px;border:1px solid #dcfce7;border-radius:999px;background:#f0fdf4;color:#15803d;font-size:9px;font-weight:750}
+        .rms-api-connection-badge i{width:6px;height:6px;border-radius:999px;background:#22c55e}
+        .rms-api-settings-divider{height:1px;background:#f0f0f2}
+        .rms-api-settings-grid{display:grid;grid-template-columns:1.4fr .8fr;gap:18px;padding:24px 26px}
+        .rms-api-field{display:grid;gap:8px}
+        .rms-api-field>span{font-size:10px;font-weight:800;color:#27272a}
+        .rms-api-field>small{font-size:9px;line-height:1.4;color:#a1a1aa}
+        .rms-api-input-wrap{display:flex;align-items:center;overflow:hidden;height:48px;border:1px solid #d4d4d8;border-radius:12px;background:#fff;transition:border-color .2s,box-shadow .2s}
+        .rms-api-input-wrap:focus-within{border-color:#ef2b2f;box-shadow:0 0 0 4px rgba(239,43,47,.08)}
+        .rms-api-input-wrap input,.rms-api-field select{width:100%;height:48px;border:1px solid #d4d4d8;border-radius:12px;background:#fff;padding:0 13px;color:#27272a;font-size:11px;outline:none}
+        .rms-api-input-wrap input{border:0;border-radius:0}
+        .rms-api-input-wrap button{margin-right:6px;padding:7px 9px;border:0;border-radius:8px;background:#f4f4f5;color:#52525b;font-size:9px;font-weight:750;cursor:pointer}
+        .rms-api-info-strip{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:0 26px 26px;padding:15px;border:1px solid #fee2e2;border-radius:15px;background:linear-gradient(135deg,#fffafa,#fff)}
+        .rms-api-info-strip>div{display:flex;align-items:center;gap:10px;min-width:0}
+        .rms-api-info-icon{display:grid;place-items:center;width:30px;height:30px;flex:0 0 30px;border-radius:9px;background:#fff0f0;color:#ef2b2f;font-weight:900}
+        .rms-api-info-strip strong,.rms-api-info-strip small{display:block}
+        .rms-api-info-strip strong{font-size:10px;color:#27272a}
+        .rms-api-info-strip small{margin-top:3px;max-width:600px;font-size:9px;line-height:1.4;color:#a1a1aa}
+        .rms-api-test-button{display:inline-flex;align-items:center;gap:12px;padding:10px 13px;border:1px solid #e4e4e7;border-radius:10px;background:#18181b;color:#fff;font-size:9px;font-weight:800;white-space:nowrap;cursor:pointer;transition:transform .2s,box-shadow .2s}
+        .rms-api-test-button:hover{transform:translateY(-1px);box-shadow:0 9px 22px rgba(24,24,27,.15)}
+        .rms-api-test-button span{font-size:13px}
+        .rms-general-settings-card{display:grid}
+        .rms-general-settings-item{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:23px 26px;border-bottom:1px solid #f0f0f2}
+        .rms-general-settings-item:last-child{border-bottom:0}
+        .rms-general-settings-item strong,.rms-general-settings-item span{display:block}
+        .rms-general-settings-item strong{font-size:12px;color:#27272a}
+        .rms-general-settings-item>div span{margin-top:4px;font-size:10px;color:#a1a1aa}
+        .rms-settings-ready{padding:6px 9px;border-radius:999px;background:#f0fdf4;color:#15803d;font-size:8px!important;font-weight:850}
+        @media(max-width:900px){
+            .rms-settings-workspace{position:absolute;inset:0;padding:95px 18px 22px}
+            .rms-settings-page{max-height:calc(100vh - 117px)}
+            .rms-settings-page-head{align-items:flex-start;flex-direction:column;gap:14px}
+            .rms-settings-page-head h1{font-size:27px}
+            .rms-api-settings-grid{grid-template-columns:1fr}
+            .rms-api-settings-card-head,.rms-api-info-strip{align-items:flex-start;flex-direction:column}
+        }
+        @media(max-width:640px){
+            .rms-settings-subnav{margin-left:15px}
+            .rms-settings-page-head p{font-size:11px}
+            .rms-api-settings-card-head,.rms-api-settings-grid{padding:18px}
+            .rms-api-info-strip{margin:0 18px 18px}
+            .rms-general-settings-item{align-items:flex-start;flex-direction:column}
+        }
+
+
+        /* =========================================================
+           SETTINGS V1.1 — TYPOGRAPHY / SPACING / LOGS
+           ========================================================= */
+        .rms-settings-page-head h1{font-size:38px!important;font-weight:850!important;letter-spacing:-.045em}
+        .rms-settings-page-head p{font-size:14px!important;line-height:1.6}
+        .rms-settings-head-badge{font-size:10px;padding:10px 13px}
+        .rms-api-settings-card-head{padding:28px 30px}
+        .rms-api-settings-mark{width:54px;height:54px;border-radius:16px;font-size:13px}
+        .rms-api-settings-brand strong{font-size:22px}
+        .rms-api-settings-brand small{font-size:11px}
+        .rms-api-settings-grid{padding:30px}
+        .rms-api-field>span{font-size:12px}
+        .rms-api-field>small{font-size:10px}
+        .rms-api-input-wrap,.rms-api-input-wrap input,.rms-api-field select{height:54px}
+        .rms-api-input-wrap input,.rms-api-field select{font-size:13px}
+        .rms-api-info-strip{margin:0 30px 26px;padding:17px}
+        .rms-api-info-strip strong{font-size:11px}
+        .rms-api-info-strip small{font-size:10px;line-height:1.5}
+        .rms-api-test-button{min-height:44px;padding:0 15px;font-size:11px}
+        .rms-general-settings-item{padding:28px 30px}
+        .rms-general-settings-item strong{font-size:14px}
+        .rms-general-settings-item>div span{font-size:11px}
+        .rms-settings-ready{font-size:9px!important}
+
+        .rms-openai-logs{margin:0 30px 26px;border:1px solid #e4e4e7;border-radius:18px;background:#fff;overflow:hidden}
+        .rms-openai-logs-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:17px 18px;border-bottom:1px solid #f0f0f2}
+        .rms-openai-logs-title{display:flex;align-items:center;gap:11px}
+        .rms-openai-logs-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:11px;background:#f4f4f5;color:#52525b}
+        .rms-openai-logs-icon svg{width:18px;height:18px}
+        .rms-openai-logs-title div{display:grid;gap:3px}
+        .rms-openai-logs-title strong{font-size:13px;color:#27272a}
+        .rms-openai-logs-title small{font-size:10px;color:#a1a1aa}
+        .rms-openai-log-actions{display:flex;align-items:center;gap:8px}
+        .rms-openai-log-status{display:inline-flex;align-items:center;gap:6px;min-height:29px;padding:0 10px;border:1px solid #e4e4e7;border-radius:999px;background:#fafafa;color:#a1a1aa;font-size:8px;font-weight:850;letter-spacing:.07em}
+        .rms-openai-log-status i{width:6px;height:6px;border-radius:50%;background:#a1a1aa}
+        .rms-openai-log-clear{height:29px;padding:0 10px;border:1px solid #e4e4e7;border-radius:8px;background:#fff;color:#71717a;font-size:9px;font-weight:750;cursor:pointer}
+        .rms-openai-log-console{min-height:210px;display:grid;place-items:center;padding:24px;background:#18181b}
+        .rms-openai-log-empty{text-align:center;display:grid;place-items:center;gap:7px}
+        .rms-openai-log-empty-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:#ef2b2f;font-size:20px}
+        .rms-openai-log-empty strong{font-size:12px;color:#e4e4e7}
+        .rms-openai-log-empty small{max-width:540px;font-size:10px;line-height:1.6;color:#71717a}
+        .rms-openai-log-footer{display:flex;justify-content:space-between;gap:12px;padding:9px 14px;background:#111113;color:#52525b;font-size:8px;font-weight:750;letter-spacing:.05em}
+        .rms-openai-log-footer span:first-child{display:inline-flex;align-items:center;gap:6px}
+        .rms-openai-log-footer i{width:5px;height:5px;border-radius:50%;background:#ef2b2f;box-shadow:0 0 8px rgba(239,43,47,.5)}
+
+        @media(max-width:900px){
+            .rms-settings-page-head h1{font-size:30px!important}
+            .rms-api-settings-card-head{padding:24px}
+            .rms-api-settings-grid{padding:24px}
+            .rms-openai-logs{margin:0 24px 22px}
+        }
+        @media(max-width:640px){
+            .rms-settings-page-head h1{font-size:27px!important}
+            .rms-settings-page-head p{font-size:12px!important}
+            .rms-api-settings-card-head,.rms-api-settings-grid{padding:20px}
+            .rms-api-info-strip{margin:0 20px 20px}
+            .rms-general-settings-item{padding:21px 20px}
+            .rms-openai-logs{margin:0 20px 20px}
+            .rms-openai-logs-head{align-items:flex-start;flex-direction:column}
+            .rms-openai-log-actions{width:100%;justify-content:space-between}
+            .rms-openai-log-console{min-height:175px}
+            .rms-openai-log-footer{flex-direction:column}
+        }

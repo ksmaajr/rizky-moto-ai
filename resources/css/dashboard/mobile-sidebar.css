@@ -1,0 +1,244 @@
+/* RMS Dashboard — Mobile Sidebar V4 */
+
+.rms-sidebar-lock {
+    overflow: hidden !important;
+}
+
+@keyframes rmsSidebarHandleIn {
+    from {
+        opacity: 0;
+        transform: translate3d(-7px,-50%,0) scale(.92);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0,-50%,0) scale(1);
+    }
+}
+
+@media (max-width: 900px) {
+    .dashboard-sidebar {
+        z-index: 9000 !important;
+        width: min(300px, 84vw) !important;
+        transform: translate3d(-105%,0,0) !important;
+        transition:
+            transform .38s cubic-bezier(.22,.8,.2,1),
+            box-shadow .28s ease !important;
+        will-change: transform;
+        pointer-events: auto !important;
+    }
+
+    .dashboard-sidebar.mobile-open {
+        transform: translate3d(0,0,0) !important;
+        box-shadow:
+            18px 0 55px rgba(0,0,0,.30),
+            4px 0 20px rgba(239,43,47,.06) !important;
+    }
+
+    .dashboard-overlay {
+        position: fixed !important;
+        z-index: 8990 !important;
+        inset: 0 !important;
+        display: block !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        background: rgba(7,7,9,.58) !important;
+        backdrop-filter: blur(8px) saturate(.82) !important;
+        -webkit-backdrop-filter: blur(8px) saturate(.82) !important;
+        transition:
+            opacity .30s ease,
+            visibility 0s linear .30s !important;
+    }
+
+    .dashboard-overlay.mobile-visible {
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        transition:
+            opacity .30s ease,
+            visibility 0s linear 0s !important;
+    }
+
+    .mobile-menu {
+        position: relative !important;
+        z-index: 9010 !important;
+        display: flex !important;
+        width: 40px !important;
+        height: 40px !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex: 0 0 40px;
+        border: 1px solid #e4e4e7 !important;
+        border-radius: 12px !important;
+        background: #fff !important;
+        color: #52525b !important;
+        cursor: pointer !important;
+        pointer-events: auto !important;
+        touch-action: manipulation !important;
+        -webkit-tap-highlight-color: transparent !important;
+        transition:
+            transform .28s cubic-bezier(.22,.8,.2,1),
+            background .22s ease,
+            color .22s ease,
+            border-color .22s ease,
+            box-shadow .22s ease !important;
+    }
+
+    .mobile-menu:active {
+        transform: scale(.94);
+    }
+
+    .mobile-menu svg {
+        width: 17px !important;
+        height: 17px !important;
+        transition: opacity .18s ease, transform .22s ease;
+    }
+
+    .mobile-menu.is-sidebar-open {
+        background: #18181b !important;
+        border-color: #18181b !important;
+        color: #fff !important;
+        box-shadow: 0 8px 24px rgba(24,24,27,.20) !important;
+    }
+
+    .mobile-menu.is-sidebar-open svg {
+        opacity: 0;
+        transform: scale(.72) rotate(-45deg);
+    }
+
+    .mobile-menu.is-sidebar-open::before,
+    .mobile-menu.is-sidebar-open::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 15px;
+        height: 2px;
+        border-radius: 99px;
+        background: #fff;
+        transform-origin: center;
+        transition: transform .24s cubic-bezier(.22,.8,.2,1);
+    }
+
+    .mobile-menu.is-sidebar-open::before {
+        transform: translate(-50%,-50%) rotate(45deg);
+    }
+
+    .mobile-menu.is-sidebar-open::after {
+        transform: translate(-50%,-50%) rotate(-45deg);
+    }
+
+    .mobile-close {
+        position: absolute !important;
+        right: -16px !important;
+        top: 50% !important;
+        z-index: 9020 !important;
+        display: flex !important;
+        width: 34px !important;
+        height: 62px !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 !important;
+        border: 1px solid rgba(255,255,255,.12) !important;
+        border-left: 0 !important;
+        border-radius: 0 15px 15px 0 !important;
+        background: linear-gradient(180deg,#27272a,#111113) !important;
+        color: #fff !important;
+        cursor: pointer !important;
+        pointer-events: auto !important;
+        touch-action: manipulation !important;
+        transform: translate3d(0,-50%,0) !important;
+        box-shadow: 12px 12px 32px rgba(0,0,0,.25) !important;
+        animation: rmsSidebarHandleIn .28s ease both;
+        -webkit-tap-highlight-color: transparent !important;
+    }
+
+    .mobile-close::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 12px;
+        bottom: 12px;
+        width: 2px;
+        border-radius: 99px;
+        background: #ef2b2f;
+        box-shadow: 0 0 13px rgba(239,43,47,.45);
+    }
+
+    .mobile-close svg {
+        width: 16px !important;
+        height: 16px !important;
+        opacity: .92;
+    }
+
+    .mobile-close:active {
+        transform: translate3d(-1px,-50%,0) scale(.96) !important;
+    }
+
+    .sidebar-brand {
+        position: relative !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dashboard-sidebar,
+    .dashboard-overlay,
+    .mobile-menu,
+    .mobile-close,
+    .mobile-menu svg {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+
+/* V5 interaction polish */
+@media (max-width: 900px) {
+    .dashboard-sidebar:not(.mobile-open) .mobile-close {
+        pointer-events: none !important;
+        opacity: 0 !important;
+    }
+
+    .dashboard-sidebar.mobile-open .mobile-close {
+        pointer-events: auto !important;
+        opacity: 1 !important;
+    }
+
+    .rms-settings-subitem {
+        touch-action: manipulation;
+    }
+}
+
+
+/* V6: Settings submenu stays inside the sidebar flow. */
+@media (max-width: 900px) {
+    .dashboard-sidebar {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        overflow: visible !important;
+    }
+
+    .dashboard-sidebar .rms-settings-nav {
+        position: relative !important;
+        z-index: 5 !important;
+    }
+
+    .dashboard-sidebar .rms-settings-subnav {
+        position: relative !important;
+        left: auto !important;
+        right: auto !important;
+        top: auto !important;
+        bottom: auto !important;
+        width: 100% !important;
+        transform: none !important;
+    }
+
+    .dashboard-sidebar .mobile-close {
+        right: -16px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        z-index: 20 !important;
+    }
+}

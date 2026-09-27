@@ -1,0 +1,20 @@
+FIX PARSE ERROR — Settings V2
+
+The previous generated dashboard had an invalid Blade control-flow insertion.
+This package starts again from the user's original dashboard source and inserts
+the Settings child component in the existing @if / @elseif / @endif chain.
+
+Install:
+1. Replace the current dashboard source with dashboard.php.
+2. Copy app/Livewire/Dashboard/Settings/Index.php
+3. Copy resources/views/livewire/dashboard/settings/index.blade.php
+4. Import resources/css/dashboard/settings.css in resources/css/app.css:
+       @import "./dashboard/settings.css";
+5. Import resources/js/dashboard/settings.js in resources/js/app.js:
+       import './dashboard/settings.js';
+6. Run:
+       php artisan optimize:clear
+       npm.cmd run dev
+
+No Settings route is required. Settings remains inside the existing dashboard
+workspace and switches using Livewire.

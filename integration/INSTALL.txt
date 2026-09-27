@@ -1,0 +1,20 @@
+RMS SETTINGS FINAL
+
+1. Replace dashboard component with dashboard.blade.php.
+2. Add to resources/css/app.css:
+   @import "./dashboard/settings/general.css";
+   @import "./dashboard/settings/openai.css";
+
+3. Add to resources/js/app.js:
+   import "./dashboard/settings-openai.js";
+
+4. Clear cache:
+   php artisan optimize:clear
+
+5. Restart:
+   npm.cmd run dev
+
+Important:
+The old inline Settings CSS block was removed from the dashboard component.
+This is necessary because inline CSS in the dashboard was overriding the external
+settings stylesheet. General and OpenAI are separate Blade views.

@@ -1,0 +1,60 @@
+RIZKY MOTO SHOP — TEMPLATE LIBRARY INTEGRATION
+
+Do NOT create a /templates route.
+Do NOT redirect to a new page.
+The Template Library is rendered inside the existing dashboard main content.
+
+1) DASHBOARD SFC — add this method beside openStore()/openDashboard():
+
+public function openTemplates(): void
+{
+    $this->activeSection = 'templates';
+}
+
+2) SIDEBAR — replace the current Templates button with:
+
+<button
+    type="button"
+    class="nav-item {{ $activeSection === 'templates' ? 'active' : '' }}"
+    wire:click="openTemplates"
+    wire:loading.attr="disabled"
+    wire:target="openTemplates"
+>
+    <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+            <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="3" y="14" width="18" height="7" rx="1.5"/>
+        </svg>
+    </span>
+    <span class="nav-label">Templates</span>
+</button>
+
+3) MAIN CONTENT — directly after the Stores branch, add:
+
+@elseif ($activeSection === 'templates')
+    <div class="rms-content-enter" wire:key="workspace-templates">
+        <livewire:dashboard.templates.index />
+    </div>
+@endif
+
+4) CSS — add this line to resources/css/app.css:
+
+@import "./dashboard/templates.css";
+
+Keep the import AFTER the main Tailwind import if possible.
+
+5) NO ROUTE IS REQUIRED.
+The component is mounted as a child component inside Dashboard.
+
+6) After copying files:
+
+php artisan optimize:clear
+npm.cmd run dev
+
+Then Ctrl + Shift + R in Chrome.
+
+The URL must remain:
+http://localhost:8000/
+
+Clicking Templates changes only the main workspace content.

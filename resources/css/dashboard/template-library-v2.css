@@ -1,0 +1,3203 @@
+
+/* =========================================================
+   RMS TEMPLATE LIBRARY — V2 STORE FILTER + CARD UPGRADE
+   Append after templates.css so these rules win.
+   ========================================================= */
+
+.rms-template-store-filter {
+    min-width: 190px;
+}
+
+.rms-template-select-trigger {
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+}
+
+.rms-store-mini-logo,
+.rms-store-option-logo,
+.rms-template-store-logo {
+    position: relative;
+    overflow: hidden;
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border: 1px solid rgba(228,228,231,.9);
+    background: linear-gradient(145deg,#fff,#f4f4f5);
+    color: #18181b;
+}
+
+.rms-store-mini-logo {
+    width: 29px;
+    height: 29px;
+    border-radius: 9px;
+}
+
+.rms-store-mini-logo img,
+.rms-store-option-logo img,
+.rms-template-store-logo img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain;
+}
+
+.rms-store-mini-logo b,
+.rms-store-option-logo b,
+.rms-template-store-logo b {
+    font-size: 10px;
+    font-weight: 900;
+}
+
+.rms-store-mini-logo.all,
+.rms-store-option-logo.all {
+    background: #18181b;
+    color: #fff;
+    border-color: #18181b;
+}
+
+.rms-store-mini-logo.all svg,
+.rms-store-option-logo.all svg {
+    width: 15px;
+    height: 15px;
+}
+
+.rms-store-filter-label {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    color: #27272a;
+    font-size: 12px;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+}
+
+.rms-select-chevron {
+    margin-left: auto;
+    color: #a1a1aa;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.rms-store-filter-menu {
+    min-width: 285px !important;
+    padding: 7px !important;
+    border-radius: 17px !important;
+}
+
+.rms-store-menu-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 9px 7px;
+    border-bottom: 1px solid #f1f1f2;
+    margin-bottom: 5px;
+}
+
+.rms-store-menu-heading span {
+    font-size: 8px;
+    letter-spacing: .14em;
+    font-weight: 900;
+    color: #a1a1aa;
+}
+
+.rms-store-menu-heading small {
+    font-size: 8px;
+    color: #a1a1aa;
+}
+
+.rms-store-filter-menu > button {
+    min-height: 52px !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 9px !important;
+    border-radius: 11px !important;
+}
+
+.rms-store-filter-menu > button:hover,
+.rms-store-filter-menu > button.selected {
+    background: #f8f8f8 !important;
+}
+
+.rms-store-filter-menu > button.selected {
+    box-shadow: inset 0 0 0 1px rgba(220,38,38,.08);
+}
+
+.rms-store-option {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+}
+
+.rms-store-option-logo {
+    width: 35px;
+    height: 35px;
+    border-radius: 10px;
+}
+
+.rms-store-option > span:last-child {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+}
+
+.rms-store-option strong {
+    overflow: hidden;
+    max-width: 175px;
+    color: #27272a;
+    font-size: 11px;
+    font-weight: 850;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rms-store-option small {
+    color: #a1a1aa;
+    font-size: 8px;
+    font-weight: 650;
+}
+
+.rms-store-filter-menu > button > i {
+    opacity: 0;
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    border-radius: 7px;
+    background: #fee2e2;
+    color: #dc2626;
+    font-size: 10px;
+    font-style: normal;
+    font-weight: 900;
+}
+
+.rms-store-filter-menu > button.selected > i {
+    opacity: 1;
+}
+
+/* ---------- V2 template cards ---------- */
+
+.rms-template-grid {
+    grid-template-columns: repeat(3,minmax(0,1fr)) !important;
+    gap: 18px !important;
+}
+
+.rms-template-card-v2 {
+    overflow: hidden;
+    border: 1px solid #e8e8ea !important;
+    border-radius: 20px !important;
+    background: #fff !important;
+    box-shadow: 0 10px 34px rgba(24,24,27,.055) !important;
+    transition: transform .28s cubic-bezier(.22,.8,.2,1),
+                box-shadow .28s ease,
+                border-color .28s ease !important;
+}
+
+.rms-template-card-v2:hover {
+    transform: translateY(-5px);
+    border-color: #d4d4d8 !important;
+    box-shadow: 0 24px 55px rgba(24,24,27,.11) !important;
+}
+
+.rms-template-preview-v2 {
+    position: relative;
+    height: 235px !important;
+    overflow: hidden;
+    background: #f4f4f5;
+}
+
+.rms-template-preview-v2 > img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    transition: transform .6s cubic-bezier(.22,.8,.2,1), filter .35s ease;
+}
+
+.rms-template-card-v2:hover .rms-template-preview-v2 > img {
+    transform: scale(1.045);
+}
+
+.rms-template-preview-shade {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(180deg,rgba(0,0,0,.26) 0%,transparent 28%,transparent 58%,rgba(0,0,0,.56) 100%);
+}
+
+.rms-template-status {
+    z-index: 3;
+}
+
+.rms-template-preview-bottom {
+    position: absolute;
+    z-index: 4;
+    left: 14px;
+    right: 14px;
+    bottom: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.rms-template-ratio-badge,
+.rms-template-preview-tag {
+    display: inline-flex;
+    align-items: center;
+    min-height: 25px;
+    padding: 0 9px;
+    border: 1px solid rgba(255,255,255,.22);
+    border-radius: 8px;
+    background: rgba(17,17,17,.66);
+    color: #fff;
+    backdrop-filter: blur(10px);
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: .08em;
+}
+
+.rms-template-preview-tag {
+    border-color: rgba(255,255,255,.15);
+    color: #d4d4d8;
+}
+
+.rms-template-card-body-v2 {
+    padding: 15px 16px 16px !important;
+}
+
+.rms-template-store-identity {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f1f1f2;
+}
+
+.rms-template-store-logo {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+}
+
+.rms-template-store-identity > span:nth-child(2) {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+    flex: 1;
+}
+
+.rms-template-store-identity small {
+    color: #a1a1aa;
+    font-size: 7px;
+    font-weight: 900;
+    letter-spacing: .13em;
+}
+
+.rms-template-store-identity strong {
+    overflow: hidden;
+    color: #27272a;
+    font-size: 10px;
+    font-weight: 850;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rms-template-store-identity em {
+    padding: 5px 7px;
+    border-radius: 7px;
+    background: #f4f4f5;
+    color: #71717a;
+    font-size: 7px;
+    font-style: normal;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.rms-template-card-title-row-v2 {
+    margin-top: 13px;
+}
+
+.rms-template-card-title-row-v2 h3 {
+    font-size: 16px !important;
+    letter-spacing: -.025em;
+    line-height: 1.18 !important;
+}
+
+.rms-template-description-v2 {
+    min-height: 37px;
+    margin-top: 7px !important;
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    color: #71717a !important;
+    font-size: 9px !important;
+    line-height: 1.55 !important;
+}
+
+.rms-template-card-meta-v2 {
+    display: grid !important;
+    grid-template-columns: repeat(3,1fr);
+    gap: 7px;
+    margin-top: 13px !important;
+}
+
+.rms-template-card-meta-v2 > span {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 5px;
+    row-gap: 1px;
+    padding: 8px 8px;
+    border: 1px solid #f0f0f1;
+    border-radius: 10px;
+    background: #fafafa;
+}
+
+.rms-template-card-meta-v2 > span i {
+    grid-row: span 2;
+    display: grid;
+    place-items: center;
+    color: #dc2626;
+    font-size: 10px;
+    font-style: normal;
+}
+
+.rms-template-card-meta-v2 > span b {
+    color: #3f3f46;
+    font-size: 9px;
+    line-height: 1;
+}
+
+.rms-template-card-meta-v2 > span small {
+    color: #a1a1aa;
+    font-size: 7px;
+    line-height: 1;
+}
+
+.rms-template-card-actions-v2 {
+    margin-top: 14px !important;
+    padding-top: 12px;
+    border-top: 1px solid #f1f1f2;
+}
+
+.rms-template-card-actions-v2 > button:first-child {
+    min-height: 38px;
+    border-radius: 10px !important;
+    font-size: 9px !important;
+}
+
+.rms-template-card-actions-v2 > button.ghost {
+    min-width: 62px;
+    min-height: 38px;
+    border: 1px solid #e4e4e7 !important;
+    border-radius: 10px !important;
+    background: #fff !important;
+    color: #52525b !important;
+    font-size: 8px !important;
+    font-weight: 850;
+}
+
+.rms-template-card-actions-v2 > button.ghost:hover {
+    border-color: #d4d4d8 !important;
+    background: #f8f8f8 !important;
+}
+
+.rms-template-menu-v2 {
+    min-width: 190px !important;
+    padding: 6px !important;
+}
+
+.rms-template-menu-label {
+    padding: 7px 9px 6px;
+    color: #a1a1aa;
+    font-size: 7px;
+    font-weight: 900;
+    letter-spacing: .13em;
+}
+
+.rms-template-menu-v2 > button {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    border-radius: 8px !important;
+    font-size: 9px !important;
+}
+
+.rms-template-menu-v2 > button > span {
+    width: 18px;
+    color: #71717a;
+    text-align: center;
+}
+
+.rms-template-menu-v2 > button.danger > span {
+    color: #dc2626;
+}
+
+.rms-template-menu-divider {
+    height: 1px;
+    margin: 5px 4px;
+    background: #f1f1f2;
+}
+
+/* ---------- form store selector ---------- */
+
+.rms-template-select-form .rms-template-select-trigger {
+    min-height: 46px;
+    border: 1px solid #e4e4e7;
+    border-radius: 11px;
+    padding: 0 11px;
+    background: #fff;
+}
+
+.rms-template-select-form .rms-template-select-trigger:hover {
+    border-color: #d4d4d8;
+}
+
+@media (max-width: 1120px) {
+    .rms-template-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+    }
+}
+
+@media (max-width: 700px) {
+    .rms-template-store-filter {
+        min-width: 0;
+        flex: 1 1 100%;
+    }
+
+    .rms-template-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .rms-template-preview-v2 {
+        height: 245px !important;
+    }
+
+    .rms-store-filter-menu {
+        width: min(320px, calc(100vw - 32px)) !important;
+        min-width: 0 !important;
+    }
+
+    .rms-template-card-meta-v2 {
+        grid-template-columns: repeat(3,1fr);
+    }
+}
+
+@media (max-width: 430px) {
+    .rms-template-preview-v2 {
+        height: 220px !important;
+    }
+
+    .rms-template-card-meta-v2 > span {
+        padding: 7px 6px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rms-template-card-v2,
+    .rms-template-preview-v2 > img {
+        transition: none !important;
+    }
+}
+
+
+
+/* =========================================================
+   RMS TEMPLATE LIBRARY — V3
+   Dropdown layering + larger premium cards
+   Append AFTER templates.css + template-library-v2.css
+   ========================================================= */
+
+/* =========================================================
+   01. DROPDOWN LAYERING / NO CLIPPING
+   ========================================================= */
+
+.rms-template-page,
+.rms-template-toolbar,
+.rms-template-filter-row,
+.rms-template-select {
+    overflow: visible !important;
+}
+
+.rms-template-toolbar {
+    position: relative !important;
+    z-index: 100 !important;
+}
+
+.rms-template-filter-row {
+    position: relative !important;
+    z-index: 101 !important;
+}
+
+.rms-template-select {
+    position: relative !important;
+    z-index: 102 !important;
+}
+
+.rms-template-select:has(.x-show),
+.rms-template-select:focus-within {
+    z-index: 10000 !important;
+}
+
+.rms-template-select-menu,
+.rms-store-filter-menu {
+    position: absolute !important;
+    z-index: 100000 !important;
+    isolation: isolate;
+}
+
+.rms-store-filter-menu {
+    top: calc(100% + 10px) !important;
+    right: 0 !important;
+    left: auto !important;
+    width: 340px !important;
+    min-width: 340px !important;
+    max-height: 430px !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    padding: 9px !important;
+    border: 1px solid rgba(228,228,231,.96) !important;
+    border-radius: 20px !important;
+    background: rgba(255,255,255,.985) !important;
+    box-shadow:
+        0 30px 80px rgba(24,24,27,.18),
+        0 8px 24px rgba(24,24,27,.08) !important;
+    backdrop-filter: blur(18px);
+}
+
+.rms-store-filter-menu::-webkit-scrollbar {
+    width: 5px;
+}
+
+.rms-store-filter-menu::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #d4d4d8;
+}
+
+.rms-store-menu-heading {
+    min-height: 38px;
+    padding: 8px 10px 9px !important;
+}
+
+.rms-store-menu-heading span {
+    font-size: 9px !important;
+    letter-spacing: .16em !important;
+}
+
+.rms-store-menu-heading small {
+    font-size: 9px !important;
+}
+
+.rms-store-filter-menu > button {
+    min-height: 64px !important;
+    padding: 9px 10px !important;
+    border-radius: 13px !important;
+}
+
+.rms-store-option-logo {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 12px !important;
+}
+
+.rms-store-option strong {
+    max-width: 205px !important;
+    font-size: 12px !important;
+    line-height: 1.25 !important;
+}
+
+.rms-store-option small {
+    font-size: 9px !important;
+    line-height: 1.3 !important;
+}
+
+.rms-store-filter-menu > button > i {
+    width: 26px !important;
+    height: 26px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+}
+
+.rms-store-mini-logo {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 10px !important;
+}
+
+.rms-store-filter-label {
+    font-size: 13px !important;
+    font-weight: 850 !important;
+}
+
+.rms-select-chevron {
+    font-size: 16px !important;
+}
+
+/* Make other filters equally readable */
+.rms-template-filter-row > .rms-template-select:not(.rms-template-store-filter) {
+    min-width: 145px !important;
+}
+
+.rms-template-filter-row > .rms-template-select > button {
+    min-height: 52px !important;
+    padding: 0 15px !important;
+    font-size: 12px !important;
+}
+
+/* =========================================================
+   02. LIBRARY STACKING
+   ========================================================= */
+
+.rms-template-library {
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+.rms-template-results,
+.rms-template-grid {
+    position: relative;
+    z-index: 1;
+}
+
+.rms-template-card-v2,
+.rms-template-create-card {
+    position: relative;
+    z-index: 1;
+}
+
+/* =========================================================
+   03. PREMIUM TEMPLATE CARD
+   ========================================================= */
+
+.rms-template-grid {
+    grid-template-columns: repeat(3, minmax(300px, 1fr)) !important;
+    gap: 22px !important;
+    align-items: stretch !important;
+}
+
+.rms-template-card-v2 {
+    min-width: 0;
+    border-radius: 22px !important;
+    border: 1px solid #e4e4e7 !important;
+    box-shadow:
+        0 10px 30px rgba(24,24,27,.055),
+        0 2px 7px rgba(24,24,27,.035) !important;
+}
+
+.rms-template-card-v2:hover {
+    transform: translateY(-7px) !important;
+    border-color: #d4d4d8 !important;
+    box-shadow:
+        0 28px 65px rgba(24,24,27,.13),
+        0 6px 18px rgba(220,38,38,.045) !important;
+}
+
+/* Preview */
+.rms-template-preview-v2 {
+    height: 265px !important;
+    border-radius: 21px 21px 0 0 !important;
+    background: #f4f4f5;
+}
+
+.rms-template-preview-v2 > img {
+    object-fit: cover !important;
+}
+
+.rms-template-preview-shade {
+    background:
+        linear-gradient(
+            180deg,
+            rgba(0,0,0,.28) 0%,
+            transparent 31%,
+            transparent 56%,
+            rgba(0,0,0,.70) 100%
+        ) !important;
+}
+
+/* Status */
+.rms-template-card-v2 .rms-template-status {
+    top: 15px !important;
+    left: 15px !important;
+    min-height: 31px !important;
+    padding: 0 12px !important;
+    border-radius: 999px !important;
+    font-size: 10px !important;
+    font-weight: 900 !important;
+    letter-spacing: .01em;
+    box-shadow: 0 7px 18px rgba(0,0,0,.16);
+}
+
+.rms-template-card-v2 .rms-template-status i {
+    width: 7px !important;
+    height: 7px !important;
+}
+
+/* Menu button */
+.rms-template-card-v2 .rms-template-card-menu {
+    top: 15px !important;
+    right: 15px !important;
+}
+
+.rms-template-card-v2 .rms-template-card-menu > button {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 11px !important;
+    background: rgba(17,17,17,.68) !important;
+    border: 1px solid rgba(255,255,255,.18) !important;
+    color: #fff !important;
+    font-size: 16px !important;
+    line-height: 1 !important;
+    backdrop-filter: blur(12px);
+}
+
+/* Preview badges */
+.rms-template-preview-bottom {
+    left: 15px !important;
+    right: 15px !important;
+    bottom: 15px !important;
+}
+
+.rms-template-ratio-badge,
+.rms-template-preview-tag {
+    min-height: 30px !important;
+    padding: 0 11px !important;
+    border-radius: 9px !important;
+    font-size: 9px !important;
+    letter-spacing: .07em !important;
+}
+
+/* =========================================================
+   04. CARD BODY TYPOGRAPHY
+   ========================================================= */
+
+.rms-template-card-body-v2 {
+    padding: 18px 19px 19px !important;
+}
+
+.rms-template-store-identity {
+    gap: 11px !important;
+    padding-bottom: 14px !important;
+}
+
+.rms-template-store-logo {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 12px !important;
+}
+
+.rms-template-store-identity > span:nth-child(2) {
+    gap: 3px !important;
+}
+
+.rms-template-store-identity small {
+    font-size: 8px !important;
+    letter-spacing: .15em !important;
+}
+
+.rms-template-store-identity strong {
+    font-size: 12px !important;
+    line-height: 1.25 !important;
+}
+
+.rms-template-store-identity em {
+    padding: 6px 9px !important;
+    border-radius: 8px !important;
+    font-size: 8px !important;
+}
+
+/* Title */
+.rms-template-card-title-row-v2 {
+    margin-top: 17px !important;
+}
+
+.rms-template-card-title-row-v2 h3 {
+    margin: 0 !important;
+    color: #18181b !important;
+    font-size: 20px !important;
+    font-weight: 850 !important;
+    letter-spacing: -.035em !important;
+    line-height: 1.2 !important;
+}
+
+.rms-template-card-title-row-v2 em {
+    padding: 6px 8px !important;
+    border-radius: 8px !important;
+    font-size: 9px !important;
+    font-weight: 900 !important;
+}
+
+.rms-template-description-v2 {
+    min-height: 42px !important;
+    margin-top: 8px !important;
+    color: #71717a !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    line-height: 1.55 !important;
+}
+
+/* =========================================================
+   05. META CARDS
+   ========================================================= */
+
+.rms-template-card-meta-v2 {
+    gap: 8px !important;
+    margin-top: 17px !important;
+}
+
+.rms-template-card-meta-v2 > span {
+    min-height: 48px !important;
+    padding: 9px 10px !important;
+    border-radius: 11px !important;
+    background: #fafafa !important;
+}
+
+.rms-template-card-meta-v2 > span i {
+    font-size: 11px !important;
+}
+
+.rms-template-card-meta-v2 > span b {
+    font-size: 11px !important;
+    font-weight: 850 !important;
+    line-height: 1.1 !important;
+}
+
+.rms-template-card-meta-v2 > span small {
+    font-size: 8px !important;
+    font-weight: 650 !important;
+    line-height: 1.1 !important;
+}
+
+/* =========================================================
+   06. CARD ACTIONS — CLEAN / ALIGNED
+   ========================================================= */
+
+.rms-template-card-actions-v2 {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 9px !important;
+    margin-top: 17px !important;
+    padding-top: 15px !important;
+}
+
+.rms-template-card-actions-v2 > button:first-child {
+    min-width: 0 !important;
+    min-height: 46px !important;
+    padding: 0 15px !important;
+    border: 1px solid #18181b !important;
+    border-radius: 12px !important;
+    background: #18181b !important;
+    color: #fff !important;
+    font-size: 12px !important;
+    font-weight: 850 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
+}
+
+.rms-template-card-actions-v2 > button:first-child span {
+    font-size: 15px !important;
+    line-height: 1 !important;
+}
+
+.rms-template-card-actions-v2 > button:first-child:hover {
+    background: #27272a !important;
+    transform: translateY(-1px);
+    box-shadow: 0 9px 20px rgba(24,24,27,.14);
+}
+
+.rms-template-card-actions-v2 > button.ghost {
+    min-width: 86px !important;
+    min-height: 46px !important;
+    padding: 0 13px !important;
+    border: 1px solid #dedee2 !important;
+    border-radius: 12px !important;
+    background: #fff !important;
+    color: #3f3f46 !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+}
+
+.rms-template-card-actions-v2 > button.ghost:hover {
+    background: #f8f8f8 !important;
+    border-color: #cfcfd4 !important;
+}
+
+/* =========================================================
+   07. CREATE CARD
+   ========================================================= */
+
+.rms-template-create-card {
+    min-height: 490px !important;
+    border-radius: 22px !important;
+    border: 1px dashed #d4d4d8 !important;
+    background:
+        radial-gradient(circle at 50% 38%, rgba(220,38,38,.055), transparent 34%),
+        linear-gradient(180deg,#fff,#fafafa) !important;
+    box-shadow: 0 10px 30px rgba(24,24,27,.035) !important;
+}
+
+.rms-template-create-card > span {
+    width: 58px !important;
+    height: 58px !important;
+    border-radius: 16px !important;
+    font-size: 28px !important;
+}
+
+.rms-template-create-card > strong {
+    margin-top: 20px !important;
+    color: #18181b !important;
+    font-size: 16px !important;
+    font-weight: 850 !important;
+}
+
+.rms-template-create-card > small {
+    max-width: 240px !important;
+    margin-top: 8px !important;
+    color: #71717a !important;
+    font-size: 11px !important;
+    line-height: 1.55 !important;
+}
+
+.rms-template-create-card > em {
+    margin-top: 19px !important;
+    font-size: 11px !important;
+    font-weight: 850 !important;
+}
+
+/* =========================================================
+   08. TEMPLATE ACTION DROPDOWN
+   ========================================================= */
+
+.rms-template-menu-v2 {
+    z-index: 100000 !important;
+    min-width: 215px !important;
+    padding: 7px !important;
+    border-radius: 15px !important;
+    box-shadow: 0 22px 55px rgba(24,24,27,.18) !important;
+}
+
+.rms-template-menu-label {
+    padding: 9px 10px 7px !important;
+    font-size: 8px !important;
+}
+
+.rms-template-menu-v2 > button {
+    min-height: 40px !important;
+    padding: 0 10px !important;
+    border-radius: 9px !important;
+    font-size: 11px !important;
+    font-weight: 750 !important;
+}
+
+/* =========================================================
+   09. RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1180px) {
+    .rms-template-grid {
+        grid-template-columns: repeat(2, minmax(290px, 1fr)) !important;
+    }
+
+    .rms-template-preview-v2 {
+        height: 250px !important;
+    }
+}
+
+@media (max-width: 900px) {
+    .rms-template-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .rms-template-filter-row {
+        flex-wrap: wrap !important;
+    }
+
+    .rms-template-store-filter {
+        flex: 1 1 220px !important;
+    }
+
+    .rms-template-filter-row > .rms-template-select:not(.rms-template-store-filter) {
+        flex: 1 1 140px !important;
+    }
+}
+
+@media (max-width: 680px) {
+    .rms-template-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .rms-template-preview-v2 {
+        height: 260px !important;
+    }
+
+    .rms-template-card-title-row-v2 h3 {
+        font-size: 19px !important;
+    }
+
+    .rms-template-description-v2 {
+        font-size: 12px !important;
+    }
+
+    .rms-store-filter-menu {
+        position: fixed !important;
+        top: auto !important;
+        right: 12px !important;
+        left: 12px !important;
+        bottom: 12px !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-height: min(520px, calc(100vh - 24px)) !important;
+    }
+}
+
+@media (max-width: 430px) {
+    .rms-template-card-actions-v2 {
+        grid-template-columns: 1fr !important;
+    }
+
+    .rms-template-card-actions-v2 > button.ghost {
+        width: 100% !important;
+    }
+
+    .rms-template-card-meta-v2 > span {
+        padding: 8px 7px !important;
+    }
+
+    .rms-template-card-meta-v2 > span b {
+        font-size: 10px !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rms-template-card-v2,
+    .rms-template-card-actions-v2 > button:first-child {
+        transition: none !important;
+    }
+}
+
+
+
+/* =========================================================
+   RMS TEMPLATE LIBRARY — V4
+   Typography + aspect ratio + card readability
+   Append after complete-v3.css
+   ========================================================= */
+
+.rms-template-card-v2 {
+    overflow: hidden !important;
+}
+
+/* Bigger, calmer title */
+.rms-template-card-title-row-v2 {
+    margin-top: 18px !important;
+    min-height: 30px !important;
+}
+
+.rms-template-card-title-row-v2 h3 {
+    font-size: 23px !important;
+    line-height: 1.18 !important;
+    font-weight: 850 !important;
+    letter-spacing: -.04em !important;
+    color: #18181b !important;
+}
+
+/* Description is intentionally more readable */
+.rms-template-description-v2 {
+    min-height: 44px !important;
+    margin-top: 9px !important;
+    font-size: 13px !important;
+    line-height: 1.55 !important;
+    font-weight: 500 !important;
+    color: #71717a !important;
+}
+
+/* Store information */
+.rms-template-store-identity {
+    min-height: 47px !important;
+}
+
+.rms-template-store-identity small {
+    font-size: 8.5px !important;
+}
+
+.rms-template-store-identity strong {
+    font-size: 13px !important;
+    line-height: 1.25 !important;
+    font-weight: 850 !important;
+}
+
+.rms-template-store-identity em {
+    font-size: 9px !important;
+    font-weight: 800 !important;
+}
+
+/* Four readable information blocks */
+.rms-template-card-meta-v2 {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+    margin-top: 17px !important;
+    padding-top: 15px !important;
+    border-top: 1px solid #eeeeef !important;
+}
+
+.rms-template-card-meta-v2 > span {
+    min-width: 0 !important;
+    min-height: 57px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    gap: 3px !important;
+    padding: 8px 9px !important;
+    border: 1px solid #e9e9ec !important;
+    border-radius: 12px !important;
+    background: #fafafa !important;
+}
+
+.rms-template-card-meta-v2 > span i {
+    font-style: normal !important;
+    font-size: 10px !important;
+    line-height: 1 !important;
+    color: #dc2626 !important;
+}
+
+.rms-template-card-meta-v2 > span b {
+    display: block !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    font-size: 10.5px !important;
+    line-height: 1.05 !important;
+    font-weight: 850 !important;
+    color: #27272a !important;
+}
+
+.rms-template-card-meta-v2 > span small {
+    display: block !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    font-size: 7.5px !important;
+    line-height: 1.1 !important;
+    font-weight: 650 !important;
+    color: #a1a1aa !important;
+}
+
+/* Aspect ratio gets a subtle visual priority */
+.rms-template-card-meta-v2 > span:nth-child(2) {
+    background: #fff8f8 !important;
+    border-color: #f4dada !important;
+}
+
+.rms-template-card-meta-v2 > span:nth-child(2) i {
+    color: #dc2626 !important;
+}
+
+/* Action row: smaller button typography, stronger spacing */
+.rms-template-card-actions-v2 {
+    grid-template-columns: minmax(0, 1fr) 88px !important;
+    gap: 9px !important;
+    margin-top: 15px !important;
+    padding-top: 15px !important;
+}
+
+.rms-template-card-actions-v2 > button:first-child {
+    min-height: 44px !important;
+    padding: 0 13px !important;
+    border-radius: 11px !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+    font-weight: 800 !important;
+    letter-spacing: 0 !important;
+}
+
+.rms-template-card-actions-v2 > button:first-child span {
+    font-size: 11px !important;
+    font-weight: 800 !important;
+}
+
+.rms-template-card-actions-v2 > button:first-child b {
+    font-size: 13px !important;
+    line-height: 1 !important;
+}
+
+.rms-template-card-actions-v2 > button.ghost {
+    min-width: 88px !important;
+    min-height: 44px !important;
+    padding: 0 10px !important;
+    border-radius: 11px !important;
+    font-size: 10px !important;
+    font-weight: 750 !important;
+}
+
+/* Preview ratio remains visible but smaller and cleaner */
+.rms-template-ratio-badge {
+    font-size: 9px !important;
+    font-weight: 850 !important;
+}
+
+/* Card has a little more breathing room */
+.rms-template-card-body-v2 {
+    padding: 19px 19px 18px !important;
+}
+
+/* Desktop cards: keep information readable */
+@media (min-width: 1181px) {
+    .rms-template-grid {
+        grid-template-columns: repeat(3, minmax(320px, 1fr)) !important;
+        gap: 24px !important;
+    }
+
+    .rms-template-preview-v2 {
+        height: 275px !important;
+    }
+}
+
+/* Tablet: metadata can breathe */
+@media (max-width: 900px) {
+    .rms-template-card-meta-v2 > span {
+        min-height: 54px !important;
+        padding: 8px !important;
+    }
+
+    .rms-template-card-title-row-v2 h3 {
+        font-size: 21px !important;
+    }
+}
+
+/* Mobile: keep four info blocks but readable */
+@media (max-width: 680px) {
+    .rms-template-card-meta-v2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    .rms-template-card-meta-v2 > span {
+        min-height: 55px !important;
+    }
+
+    .rms-template-card-title-row-v2 h3 {
+        font-size: 22px !important;
+    }
+
+    .rms-template-description-v2 {
+        font-size: 13px !important;
+    }
+}
+
+@media (max-width: 430px) {
+    .rms-template-card-actions-v2 {
+        grid-template-columns: minmax(0, 1fr) 82px !important;
+    }
+
+    .rms-template-card-actions-v2 > button:first-child {
+        font-size: 10.5px !important;
+    }
+
+    .rms-template-card-actions-v2 > button:first-child span {
+        font-size: 10.5px !important;
+    }
+
+    .rms-template-card-actions-v2 > button.ghost {
+        min-width: 82px !important;
+        font-size: 9.5px !important;
+    }
+}
+
+
+
+/* =========================================================
+   RMS TEMPLATE LIBRARY — V5
+   CREATE / EDIT MODAL — PREMIUM OVERLAY
+   Fixes:
+   - full viewport backdrop
+   - stronger blur + dimming
+   - removes white side spots / exposed page
+   - balanced typography
+   - cleaner form hierarchy
+   - better modal proportions
+   ========================================================= */
+
+/* =========================================================
+   01. MODAL LAYER — TRUE VIEWPORT OVERLAY
+   ========================================================= */
+
+.rms-template-modal-layer {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 200000 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    min-height: 100vh !important;
+    margin: 0 !important;
+    padding: 28px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+    isolation: isolate !important;
+}
+
+/* Force the backdrop to cover EVERYTHING behind the modal */
+.rms-template-modal-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    background:
+        radial-gradient(circle at 50% 35%, rgba(255,255,255,.07), transparent 34%),
+        rgba(9, 9, 11, .68) !important;
+    backdrop-filter: blur(16px) saturate(.78) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(.78) !important;
+    z-index: -1 !important;
+    pointer-events: auto !important;
+}
+
+/* Prevent the old page from visually bleeding around the modal */
+.rms-template-modal-layer::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    background: #09090b;
+    pointer-events: none;
+}
+
+/* =========================================================
+   02. MAIN MODAL CONTAINER
+   ========================================================= */
+
+.rms-template-modal {
+    position: relative !important;
+    z-index: 2 !important;
+    width: min(980px, calc(100vw - 56px)) !important;
+    max-width: 980px !important;
+    max-height: calc(100dvh - 56px) !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    border: 1px solid rgba(255,255,255,.92) !important;
+    border-radius: 26px !important;
+    background: #fff !important;
+    box-shadow:
+        0 50px 120px rgba(0,0,0,.34),
+        0 18px 50px rgba(0,0,0,.18),
+        0 0 0 1px rgba(0,0,0,.04) !important;
+    animation: rmsTemplateModalInV5 .34s cubic-bezier(.16,1,.3,1) both !important;
+}
+
+/* Fine inner highlight */
+.rms-template-modal::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.95);
+    z-index: 5;
+}
+
+/* =========================================================
+   03. MODAL HEADER
+   ========================================================= */
+
+.rms-template-modal-head {
+    position: relative !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 24px !important;
+    padding: 31px 32px 27px !important;
+    border-bottom: 1px solid #eeeeef !important;
+    background:
+        radial-gradient(circle at 93% 0%, rgba(220,38,38,.055), transparent 30%),
+        linear-gradient(180deg,#fff 0%,#fdfdfd 100%) !important;
+}
+
+.rms-template-modal-head > div {
+    min-width: 0;
+}
+
+.rms-template-modal-head > div > span {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    margin-bottom: 9px !important;
+    color: #dc2626 !important;
+    font-size: 9px !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+    letter-spacing: .17em !important;
+}
+
+.rms-template-modal-head > div > span i {
+    width: 7px !important;
+    height: 7px !important;
+    display: inline-block !important;
+    border-radius: 999px !important;
+    background: #ef4444 !important;
+    box-shadow: 0 0 0 4px rgba(239,68,68,.09) !important;
+}
+
+.rms-template-modal-head h2 {
+    margin: 0 !important;
+    color: #18181b !important;
+    font-size: 30px !important;
+    line-height: 1.08 !important;
+    font-weight: 850 !important;
+    letter-spacing: -.045em !important;
+}
+
+.rms-template-modal-head p {
+    margin: 8px 0 0 !important;
+    color: #71717a !important;
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+    font-weight: 500 !important;
+}
+
+.rms-template-modal-head > button {
+    flex: 0 0 auto !important;
+    width: 42px !important;
+    height: 42px !important;
+    display: grid !important;
+    place-items: center !important;
+    border: 1px solid #dedee2 !important;
+    border-radius: 12px !important;
+    background: #fff !important;
+    color: #71717a !important;
+    font-size: 23px !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    transition: .2s ease !important;
+}
+
+.rms-template-modal-head > button:hover {
+    border-color: #c9c9ce !important;
+    background: #f8f8f8 !important;
+    color: #18181b !important;
+    transform: rotate(4deg) !important;
+}
+
+/* =========================================================
+   04. FORM SCROLL AREA
+   ========================================================= */
+
+.rms-template-form-scroll {
+    max-height: calc(100dvh - 178px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 27px 32px 29px !important;
+    scrollbar-width: thin;
+    scrollbar-color: #d4d4d8 transparent;
+}
+
+.rms-template-form-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.rms-template-form-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.rms-template-form-scroll::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #d4d4d8;
+}
+
+/* =========================================================
+   05. FORM GRID / FIELD HIERARCHY
+   ========================================================= */
+
+.rms-template-form-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 20px 18px !important;
+}
+
+.rms-template-field {
+    min-width: 0 !important;
+}
+
+.rms-template-field.full {
+    grid-column: 1 / -1 !important;
+}
+
+.rms-template-field > span {
+    display: block !important;
+    margin-bottom: 8px !important;
+    color: #3f3f46 !important;
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+    font-weight: 850 !important;
+    letter-spacing: .01em !important;
+}
+
+.rms-template-field > input,
+.rms-template-field > textarea {
+    width: 100% !important;
+    border: 1px solid #dedee3 !important;
+    border-radius: 12px !important;
+    outline: none !important;
+    background: #fff !important;
+    color: #18181b !important;
+    font-family: inherit !important;
+    font-size: 12px !important;
+    font-weight: 550 !important;
+    line-height: 1.5 !important;
+    transition:
+        border-color .18s ease,
+        box-shadow .18s ease,
+        background .18s ease !important;
+}
+
+.rms-template-field > input {
+    height: 48px !important;
+    padding: 0 14px !important;
+}
+
+.rms-template-field > textarea {
+    min-height: 105px !important;
+    padding: 13px 14px !important;
+    resize: vertical !important;
+}
+
+.rms-template-field > textarea[wire\\:model="templatePrompt"] {
+    min-height: 135px !important;
+}
+
+.rms-template-field > textarea[wire\\:model="templateNegativePrompt"] {
+    min-height: 105px !important;
+}
+
+.rms-template-field > input::placeholder,
+.rms-template-field > textarea::placeholder {
+    color: #a1a1aa !important;
+    opacity: 1 !important;
+}
+
+.rms-template-field > input:focus,
+.rms-template-field > textarea:focus {
+    border-color: #f0a0a0 !important;
+    background: #fff !important;
+    box-shadow:
+        0 0 0 3px rgba(220,38,38,.07),
+        0 7px 20px rgba(24,24,27,.035) !important;
+}
+
+/* =========================================================
+   06. CUSTOM SELECTS INSIDE MODAL
+   ========================================================= */
+
+.rms-template-select-form {
+    width: 100% !important;
+    position: relative !important;
+}
+
+.rms-template-select-form > button {
+    width: 100% !important;
+    height: 48px !important;
+    padding: 0 13px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    border: 1px solid #dedee3 !important;
+    border-radius: 12px !important;
+    background: #fff !important;
+    color: #27272a !important;
+    font-size: 12px !important;
+    font-weight: 750 !important;
+}
+
+.rms-template-select-form > button > span {
+    min-width: 0 !important;
+    flex: 1 !important;
+    text-align: left !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+.rms-template-select-form > button:hover {
+    border-color: #cfcfd4 !important;
+}
+
+.rms-template-select-form .rms-template-select-menu {
+    z-index: 300000 !important;
+    width: 100% !important;
+    max-height: 280px !important;
+    overflow-y: auto !important;
+    padding: 7px !important;
+    border: 1px solid #e2e2e6 !important;
+    border-radius: 14px !important;
+    background: rgba(255,255,255,.99) !important;
+    box-shadow: 0 25px 60px rgba(24,24,27,.18) !important;
+}
+
+.rms-template-select-form .rms-template-select-menu > button {
+    min-height: 44px !important;
+    padding: 0 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    border-radius: 9px !important;
+    color: #3f3f46 !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+}
+
+.rms-template-select-form .rms-template-select-menu > button:hover {
+    background: #f7f7f8 !important;
+}
+
+.rms-template-select-form .rms-template-select-menu > button i {
+    color: #dc2626 !important;
+    font-size: 10px !important;
+    font-style: normal !important;
+}
+
+/* =========================================================
+   07. STATUS TOGGLE
+   ========================================================= */
+
+.rms-template-status-toggle {
+    width: 100% !important;
+    min-height: 48px !important;
+    padding: 0 13px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    border: 1px solid #dedee3 !important;
+    border-radius: 12px !important;
+    background: #fafafa !important;
+    color: #52525b !important;
+}
+
+.rms-template-status-toggle i {
+    width: 9px !important;
+    height: 9px !important;
+    flex: 0 0 9px !important;
+    border-radius: 999px !important;
+    background: #a1a1aa !important;
+    box-shadow: 0 0 0 4px rgba(161,161,170,.12) !important;
+}
+
+.rms-template-status-toggle strong {
+    font-size: 11px !important;
+    font-weight: 800 !important;
+}
+
+.rms-template-status-toggle.on {
+    border-color: #b9ebcc !important;
+    background: #f2fbf5 !important;
+    color: #15803d !important;
+}
+
+.rms-template-status-toggle.on i {
+    background: #22c55e !important;
+    box-shadow: 0 0 0 4px rgba(34,197,94,.11) !important;
+}
+
+/* =========================================================
+   08. IMAGE UPLOAD PANEL
+   ========================================================= */
+
+.rms-template-upload {
+    min-height: 118px !important;
+    display: grid !important;
+    grid-template-columns: 100px minmax(0, 1fr) !important;
+    gap: 16px !important;
+    align-items: center !important;
+    padding: 13px !important;
+    border: 1px dashed #d4d4d8 !important;
+    border-radius: 15px !important;
+    background:
+        radial-gradient(circle at 10% 0%, rgba(220,38,38,.045), transparent 30%),
+        #fafafa !important;
+}
+
+.rms-template-upload-preview {
+    width: 100px !important;
+    height: 92px !important;
+    overflow: hidden !important;
+    display: grid !important;
+    place-items: center !important;
+    border: 1px solid #e4e4e7 !important;
+    border-radius: 12px !important;
+    background: #fff !important;
+}
+
+.rms-template-upload-preview img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+}
+
+.rms-template-upload-preview span {
+    color: #a1a1aa !important;
+    font-size: 10px !important;
+    font-weight: 900 !important;
+    letter-spacing: .1em !important;
+}
+
+.rms-template-upload-copy {
+    min-width: 0 !important;
+}
+
+.rms-template-upload-copy label {
+    display: inline-flex !important;
+    align-items: center !important;
+    min-height: 40px !important;
+    padding: 0 13px !important;
+    border: 1px solid #d4d4d8 !important;
+    border-radius: 10px !important;
+    background: #fff !important;
+    color: #27272a !important;
+    cursor: pointer !important;
+    transition: .18s ease !important;
+}
+
+.rms-template-upload-copy label:hover {
+    border-color: #bdbdc2 !important;
+    background: #f8f8f8 !important;
+}
+
+.rms-template-upload-copy label strong {
+    font-size: 11px !important;
+    font-weight: 800 !important;
+}
+
+.rms-template-upload-copy label input {
+    display: none !important;
+}
+
+.rms-template-upload-copy > small {
+    display: block !important;
+    margin-top: 7px !important;
+    color: #a1a1aa !important;
+    font-size: 9px !important;
+    line-height: 1.4 !important;
+}
+
+.rms-template-upload-progress {
+    height: 4px !important;
+    margin-top: 9px !important;
+    overflow: hidden !important;
+    border-radius: 999px !important;
+    background: #e4e4e7 !important;
+}
+
+.rms-template-upload-progress i {
+    display: block !important;
+    height: 100% !important;
+    border-radius: inherit !important;
+    background: #dc2626 !important;
+}
+
+/* =========================================================
+   09. ERROR TEXT
+   ========================================================= */
+
+.rms-template-field .error {
+    display: block !important;
+    margin-top: 6px !important;
+    color: #dc2626 !important;
+    font-size: 9px !important;
+    line-height: 1.35 !important;
+    font-weight: 700 !important;
+}
+
+/* =========================================================
+   10. MODAL FOOTER
+   ========================================================= */
+
+.rms-template-form-footer {
+    position: sticky !important;
+    bottom: -1px !important;
+    z-index: 20 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 10px !important;
+    margin: 27px -32px -29px !important;
+    padding: 17px 32px !important;
+    border-top: 1px solid #eeeeef !important;
+    background: rgba(255,255,255,.96) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+}
+
+.rms-template-form-footer button {
+    min-height: 44px !important;
+    padding: 0 18px !important;
+    border-radius: 11px !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+}
+
+.rms-template-form-footer .secondary {
+    border: 1px solid #dedee3 !important;
+    background: #fff !important;
+    color: #52525b !important;
+}
+
+.rms-template-form-footer .secondary:hover {
+    background: #f8f8f8 !important;
+}
+
+.rms-template-form-footer .primary {
+    min-width: 155px !important;
+    border: 1px solid #18181b !important;
+    background: #18181b !important;
+    color: #fff !important;
+    box-shadow: 0 8px 18px rgba(24,24,27,.12) !important;
+}
+
+.rms-template-form-footer .primary:hover {
+    background: #27272a !important;
+}
+
+/* =========================================================
+   11. ANIMATION
+   ========================================================= */
+
+@keyframes rmsTemplateModalInV5 {
+    from {
+        opacity: 0;
+        transform: translateY(18px) scale(.975);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* =========================================================
+   12. TABLET
+   ========================================================= */
+
+@media (max-width: 900px) {
+    .rms-template-modal-layer {
+        padding: 20px !important;
+    }
+
+    .rms-template-modal {
+        width: min(760px, calc(100vw - 40px)) !important;
+        max-height: calc(100dvh - 40px) !important;
+        border-radius: 22px !important;
+    }
+
+    .rms-template-modal-head {
+        padding: 25px 25px 22px !important;
+    }
+
+    .rms-template-modal-head h2 {
+        font-size: 27px !important;
+    }
+
+    .rms-template-form-scroll {
+        max-height: calc(100dvh - 150px) !important;
+        padding: 23px 25px 25px !important;
+    }
+
+    .rms-template-form-footer {
+        margin: 23px -25px -25px !important;
+        padding: 15px 25px !important;
+    }
+}
+
+/* =========================================================
+   13. MOBILE
+   ========================================================= */
+
+@media (max-width: 680px) {
+    .rms-template-modal-layer {
+        align-items: flex-end !important;
+        padding: 0 !important;
+    }
+
+    .rms-template-modal {
+        width: 100vw !important;
+        max-width: none !important;
+        max-height: 94dvh !important;
+        border-radius: 24px 24px 0 0 !important;
+    }
+
+    .rms-template-modal-head {
+        padding: 22px 19px 18px !important;
+    }
+
+    .rms-template-modal-head h2 {
+        font-size: 25px !important;
+    }
+
+    .rms-template-modal-head p {
+        font-size: 11px !important;
+    }
+
+    .rms-template-form-scroll {
+        max-height: calc(94dvh - 133px) !important;
+        padding: 20px 19px 23px !important;
+    }
+
+    .rms-template-form-grid {
+        grid-template-columns: 1fr !important;
+        gap: 17px !important;
+    }
+
+    .rms-template-field.full {
+        grid-column: auto !important;
+    }
+
+    .rms-template-form-footer {
+        margin: 20px -19px -23px !important;
+        padding: 13px 19px !important;
+    }
+
+    .rms-template-form-footer button {
+        flex: 1 !important;
+        min-width: 0 !important;
+    }
+
+    .rms-template-upload {
+        grid-template-columns: 82px minmax(0, 1fr) !important;
+        gap: 12px !important;
+    }
+
+    .rms-template-upload-preview {
+        width: 82px !important;
+        height: 82px !important;
+    }
+}
+
+@media (max-width: 430px) {
+    .rms-template-modal-head > button {
+        width: 38px !important;
+        height: 38px !important;
+    }
+
+    .rms-template-modal-head h2 {
+        font-size: 23px !important;
+    }
+
+    .rms-template-field > span {
+        font-size: 9.5px !important;
+    }
+
+    .rms-template-field > input,
+    .rms-template-select-form > button {
+        height: 46px !important;
+        font-size: 11px !important;
+    }
+
+    .rms-template-field > textarea {
+        font-size: 11px !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rms-template-modal {
+        animation: none !important;
+    }
+}
+
+
+
+/* =========================================================
+   RMS TEMPLATE LIBRARY — V6
+   HARD FIX: VIEWPORT MODAL / BACKDROP
+   ========================================================= */
+
+/*
+ * The modal is teleported directly into <body>.
+ * This prevents dashboard/main containers, transforms, overflow,
+ * stacking contexts, and sidebar layers from affecting it.
+ */
+
+body:has(.rms-template-modal-layer) {
+    overflow: hidden !important;
+}
+
+/* The layer itself is the viewport-sized stacking context. */
+.rms-template-modal-layer {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    margin: 0 !important;
+    padding: 28px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+    z-index: 2147483000 !important;
+    isolation: isolate !important;
+}
+
+/* IMPORTANT: no negative z-index here. */
+.rms-template-modal-layer .rms-template-modal-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    z-index: 0 !important;
+    background:
+        radial-gradient(
+            circle at 50% 24%,
+            rgba(255,255,255,.075) 0%,
+            rgba(255,255,255,0) 35%
+        ),
+        rgba(7,7,9,.76) !important;
+    backdrop-filter: blur(22px) saturate(.72) brightness(.72) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(.72) brightness(.72) !important;
+}
+
+/* Kill any old pseudo overlay that could create a separate dark/white block. */
+.rms-template-modal-layer::before,
+.rms-template-modal-layer::after {
+    display: none !important;
+}
+
+/* Modal always sits above backdrop. */
+.rms-template-modal-layer .rms-template-modal {
+    position: relative !important;
+    z-index: 2 !important;
+    flex: 0 1 auto !important;
+    width: min(980px, calc(100vw - 56px)) !important;
+    max-width: 980px !important;
+    max-height: calc(100dvh - 56px) !important;
+    margin: 0 auto !important;
+    transform: translateZ(0);
+}
+
+/* Make header/body use the full modal width without strange offsets. */
+.rms-template-modal-layer .rms-template-modal-head,
+.rms-template-modal-layer .rms-template-form-scroll {
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Make the modal itself visually crisp against the blurred page. */
+.rms-template-modal-layer .rms-template-modal {
+    box-shadow:
+        0 60px 140px rgba(0,0,0,.42),
+        0 24px 70px rgba(0,0,0,.22),
+        0 0 0 1px rgba(255,255,255,.72) !important;
+}
+
+/* Stronger close button */
+.rms-template-modal-layer .rms-template-modal-head > button {
+    position: relative !important;
+    z-index: 5 !important;
+}
+
+/* Delete dialog gets the same viewport treatment. */
+.rms-template-modal-layer.rms-template-delete-layer .rms-template-delete-modal {
+    position: relative !important;
+    z-index: 2 !important;
+}
+
+/* =========================================================
+   TYPOGRAPHY BALANCE V6
+   ========================================================= */
+
+.rms-template-modal-head h2 {
+    font-size: 28px !important;
+    font-weight: 850 !important;
+}
+
+.rms-template-modal-head p {
+    font-size: 11.5px !important;
+}
+
+.rms-template-field > span {
+    font-size: 10px !important;
+    font-weight: 800 !important;
+}
+
+.rms-template-field > input,
+.rms-template-field > textarea,
+.rms-template-select-form > button {
+    font-size: 12px !important;
+    font-weight: 550 !important;
+}
+
+.rms-template-field > input,
+.rms-template-select-form > button {
+    min-height: 48px !important;
+}
+
+.rms-template-field > textarea {
+    font-size: 12px !important;
+    line-height: 1.55 !important;
+}
+
+.rms-template-form-footer button {
+    font-size: 11px !important;
+}
+
+/* =========================================================
+   RESPONSIVE HARD FIX
+   ========================================================= */
+
+@media (max-width: 680px) {
+    .rms-template-modal-layer {
+        padding: 0 !important;
+        align-items: flex-end !important;
+    }
+
+    .rms-template-modal-layer .rms-template-modal {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        max-height: 94dvh !important;
+        border-radius: 24px 24px 0 0 !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rms-template-modal-layer .rms-template-modal {
+        animation: none !important;
+    }
+}
+
+/* =========================================================
+   RMS TEMPLATE LIBRARY — V7
+   PREMIUM STORE SELECTOR — CREATE / EDIT MODAL
+   Append after V6 so these rules win.
+   ========================================================= */
+
+/* Selector wrapper */
+.rms-template-select-form {
+    position: relative !important;
+    z-index: 120 !important;
+    overflow: visible !important;
+}
+
+.rms-template-select-form:has(.rms-store-form-menu) {
+    z-index: 100000 !important;
+}
+
+/* Trigger */
+.rms-template-select-form .rms-template-select-trigger,
+.rms-store-form-trigger {
+    position: relative !important;
+    width: 100% !important;
+    min-height: 58px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 6px 10px 6px 7px !important;
+    border: 1px solid #dedee3 !important;
+    border-radius: 14px !important;
+    background: #fff !important;
+    color: #18181b !important;
+    cursor: pointer !important;
+    text-align: left !important;
+    box-shadow: 0 1px 2px rgba(24,24,27,.025) !important;
+    transition:
+        border-color .22s ease,
+        box-shadow .22s ease,
+        background .22s ease,
+        transform .18s ease !important;
+}
+
+.rms-template-select-form .rms-template-select-trigger:hover,
+.rms-store-form-trigger:hover {
+    border-color: #cfcfd5 !important;
+    box-shadow: 0 7px 20px rgba(24,24,27,.055) !important;
+}
+
+.rms-template-select-form .rms-template-select-trigger:active,
+.rms-store-form-trigger:active {
+    transform: scale(.992) !important;
+}
+
+.rms-template-select-form .rms-template-select-trigger.is-open,
+.rms-store-form-trigger.is-open,
+.rms-template-select-form:has(.rms-store-form-menu) .rms-store-form-trigger {
+    border-color: #ef4444 !important;
+    box-shadow:
+        0 0 0 4px rgba(239,68,68,.075),
+        0 10px 26px rgba(24,24,27,.07) !important;
+}
+
+/* Selected logo */
+.rms-store-form-trigger .rms-store-select-logo,
+.rms-template-select-form .rms-store-select-logo {
+    position: relative !important;
+    width: 45px !important;
+    height: 45px !important;
+    flex: 0 0 45px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+    border: 1px solid #e4e4e7 !important;
+    border-radius: 12px !important;
+    background: linear-gradient(145deg,#fff,#f4f4f5) !important;
+    box-shadow: 0 2px 6px rgba(24,24,27,.04) !important;
+    transition:
+        transform .28s cubic-bezier(.2,.9,.2,1),
+        box-shadow .25s ease,
+        border-color .2s ease !important;
+}
+
+.rms-store-form-trigger:hover .rms-store-select-logo {
+    transform: scale(1.045) !important;
+    border-color: #d4d4d8 !important;
+    box-shadow: 0 6px 15px rgba(24,24,27,.09) !important;
+}
+
+.rms-store-form-trigger .rms-store-select-logo img,
+.rms-template-select-form .rms-store-select-logo img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+}
+
+/* Selected text */
+.rms-store-form-trigger .rms-store-select-content,
+.rms-template-select-form .rms-store-select-content {
+    min-width: 0 !important;
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+}
+
+.rms-store-form-trigger .rms-store-select-label {
+    display: block !important;
+    color: #a1a1aa !important;
+    font-size: 8px !important;
+    font-weight: 850 !important;
+    letter-spacing: .12em !important;
+    line-height: 1 !important;
+    text-transform: uppercase !important;
+}
+
+.rms-store-form-trigger .rms-store-select-name {
+    display: block !important;
+    overflow: hidden !important;
+    color: #18181b !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+/* Chevron */
+.rms-store-form-trigger .rms-store-select-chevron {
+    width: 30px !important;
+    height: 30px !important;
+    flex: 0 0 30px !important;
+    display: grid !important;
+    place-items: center !important;
+    margin-left: auto !important;
+    border-radius: 9px !important;
+    color: #a1a1aa !important;
+    font-size: 13px !important;
+    transition:
+        transform .28s cubic-bezier(.2,.9,.2,1),
+        color .2s ease,
+        background .2s ease !important;
+}
+
+.rms-store-form-trigger:hover .rms-store-select-chevron {
+    color: #52525b !important;
+    background: #f4f4f5 !important;
+}
+
+.rms-store-form-trigger.is-open .rms-store-select-chevron,
+.rms-template-select-form:has(.rms-store-form-menu) .rms-store-select-chevron {
+    transform: rotate(180deg) !important;
+    color: #ef4444 !important;
+    background: #fef2f2 !important;
+}
+
+/* Dropdown panel */
+.rms-store-form-menu {
+    position: absolute !important;
+    top: calc(100% + 9px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    min-width: 330px !important;
+    max-height: 355px !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    padding: 8px !important;
+    border: 1px solid rgba(228,228,231,.94) !important;
+    border-radius: 18px !important;
+    background: rgba(255,255,255,.985) !important;
+    box-shadow:
+        0 30px 75px rgba(24,24,27,.18),
+        0 9px 25px rgba(24,24,27,.075),
+        0 0 0 1px rgba(255,255,255,.9) inset !important;
+    backdrop-filter: blur(18px) saturate(1.05) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(1.05) !important;
+    transform-origin: top center !important;
+    animation: rmsStoreFormMenuIn .24s cubic-bezier(.16,1,.3,1) both !important;
+    z-index: 2147482000 !important;
+}
+
+@keyframes rmsStoreFormMenuIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(.965);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.rms-store-form-menu::-webkit-scrollbar {
+    width: 5px !important;
+}
+
+.rms-store-form-menu::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+.rms-store-form-menu::-webkit-scrollbar-thumb {
+    border-radius: 999px !important;
+    background: #d4d4d8 !important;
+}
+
+/* Dropdown header */
+.rms-store-form-menu .rms-store-menu-heading {
+    min-height: 43px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    margin: 0 0 5px !important;
+    padding: 8px 10px 9px !important;
+    border-bottom: 1px solid #f0f0f1 !important;
+}
+
+.rms-store-form-menu .rms-store-menu-heading > div {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+}
+
+.rms-store-form-menu .rms-store-menu-heading span {
+    color: #a1a1aa !important;
+    font-size: 8px !important;
+    font-weight: 900 !important;
+    letter-spacing: .15em !important;
+    line-height: 1 !important;
+}
+
+.rms-store-form-menu .rms-store-menu-heading small {
+    color: #a1a1aa !important;
+    font-size: 8px !important;
+    font-weight: 550 !important;
+}
+
+.rms-store-form-menu .rms-store-menu-heading > b {
+    min-width: 26px !important;
+    height: 26px !important;
+    padding: 0 7px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 8px !important;
+    background: #f4f4f5 !important;
+    color: #71717a !important;
+    font-size: 9px !important;
+    font-weight: 800 !important;
+}
+
+/* Store option */
+.rms-store-form-menu > button {
+    position: relative !important;
+    width: 100% !important;
+    min-height: 66px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 11px !important;
+    margin: 0 !important;
+    padding: 9px 10px !important;
+    border: 1px solid transparent !important;
+    border-radius: 13px !important;
+    background: transparent !important;
+    color: inherit !important;
+    cursor: pointer !important;
+    text-align: left !important;
+    transition:
+        background .2s ease,
+        border-color .2s ease,
+        transform .2s cubic-bezier(.2,.8,.2,1),
+        box-shadow .2s ease !important;
+}
+
+.rms-store-form-menu > button:hover {
+    transform: translateX(2px) !important;
+    border-color: #ededf0 !important;
+    background: #fafafa !important;
+    box-shadow: 0 6px 16px rgba(24,24,27,.045) !important;
+}
+
+.rms-store-form-menu > button:active {
+    transform: translateX(2px) scale(.992) !important;
+}
+
+.rms-store-form-menu > button.selected,
+.rms-store-form-menu > button[aria-selected="true"] {
+    border-color: #fee2e2 !important;
+    background: linear-gradient(135deg,#fff7f7 0%,#fff 100%) !important;
+    box-shadow: inset 3px 0 0 #ef4444 !important;
+}
+
+/* Option logo */
+.rms-store-form-menu .rms-store-option-logo {
+    position: relative !important;
+    width: 44px !important;
+    height: 44px !important;
+    flex: 0 0 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+    border: 1px solid #e4e4e7 !important;
+    border-radius: 12px !important;
+    background: linear-gradient(145deg,#fff,#f4f4f5) !important;
+    transition:
+        transform .27s cubic-bezier(.2,1.25,.4,1),
+        box-shadow .22s ease,
+        border-color .2s ease !important;
+}
+
+.rms-store-form-menu > button:hover .rms-store-option-logo {
+    transform: scale(1.075) !important;
+    border-color: #d4d4d8 !important;
+    box-shadow: 0 6px 14px rgba(24,24,27,.085) !important;
+}
+
+.rms-store-form-menu > button.selected .rms-store-option-logo,
+.rms-store-form-menu > button[aria-selected="true"] .rms-store-option-logo {
+    border-color: #fecaca !important;
+    box-shadow: 0 0 0 3px rgba(239,68,68,.065) !important;
+}
+
+.rms-store-form-menu .rms-store-option-logo img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+}
+
+/* Option info */
+.rms-store-form-menu .rms-store-option {
+    min-width: 0 !important;
+    flex: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 11px !important;
+}
+
+.rms-store-form-menu .rms-store-option > span:last-child {
+    min-width: 0 !important;
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+}
+
+.rms-store-form-menu .rms-store-option strong {
+    display: block !important;
+    max-width: none !important;
+    overflow: hidden !important;
+    color: #27272a !important;
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+.rms-store-form-menu .rms-store-option small {
+    display: block !important;
+    color: #a1a1aa !important;
+    font-size: 9px !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+}
+
+/* Check indicator */
+.rms-store-form-menu > button > i {
+    width: 29px !important;
+    height: 29px !important;
+    flex: 0 0 29px !important;
+    display: grid !important;
+    place-items: center !important;
+    margin-left: auto !important;
+    border-radius: 9px !important;
+    background: #fee2e2 !important;
+    color: #ef4444 !important;
+    font-size: 12px !important;
+    font-style: normal !important;
+    font-weight: 900 !important;
+    opacity: 0 !important;
+    transform: scale(.62) rotate(-10deg) !important;
+    transition:
+        opacity .18s ease,
+        transform .3s cubic-bezier(.2,1.5,.4,1),
+        background .2s ease !important;
+}
+
+.rms-store-form-menu > button.selected > i,
+.rms-store-form-menu > button[aria-selected="true"] > i {
+    opacity: 1 !important;
+    transform: scale(1) rotate(0) !important;
+}
+
+.rms-store-form-menu > button:hover > i {
+    background: #fecaca !important;
+}
+
+/* Empty state if no stores */
+.rms-store-form-menu .rms-store-empty {
+    padding: 28px 15px !important;
+    text-align: center !important;
+    color: #a1a1aa !important;
+    font-size: 10px !important;
+}
+
+/* Mobile */
+@media (max-width: 680px) {
+    .rms-store-form-menu {
+        min-width: 0 !important;
+        width: 100% !important;
+        max-height: 320px !important;
+        border-radius: 16px !important;
+    }
+
+    .rms-template-select-form .rms-template-select-trigger,
+    .rms-store-form-trigger {
+        min-height: 55px !important;
+    }
+
+    .rms-store-form-trigger .rms-store-select-logo,
+    .rms-template-select-form .rms-store-select-logo {
+        width: 42px !important;
+        height: 42px !important;
+        flex-basis: 42px !important;
+    }
+
+    .rms-store-form-menu > button {
+        min-height: 61px !important;
+    }
+
+    .rms-store-form-menu .rms-store-option-logo {
+        width: 41px !important;
+        height: 41px !important;
+        flex-basis: 41px !important;
+    }
+}
+
+@media (max-width: 430px) {
+    .rms-store-form-trigger .rms-store-select-name {
+        font-size: 12px !important;
+    }
+
+    .rms-store-form-menu > button {
+        min-height: 58px !important;
+        padding: 8px !important;
+    }
+
+    .rms-store-form-menu .rms-store-option strong {
+        font-size: 11px !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rms-store-form-menu,
+    .rms-store-form-menu > button,
+    .rms-store-option-logo,
+    .rms-store-select-logo,
+    .rms-store-select-chevron,
+    .rms-store-form-menu > button > i {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* =========================================================
+   RMS TEMPLATE LIBRARY — V8
+   STORE DROPDOWN + STATUS TOGGLE POLISH
+   Targets the actual Create/Edit markup in V6.
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   01. STORE SELECT — ACTUAL MODAL MARKUP
+   --------------------------------------------------------- */
+
+.rms-template-select-form {
+    position: relative !important;
+    z-index: 200 !important;
+    overflow: visible !important;
+}
+
+.rms-template-select-form:focus-within,
+.rms-template-select-form:has(.rms-store-filter-menu[style*="display: block"]),
+.rms-template-select-form:has(.rms-store-filter-menu:not([style*="display: none"])) {
+    z-index: 100000 !important;
+}
+
+.rms-template-select-form > .rms-template-select-trigger {
+    position: relative !important;
+    min-height: 58px !important;
+    width: 100% !important;
+    padding: 6px 10px 6px 7px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    border: 1px solid #dedee3 !important;
+    border-radius: 14px !important;
+    background: #fff !important;
+    color: #18181b !important;
+    text-align: left !important;
+    cursor: pointer !important;
+    box-shadow: 0 1px 2px rgba(24,24,27,.025) !important;
+    transition:
+        border-color .22s ease,
+        box-shadow .22s ease,
+        background .22s ease,
+        transform .16s ease !important;
+}
+
+.rms-template-select-form > .rms-template-select-trigger:hover {
+    border-color: #cfcfd5 !important;
+    box-shadow: 0 8px 22px rgba(24,24,27,.065) !important;
+}
+
+.rms-template-select-form > .rms-template-select-trigger:active {
+    transform: scale(.993) !important;
+}
+
+/* Logo in the selected store */
+.rms-template-select-form > .rms-template-select-trigger .rms-store-mini-logo {
+    position: relative !important;
+    width: 44px !important;
+    height: 44px !important;
+    flex: 0 0 44px !important;
+    display: grid !important;
+    place-items: center !important;
+    overflow: hidden !important;
+    border: 1px solid #e4e4e7 !important;
+    border-radius: 11px !important;
+    background: linear-gradient(145deg,#fff,#f4f4f5) !important;
+    box-shadow: 0 2px 7px rgba(24,24,27,.045) !important;
+    transition:
+        transform .28s cubic-bezier(.2,1.3,.35,1),
+        box-shadow .25s ease,
+        border-color .2s ease !important;
+}
+
+.rms-template-select-form > .rms-template-select-trigger:hover .rms-store-mini-logo {
+    transform: scale(1.06) !important;
+    border-color: #d4d4d8 !important;
+    box-shadow: 0 7px 16px rgba(24,24,27,.09) !important;
+}
+
+.rms-template-select-form > .rms-template-select-trigger .rms-store-mini-logo img {
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+    object-fit: contain !important;
+}
+
+.rms-template-select-form > .rms-template-select-trigger .rms-store-filter-label {
+    min-width: 0 !important;
+    flex: 1 !important;
+    overflow: hidden !important;
+    color: #27272a !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+/* Arrow: actual class in current Blade */
+.rms-template-select-form > .rms-template-select-trigger .rms-select-chevron {
+    position: relative !important;
+    width: 30px !important;
+    height: 30px !important;
+    flex: 0 0 30px !important;
+    margin-left: auto !important;
+    display: grid !important;
+    place-items: center !important;
+    border-radius: 9px !important;
+    color: #a1a1aa !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+    transform-origin: center !important;
+    transition:
+        transform .32s cubic-bezier(.2,1.25,.35,1),
+        color .2s ease,
+        background .2s ease,
+        box-shadow .2s ease !important;
+}
+
+.rms-template-select-form > .rms-template-select-trigger:hover .rms-select-chevron {
+    color: #52525b !important;
+    background: #f4f4f5 !important;
+}
+
+/* Alpine exposes aria-expanded on the trigger, so this reliably animates */
+.rms-template-select-form > .rms-template-select-trigger[aria-expanded="true"] .rms-select-chevron {
+    transform: rotate(180deg) !important;
+    color: #ef4444 !important;
+    background: #fef2f2 !important;
+    box-shadow: inset 0 0 0 1px rgba(239,68,68,.06) !important;
+}
+
+.rms-template-select-form > .rms-template-select-trigger[aria-expanded="true"] {
+    border-color: #ef4444 !important;
+    box-shadow:
+        0 0 0 4px rgba(239,68,68,.075),
+        0 10px 26px rgba(24,24,27,.07) !important;
+}
+
+/* Little arrow pulse when opened */
+.rms-template-select-form > .rms-template-select-trigger[aria-expanded="true"] .rms-select-chevron::after {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    border: 1px solid rgba(239,68,68,.16);
+    border-radius: 11px;
+    animation: rmsStoreArrowPulse .7s ease-out both;
+    pointer-events: none;
+}
+
+@keyframes rmsStoreArrowPulse {
+    0% { opacity: .9; transform: scale(.82); }
+    100% { opacity: 0; transform: scale(1.22); }
+}
+
+/* ---------------------------------------------------------
+   02. STORE DROPDOWN — ACTUAL .rms-store-filter-menu
+   --------------------------------------------------------- */
+
+.rms-template-select-form > .rms-store-filter-menu {
+    position: absolute !important;
+    top: calc(100% + 10px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    min-width: 330px !important;
+    max-height: 360px !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    padding: 8px !important;
+    border: 1px solid rgba(228,228,231,.96) !important;
+    border-radius: 18px !important;
+    background: rgba(255,255,255,.985) !important;
+    box-shadow:
+        0 34px 85px rgba(24,24,27,.20),
+        0 10px 28px rgba(24,24,27,.08),
+        inset 0 1px 0 rgba(255,255,255,.95) !important;
+    backdrop-filter: blur(18px) saturate(1.04) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(1.04) !important;
+    transform-origin: top center !important;
+    z-index: 2147482000 !important;
+}
+
+.rms-template-select-form > .rms-store-filter-menu::-webkit-scrollbar {
+    width: 5px !important;
+}
+
+.rms-template-select-form > .rms-store-filter-menu::-webkit-scrollbar-thumb {
+    border-radius: 999px !important;
+    background: #d4d4d8 !important;
+}
+
+/* Header */
+.rms-template-select-form > .rms-store-filter-menu > .rms-store-menu-heading {
+    min-height: 43px !important;
+    margin: 0 0 5px !important;
+    padding: 8px 10px 9px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    border-bottom: 1px solid #f0f0f1 !important;
+}
+
+.rms-template-select-form > .rms-store-filter-menu > .rms-store-menu-heading span {
+    color: #a1a1aa !important;
+    font-size: 8px !important;
+    font-weight: 900 !important;
+    letter-spacing: .15em !important;
+}
+
+.rms-template-select-form > .rms-store-filter-menu > .rms-store-menu-heading small {
+    color: #a1a1aa !important;
+    font-size: 8px !important;
+}
+
+/* Options */
+.rms-template-select-form > .rms-store-filter-menu > button {
+    position: relative !important;
+    width: 100% !important;
+    min-height: 66px !important;
+    margin: 0 !important;
+    padding: 9px 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 11px !important;
+    border: 1px solid transparent !important;
+    border-radius: 13px !important;
+    background: transparent !important;
+    cursor: pointer !important;
+    text-align: left !important;
+    transition:
+        background .2s ease,
+        border-color .2s ease,
+        transform .2s cubic-bezier(.2,.8,.2,1),
+        box-shadow .2s ease !important;
+}
+
+.rms-template-select-form > .rms-store-filter-menu > button:hover {
+    transform: translateX(2px) !important;
+    border-color: #ededf0 !important;
+    background: #fafafa !important;
+    box-shadow: 0 7px 18px rgba(24,24,27,.05) !important;
+}
+
+.rms-template-select-form > .rms-store-filter-menu > button:active {
+    transform: translateX(2px) scale(.992) !important;
+}
+
+.rms-template-select-form > .rms-store-filter-menu > button.selected {
+    border-color: #fee2e2 !important;
+    background: linear-gradient(135deg,#fff7f7,#fff) !important;
+    box-shadow: inset 3px 0 0 #ef4444 !important;
+}
+
+/* Option logo */
+.rms-template-select-form > .rms-store-filter-menu .rms-store-option-logo {
+    width: 44px !important;
+    height: 44px !important;
+    flex: 0 0 44px !important;
+    display: grid !important;
+    place-items: center !important;
+    overflow: hidden !important;
+    border: 1px solid #e4e4e7 !important;
+    border-radius: 12px !important;
+    background: linear-gradient(145deg,#fff,#f4f4f5) !important;
+    transition:
+        transform .27s cubic-bezier(.2,1.3,.35,1),
+        box-shadow .22s ease,
+        border-color .2s ease !important;
+}
+
+.rms-template-select-form > .rms-store-filter-menu > button:hover .rms-store-option-logo {
+    transform: scale(1.075) !important;
+    border-color: #d4d4d8 !important;
+    box-shadow: 0 7px 15px rgba(24,24,27,.09) !important;
+}
+
+.rms-template-select-form > .rms-store-filter-menu > button.selected .rms-store-option-logo {
+    border-color: #fecaca !important;
+    box-shadow: 0 0 0 3px rgba(239,68,68,.065) !important;
+}
+
+.rms-template-select-form > .rms-store-filter-menu .rms-store-option-logo img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+}
+
+/* Store name / marketplace */
+.rms-template-select-form > .rms-store-filter-menu .rms-store-option {
+    min-width: 0 !important;
+    flex: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 11px !important;
+}
+
+.rms-template-select-form > .rms-store-filter-menu .rms-store-option > span:last-child {
+    min-width: 0 !important;
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+}
+
+.rms-template-select-form > .rms-store-filter-menu .rms-store-option strong {
+    display: block !important;
+    max-width: none !important;
+    overflow: hidden !important;
+    color: #27272a !important;
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+.rms-template-select-form > .rms-store-filter-menu .rms-store-option small {
+    display: block !important;
+    color: #a1a1aa !important;
+    font-size: 9px !important;
+    font-weight: 600 !important;
+}
+
+/* Check */
+.rms-template-select-form > .rms-store-filter-menu > button > i {
+    width: 29px !important;
+    height: 29px !important;
+    flex: 0 0 29px !important;
+    margin-left: auto !important;
+    display: grid !important;
+    place-items: center !important;
+    border-radius: 9px !important;
+    background: #fee2e2 !important;
+    color: #ef4444 !important;
+    font-size: 12px !important;
+    font-style: normal !important;
+    font-weight: 900 !important;
+    opacity: 0 !important;
+    transform: scale(.62) rotate(-10deg) !important;
+    transition:
+        opacity .18s ease,
+        transform .32s cubic-bezier(.2,1.5,.4,1),
+        background .2s ease !important;
+}
+
+.rms-template-select-form > .rms-store-filter-menu > button.selected > i {
+    opacity: 1 !important;
+    transform: scale(1) rotate(0) !important;
+}
+
+.rms-template-select-form > .rms-store-filter-menu > button:hover > i {
+    background: #fecaca !important;
+}
+
+/* ---------------------------------------------------------
+   03. STATUS TOGGLE — ACTIVE / DRAFT
+   --------------------------------------------------------- */
+
+.rms-template-status-toggle {
+    position: relative !important;
+    width: 100% !important;
+    min-height: 50px !important;
+    padding: 0 13px 0 11px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 11px !important;
+    border: 1px solid #dedee3 !important;
+    border-radius: 13px !important;
+    background: #fafafa !important;
+    color: #52525b !important;
+    cursor: pointer !important;
+    text-align: left !important;
+    overflow: hidden !important;
+    transition:
+        background .25s ease,
+        border-color .25s ease,
+        color .25s ease,
+        box-shadow .25s ease,
+        transform .16s ease !important;
+}
+
+.rms-template-status-toggle:hover {
+    border-color: #cfcfd5 !important;
+    background: #fff !important;
+    box-shadow: 0 7px 18px rgba(24,24,27,.055) !important;
+}
+
+.rms-template-status-toggle:active {
+    transform: scale(.992) !important;
+}
+
+/* Status dot */
+.rms-template-status-toggle i {
+    position: relative !important;
+    width: 10px !important;
+    height: 10px !important;
+    flex: 0 0 10px !important;
+    border-radius: 999px !important;
+    background: #a1a1aa !important;
+    box-shadow: 0 0 0 5px rgba(161,161,170,.10) !important;
+    transition:
+        background .25s ease,
+        box-shadow .25s ease,
+        transform .3s cubic-bezier(.2,1.4,.4,1) !important;
+}
+
+.rms-template-status-toggle i::after {
+    content: "";
+    position: absolute;
+    inset: -5px;
+    border: 1px solid currentColor;
+    border-radius: inherit;
+    opacity: 0;
+    transform: scale(.7);
+}
+
+.rms-template-status-toggle:hover i::after {
+    animation: rmsStatusPulse .9s ease-out both;
+}
+
+@keyframes rmsStatusPulse {
+    0% { opacity: .25; transform: scale(.7); }
+    100% { opacity: 0; transform: scale(1.55); }
+}
+
+.rms-template-status-toggle strong {
+    font-size: 11px !important;
+    font-weight: 850 !important;
+    line-height: 1 !important;
+}
+
+/* Active state */
+.rms-template-status-toggle.on {
+    border-color: #b7ebc9 !important;
+    background:
+        linear-gradient(135deg,#f1fcf5 0%,#f7fdf9 100%) !important;
+    color: #15803d !important;
+    box-shadow: inset 0 0 0 1px rgba(34,197,94,.025) !important;
+}
+
+.rms-template-status-toggle.on:hover {
+    border-color: #86dca6 !important;
+    background: #effbf3 !important;
+    box-shadow:
+        0 8px 20px rgba(34,197,94,.07),
+        inset 0 0 0 1px rgba(34,197,94,.035) !important;
+}
+
+.rms-template-status-toggle.on i {
+    background: #22c55e !important;
+    box-shadow:
+        0 0 0 5px rgba(34,197,94,.12),
+        0 0 12px rgba(34,197,94,.22) !important;
+    transform: scale(1.03) !important;
+}
+
+.rms-template-status-toggle.on i::before {
+    content: "";
+    position: absolute;
+    inset: -5px;
+    border: 1px solid rgba(34,197,94,.24);
+    border-radius: inherit;
+    animation: rmsStatusLivePulse 1.8s ease-out infinite;
+}
+
+@keyframes rmsStatusLivePulse {
+    0% { opacity: .7; transform: scale(.72); }
+    70%,100% { opacity: 0; transform: scale(1.65); }
+}
+
+/* Tiny active indicator at the right */
+.rms-template-status-toggle.on::after {
+    content: "ACTIVE";
+    margin-left: auto;
+    padding: 5px 8px;
+    border: 1px solid #ccefd8;
+    border-radius: 7px;
+    background: rgba(255,255,255,.72);
+    color: #16a34a;
+    font-size: 7px;
+    font-weight: 900;
+    letter-spacing: .08em;
+    animation: rmsStatusBadgeIn .28s cubic-bezier(.2,1.3,.35,1) both;
+}
+
+.rms-template-status-toggle:not(.on)::after {
+    content: "DRAFT";
+    margin-left: auto;
+    padding: 5px 8px;
+    border: 1px solid #e4e4e7;
+    border-radius: 7px;
+    background: #fff;
+    color: #a1a1aa;
+    font-size: 7px;
+    font-weight: 900;
+    letter-spacing: .08em;
+}
+
+@keyframes rmsStatusBadgeIn {
+    from { opacity: 0; transform: translateX(5px) scale(.9); }
+    to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+/* ---------------------------------------------------------
+   04. MOBILE
+   --------------------------------------------------------- */
+
+@media (max-width: 680px) {
+    .rms-template-select-form > .rms-store-filter-menu {
+        min-width: 0 !important;
+        width: 100% !important;
+        max-height: 320px !important;
+        border-radius: 16px !important;
+    }
+
+    .rms-template-select-form > .rms-template-select-trigger {
+        min-height: 55px !important;
+    }
+
+    .rms-template-select-form > .rms-template-select-trigger .rms-store-mini-logo {
+        width: 42px !important;
+        height: 42px !important;
+        flex-basis: 42px !important;
+    }
+
+    .rms-template-select-form > .rms-store-filter-menu > button {
+        min-height: 61px !important;
+    }
+
+    .rms-template-select-form > .rms-store-filter-menu .rms-store-option-logo {
+        width: 41px !important;
+        height: 41px !important;
+        flex-basis: 41px !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rms-template-select-form > .rms-template-select-trigger .rms-select-chevron,
+    .rms-template-select-form > .rms-template-select-trigger .rms-store-mini-logo,
+    .rms-template-select-form > .rms-store-filter-menu > button,
+    .rms-template-status-toggle,
+    .rms-template-status-toggle i {
+        transition: none !important;
+        animation: none !important;
+    }
+}

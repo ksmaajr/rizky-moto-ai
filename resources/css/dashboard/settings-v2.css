@@ -1,0 +1,867 @@
+/* =========================================================
+   RIZKY MOTO SHOP — SETTINGS / OPENAI API V2
+   Balanced typography + connection logs
+   ========================================================= */
+
+.rms-settings-workspace {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    display: grid;
+    place-items: center;
+    padding: 108px 34px 32px;
+    background: rgba(244,244,245,.94);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+.rms-settings-page {
+    width: min(1180px, 100%);
+    max-height: calc(100vh - 140px);
+    overflow: auto;
+    scrollbar-width: thin;
+}
+
+.rms-settings-page-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 30px;
+    margin-bottom: 22px;
+}
+
+.rms-settings-page-head .section-kicker {
+    display: block;
+    font-size: 11px;
+    line-height: 1;
+    font-weight: 850;
+    letter-spacing: .14em;
+    color: #ef2b2f;
+}
+
+.rms-settings-page-head h1 {
+    margin: 9px 0 7px;
+    font-size: clamp(30px, 2.8vw, 38px);
+    line-height: 1.04;
+    letter-spacing: -.045em;
+    font-weight: 850;
+    color: #18181b;
+}
+
+.rms-settings-page-head p {
+    margin: 0;
+    max-width: 720px;
+    color: #71717a;
+    font-size: 14px;
+    line-height: 1.55;
+}
+
+.rms-settings-head-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 13px;
+    border: 1px solid #e4e4e7;
+    border-radius: 999px;
+    background: #fff;
+    color: #71717a;
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: .08em;
+    white-space: nowrap;
+}
+
+.rms-settings-head-badge i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 0 4px rgba(34,197,94,.1);
+}
+
+.rms-api-settings-card {
+    border: 1px solid #e4e4e7;
+    border-radius: 24px;
+    background: #fff;
+    box-shadow: 0 22px 70px rgba(24,24,27,.09);
+    overflow: hidden;
+}
+
+.rms-settings-v2-head {
+    min-height: 102px;
+    padding: 25px 28px;
+}
+
+.rms-api-settings-brand {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.rms-api-settings-mark {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    flex: 0 0 52px;
+    place-items: center;
+    border-radius: 16px;
+    background: #18181b;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 900;
+    box-shadow: 0 10px 25px rgba(24,24,27,.15);
+}
+
+.rms-api-settings-brand div {
+    display: grid;
+    gap: 4px;
+}
+
+.rms-api-settings-brand > div > span {
+    font-size: 9px;
+    line-height: 1;
+    color: #ef2b2f;
+    font-weight: 850;
+    letter-spacing: .15em;
+}
+
+.rms-api-settings-brand strong {
+    font-size: 21px;
+    line-height: 1.05;
+    letter-spacing: -.025em;
+    color: #18181b;
+}
+
+.rms-api-settings-brand small {
+    font-size: 11px;
+    line-height: 1.3;
+    color: #71717a;
+}
+
+.rms-api-connection-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    border: 1px solid #dcfce7;
+    border-radius: 999px;
+    background: #f0fdf4;
+    color: #15803d;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.rms-api-connection-badge i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 0 4px rgba(34,197,94,.1);
+}
+
+.rms-api-settings-divider {
+    height: 1px;
+    background: #f0f0f2;
+}
+
+.rms-settings-v2-grid {
+    display: grid;
+    grid-template-columns: 1.35fr .8fr;
+    gap: 23px 20px;
+    padding: 28px;
+}
+
+.rms-settings-v2-field {
+    display: grid;
+    gap: 9px;
+}
+
+.rms-settings-v2-field > span {
+    font-size: 12px;
+    line-height: 1.2;
+    font-weight: 800;
+    color: #27272a;
+}
+
+.rms-settings-v2-field > small {
+    font-size: 10px;
+    line-height: 1.45;
+    color: #a1a1aa;
+}
+
+.rms-settings-v2-input {
+    height: 52px;
+    border: 1px solid #d4d4d8;
+    border-radius: 13px;
+    background: #fff;
+}
+
+.rms-settings-v2-input input,
+.rms-settings-v2-field select {
+    height: 52px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 550;
+    color: #27272a;
+}
+
+.rms-settings-v2-input input {
+    padding: 0 15px;
+}
+
+.rms-settings-v2-input button {
+    min-width: 56px;
+    margin-right: 7px;
+    padding: 8px 10px;
+    border: 1px solid #e4e4e7;
+    border-radius: 9px;
+    background: #f4f4f5;
+    color: #52525b;
+    font-size: 10px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.rms-settings-v2-field select {
+    width: 100%;
+    padding: 0 14px;
+    border: 1px solid #d4d4d8;
+    border-radius: 13px;
+    outline: none;
+    background: #fff;
+    cursor: pointer;
+}
+
+.rms-settings-v2-input:focus-within,
+.rms-settings-v2-field select:focus {
+    border-color: #ef2b2f;
+    box-shadow: 0 0 0 4px rgba(239,43,47,.08);
+}
+
+.rms-settings-v2-secure {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+    margin: 0 28px 20px;
+    padding: 17px;
+    border: 1px solid #fee2e2;
+    border-radius: 16px;
+    background: linear-gradient(135deg,#fffafa,#fff);
+}
+
+.rms-settings-v2-secure > div:first-child {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.rms-api-info-icon {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    place-items: center;
+    border-radius: 10px;
+    background: #fff0f0;
+    color: #ef2b2f;
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.rms-settings-v2-secure strong {
+    display: block;
+    font-size: 12px;
+    color: #27272a;
+}
+
+.rms-settings-v2-secure small {
+    display: block;
+    margin-top: 4px;
+    max-width: 720px;
+    font-size: 10px;
+    line-height: 1.45;
+    color: #a1a1aa;
+}
+
+.rms-api-test-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 42px;
+    padding: 0 14px;
+    border: 1px solid #e4e4e7;
+    border-radius: 11px;
+    background: #18181b;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+
+.rms-api-test-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 25px rgba(24,24,27,.16);
+}
+
+.rms-api-test-button:active {
+    transform: translateY(0) scale(.98);
+}
+
+.rms-test-arrow {
+    font-size: 15px;
+    line-height: 1;
+}
+
+.rms-test-spinner {
+    display: none;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255,255,255,.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: rmsSettingsSpin .7s linear infinite;
+}
+
+.rms-api-test-button.is-testing .rms-test-spinner {
+    display: block;
+}
+
+.rms-api-test-button.is-testing .rms-test-arrow {
+    display: none;
+}
+
+/* Connection logs */
+
+.rms-api-logs {
+    margin: 0 28px 20px;
+    border: 1px solid #e4e4e7;
+    border-radius: 17px;
+    background: #fafafa;
+    overflow: hidden;
+}
+
+.rms-api-logs-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    min-height: 72px;
+    padding: 15px 17px;
+    border-bottom: 1px solid #e4e4e7;
+    background: #fff;
+}
+
+.rms-api-logs-title {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-width: 0;
+}
+
+.rms-api-logs-icon {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    place-items: center;
+    border: 1px solid #e4e4e7;
+    border-radius: 10px;
+    background: #f4f4f5;
+    color: #52525b;
+}
+
+.rms-api-logs-icon svg {
+    width: 17px;
+    height: 17px;
+}
+
+.rms-api-logs-title div {
+    display: grid;
+    gap: 3px;
+}
+
+.rms-api-logs-title strong {
+    font-size: 12px;
+    color: #27272a;
+}
+
+.rms-api-logs-title small {
+    font-size: 10px;
+    line-height: 1.4;
+    color: #a1a1aa;
+}
+
+.rms-api-logs-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rms-api-log-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 27px;
+    padding: 0 9px;
+    border: 1px solid #e4e4e7;
+    border-radius: 999px;
+    background: #fafafa;
+    color: #a1a1aa;
+    font-size: 8px;
+    font-weight: 850;
+    letter-spacing: .06em;
+}
+
+.rms-api-log-status i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #a1a1aa;
+}
+
+.rms-api-log-clear {
+    min-height: 27px;
+    padding: 0 9px;
+    border: 1px solid #e4e4e7;
+    border-radius: 8px;
+    background: #fff;
+    color: #71717a;
+    font-size: 9px;
+    font-weight: 750;
+    cursor: pointer;
+}
+
+.rms-api-log-console {
+    min-height: 170px;
+    max-height: 220px;
+    padding: 20px;
+    background:
+        radial-gradient(circle at 15% 20%, rgba(239,43,47,.055), transparent 28%),
+        #18181b;
+    color: #a1a1aa;
+}
+
+.rms-api-log-empty {
+    min-height: 130px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 6px;
+    text-align: center;
+}
+
+.rms-api-log-empty-icon {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    margin-bottom: 3px;
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 11px;
+    background: rgba(255,255,255,.05);
+    color: #ef2b2f;
+    font-size: 18px;
+}
+
+.rms-api-log-empty strong {
+    font-size: 11px;
+    color: #e4e4e7;
+}
+
+.rms-api-log-empty small {
+    max-width: 480px;
+    font-size: 9px;
+    line-height: 1.5;
+    color: #71717a;
+}
+
+.rms-api-log-empty b {
+    color: #a1a1aa;
+}
+
+.rms-api-logs-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 9px 14px;
+    border-top: 1px solid rgba(255,255,255,.06);
+    background: #111113;
+    color: #52525b;
+    font-size: 8px;
+    font-weight: 750;
+    letter-spacing: .05em;
+}
+
+.rms-api-logs-footer span:first-child {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.rms-api-logs-footer i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #ef2b2f;
+    box-shadow: 0 0 9px rgba(239,43,47,.6);
+}
+
+.rms-api-settings-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 18px 28px;
+    border-top: 1px solid #f0f0f2;
+    background: #fff;
+}
+
+.rms-api-settings-footer > span {
+    color: #a1a1aa;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.rms-api-save-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 13px;
+    min-height: 44px;
+    padding: 0 15px 0 17px;
+    border: 0;
+    border-radius: 12px;
+    background: linear-gradient(135deg,#ef2529,#ff484b);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 850;
+    box-shadow: 0 10px 25px rgba(239,43,47,.18);
+    cursor: pointer;
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.rms-api-save-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 30px rgba(239,43,47,.24);
+}
+
+.rms-api-save-button b {
+    display: grid;
+    width: 26px;
+    height: 26px;
+    place-items: center;
+    border-radius: 8px;
+    background: rgba(255,255,255,.18);
+    font-size: 12px;
+}
+
+@keyframes rmsSettingsSpin {
+    to { transform: rotate(360deg); }
+}
+
+/* Sidebar settings retained here for consistency if this CSS replaces
+   the previous inline settings styles. */
+
+.rms-settings-nav { position: relative; }
+.rms-settings-chevron {
+    margin-left: auto;
+    display: grid;
+    width: 22px;
+    height: 22px;
+    place-items: center;
+    color: #a1a1aa;
+    transition: transform .22s ease, color .22s ease;
+}
+.rms-settings-chevron svg { width: 15px; height: 15px; }
+.rms-settings-chevron.is-open {
+    transform: rotate(180deg);
+    color: #18181b;
+}
+.rms-settings-subnav {
+    display: grid;
+    gap: 4px;
+    margin: 3px 0 5px 19px;
+    padding: 2px 0 2px 13px;
+    border-left: 1px solid rgba(228,228,231,.9);
+}
+.rms-settings-subnav[x-cloak] { display: none !important; }
+.rms-settings-subitem {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    min-height: 48px;
+    padding: 7px 10px;
+    border: 1px solid transparent;
+    border-radius: 11px;
+    background: transparent;
+    color: #71717a;
+    text-align: left;
+    cursor: pointer;
+    transition: background .2s ease, border-color .2s ease, color .2s ease;
+}
+.rms-settings-subitem:hover {
+    background: rgba(244,244,245,.78);
+    color: #27272a;
+}
+.rms-settings-subitem.active {
+    background: #fff;
+    border-color: #e4e4e7;
+    color: #18181b;
+    box-shadow: 0 7px 20px rgba(24,24,27,.06);
+}
+.rms-settings-subline {
+    position: absolute;
+    left: -14px;
+    width: 2px;
+    height: 20px;
+    border-radius: 99px;
+    background: transparent;
+}
+.rms-settings-subitem.active .rms-settings-subline {
+    height: 27px;
+    background: #ef2b2f;
+}
+.rms-settings-subicon {
+    display: grid;
+    width: 27px;
+    height: 27px;
+    flex: 0 0 27px;
+    place-items: center;
+    border-radius: 8px;
+    background: #f4f4f5;
+    color: #71717a;
+}
+.rms-settings-subicon svg { width: 14px; height: 14px; }
+.rms-settings-subitem.active .rms-settings-subicon {
+    background: #fff0f0;
+    color: #ef2b2f;
+}
+.rms-settings-ai {
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: .04em;
+    background: #18181b;
+    color: #fff;
+}
+.rms-settings-subcopy {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+}
+.rms-settings-subcopy strong {
+    font-size: 10px;
+    line-height: 1.2;
+    font-weight: 750;
+}
+.rms-settings-subcopy small {
+    font-size: 8px;
+    line-height: 1.25;
+    color: #a1a1aa;
+    white-space: nowrap;
+}
+.rms-settings-status-dot {
+    width: 6px;
+    height: 6px;
+    margin-left: auto;
+    flex: 0 0 6px;
+    border-radius: 999px;
+    background: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34,197,94,.10);
+}
+
+@media (max-width: 1000px) {
+    .rms-settings-v2-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    .rms-settings-v2-grid .rms-api-field:first-child {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 900px) {
+    .rms-settings-workspace {
+        position: absolute;
+        inset: 0;
+        padding: 94px 18px 22px;
+    }
+
+    .rms-settings-page {
+        max-height: calc(100vh - 116px);
+    }
+
+    .rms-settings-page-head {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 13px;
+    }
+
+    .rms-settings-page-head h1 {
+        font-size: 29px;
+    }
+
+    .rms-settings-page-head p {
+        font-size: 12px;
+    }
+
+    .rms-settings-v2-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .rms-settings-v2-grid .rms-api-field:first-child {
+        grid-column: auto;
+    }
+
+    .rms-settings-v2-head {
+        padding: 21px;
+    }
+
+    .rms-settings-v2-grid {
+        padding: 21px;
+    }
+
+    .rms-settings-v2-secure {
+        align-items: flex-start;
+        flex-direction: column;
+        margin: 0 21px 18px;
+    }
+
+    .rms-api-logs {
+        margin: 0 21px 18px;
+    }
+
+    .rms-api-settings-footer {
+        padding: 16px 21px;
+    }
+}
+
+@media (max-width: 640px) {
+    .rms-settings-workspace {
+        padding: 88px 12px 16px;
+    }
+
+    .rms-settings-page {
+        max-height: calc(100vh - 104px);
+    }
+
+    .rms-settings-page-head h1 {
+        font-size: 26px;
+    }
+
+    .rms-settings-page-head p {
+        font-size: 11px;
+    }
+
+    .rms-api-settings-brand {
+        gap: 11px;
+    }
+
+    .rms-api-settings-mark {
+        width: 44px;
+        height: 44px;
+        flex-basis: 44px;
+        border-radius: 13px;
+    }
+
+    .rms-api-settings-brand strong {
+        font-size: 18px;
+    }
+
+    .rms-api-settings-brand small {
+        font-size: 10px;
+    }
+
+    .rms-api-connection-badge {
+        font-size: 9px;
+    }
+
+    .rms-settings-v2-grid {
+        padding: 18px;
+        gap: 18px;
+    }
+
+    .rms-settings-v2-field > span {
+        font-size: 11px;
+    }
+
+    .rms-settings-v2-field > small {
+        font-size: 9px;
+    }
+
+    .rms-settings-v2-input,
+    .rms-settings-v2-field select,
+    .rms-settings-v2-input input {
+        height: 50px;
+        font-size: 12px;
+    }
+
+    .rms-settings-v2-secure {
+        margin: 0 18px 16px;
+        padding: 14px;
+    }
+
+    .rms-settings-v2-secure small {
+        font-size: 9px;
+    }
+
+    .rms-api-test-button {
+        width: 100%;
+        min-height: 44px;
+        font-size: 11px;
+    }
+
+    .rms-api-logs {
+        margin: 0 18px 16px;
+    }
+
+    .rms-api-logs-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .rms-api-logs-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .rms-api-log-console {
+        min-height: 155px;
+        padding: 15px;
+    }
+
+    .rms-api-logs-footer {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .rms-api-settings-footer {
+        align-items: stretch;
+        flex-direction: column;
+        padding: 15px 18px;
+    }
+
+    .rms-api-save-button {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rms-api-test-button,
+    .rms-api-save-button,
+    .rms-settings-chevron,
+    .rms-settings-subitem {
+        transition: none;
+    }
+
+    .rms-test-spinner {
+        animation: none;
+    }
+}

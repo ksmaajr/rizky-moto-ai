@@ -1,0 +1,8 @@
+V6 behavior:
+- Tap hamburger: open sidebar.
+- Tap Settings parent: ONLY expands/collapses submenu. Sidebar stays open.
+- Tap Settings parent does not call Livewire and does not touch drawer state.
+- Tap General/OpenAI API: Livewire changes workspace and dispatches close.
+- Tap outside: close.
+- Tap close handle: close.
+- Settings submenu remains in normal sidebar flow and cannot reposition the close handle.
