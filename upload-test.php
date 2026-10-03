@@ -1,28 +1,26 @@
-<?php
+.rms-generator-preview-modal-custom {
+            position: fixed !important;
+            inset: 0 !important;
+            z-index: 999999 !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 20px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            box-sizing: border-box;
+            overscroll-behavior: contain;
+            background: rgba(15, 15, 18, 0.72);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
 
-echo "PHP TEMP TEST" . PHP_EOL;
-echo "sys_get_temp_dir = " . sys_get_temp_dir() . PHP_EOL;
-echo "upload_tmp_dir   = " . ini_get("upload_tmp_dir") . PHP_EOL;
+        .rms-generator-preview-modal-custom[x-cloak] {
+            display: none !important;
+        }
 
-$file = tempnam(sys_get_temp_dir(), "rizky_");
-
-if ($file === false) {
-    echo "TEMP FILE FAILED" . PHP_EOL;
-    exit(1);
-}
-
-echo "temporary file = " . $file . PHP_EOL;
-
-file_put_contents($file, "TEST");
-
-if (file_exists($file)) {
-    echo "TEMP FILE OK" . PHP_EOL;
-    unlink($file);
-} else {
-    echo "TEMP FILE FAILED" . PHP_EOL;
-}
-
-echo "upload_tmp_dir = " . ini_get('upload_tmp_dir') . PHP_EOL;
-echo "upload_max_filesize = " . ini_get('upload_max_filesize') . PHP_EOL;
-echo "post_max_size = " . ini_get('post_max_size') . PHP_EOL;
-echo "sys_temp_dir = " . sys_get_temp_dir() . PHP_EOL;
+        .rms-generator-preview-modal-custom .rms-preview-backdrop {
+            position: absolute;
+            inset: 0;
+            background: transparent;
+        }

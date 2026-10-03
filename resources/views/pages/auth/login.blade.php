@@ -821,7 +821,6 @@ class extends Component
                 <form
                     x-data="loginForm()"
                     @submit.prevent="startLogin"
-                    wire:submit="login"
                     class="space-y-4 sm:space-y-5"
                 >
 

@@ -20,3 +20,7 @@ import { rmsImageGenerator } from './dashboard/generator.js';
 window.rmsImageGenerator = rmsImageGenerator;
 
 import './dashboard/settings-openai.js';
+
+import './auth/login.js';
+
+import './dashboard/activity-log-stream.js';

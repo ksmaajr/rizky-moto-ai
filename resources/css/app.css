@@ -12,6 +12,5 @@
 /* Mobile */
 @import "./dashboard/mobile-sidebar.css";
 
-/* Settings — dipisahkan */
-@import "./dashboard/settings/general.css";
-@import "./dashboard/settings/openai.css";
+/* Settings — single workspace view */
+@import "./dashboard/settings.css";

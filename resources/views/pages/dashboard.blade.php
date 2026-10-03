@@ -14,8 +14,168 @@ class extends Component
     }
 
     public string $activeSection = 'dashboard';
+
+    // Settings workspace state
+    public string $activeTab = 'general';
+    public bool $showApiKey = false;
+    public string $apiKey = '';
+    public string $imageModel = 'OpenAI Image Generation';
+    public string $defaultAspectRatio = '1:1';
+    public string $defaultQuality = 'standard';
+    public bool $hasOpenAiKey = false;
+
     public string $storeSearch = '';
     public string $storeStatus = 'all';
+
+    // Global activity log workspace.
+    public array $activityLogs = [];
+    public string $activitySearch = '';
+    public string $activityCategory = 'all';
+    public string $activityStatus = 'all';
+    public string $activityTimeframe = 'all';
+
+
+    public function mount(): void
+    {
+        $settings = \App\Models\OpenAiSetting::query()->first();
+
+        if ($settings) {
+            $this->imageModel = $settings->model ?: 'OpenAI Image Generation';
+            $this->defaultAspectRatio = $settings->default_aspect_ratio ?: '1:1';
+            $this->defaultQuality = $settings->default_quality ?: 'standard';
+            $this->hasOpenAiKey = filled($settings->api_key);
+        }
+
+        $this->loadActivityLogs();
+    }
+
+    private function loadActivityLogs(): void
+    {
+        $query = \App\Models\ActivityLog::query()
+            ->latest('created_at');
+
+        $search = trim($this->activitySearch);
+
+        if ($search !== '') {
+            $keyword = '%' . $search . '%';
+
+            $query->where(function ($q) use ($keyword) {
+                $q->where('title', 'like', $keyword)
+                    ->orWhere('description', 'like', $keyword)
+                    ->orWhere('action', 'like', $keyword)
+                    ->orWhere('category', 'like', $keyword)
+                    ->orWhere('metadata', 'like', $keyword);
+            });
+        }
+
+        if ($this->activityCategory !== 'all') {
+            $query->where('category', $this->activityCategory);
+        }
+
+        if ($this->activityStatus !== 'all') {
+            $query->where('status', $this->activityStatus);
+        }
+
+        if ($this->activityTimeframe !== 'all') {
+            $from = match ($this->activityTimeframe) {
+                'today' => now()->startOfDay(),
+                '7d' => now()->subDays(7)->startOfDay(),
+                '30d' => now()->subDays(30)->startOfDay(),
+                default => null,
+            };
+
+            if ($from) {
+                $query->where('created_at', '>=', $from);
+            }
+        }
+
+        $this->activityLogs = $query
+            ->limit(100)
+            ->get()
+            ->map(fn ($log) => [
+                'id' => $log->id,
+                'category' => $log->category,
+                'action' => $log->action,
+                'status' => $log->status,
+                'title' => $log->title,
+                'description' => $log->description,
+                'metadata' => $log->metadata ?? [],
+                'duration_ms' => $log->duration_ms,
+                'http_status' => $log->http_status,
+                'entity_type' => $log->entity_type,
+                'entity_id' => $log->entity_id,
+                'created_at' => $log->created_at?->format('d M Y, H:i:s'),
+                'created_at_human' => $log->created_at?->diffForHumans(),
+            ])
+            ->toArray();
+    }
+
+    public function refreshActivityLogs(): void
+    {
+        $this->loadActivityLogs();
+    }
+
+    public function getActivityLogCountProperty(): int
+    {
+        return \App\Models\ActivityLog::query()->count();
+    }
+
+    public function getFilteredActivityLogCountProperty(): int
+    {
+        return count($this->activityLogs);
+    }
+
+    public function getOpenAiStatusProperty(): array
+    {
+        $settings = \App\Models\OpenAiSetting::query()->first();
+
+        $latest = \App\Models\ActivityLog::query()
+            ->where('category', 'api')
+            ->where('action', 'test_openai_connection')
+            ->latest('created_at')
+            ->first();
+
+        if (! $settings || ! filled($settings->api_key)) {
+            return [
+                'state' => 'not_configured',
+                'label' => 'Not configured',
+                'subtitle' => 'API key belum disimpan',
+                'badge' => 'STEP 0',
+            ];
+        }
+
+        if ($latest?->status === 'success') {
+            return [
+                'state' => 'connected',
+                'label' => 'Connected',
+                'subtitle' => 'OpenAI API authenticated',
+                'badge' => 'LIVE',
+            ];
+        }
+
+        if ($latest?->status === 'error') {
+            return [
+                'state' => 'error',
+                'label' => 'Connection error',
+                'subtitle' => 'Periksa Connection Logs',
+                'badge' => 'CHECK',
+            ];
+        }
+
+        return [
+            'state' => 'configured',
+            'label' => 'Configured',
+            'subtitle' => 'Run connection test',
+            'badge' => 'STEP 1',
+        ];
+    }
+
+    public function getFavoriteCountProperty(): int
+    {
+        return \App\Models\GeneratedImage::query()
+            ->where('is_favorite', true)
+            ->count();
+    }
 
     public function getStoresProperty()
     {
@@ -95,16 +255,184 @@ class extends Component
     public function openSettings(): void
     {
         $this->activeSection = 'settings-general';
+        $this->activeTab = 'general';
     }
 
     public function openGeneralSettings(): void
     {
         $this->activeSection = 'settings-general';
+        $this->activeTab = 'general';
     }
 
     public function openOpenAiSettings(): void
     {
         $this->activeSection = 'settings-openai';
+        $this->activeTab = 'openai';
+    }
+
+    public function selectTab(string $tab): void
+    {
+        if (! in_array($tab, ['general', 'openai'], true)) {
+            return;
+        }
+
+        $this->activeTab = $tab;
+        $this->activeSection = $tab === 'openai'
+            ? 'settings-openai'
+            : 'settings-general';
+    }
+
+    public function testConnection(): void
+    {
+        try {
+            $result = app(\App\Services\OpenAiService::class)->testConnection(
+                apiKey: trim($this->apiKey) !== '' ? trim($this->apiKey) : null,
+                model: $this->imageModel,
+            );
+
+            $this->hasOpenAiKey = $result['has_key'];
+
+            $this->dispatch(
+                'openai-test-result',
+                type: $result['status'],
+                message: $result['message'],
+                detail: $result['detail'],
+            );
+
+            $this->dispatch(
+                'toast',
+                type: $result['status'] === 'success' ? 'success' : ($result['status'] === 'warning' ? 'warning' : 'error'),
+                title: $result['title'],
+                message: $result['message'],
+            );
+        } catch (\Throwable $e) {
+            report($e);
+
+            $this->dispatch(
+                'openai-test-result',
+                type: 'error',
+                message: 'Test koneksi gagal.',
+                detail: 'Terjadi error internal saat menghubungi OpenAI.',
+            );
+
+            $this->dispatch(
+                'toast',
+                type: 'error',
+                title: 'Test koneksi gagal',
+                message: 'Terjadi error internal. Periksa log Laravel.',
+            );
+        }
+        $this->loadActivityLogs();
+    }
+
+    public function clearActivityLogs(): void
+    {
+        try {
+            \App\Models\ActivityLog::query()->delete();
+            $this->loadActivityLogs();
+
+            $this->dispatch(
+                'toast',
+                type: 'success',
+                title: 'Activity logs dibersihkan',
+                message: 'Seluruh riwayat aktivitas sudah dihapus.'
+            );
+        } catch (\Throwable $e) {
+            report($e);
+
+            $this->dispatch(
+                'toast',
+                type: 'error',
+                title: 'Gagal membersihkan logs',
+                message: 'Activity logs tidak dapat dihapus.'
+            );
+        }
+    }
+
+    public function saveOpenAi(): void
+    {
+        try {
+            $this->validate([
+                'apiKey' => ['nullable', 'string', 'max:500'],
+            ]);
+
+            $existing = \App\Models\OpenAiSetting::query()->first();
+            $newApiKey = trim((string) $this->apiKey);
+
+            if ($newApiKey === '' && ! filled($existing?->api_key)) {
+                $this->dispatch(
+                    'toast',
+                    type: 'warning',
+                    title: 'API Key belum diisi',
+                    message: 'Masukkan API Key OpenAI terlebih dahulu.'
+                );
+
+                return;
+            }
+
+            $savedSettings = app(\App\Services\OpenAiService::class)->saveApiKey(
+                $newApiKey !== '' ? $newApiKey : null,
+            );
+
+            $this->hasOpenAiKey = filled($savedSettings->api_key);
+
+            if (! $this->hasOpenAiKey) {
+                $this->dispatch(
+                    'toast',
+                    type: 'error',
+                    title: 'API Key gagal disimpan',
+                    message: 'Credential tidak berhasil tersimpan di database.'
+                );
+
+                return;
+            }
+
+            app(\App\Services\ActivityLogService::class)->success(
+                category: 'api',
+                action: 'update_openai_configuration',
+                title: 'OpenAI API configuration diperbarui.',
+                description: 'Credential OpenAI berhasil disimpan melalui backend.',
+            );
+
+            $this->apiKey = '';
+            $this->showApiKey = false;
+            $this->loadActivityLogs();
+
+            $this->dispatch(
+                'toast',
+                type: 'success',
+                title: 'Konfigurasi tersimpan',
+                message: 'OpenAI API siap digunakan oleh Product Generator.'
+            );
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->dispatch(
+                'toast',
+                type: 'warning',
+                title: 'Periksa konfigurasi',
+                message: $e->validator->errors()->first()
+            );
+
+            throw $e;
+        } catch (\Throwable $e) {
+            report($e);
+
+            $this->dispatch(
+                'toast',
+                type: 'error',
+                title: 'Gagal menyimpan',
+                message: 'Konfigurasi OpenAI tidak dapat disimpan.'
+            );
+        }
+    }
+
+    public function saveGeneral(): void
+    {
+        $this->dispatch(
+            'toast',
+            type: 'success',
+            title: 'Preferences siap',
+            message: 'Pengaturan workspace sudah siap disimpan.'
+        );
     }
 };
 
@@ -235,22 +563,28 @@ class extends Component
                 </div>
             </div>
 
-            <div
-                class="nav-section rms-settings-nav"
-                x-data="{ settingsOpen: @js(str_starts_with($activeSection, 'settings-')) }"
-                x-effect="if ($wire.activeSection?.startsWith('settings-')) settingsOpen = true"
-            >
+            {{-- =========================================================
+                SETTINGS NAVIGATION
+                ========================================================= --}}
+            <div class="nav-section rms-settings-nav">
                 <div class="nav-heading">System</div>
 
                 <div class="nav-list">
+
                     <button
                         type="button"
                         class="nav-item {{ str_starts_with($activeSection, 'settings-') ? 'active' : '' }}"
-                        @click="settingsOpen = !settingsOpen"
-                        :aria-expanded="settingsOpen.toString()"
+                        wire:click="openSettings"
+                        wire:loading.attr="disabled"
+                        wire:target="openSettings"
                     >
                         <span class="nav-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.7"
+                            >
                                 <path d="M12 3v2"/>
                                 <path d="M12 19v2"/>
                                 <path d="m4.2 4.2 1.4 1.4"/>
@@ -263,55 +597,11 @@ class extends Component
                             </svg>
                         </span>
 
-                        <span class="nav-label">Settings</span>
-
-                        <span class="rms-settings-chevron" :class="{ 'is-open': settingsOpen }" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                <path d="m7 10 5 5 5-5"/>
-                            </svg>
+                        <span class="nav-label">
+                            Settings
                         </span>
                     </button>
 
-                    <div
-                        class="rms-settings-subnav"
-                        x-show="settingsOpen"
-                        x-collapse.duration.220ms
-                        x-cloak
-                    >
-                        <button
-                            type="button"
-                            class="rms-settings-subitem {{ $activeSection === 'settings-general' ? 'active' : '' }}"
-                            wire:click="openGeneralSettings"
-                        >
-                            <span class="rms-settings-subline"></span>
-                            <span class="rms-settings-subicon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-                                    <circle cx="12" cy="12" r="3"/>
-                                    <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.2h-2.5v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H6.5v-2.5h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-1.8.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5V4h2.5v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.8 1.8-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.2v2.5h-.2a1.7 1.7 0 0 0-1.5 1.4Z"/>
-                                </svg>
-                            </span>
-                            <span class="rms-settings-subcopy">
-                                <strong>General</strong>
-                                <small>Workspace preferences</small>
-                            </span>
-                        </button>
-
-                        <button
-                            type="button"
-                            class="rms-settings-subitem {{ $activeSection === 'settings-openai' ? 'active' : '' }}"
-                            wire:click="openOpenAiSettings"
-                        >
-                            <span class="rms-settings-subline"></span>
-                            <span class="rms-settings-subicon rms-settings-ai">
-                                <span>AI</span>
-                            </span>
-                            <span class="rms-settings-subcopy">
-                                <strong>OpenAI API</strong>
-                                <small>Creative engine connection</small>
-                            </span>
-                            <span class="rms-settings-status-dot"></span>
-                        </button>
-                    </div>
                 </div>
             </div>
 
@@ -332,9 +622,9 @@ class extends Component
                 </div>
 
                 <div class="api-status-row">
-                    <span class="api-status-dot"></span>
-                    <span>Ready to connect</span>
-                    <span class="api-status-badge">STEP 0</span>
+                    <span class="api-status-dot {{ $this->openAiStatus['state'] === 'connected' ? 'is-connected' : ($this->openAiStatus['state'] === 'error' ? 'is-error' : '') }}"></span>
+                    <span>{{ $this->openAiStatus['label'] }}</span>
+                    <span class="api-status-badge">{{ $this->openAiStatus['badge'] }}</span>
                 </div>
             </div>
         </div>
@@ -805,15 +1095,15 @@ class extends Component
                     </div>
 
                     <div class="premium-stat-label">Active Stores</div>
-                    <div class="premium-stat-value">04</div>
+                    <div class="premium-stat-value">{{ str_pad((string) $this->activeStores, 2, '0', STR_PAD_LEFT) }}</div>
 
                     <div class="premium-stat-bottom">
                         <span>Connected marketplace stores</span>
-                        <strong>100%</strong>
+                        <strong>{{ $this->totalStores > 0 ? round(($this->activeStores / $this->totalStores) * 100) : 0 }}%</strong>
                     </div>
 
                     <div class="premium-stat-progress">
-                        <span style="width: 100%"></span>
+                        <span style="width: {{ $this->totalStores > 0 ? round(($this->activeStores / $this->totalStores) * 100) : 0 }}%"></span>
                     </div>
 
                 </article>
@@ -837,15 +1127,15 @@ class extends Component
                     </div>
 
                     <div class="premium-stat-label">Templates</div>
-                    <div class="premium-stat-value">12</div>
+                    <div class="premium-stat-value">{{ $this->totalTemplates }}</div>
 
                     <div class="premium-stat-bottom">
                         <span>Configured visual templates</span>
-                        <strong>12 / 20</strong>
+                        <strong>{{ $this->totalTemplates }} total</strong>
                     </div>
 
                     <div class="premium-stat-progress violet">
-                        <span style="width: 60%"></span>
+                        <span style="width: {{ $this->totalTemplates > 0 ? 100 : 0 }}%"></span>
                     </div>
 
                 </article>
@@ -868,15 +1158,15 @@ class extends Component
                     </div>
 
                     <div class="premium-stat-label">Generations</div>
-                    <div class="premium-stat-value">128</div>
+                    <div class="premium-stat-value">{{ $this->totalGenerations }}</div>
 
                     <div class="premium-stat-bottom">
                         <span>Visuals generated</span>
-                        <strong>+18%</strong>
+                        <strong>LIVE</strong>
                     </div>
 
                     <div class="premium-stat-progress orange">
-                        <span style="width: 78%"></span>
+                        <span style="width: {{ $this->totalGenerations > 0 ? 100 : 0 }}%"></span>
                     </div>
 
                 </article>
@@ -898,15 +1188,15 @@ class extends Component
                     </div>
 
                     <div class="premium-stat-label">Favorites</div>
-                    <div class="premium-stat-value">24</div>
+                    <div class="premium-stat-value">{{ $this->favoriteCount }}</div>
 
                     <div class="premium-stat-bottom">
                         <span>Saved visual results</span>
-                        <strong>24 saved</strong>
+                        <strong>{{ $this->favoriteCount }} saved</strong>
                     </div>
 
                     <div class="premium-stat-progress green">
-                        <span style="width: 48%"></span>
+                        <span style="width: {{ $this->favoriteCount > 0 ? 100 : 0 }}%"></span>
                     </div>
 
                 </article>
@@ -1070,7 +1360,7 @@ class extends Component
                     <span class="premium-system-divider"></span>
 
                     <span class="premium-system-version">
-                        BUILD 01.00
+                        OPENAI: {{ $this->openAiStatus['label'] }}
                     </span>
 
                 </div>
@@ -1102,25 +1392,18 @@ class extends Component
                 >
                     <livewire:dashboard.generator.index />
                 </div>
+
+            @elseif (in_array($activeSection, ['settings-general', 'settings-openai'], true))
+                <div
+                    class="workspace-section-shell rms-content-enter rms-settings-section-shell"
+                    wire:key="workspace-settings"
+                >
+                    @include('livewire.dashboard.settings.index')
+                </div>
             @endif
 
         </main>
     </div>
-
-    {{-- =========================================================
-         SETTINGS WORKSPACE
-         Each settings section is isolated in its own Blade view.
-         ======================================================== --}}
-    @if ($activeSection === 'settings-general')
-        <div class="rms-settings-workspace">
-            @include('livewire.dashboard.settings.general')
-        </div>
-    @elseif ($activeSection === 'settings-openai')
-        <div class="rms-settings-workspace">
-            @include('livewire.dashboard.settings.openai')
-        </div>
-    @endif
-
 
     {{-- UNIVERSAL TOAST HOST --}}
     @teleport('body')
@@ -1192,6 +1475,8 @@ class extends Component
         @keyframes rmsToastIn{from{opacity:0;transform:translate3d(18px,-8px,0) scale(.97)}to{opacity:1;transform:none}}@keyframes rmsToastSpin{to{transform:rotate(360deg)}}
         @media(max-width:640px){.rms-universal-toast{left:12px;right:12px;top:12px;width:auto;padding:12px}.rms-toast-icon{width:35px;height:35px;flex-basis:35px}.rms-toast-copy strong{font-size:10px}.rms-toast-copy span{font-size:9px}}
         @media(prefers-reduced-motion:reduce){.rms-universal-toast{animation:none}.rms-toast-icon{animation:none}}
+        .api-status-dot.is-connected{background:#16a34a;box-shadow:0 0 0 4px rgba(22,163,74,.10)}
+        .api-status-dot.is-error{background:#dc2626;box-shadow:0 0 0 4px rgba(220,38,38,.10)}
     </style>
 </div>
 
