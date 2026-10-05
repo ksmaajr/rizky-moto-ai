@@ -134,6 +134,7 @@ class OpenAiImageService
 
         $startedAt = microtime(true);
         $httpErrorLogged = false;
+        $store = $this->resolveStoreForTemplate($store, $template);
         $hasInstalledReference = (bool) $imageTwo;
         $hasTemplateReference = $this->hasTemplateReference($template);
         $attachTemplateReference = $hasTemplateReference;
@@ -318,32 +319,22 @@ class OpenAiImageService
                 ]);
             }
 
-            // Attachment order is intentional:
-            // 1. Template master reference (layout/style/composition)
-            // 2. Product reference (product identity)
-            // 3. Installed/in-use reference (optional factual usage)
-            // 4. Store logo (official branding)
-            $attachments = [];
+            // Build one normalized reference contract for every model/provider.
+            // The service owns the semantic roles; the transport adapter decides
+            // whether the selected model receives multiple inputs or one fallback board.
+            $referenceManifest = $this->buildUniversalReferenceManifest(
+                store: $store,
+                template: $template,
+                productPath: $productOnePath,
+                installedPath: ($imageTwo && $productTwoPath) ? $productTwoPath : null,
+            );
 
-            if ($attachTemplateReference) {
-                $templateReferencePath = $this->templateReferencePath($template);
-                if ($templateReferencePath) {
-                    $attachments[] = [$templateReferencePath, basename($templateReferencePath)];
-                }
-            }
-
-            $attachments[] = [$productOnePath, basename($productOnePath)];
-
-            if ($imageTwo && $productTwoPath) {
-                $attachments[] = [$productTwoPath, basename($productTwoPath)];
-            }
-
-            if ($hasStoreLogo) {
-                $logoPath = Storage::disk('public')->path($store->logo_path);
-                if (is_readable($logoPath)) {
-                    $attachments[] = [$logoPath, basename($logoPath)];
-                }
-            }
+            $referenceTransport = $this->prepareReferenceTransport(
+                model: $model,
+                references: $referenceManifest,
+                generationId: $generation->id,
+            );
+            $attachments = $referenceTransport['attachments'];
 
             $this->activity()->processing(
                 action: 'generate_openai_image',
@@ -359,6 +350,8 @@ class OpenAiImageService
                     'generation_id' => $generation->id,
                     'endpoint' => '/v1/images/edits',
                     'attachment_count' => count($attachments),
+                    'reference_transport' => $referenceTransport['transport'],
+                    'reference_manifest' => $this->publicReferenceManifest($referenceManifest),
                     'model' => $model,
                     'size' => $this->mapSize($aspectRatio),
                     'quality' => $this->mapQuality($quality),
@@ -616,6 +609,7 @@ class OpenAiImageService
         ?string $customTitle = null,
     ): Generation {
         $startedAt = microtime(true);
+        $store = $this->resolveStoreForTemplate($store, $template);
 
         if (! $this->apiPool()->hasAvailableKey($user->id)) {
             throw new RuntimeException('Belum ada Vercel AI Gateway API Key yang tersedia. Buka Settings → AI Gateway.');
@@ -721,6 +715,9 @@ class OpenAiImageService
         $generation->loadMissing(['store', 'template']);
         $store = $generation->store;
         $template = $generation->template;
+        if ($store && $template) {
+            $store = $this->resolveStoreForTemplate($store, $template);
+        }
         $startedAt = microtime(true);
         $httpErrorLogged = false;
 
@@ -846,29 +843,22 @@ class OpenAiImageService
                 'progress_stage' => 'Menyiapkan reference image',
             ])]);
 
-            // Keep the reference order stable so the prompt can assign each image a role:
-            // 1 = Template master, 2 = product, 3 = installed reference (optional), 4 = logo.
-            $attachments = [];
+            // Build one normalized reference contract for every model/provider.
+            // The service owns the semantic roles; the transport adapter decides
+            // whether the selected model receives multiple inputs or one fallback board.
+            $referenceManifest = $this->buildUniversalReferenceManifest(
+                store: $store,
+                template: $template,
+                productPath: $productOnePath,
+                installedPath: $productTwoPath,
+            );
 
-            if ($attachTemplateReference) {
-                $templateReferencePath = $this->templateReferencePath($template);
-                if ($templateReferencePath) {
-                    $attachments[] = [$templateReferencePath, basename($templateReferencePath)];
-                }
-            }
-
-            $attachments[] = [$productOnePath, basename($productOnePath)];
-
-            if ($productTwoPath) {
-                $attachments[] = [$productTwoPath, basename($productTwoPath)];
-            }
-
-            if ($hasStoreLogo) {
-                $logoPath = Storage::disk('public')->path($store->logo_path);
-                if (is_readable($logoPath)) {
-                    $attachments[] = [$logoPath, basename($logoPath)];
-                }
-            }
+            $referenceTransport = $this->prepareReferenceTransport(
+                model: $model,
+                references: $referenceManifest,
+                generationId: $generation->id,
+            );
+            $attachments = $referenceTransport['attachments'];
 
             $generation->refresh();
             if ($generation->status === 'cancelled') {
@@ -879,6 +869,8 @@ class OpenAiImageService
                 'progress' => 35,
                 'progress_stage' => 'Mengirim request ke OpenAI',
                 'attachment_count' => count($attachments),
+                'reference_transport' => $referenceTransport['transport'],
+                'reference_manifest' => $this->publicReferenceManifest($referenceManifest),
             ])]);
 
             $this->activity()->processing(
@@ -891,6 +883,8 @@ class OpenAiImageService
                     'generation_id' => $generation->id,
                     'endpoint' => '/v1/images/edits',
                     'attachment_count' => count($attachments),
+                    'reference_transport' => $referenceTransport['transport'],
+                    'reference_manifest' => $this->publicReferenceManifest($referenceManifest),
                     'model' => $model,
                     'image_count' => (int) (($generation->metadata ?? [])['requested_image_count'] ?? 1),
                 ],
@@ -1094,7 +1088,11 @@ class OpenAiImageService
         $hasStoreLogo = $this->hasStoreLogo($store);
 
         $referenceRoles = [
-            'REFERENCE IMAGE CONTRACT — FOLLOW THE ATTACHMENT ORDER EXACTLY:',
+            'REFERENCE INPUT TRANSPORT — IMPORTANT:',
+            '- The service may send these references as separate images OR as one labeled UNIVERSAL REFERENCE BOARD when the selected model/provider does not reliably support multiple image inputs.',
+            '- If a UNIVERSAL REFERENCE BOARD is supplied, it contains labeled panels for TEMPLATE, PRODUCT, INSTALLED and STORE LOGO. Treat each labeled panel as its own semantic reference; the board itself is NOT the product and must NEVER be reproduced as a collage.',
+            '- The semantic role always matters more than the physical attachment number.',
+            'REFERENCE IMAGE CONTRACT — FOLLOW THE ATTACHMENT ORDER EXACTLY WHEN REFERENCES ARE SENT SEPARATELY:',
             $hasTemplateReference
                 ? 'IMAGE 1 — TEMPLATE MASTER REFERENCE: this is the visual master for the selected Template.'
                 : 'NO TEMPLATE MASTER REFERENCE IMAGE IS AVAILABLE: use the Template prompt as the layout/style source of truth.',
@@ -1138,7 +1136,11 @@ class OpenAiImageService
                 'GENERATION MODE: PRODUCT + INSTALLED REFERENCE',
                 '- The Template master reference remains the design/layout authority when available.',
                 '- The actual product reference remains the product-identity authority.',
-                '- Use the installed reference only to understand factual real-world installation or usage.',
+                '- Use the installed reference to understand factual real-world installation, orientation, placement, scale, fitment and usage.',
+                '- FINAL OUTPUT REQUIREMENT: when an installed reference is supplied, the installed product MUST be visibly represented in the final advertisement as the primary/hero product view. Do not silently use it only as hidden analysis.',
+                '- FINAL OUTPUT REQUIREMENT: the supplied product/packaging reference MUST also be visibly represented as a secondary supporting visual when packaging is present. Preserve its actual packaging/product identity; do not omit it merely because an installed reference exists.',
+                '- FINAL OUTPUT REQUIREMENT: when a Store logo is supplied, the official Store logo MUST be visibly placed in the final advertisement in a clean, intentional branding position.',
+                '- Integrate the hero installed view, packaging/product visual and Store logo into ONE cohesive commercial composition. Do NOT output a literal 2x2 collage or a side-by-side comparison.',
                 '- Keep the same Template composition, hierarchy, graphic language and visual rhythm even when the installed reference changes.',
                 '- Do not let the installed reference redesign the Template.',
             ]
@@ -1278,8 +1280,11 @@ class OpenAiImageService
             'FINAL COMPOSITION CHECK:',
             '- The selected Template design must be recognizable in the final composition.',
             '- The supplied product must remain the unmistakable hero product.',
-            '- The Store logo must be used only as official branding when supplied.',
-            '- Do not create a collage or side-by-side comparison of references.',
+            '- When an installed reference is supplied, the installed product view must be visibly present in the final advertisement.',
+            '- When a packaging/product reference is supplied, the packaging/product visual must be visibly present as a supporting visual in the final advertisement.',
+            '- When a Store logo is supplied, the exact official Store logo must be visibly present in the final advertisement.',
+            '- Integrate all required visual roles into ONE cohesive commercial composition.',
+            '- Do not create a literal collage, contact sheet, or side-by-side comparison of the source references.',
             '- Produce ONE cohesive final advertisement.',
         ];
 
@@ -1567,6 +1572,276 @@ PROMPT;
     }
 
     /**
+     * Guarantee that the Store used for branding belongs to the selected Template.
+     * The Template is the source of truth because each Template is owned by exactly
+     * one Store. The caller-provided Store is retained only when it matches.
+     */
+    private function resolveStoreForTemplate(Store $store, Template $template): Store
+    {
+        $template->loadMissing('store');
+        $templateStore = $template->store;
+
+        if (! $templateStore) {
+            throw new RuntimeException('Template belum memiliki Store pemilik.');
+        }
+
+        if ((int) $templateStore->id !== (int) $store->id) {
+            throw new RuntimeException(
+                'Store tidak cocok dengan Template. Generation dibatalkan untuk mencegah logo Store yang salah.'
+            );
+        }
+
+        return $templateStore;
+    }
+
+    /**
+     * Build the canonical, provider-neutral reference manifest.
+     *
+     * Roles are semantic and never depend on the model's multipart field names:
+     * template = visual/layout authority
+     * product = exact product identity authority
+     * installed = factual installation/usage authority
+     * store_logo = official store branding authority
+     *
+     * @return array<int,array{role:string,path:string,filename:string}>
+     */
+    private function buildUniversalReferenceManifest(
+        Store $store,
+        Template $template,
+        string $productPath,
+        ?string $installedPath = null,
+    ): array {
+        $references = [];
+
+        if ($this->hasTemplateReference($template)) {
+            $path = $this->templateReferencePath($template);
+            if ($path) {
+                $references[] = [
+                    'role' => 'template',
+                    'path' => $path,
+                    'filename' => 'template-master-' . basename($path),
+                ];
+            }
+        }
+
+        if (! is_readable($productPath)) {
+            throw new RuntimeException('Primary product reference tidak dapat dibaca.');
+        }
+
+        $references[] = [
+            'role' => 'product',
+            'path' => $productPath,
+            'filename' => 'product-reference-' . basename($productPath),
+        ];
+
+        if ($installedPath !== null && is_readable($installedPath)) {
+            $references[] = [
+                'role' => 'installed',
+                'path' => $installedPath,
+                'filename' => 'installed-reference-' . basename($installedPath),
+            ];
+        }
+
+        // IMPORTANT: the logo always comes from the Store attached to the selected Template.
+        // Never accept a logo uploaded by the generator form as a replacement.
+        if ($this->hasStoreLogo($store)) {
+            $logoPath = Storage::disk('public')->path($store->logo_path);
+            if (is_readable($logoPath)) {
+                $references[] = [
+                    'role' => 'store_logo',
+                    'path' => $logoPath,
+                    'filename' => 'store-logo-' . basename($logoPath),
+                ];
+            }
+        }
+
+        return $references;
+    }
+
+    /**
+     * Decide how the canonical references are transported to the selected model.
+     *
+     * Models documented to accept multiple reference images receive the references
+     * individually. Unknown/ambiguous models use a single labeled reference board,
+     * which preserves all roles instead of silently dropping the second/third image.
+     * This makes the service safe when new providers/models are added later.
+     *
+     * @return array{transport:string,attachments:array<int,array{0:string,1:string,2:string,3:bool}>}
+     */
+    private function prepareReferenceTransport(
+        string $model,
+        array $references,
+        int $generationId,
+    ): array {
+        if ($this->modelSupportsMultipleReferenceImages($model)) {
+            return [
+                'transport' => 'multiple_reference_images',
+                'attachments' => array_map(
+                    static fn (array $reference): array => [
+                        $reference['path'],
+                        $reference['filename'],
+                        $reference['role'],
+                        false,
+                    ],
+                    $references
+                ),
+            ];
+        }
+
+        $boardPath = $this->createUniversalReferenceBoard($references, $generationId);
+
+        return [
+            'transport' => 'single_reference_board',
+            'attachments' => [[
+                $boardPath,
+                'universal-reference-board-' . $generationId . '.png',
+                'reference_board',
+                true,
+            ]],
+        ];
+    }
+
+    private function modelSupportsMultipleReferenceImages(string $model): bool
+    {
+        $model = strtolower(trim($model));
+
+        // These families are explicitly exposed by AI Gateway with multiple reference
+        // image support in their current model pages/playground.
+        return str_starts_with($model, 'openai/gpt-image-')
+            || str_starts_with($model, 'google/gemini-3-pro-image')
+            || str_starts_with($model, 'google/gemini-3.1-flash-image')
+            || str_starts_with($model, 'bytedance/seedream-5.0-lite');
+    }
+
+    /**
+     * Create a neutral 2x2 reference board for models where multi-image transport
+     * is not known to be supported. Each panel is labeled with its semantic role.
+     */
+    private function createUniversalReferenceBoard(array $references, int $generationId): string
+    {
+        if (! function_exists('imagecreatetruecolor')) {
+            throw new RuntimeException('PHP GD extension diperlukan untuk fallback universal reference board.');
+        }
+
+        $directory = storage_path('app/generation-reference-boards');
+        if (! is_dir($directory) && ! @mkdir($directory, 0775, true) && ! is_dir($directory)) {
+            throw new RuntimeException('Folder reference board tidak dapat dibuat.');
+        }
+
+        $canvasWidth = 2400;
+        $canvasHeight = 1800;
+        $gap = 32;
+        $header = 86;
+        $panelWidth = (int) (($canvasWidth - ($gap * 3)) / 2);
+        $panelHeight = (int) (($canvasHeight - ($gap * 3) - $header) / 2);
+
+        $canvas = imagecreatetruecolor($canvasWidth, $canvasHeight);
+        imagealphablending($canvas, true);
+        imagesavealpha($canvas, false);
+
+        $background = imagecolorallocate($canvas, 20, 24, 28);
+        $panelBackground = imagecolorallocate($canvas, 245, 245, 245);
+        $text = imagecolorallocate($canvas, 255, 255, 255);
+        $muted = imagecolorallocate($canvas, 170, 178, 186);
+        imagefill($canvas, 0, 0, $background);
+
+        imagestring($canvas, 5, 32, 22, 'UNIVERSAL REFERENCE BOARD — DO NOT TREAT AS A SINGLE PRODUCT PHOTO', $text);
+        imagestring($canvas, 3, 32, 50, 'TEMPLATE = STYLE · PRODUCT = IDENTITY · INSTALLED = USAGE · STORE LOGO = BRANDING', $muted);
+
+        $positions = [
+            [0, 0], [1, 0], [0, 1], [1, 1],
+        ];
+
+        foreach ($positions as $index => [$column, $row]) {
+            $x = $gap + ($column * ($panelWidth + $gap));
+            $y = $header + $gap + ($row * ($panelHeight + $gap));
+            imagefilledrectangle($canvas, $x, $y, $x + $panelWidth, $y + $panelHeight, $panelBackground);
+
+            if (! isset($references[$index])) {
+                continue;
+            }
+
+            $reference = $references[$index];
+            $source = $this->loadReferenceImage($reference['path']);
+            if ($source === null) {
+                continue;
+            }
+
+            $label = strtoupper(str_replace('_', ' ', $reference['role']));
+            $labelHeight = 42;
+            $labelBg = imagecolorallocate($canvas, 15, 18, 22);
+            imagefilledrectangle($canvas, $x, $y, $x + $panelWidth, $y + $labelHeight, $labelBg);
+            imagestring($canvas, 5, $x + 16, $y + 11, $label, $text);
+
+            $srcWidth = imagesx($source);
+            $srcHeight = imagesy($source);
+            $availableTop = $y + $labelHeight + 10;
+            $availableHeight = $panelHeight - $labelHeight - 20;
+
+            $scale = min(
+                ($panelWidth - 20) / max(1, $srcWidth),
+                $availableHeight / max(1, $srcHeight)
+            );
+            $dstWidth = max(1, (int) floor($srcWidth * $scale));
+            $dstHeight = max(1, (int) floor($srcHeight * $scale));
+            $dstX = $x + (int) floor(($panelWidth - $dstWidth) / 2);
+            $dstY = $availableTop + (int) floor(($availableHeight - $dstHeight) / 2);
+
+            imagecopyresampled(
+                $canvas,
+                $source,
+                $dstX,
+                $dstY,
+                0,
+                0,
+                $dstWidth,
+                $dstHeight,
+                $srcWidth,
+                $srcHeight
+            );
+
+            imagedestroy($source);
+        }
+
+        $path = $directory . '/reference-board-' . $generationId . '-' . uniqid('', true) . '.png';
+        if (! imagepng($canvas, $path, 6)) {
+            imagedestroy($canvas);
+            throw new RuntimeException('Universal reference board gagal dibuat.');
+        }
+
+        imagedestroy($canvas);
+
+        return $path;
+    }
+
+    /**
+     * @return resource|null
+     */
+    private function loadReferenceImage(string $path)
+    {
+        $mime = strtolower((string) @mime_content_type($path));
+
+        return match ($mime) {
+            'image/jpeg', 'image/jpg' => @imagecreatefromjpeg($path) ?: null,
+            'image/png' => @imagecreatefrompng($path) ?: null,
+            'image/webp' => function_exists('imagecreatefromwebp') ? (@imagecreatefromwebp($path) ?: null) : null,
+            'image/gif' => @imagecreatefromgif($path) ?: null,
+            default => null,
+        };
+    }
+
+    private function publicReferenceManifest(array $references): array
+    {
+        return array_map(
+            static fn (array $reference): array => [
+                'role' => $reference['role'],
+                'filename' => $reference['filename'],
+            ],
+            $references
+        );
+    }
+
+    /**
      * Resolve the credential used by Vercel AI Gateway.
      *
      * AI_GATEWAY_API_KEY is preferred so production can keep the gateway
@@ -1626,7 +1901,7 @@ PROMPT;
 
             $handles = [];
             try {
-                foreach ($attachments as [$path, $filename]) {
+                foreach ($attachments as [$path, $filename, $role, $temporary]) {
                     $handle = fopen($path, 'rb');
                     if ($handle === false) {
                         throw new RuntimeException('File input tidak dapat dibuka: ' . $filename);
@@ -1647,6 +1922,7 @@ PROMPT;
             if ($response->successful()) {
                 $this->apiPool()->reportSuccess($credential['id'], $userId);
 
+                $this->cleanupTemporaryReferenceAttachments($attachments);
                 return [$response, $credential];
             }
 
@@ -1685,9 +1961,22 @@ PROMPT;
             );
         }
 
+        $this->cleanupTemporaryReferenceAttachments($attachments);
+
         throw new RuntimeException(
             $lastError ?: 'Semua Vercel AI Gateway API key yang tersedia gagal digunakan.'
         );
+    }
+
+    private function cleanupTemporaryReferenceAttachments(array $attachments): void
+    {
+        foreach ($attachments as $attachment) {
+            $path = $attachment[0] ?? null;
+            $temporary = (bool) ($attachment[3] ?? false);
+            if ($temporary && is_string($path) && is_file($path)) {
+                @unlink($path);
+            }
+        }
     }
 
     /**
