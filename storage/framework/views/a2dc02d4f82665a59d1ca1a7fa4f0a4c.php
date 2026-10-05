@@ -1,1078 +1,15 @@
 <?php
-
-
-
 use Livewire\Attributes\Layout;
-
 use Livewire\Component;
-
 use App\Models\Store;
 use App\Services\QueueWorkerManager;
-
-
-
-new
-
-#[Layout('layouts::app')]
-
-class extends Component
-
-{
-
-    use \App\Livewire\Concerns\ManagesVercelGatewayKeys;
-
-
-
-    public function getUserProperty(): ?object
-
-    {
-
-        return auth()->user();
-
-    }
-
-
-
-    public string $activeSection = 'dashboard';
-
-
-
-    // Settings workspace state
-
-    public string $activeTab = 'general';
-
-    public bool $showApiKey = false;
-
-    public string $apiKey = '';
-
-    public string $imageModel = 'OpenAI Image Generation';
-
-    public string $defaultAspectRatio = '1:1';
-
-    public string $defaultQuality = 'standard';
-
-    public bool $hasOpenAiKey = false;
-
-
-
-    
-    public array $workerStatus = [
-        'running' => false,
-        'pid' => null,
-        'queue' => 'database',
-        'started_at' => null,
-    ];
-
-// Legacy OpenAI connection logs kept for the existing settings activity UI.
-
-    public array $openAiLogs = [];
-
-
-
-    public string $storeSearch = '';
-
-    public string $storeStatus = 'all';
-
-
-
-    // Global activity log workspace.
-
-    public array $activityLogs = [];
-
-    public string $activitySearch = '';
-
-    public string $activityCategory = 'all';
-
-    public string $activityStatus = 'all';
-
-    public string $activityTimeframe = 'all';
-
-
-
-
-
-    public function mount(): void
-
-    {
-
-        $settings = \App\Models\OpenAiSetting::query()->first();
-
-
-
-        if ($settings) {
-
-            $this->imageModel = $settings->model ?: 'OpenAI Image Generation';
-
-            $this->defaultAspectRatio = $settings->default_aspect_ratio ?: '1:1';
-
-            $this->defaultQuality = $settings->default_quality ?: 'standard';
-
-            $this->hasOpenAiKey = filled($settings->api_key);
-
-        }
-
-
-
-        $this->loadActivityLogs();
-
-        $this->loadOpenAiLogs();
-
-        $this->loadVercelGatewayLogs();
-
-        // Worker status is loaded on explicit user action only.
-        // Do not execute OS process checks during Dashboard mount; on Windows this can block the HTTP request.
-
-    }
-
-
-
-    private function loadOpenAiLogs(): void
-
-    {
-
-        $this->openAiLogs = \App\Models\OpenAiConnectionLog::query()
-
-            ->latest('tested_at')
-
-            ->limit(50)
-
-            ->get()
-
-            ->map(fn ($log) => [
-
-                'id' => $log->id,
-
-                'status' => $log->status,
-
-                'message' => $log->message,
-
-                'detail' => $log->detail,
-
-                'http_status' => $log->http_status,
-
-                'duration_ms' => $log->duration_ms,
-
-                'model' => $log->model,
-
-                'tested_at' => $log->tested_at?->format('d M Y, H:i:s'),
-
-            ])
-
-            ->toArray();
-
-    }
-
-
-
-    private function loadActivityLogs(): void
-
-    {
-
-        $query = \App\Models\ActivityLog::query()
-
-            ->latest('created_at');
-
-
-
-        $search = trim($this->activitySearch);
-
-
-
-        if ($search !== '') {
-
-            $keyword = '%' . $search . '%';
-
-
-
-            $query->where(function ($q) use ($keyword) {
-
-                $q->where('title', 'like', $keyword)
-
-                    ->orWhere('description', 'like', $keyword)
-
-                    ->orWhere('action', 'like', $keyword)
-
-                    ->orWhere('category', 'like', $keyword)
-
-                    ->orWhere('metadata', 'like', $keyword);
-
-            });
-
-        }
-
-
-
-        if ($this->activityCategory !== 'all') {
-
-            $query->where('category', $this->activityCategory);
-
-        }
-
-
-
-        if ($this->activityStatus !== 'all') {
-
-            $query->where('status', $this->activityStatus);
-
-        }
-
-
-
-        if ($this->activityTimeframe !== 'all') {
-
-            $from = match ($this->activityTimeframe) {
-
-                'today' => now()->startOfDay(),
-
-                '7d' => now()->subDays(7)->startOfDay(),
-
-                '30d' => now()->subDays(30)->startOfDay(),
-
-                default => null,
-
-            };
-
-
-
-            if ($from) {
-
-                $query->where('created_at', '>=', $from);
-
-            }
-
-        }
-
-
-
-        $this->activityLogs = $query
-
-            ->limit(100)
-
-            ->get()
-
-            ->map(fn ($log) => [
-
-                'id' => $log->id,
-
-                'category' => $log->category,
-
-                'action' => $log->action,
-
-                'status' => $log->status,
-
-                'title' => $log->title,
-
-                'description' => $log->description,
-
-                'metadata' => $log->metadata ?? [],
-
-                'duration_ms' => $log->duration_ms,
-
-                'http_status' => $log->http_status,
-
-                'entity_type' => $log->entity_type,
-
-                'entity_id' => $log->entity_id,
-
-                'created_at' => $log->created_at?->format('d M Y, H:i:s'),
-
-                'created_at_human' => $log->created_at?->diffForHumans(),
-
-            ])
-
-            ->toArray();
-
-    }
-
-
-
-    public function refreshActivityLogs(): void
-
-    {
-
-        $this->loadActivityLogs();
-
-    }
-
-
-
-    public function getActivityLogCountProperty(): int
-
-    {
-
-        return \App\Models\ActivityLog::query()->count();
-
-    }
-
-
-
-    public function getFilteredActivityLogCountProperty(): int
-
-    {
-
-        return count($this->activityLogs);
-
-    }
-
-
-
-    public function getOpenAiStatusProperty(): array
-
-    {
-
-        $settings = \App\Models\OpenAiSetting::query()->first();
-
-
-
-        $latest = \App\Models\ActivityLog::query()
-
-            ->where('category', 'api')
-
-            ->where('action', 'test_openai_connection')
-
-            ->latest('created_at')
-
-            ->first();
-
-
-
-        if (! $settings || ! filled($settings->api_key)) {
-
-            return [
-
-                'state' => 'not_configured',
-
-                'label' => 'Not configured',
-
-                'subtitle' => 'API key belum disimpan',
-
-                'badge' => 'STEP 0',
-
-            ];
-
-        }
-
-
-
-        if ($latest?->status === 'success') {
-
-            return [
-
-                'state' => 'connected',
-
-                'label' => 'Connected',
-
-                'subtitle' => 'OpenAI API authenticated',
-
-                'badge' => 'LIVE',
-
-            ];
-
-        }
-
-
-
-        if ($latest?->status === 'error') {
-
-            return [
-
-                'state' => 'error',
-
-                'label' => 'Connection error',
-
-                'subtitle' => 'Periksa Connection Logs',
-
-                'badge' => 'CHECK',
-
-            ];
-
-        }
-
-
-
-        return [
-
-            'state' => 'configured',
-
-            'label' => 'Configured',
-
-            'subtitle' => 'Run connection test',
-
-            'badge' => 'STEP 1',
-
-        ];
-
-    }
-
-
-
-    public function getFavoriteCountProperty(): int
-
-    {
-
-        return \App\Models\GeneratedImage::query()
-
-            ->where('is_favorite', true)
-
-            ->count();
-
-    }
-
-
-
-    public function getStoresProperty()
-
-    {
-
-        return Store::query()
-
-            ->withCount(['templates', 'generations'])
-
-            ->when($this->storeSearch !== '', function ($query) {
-
-                $keyword = '%' . trim($this->storeSearch) . '%';
-
-                $query->where(function ($q) use ($keyword) {
-
-                    $q->where('name', 'like', $keyword)
-
-                        ->orWhere('brand_name', 'like', $keyword)
-
-                        ->orWhere('marketplace', 'like', $keyword);
-
-                });
-
-            })
-
-            ->when($this->storeStatus === 'active', fn ($query) => $query->where('is_active', true))
-
-            ->when($this->storeStatus === 'inactive', fn ($query) => $query->where('is_active', false))
-
-            ->orderBy('sort_order')
-
-            ->orderBy('name')
-
-            ->get();
-
-    }
-
-
-
-    public function getTotalStoresProperty(): int
-
-    {
-
-        return Store::count();
-
-    }
-
-
-
-    public function getActiveStoresProperty(): int
-
-    {
-
-        return Store::where('is_active', true)->count();
-
-    }
-
-
-
-    public function getTotalTemplatesProperty(): int
-
-    {
-
-        return (int) Store::withCount('templates')->get()->sum('templates_count');
-
-    }
-
-
-
-    public function getTotalGenerationsProperty(): int
-
-    {
-
-        return (int) Store::withCount('generations')->get()->sum('generations_count');
-
-    }
-
-
-
-    
-    /**
-     * Queue worker controls used directly from the dashboard sidebar.
-     */
-    // Worker status is refreshed on mount and after every worker action.
-    // Intentionally no wire:poll here: this dashboard has global Livewire loading
-    // indicators, so continuous polling makes the whole page appear to load forever.
-    public function refreshWorkerStatus(): void
-    {
-        try {
-            $this->assertWorkerControlAccess();
-
-            // Keep all OS/process detection in QueueWorkerManager.
-            // This prevents the Dashboard and the Artisan command from having
-            // two different definitions of "worker running".
-            $status = app(QueueWorkerManager::class)->status();
-
-            $this->workerStatus = [
-                'running' => (bool) ($status['running'] ?? false),
-                'pid' => $status['pid'] ?? null,
-                'queue' => (string) ($status['queue'] ?? config('queue.default', 'database')),
-                'started_at' => $status['started_at'] ?? null,
-            ];
-        } catch (\Throwable $e) {
-            report($e);
-
-            $this->workerStatus = [
-                'running' => false,
-                'pid' => null,
-                'queue' => (string) config('queue.default', 'database'),
-                'started_at' => null,
-            ];
-        }
-    }
-
-    public function startQueueWorker(): void
-    {
-        try {
-            $this->assertWorkerControlAccess();
-
-            $result = app(QueueWorkerManager::class)->start();
-            $this->refreshWorkerStatus();
-
-            $this->dispatch(
-                'toast',
-                type: ($result['success'] ?? false) ? 'success' : 'info',
-                title: ($result['success'] ?? false) ? 'Worker berhasil dijalankan' : 'Worker sudah berjalan',
-                message: (string) ($result['message'] ?? 'Queue worker siap digunakan.'),
-            );
-        } catch (\Throwable $e) {
-            report($e);
-            $this->refreshWorkerStatus();
-
-            $this->dispatch(
-                'toast',
-                type: 'error',
-                title: 'Worker gagal dijalankan',
-                message: $e->getMessage(),
-            );
-        }
-    }
-
-    public function stopQueueWorker(): void
-    {
-        try {
-            $this->assertWorkerControlAccess();
-
-            $result = app(QueueWorkerManager::class)->stop();
-            $this->refreshWorkerStatus();
-
-            $this->dispatch(
-                'toast',
-                type: ($result['success'] ?? false) ? 'success' : 'info',
-                title: ($result['success'] ?? false) ? 'Worker stopped' : 'Worker sudah berhenti',
-                message: (string) ($result['message'] ?? 'Queue worker tidak aktif.'),
-            );
-        } catch (\Throwable $e) {
-            report($e);
-            $this->refreshWorkerStatus();
-
-            $this->dispatch(
-                'toast',
-                type: 'error',
-                title: 'Worker gagal dihentikan',
-                message: $e->getMessage(),
-            );
-        }
-    }
-
-    public function restartQueueWorker(): void
-    {
-        try {
-            $this->assertWorkerControlAccess();
-
-            $result = app(QueueWorkerManager::class)->restart();
-            $this->refreshWorkerStatus();
-
-            $this->dispatch(
-                'toast',
-                type: ($result['success'] ?? false) ? 'success' : 'error',
-                title: ($result['success'] ?? false) ? 'Worker restarted' : 'Restart worker gagal',
-                message: (string) ($result['message'] ?? 'Queue worker sudah direstart.'),
-            );
-        } catch (\Throwable $e) {
-            report($e);
-            $this->refreshWorkerStatus();
-
-            $this->dispatch(
-                'toast',
-                type: 'error',
-                title: 'Worker gagal direstart',
-                message: $e->getMessage(),
-            );
-        }
-    }
-
-    private function assertWorkerControlAccess(): void
-    {
-        abort_unless(auth()->check(), 403);
-    }
-
-
-public function getUserInitialsProperty(): string
-
-    {
-
-        $name = trim((string) ($this->user?->name ?? 'User'));
-
-        $parts = preg_split('/\s+/', $name) ?: [];
-
-
-
-        return collect($parts)
-
-            ->filter()
-
-            ->take(2)
-
-            ->map(fn ($part) => strtoupper(substr($part, 0, 1)))
-
-            ->implode('') ?: 'U';
-
-    }
-
-
-
-    public function openStore(): void
-
-    {
-
-        $this->activeSection = 'stores';
-
-
-
-        $this->dispatch('workspace-section-changed', section: 'stores');
-
-    }
-
-
-
-    public function openDashboard(): void
-
-    {
-
-        $this->activeSection = 'dashboard';
-
-
-
-        $this->dispatch('workspace-section-changed', section: 'dashboard');
-
-    }
-
-
-
-    public function openTemplates(): void
-
-    {
-
-        $this->activeSection = 'templates';
-
-    }
-
-
-
-    public function openGenerator(): void
-
-    {
-
-        $this->activeSection = 'generator';
-
-    }
-
-
-
-    public function openSettings(): void
-
-    {
-
-        $this->activeSection = 'settings-general';
-
-        $this->activeTab = 'general';
-
-    }
-
-
-
-    public function openGeneralSettings(): void
-
-    {
-
-        $this->activeSection = 'settings-general';
-
-        $this->activeTab = 'general';
-
-    }
-
-
-
-    public function openOpenAiSettings(): void
-
-    {
-
-        $this->activeSection = 'settings-openai';
-
-        $this->activeTab = 'openai';
-
-    }
-
-
-
-    public function selectTab(string $tab): void
-
-    {
-
-        if (! in_array($tab, ['general', 'openai'], true)) {
-
-            return;
-
-        }
-
-
-
-        $this->activeTab = $tab;
-
-        $this->activeSection = $tab === 'openai'
-
-            ? 'settings-openai'
-
-            : 'settings-general';
-
-    }
-
-
-
-    public function testConnection(): void
-
-    {
-
-        try {
-
-            $result = app(\App\Services\OpenAiService::class)->testConnection(
-
-                apiKey: trim($this->apiKey) !== '' ? trim($this->apiKey) : null,
-
-                model: $this->imageModel,
-
-            );
-
-
-
-            $this->hasOpenAiKey = $result['has_key'];
-
-
-
-            $this->dispatch(
-
-                'openai-test-result',
-
-                type: $result['status'],
-
-                message: $result['message'],
-
-                detail: $result['detail'],
-
-            );
-
-
-
-            $this->dispatch(
-
-                'toast',
-
-                type: $result['status'] === 'success' ? 'success' : ($result['status'] === 'warning' ? 'warning' : 'error'),
-
-                title: $result['title'],
-
-                message: $result['message'],
-
-            );
-
-        } catch (\Throwable $e) {
-
-            report($e);
-
-
-
-            $this->dispatch(
-
-                'openai-test-result',
-
-                type: 'error',
-
-                message: 'Test koneksi gagal.',
-
-                detail: 'Terjadi error internal saat menghubungi OpenAI.',
-
-            );
-
-
-
-            $this->dispatch(
-
-                'toast',
-
-                type: 'error',
-
-                title: 'Test koneksi gagal',
-
-                message: 'Terjadi error internal. Periksa log Laravel.',
-
-            );
-
-        }
-
-        $this->loadActivityLogs();
-
-        $this->loadOpenAiLogs();
-
-        $this->loadVercelGatewayLogs();
-
-    }
-
-
-
-    public function clearActivityLogs(): void
-
-    {
-
-        try {
-
-            \App\Models\ActivityLog::query()->delete();
-
-            $this->loadActivityLogs();
-
-
-
-            $this->dispatch(
-
-                'toast',
-
-                type: 'success',
-
-                title: 'Activity logs dibersihkan',
-
-                message: 'Seluruh riwayat aktivitas sudah dihapus.'
-
-            );
-
-        } catch (\Throwable $e) {
-
-            report($e);
-
-
-
-            $this->dispatch(
-
-                'toast',
-
-                type: 'error',
-
-                title: 'Gagal membersihkan logs',
-
-                message: 'Activity logs tidak dapat dihapus.'
-
-            );
-
-        }
-
-    }
-
-
-
-    public function saveOpenAi(): void
-
-    {
-
-        try {
-
-            $this->validate([
-
-                'apiKey' => ['nullable', 'string', 'max:500'],
-
-            ]);
-
-
-
-            $existing = \App\Models\OpenAiSetting::query()->first();
-
-            $newApiKey = trim((string) $this->apiKey);
-
-
-
-            if ($newApiKey === '' && ! filled($existing?->api_key)) {
-
-                $this->dispatch(
-
-                    'toast',
-
-                    type: 'warning',
-
-                    title: 'API Key belum diisi',
-
-                    message: 'Masukkan API Key OpenAI terlebih dahulu.'
-
-                );
-
-
-
-                return;
-
-            }
-
-
-
-            $savedSettings = app(\App\Services\OpenAiService::class)->saveApiKey(
-
-                $newApiKey !== '' ? $newApiKey : null,
-
-            );
-
-
-
-            $this->hasOpenAiKey = filled($savedSettings->api_key);
-
-
-
-            if (! $this->hasOpenAiKey) {
-
-                $this->dispatch(
-
-                    'toast',
-
-                    type: 'error',
-
-                    title: 'API Key gagal disimpan',
-
-                    message: 'Credential tidak berhasil tersimpan di database.'
-
-                );
-
-
-
-                return;
-
-            }
-
-
-
-            app(\App\Services\ActivityLogService::class)->success(
-
-                category: 'api',
-
-                action: 'update_openai_configuration',
-
-                title: 'OpenAI API configuration diperbarui.',
-
-                description: 'Credential OpenAI berhasil disimpan melalui backend.',
-
-            );
-
-
-
-            $this->apiKey = '';
-
-            $this->showApiKey = false;
-
-            $this->loadActivityLogs();
-
-
-
-            $this->dispatch(
-
-                'toast',
-
-                type: 'success',
-
-                title: 'Konfigurasi tersimpan',
-
-                message: 'OpenAI API siap digunakan oleh Product Generator.'
-
-            );
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-
-            $this->dispatch(
-
-                'toast',
-
-                type: 'warning',
-
-                title: 'Periksa konfigurasi',
-
-                message: $e->validator->errors()->first()
-
-            );
-
-
-
-            throw $e;
-
-        } catch (\Throwable $e) {
-
-            report($e);
-
-
-
-            $this->dispatch(
-
-                'toast',
-
-                type: 'error',
-
-                title: 'Gagal menyimpan',
-
-                message: 'Konfigurasi OpenAI tidak dapat disimpan.'
-
-            );
-
-        }
-
-    }
-
-
-
-    public function saveGeneral(): void
-
-    {
-
-        $this->dispatch(
-
-            'toast',
-
-            type: 'success',
-
-            title: 'Preferences siap',
-
-            message: 'Pengaturan workspace sudah siap disimpan.'
-
-        );
-
-    }
-
-};
-
-
-
 ?>
-
-
 
 <div class="min-h-screen bg-[#f4f4f5] text-zinc-950">
 
 
 
-    {{-- Ambient page background --}}
+    
 
     <div class="pointer-events-none fixed inset-0 overflow-hidden">
 
@@ -1084,17 +21,17 @@ public function getUserInitialsProperty(): string
 
 
 
-    {{-- MOBILE OVERLAY --}}
+    
 
     <div id="mobileOverlay" class="dashboard-overlay"></div>
 
-{{-- SIDEBAR --}}
+
 
     <aside id="dashboardSidebar" class="dashboard-sidebar">
 
 
 
-        {{-- Sidebar ambient glow --}}
+        
 
         <div class="sidebar-glow sidebar-glow-red"></div>
 
@@ -1102,7 +39,7 @@ public function getUserInitialsProperty(): string
 
 
 
-        {{-- BRAND / LOGO ONLY --}}
+        
 
         <div class="sidebar-brand">
 
@@ -1110,7 +47,7 @@ public function getUserInitialsProperty(): string
 
                 <img
 
-                    src="{{ asset('images/logo-rizky-moto-shop.png') }}"
+                    src="<?php echo e(asset('images/logo-rizky-moto-shop.png')); ?>"
 
                     alt="Rizky Moto Shop"
 
@@ -1146,7 +83,7 @@ public function getUserInitialsProperty(): string
 
 
 
-        {{-- NAVIGATION --}}
+        
 
         <div class="sidebar-scroll">
 
@@ -1160,7 +97,7 @@ public function getUserInitialsProperty(): string
 
                 <div class="nav-list">
 
-                    <button type="button" class="nav-item {{ $activeSection === 'dashboard' ? 'active' : '' }}" wire:click="openDashboard">
+                    <button type="button" class="nav-item <?php echo e($activeSection === 'dashboard' ? 'active' : ''); ?>" wire:click="openDashboard">
 
                         <span class="nav-icon">
 
@@ -1218,7 +155,7 @@ public function getUserInitialsProperty(): string
 
                 <div class="nav-list">
 
-                    <button type="button" class="nav-item {{ $activeSection === 'stores' ? 'active' : '' }}" wire:click="openStore">
+                    <button type="button" class="nav-item <?php echo e($activeSection === 'stores' ? 'active' : ''); ?>" wire:click="openStore">
 
                         <span class="nav-icon">
 
@@ -1246,7 +183,7 @@ public function getUserInitialsProperty(): string
 
                         type="button"
 
-                        class="nav-item {{ $activeSection === 'templates' ? 'active' : '' }}"
+                        class="nav-item <?php echo e($activeSection === 'templates' ? 'active' : ''); ?>"
 
                         wire:click="openTemplates"
 
@@ -1318,11 +255,7 @@ public function getUserInitialsProperty(): string
 
 
 
-            {{-- =========================================================
-
-                SETTINGS NAVIGATION
-
-                ========================================================= --}}
+            
 
             <div class="nav-section rms-settings-nav">
 
@@ -1338,7 +271,7 @@ public function getUserInitialsProperty(): string
 
                         type="button"
 
-                        class="nav-item {{ str_starts_with($activeSection, 'settings-') ? 'active' : '' }}"
+                        class="nav-item <?php echo e(str_starts_with($activeSection, 'settings-') ? 'active' : ''); ?>"
 
                         wire:click="openSettings"
 
@@ -1406,7 +339,7 @@ public function getUserInitialsProperty(): string
 
 
 
-        {{-- AI ENGINE / QUEUE WORKER STATUS --}}
+        
         <div class="sidebar-api">
             <div class="api-status-card worker-status-card">
                 <div class="api-status-top">
@@ -1417,33 +350,33 @@ public function getUserInitialsProperty(): string
                             <div class="api-subtitle">Creative generation</div>
                         </div>
                     </div>
-                    <span class="api-live-dot {{ $this->workerStatus['running'] ? 'worker-live' : 'worker-offline' }}" aria-hidden="true"></span>
+                    <span class="api-live-dot <?php echo e($this->workerStatus['running'] ? 'worker-live' : 'worker-offline'); ?>" aria-hidden="true"></span>
                 </div>
 
                 <div class="worker-mini-divider"></div>
 
                 <div class="worker-status-line">
-                    <span class="api-status-dot {{ $this->workerStatus['running'] ? 'is-connected' : 'is-error' }}"></span>
+                    <span class="api-status-dot <?php echo e($this->workerStatus['running'] ? 'is-connected' : 'is-error'); ?>"></span>
                     <div class="worker-status-copy">
-                        <strong>{{ $this->workerStatus['running'] ? 'Worker Running' : 'Worker Stopped' }}</strong>
-                        <span>{{ $this->workerStatus['running'] ? 'Queue siap memproses generation' : 'Generation queue sedang berhenti' }}</span>
+                        <strong><?php echo e($this->workerStatus['running'] ? 'Worker Running' : 'Worker Stopped'); ?></strong>
+                        <span><?php echo e($this->workerStatus['running'] ? 'Queue siap memproses generation' : 'Generation queue sedang berhenti'); ?></span>
                     </div>
-                    <span class="api-status-badge">{{ $this->workerStatus['running'] ? 'LIVE' : 'OFF' }}</span>
+                    <span class="api-status-badge"><?php echo e($this->workerStatus['running'] ? 'LIVE' : 'OFF'); ?></span>
                 </div>
 
                 <div class="worker-meta-grid">
                     <div>
                         <small>QUEUE</small>
-                        <strong>{{ $this->workerStatus['queue'] }}</strong>
+                        <strong><?php echo e($this->workerStatus['queue']); ?></strong>
                     </div>
                     <div>
                         <small>PID</small>
-                        <strong>{{ $this->workerStatus['pid'] ?: '—' }}</strong>
+                        <strong><?php echo e($this->workerStatus['pid'] ?: '—'); ?></strong>
                     </div>
                 </div>
 
                 <div class="worker-actions">
-                    @if ($this->workerStatus['running'])
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($this->workerStatus['running']): ?>
                         <button type="button" class="worker-action worker-action-restart"
                             wire:click="restartQueueWorker" wire:loading.attr="disabled" wire:target="restartQueueWorker">
                             <span wire:loading.remove wire:target="restartQueueWorker">↻</span>
@@ -1456,19 +389,19 @@ public function getUserInitialsProperty(): string
                             <span wire:loading wire:target="stopQueueWorker" class="worker-spinner">◌</span>
                             Stop
                         </button>
-                    @else
+                    <?php else: ?>
                         <button type="button" class="worker-action worker-action-start"
                             wire:click="startQueueWorker" wire:loading.attr="disabled" wire:target="startQueueWorker">
                             <span wire:loading.remove wire:target="startQueueWorker">▶</span>
                             <span wire:loading wire:target="startQueueWorker" class="worker-spinner">◌</span>
                             Start Worker
                         </button>
-                    @endif
+                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                 </div>
 
-                @if ($this->workerStatus['running'] && $this->workerStatus['started_at'])
-                    <div class="worker-started-at">Started {{ $this->workerStatus['started_at'] }}</div>
-                @endif
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($this->workerStatus['running'] && $this->workerStatus['started_at']): ?>
+                    <div class="worker-started-at">Started <?php echo e($this->workerStatus['started_at']); ?></div>
+                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
                 <div class="worker-api-footer">
                     <button type="button" class="worker-refresh" wire:click="refreshWorkerStatus" wire:loading.attr="disabled" wire:target="refreshWorkerStatus" title="Refresh worker status" aria-label="Refresh worker status">
@@ -1476,10 +409,11 @@ public function getUserInitialsProperty(): string
                         <span wire:loading wire:target="refreshWorkerStatus" class="worker-spinner">◌</span>
                     </button>
                     <span>
-                        <i class="worker-footer-dot {{ $this->openAiStatus['state'] === 'connected' ? 'is-online' : '' }}"></i>
-                        API {{ $this->openAiStatus['label'] }}
+                        <i class="worker-footer-dot <?php echo e($this->openAiStatus['state'] === 'connected' ? 'is-online' : ''); ?>"></i>
+                        API <?php echo e($this->openAiStatus['label']); ?>
+
                     </span>
-                    <span class="worker-step">{{ $this->workerStatus['running'] ? 'ENGINE READY' : 'ENGINE PAUSED' }}</span>
+                    <span class="worker-step"><?php echo e($this->workerStatus['running'] ? 'ENGINE READY' : 'ENGINE PAUSED'); ?></span>
                 </div>
             </div>
         </div>
@@ -1490,13 +424,13 @@ public function getUserInitialsProperty(): string
 
 
 
-    {{-- MAIN AREA --}}
+    
 
     <div class="dashboard-main">
 
 
 
-        {{-- TOPBAR --}}
+        
 
         <header class="topbar">
 
@@ -1566,7 +500,7 @@ public function getUserInitialsProperty(): string
 
 
 
-                {{-- NOTIFICATION MENU --}}
+                
 
                 <div class="notification-menu" id="notificationMenu">
 
@@ -1772,7 +706,7 @@ public function getUserInitialsProperty(): string
 
 
 
-                {{-- PROFILE MENU --}}
+                
 
                 <div class="profile-menu" id="profileMenu">
 
@@ -1794,7 +728,8 @@ public function getUserInitialsProperty(): string
 
                         <span class="profile-avatar">
 
-                            {{ $this->userInitials }}
+                            <?php echo e($this->userInitials); ?>
+
 
                         </span>
 
@@ -1804,7 +739,8 @@ public function getUserInitialsProperty(): string
 
                             <span class="profile-name">
 
-                                {{ $this->user?->name ?? 'User' }}
+                                <?php echo e($this->user?->name ?? 'User'); ?>
+
 
                             </span>
 
@@ -1858,7 +794,8 @@ public function getUserInitialsProperty(): string
 
                             <div class="profile-dropdown-avatar">
 
-                                {{ $this->userInitials }}
+                                <?php echo e($this->userInitials); ?>
+
 
                             </div>
 
@@ -1868,7 +805,8 @@ public function getUserInitialsProperty(): string
 
                                 <strong>
 
-                                    {{ $this->user?->name ?? 'User' }}
+                                    <?php echo e($this->user?->name ?? 'User'); ?>
+
 
                                 </strong>
 
@@ -1876,7 +814,8 @@ public function getUserInitialsProperty(): string
 
                                 <span>
 
-                                    {{ $this->user?->email ?? '-' }}
+                                    <?php echo e($this->user?->email ?? '-'); ?>
+
 
                                 </span>
 
@@ -1944,13 +883,13 @@ public function getUserInitialsProperty(): string
 
                             method="POST"
 
-                            action="{{ route('logout') }}"
+                            action="<?php echo e(route('logout')); ?>"
 
                             class="profile-logout-form"
 
                         >
 
-                            @csrf
+                            <?php echo csrf_field(); ?>
 
 
 
@@ -2018,21 +957,17 @@ public function getUserInitialsProperty(): string
 
 
 
-            @if ($activeSection === 'dashboard')
+            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($activeSection === 'dashboard'): ?>
 
-            <div class="rms-content-enter" wire:key="workspace-dashboard">
-
-
+            <div class="rms-content-enter" <?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::$currentLoop['key'] = 'workspace-dashboard'; ?>wire:key="workspace-dashboard">
 
 
 
 
 
-            {{-- =========================================================
 
-                 PREMIUM PAGE INTRO
 
-                 ======================================================== --}}
+            
 
             <section class="workspace-intro reveal reveal-1">
 
@@ -2054,7 +989,7 @@ public function getUserInitialsProperty(): string
 
                         Good afternoon,
 
-                        <span>{{ $this->user?->name ?? 'User' }}.</span>
+                        <span><?php echo e($this->user?->name ?? 'User'); ?>.</span>
 
                     </h1>
 
@@ -2126,11 +1061,7 @@ public function getUserInitialsProperty(): string
 
 
 
-            {{-- =========================================================
-
-                 HERO — AI CREATIVE ENGINE
-
-                 ========================================================= --}}
+            
 
             <section class="premium-hero reveal reveal-2">
 
@@ -2250,7 +1181,7 @@ public function getUserInitialsProperty(): string
 
 
 
-                {{-- AI PIPELINE VISUAL --}}
+                
 
                 <div class="ai-engine-visual">
 
@@ -2344,11 +1275,7 @@ public function getUserInitialsProperty(): string
 
 
 
-            {{-- =========================================================
-
-                 KPI / WORKSPACE OVERVIEW
-
-                 ========================================================= --}}
+            
 
             <section class="dashboard-section-heading reveal reveal-3">
 
@@ -2380,7 +1307,7 @@ public function getUserInitialsProperty(): string
 
 
 
-                {{-- STORES --}}
+                
 
                 <article class="premium-stat-card premium-stat-red">
 
@@ -2418,7 +1345,7 @@ public function getUserInitialsProperty(): string
 
                     <div class="premium-stat-label">Active Stores</div>
 
-                    <div class="premium-stat-value">{{ str_pad((string) $this->activeStores, 2, '0', STR_PAD_LEFT) }}</div>
+                    <div class="premium-stat-value"><?php echo e(str_pad((string) $this->activeStores, 2, '0', STR_PAD_LEFT)); ?></div>
 
 
 
@@ -2426,7 +1353,7 @@ public function getUserInitialsProperty(): string
 
                         <span>Connected marketplace stores</span>
 
-                        <strong>{{ $this->totalStores > 0 ? round(($this->activeStores / $this->totalStores) * 100) : 0 }}%</strong>
+                        <strong><?php echo e($this->totalStores > 0 ? round(($this->activeStores / $this->totalStores) * 100) : 0); ?>%</strong>
 
                     </div>
 
@@ -2434,7 +1361,7 @@ public function getUserInitialsProperty(): string
 
                     <div class="premium-stat-progress">
 
-                        <span style="width: {{ $this->totalStores > 0 ? round(($this->activeStores / $this->totalStores) * 100) : 0 }}%"></span>
+                        <span style="width: <?php echo e($this->totalStores > 0 ? round(($this->activeStores / $this->totalStores) * 100) : 0); ?>%"></span>
 
                     </div>
 
@@ -2446,7 +1373,7 @@ public function getUserInitialsProperty(): string
 
 
 
-                {{-- TEMPLATES --}}
+                
 
                 <article class="premium-stat-card">
 
@@ -2482,7 +1409,7 @@ public function getUserInitialsProperty(): string
 
                     <div class="premium-stat-label">Templates</div>
 
-                    <div class="premium-stat-value">{{ $this->totalTemplates }}</div>
+                    <div class="premium-stat-value"><?php echo e($this->totalTemplates); ?></div>
 
 
 
@@ -2490,7 +1417,7 @@ public function getUserInitialsProperty(): string
 
                         <span>Configured visual templates</span>
 
-                        <strong>{{ $this->totalTemplates }} total</strong>
+                        <strong><?php echo e($this->totalTemplates); ?> total</strong>
 
                     </div>
 
@@ -2498,7 +1425,7 @@ public function getUserInitialsProperty(): string
 
                     <div class="premium-stat-progress violet">
 
-                        <span style="width: {{ $this->totalTemplates > 0 ? 100 : 0 }}%"></span>
+                        <span style="width: <?php echo e($this->totalTemplates > 0 ? 100 : 0); ?>%"></span>
 
                     </div>
 
@@ -2510,7 +1437,7 @@ public function getUserInitialsProperty(): string
 
 
 
-                {{-- GENERATIONS --}}
+                
 
                 <article class="premium-stat-card">
 
@@ -2544,7 +1471,7 @@ public function getUserInitialsProperty(): string
 
                     <div class="premium-stat-label">Generations</div>
 
-                    <div class="premium-stat-value">{{ $this->totalGenerations }}</div>
+                    <div class="premium-stat-value"><?php echo e($this->totalGenerations); ?></div>
 
 
 
@@ -2560,7 +1487,7 @@ public function getUserInitialsProperty(): string
 
                     <div class="premium-stat-progress orange">
 
-                        <span style="width: {{ $this->totalGenerations > 0 ? 100 : 0 }}%"></span>
+                        <span style="width: <?php echo e($this->totalGenerations > 0 ? 100 : 0); ?>%"></span>
 
                     </div>
 
@@ -2572,7 +1499,7 @@ public function getUserInitialsProperty(): string
 
 
 
-                {{-- FAVORITES --}}
+                
 
                 <article class="premium-stat-card">
 
@@ -2604,7 +1531,7 @@ public function getUserInitialsProperty(): string
 
                     <div class="premium-stat-label">Favorites</div>
 
-                    <div class="premium-stat-value">{{ $this->favoriteCount }}</div>
+                    <div class="premium-stat-value"><?php echo e($this->favoriteCount); ?></div>
 
 
 
@@ -2612,7 +1539,7 @@ public function getUserInitialsProperty(): string
 
                         <span>Saved visual results</span>
 
-                        <strong>{{ $this->favoriteCount }} saved</strong>
+                        <strong><?php echo e($this->favoriteCount); ?> saved</strong>
 
                     </div>
 
@@ -2620,7 +1547,7 @@ public function getUserInitialsProperty(): string
 
                     <div class="premium-stat-progress green">
 
-                        <span style="width: {{ $this->favoriteCount > 0 ? 100 : 0 }}%"></span>
+                        <span style="width: <?php echo e($this->favoriteCount > 0 ? 100 : 0); ?>%"></span>
 
                     </div>
 
@@ -2636,17 +1563,13 @@ public function getUserInitialsProperty(): string
 
 
 
-            {{-- =========================================================
-
-                 LOWER WORKSPACE
-
-                 ========================================================= --}}
+            
 
             <section class="premium-lower-grid reveal reveal-4">
 
 
 
-                {{-- QUICK ACCESS --}}
+                
 
                 <div class="premium-content-card quick-card">
 
@@ -2770,7 +1693,7 @@ public function getUserInitialsProperty(): string
 
 
 
-                {{-- RECENT ACTIVITY --}}
+                
 
                 <div class="premium-content-card activity-card">
 
@@ -2884,11 +1807,7 @@ public function getUserInitialsProperty(): string
 
 
 
-            {{-- =========================================================
-
-                 SYSTEM / BRAND FOOTER
-
-                 ========================================================= --}}
+            
 
             <section class="premium-system-strip reveal reveal-5">
 
@@ -2902,7 +1821,7 @@ public function getUserInitialsProperty(): string
 
                         <img
 
-                            src="{{ asset('images/logo-rizky-moto-shop.png') }}"
+                            src="<?php echo e(asset('images/logo-rizky-moto-shop.png')); ?>"
 
                             alt="Rizky Moto Shop"
 
@@ -2948,7 +1867,8 @@ public function getUserInitialsProperty(): string
 
                     <span class="premium-system-version">
 
-                        OPENAI: {{ $this->openAiStatus['label'] }}
+                        OPENAI: <?php echo e($this->openAiStatus['label']); ?>
+
 
                     </span>
 
@@ -2966,69 +1886,144 @@ public function getUserInitialsProperty(): string
 
 
 
-            @elseif ($activeSection === 'stores')
+            <?php elseif($activeSection === 'stores'): ?>
 
                 <div
 
                     class="workspace-section-shell rms-content-enter"
 
-                    wire:key="workspace-stores"
+                    <?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::$currentLoop['key'] = 'workspace-stores'; ?>wire:key="workspace-stores"
 
                 >
 
-                    <livewire:stores />
+                    <?php
+$__split = function ($name, $params = []) {
+    return [$name, $params];
+};
+[$__name, $__params] = $__split('stores', []);
+
+$__keyOuter = $__key ?? null;
+
+$__key = null;
+$__componentSlots = [];
+
+$__key ??= \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::generateKey('lw-1040938067-0', $__key);
+
+$__html = app('livewire')->mount($__name, $__params, $__key, $__componentSlots);
+
+echo $__html;
+
+unset($__html);
+unset($__key);
+$__key = $__keyOuter;
+unset($__keyOuter);
+unset($__name);
+unset($__params);
+unset($__componentSlots);
+unset($__split);
+?>
 
                 </div>
 
 
 
-            @elseif ($activeSection === 'templates')
+            <?php elseif($activeSection === 'templates'): ?>
 
                 <div
 
                     class="workspace-section-shell rms-content-enter"
 
-                    wire:key="workspace-templates"
+                    <?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::$currentLoop['key'] = 'workspace-templates'; ?>wire:key="workspace-templates"
 
                 >
 
-                    <livewire:dashboard.templates.index />
+                    <?php
+$__split = function ($name, $params = []) {
+    return [$name, $params];
+};
+[$__name, $__params] = $__split('dashboard.templates.index', []);
+
+$__keyOuter = $__key ?? null;
+
+$__key = null;
+$__componentSlots = [];
+
+$__key ??= \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::generateKey('lw-1040938067-1', $__key);
+
+$__html = app('livewire')->mount($__name, $__params, $__key, $__componentSlots);
+
+echo $__html;
+
+unset($__html);
+unset($__key);
+$__key = $__keyOuter;
+unset($__keyOuter);
+unset($__name);
+unset($__params);
+unset($__componentSlots);
+unset($__split);
+?>
 
                 </div>
 
 
 
-            @elseif ($activeSection === 'generator')
+            <?php elseif($activeSection === 'generator'): ?>
 
                 <div
 
                     class="workspace-section-shell rms-content-enter"
 
-                    wire:key="workspace-generator"
+                    <?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::$currentLoop['key'] = 'workspace-generator'; ?>wire:key="workspace-generator"
 
                 >
 
-                    <livewire:dashboard.generator.index />
+                    <?php
+$__split = function ($name, $params = []) {
+    return [$name, $params];
+};
+[$__name, $__params] = $__split('dashboard.generator.index', []);
+
+$__keyOuter = $__key ?? null;
+
+$__key = null;
+$__componentSlots = [];
+
+$__key ??= \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::generateKey('lw-1040938067-2', $__key);
+
+$__html = app('livewire')->mount($__name, $__params, $__key, $__componentSlots);
+
+echo $__html;
+
+unset($__html);
+unset($__key);
+$__key = $__keyOuter;
+unset($__keyOuter);
+unset($__name);
+unset($__params);
+unset($__componentSlots);
+unset($__split);
+?>
 
                 </div>
 
 
 
-            @elseif (in_array($activeSection, ['settings-general', 'settings-openai'], true))
+            <?php elseif(in_array($activeSection, ['settings-general', 'settings-openai'], true)): ?>
 
                 <div
 
                     class="workspace-section-shell rms-content-enter rms-settings-section-shell"
 
-                    wire:key="workspace-settings"
+                    <?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::$currentLoop['key'] = 'workspace-settings'; ?>wire:key="workspace-settings"
 
                 >
 
-                    @include('livewire.dashboard.settings.index')
+                    <?php echo $__env->make('livewire.dashboard.settings.index', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
                 </div>
 
-            @endif
+            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
 
 
@@ -3038,9 +2033,9 @@ public function getUserInitialsProperty(): string
 
 
 
-    {{-- UNIVERSAL TOAST HOST --}}
+    
 
-    @teleport('body')
+    <template x-teleport="<?php echo e('body'); ?>">
 
         <div
 
@@ -3160,7 +2155,7 @@ public function getUserInitialsProperty(): string
 
         </div>
 
-    @endteleport
+    </template>
 
 
 
@@ -3217,8 +2212,4 @@ public function getUserInitialsProperty(): string
 
     </style>
 
-</div>
-
-
-
-
+</div><?php /**PATH D:\Website\Tools Generating Image Rizky Motoshop\rizky-moto-ai\storage\framework\views/livewire/views/f04a7103.blade.php ENDPATH**/ ?>

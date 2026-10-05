@@ -15,7 +15,107 @@ use Throwable;
 
 class OpenAiImageService
 {
-    private const BASE_URL = 'https://api.openai.com/v1';
+    private const BASE_URL = 'https://ai-gateway.vercel.sh/v1';
+
+    private const DEFAULT_IMAGE_MODEL = 'bytedance/seedream-5.0-pro';
+
+    private const DEFAULT_TITLE_MODEL = 'openai/gpt-5.6-luna';
+
+    /**
+     * Single source of truth for the Generator's default image model.
+     */
+    public function defaultImageModel(): string
+    {
+        return self::DEFAULT_IMAGE_MODEL;
+    }
+
+    /**
+     * Return image-capable models exposed by Vercel AI Gateway.
+     * The default model is always promoted to the top when present.
+     */
+    public function availableImageModels(): array
+    {
+        return cache()->remember('vercel.gateway.image-models', now()->addMinutes(30), function (): array {
+            try {
+                $response = Http::acceptJson()
+                    ->connectTimeout(8)
+                    ->timeout(20)
+                    ->get(self::BASE_URL . '/models');
+
+                if (! $response->successful()) {
+                    return $this->defaultImageModelFallback();
+                }
+
+                $models = collect($response->json('data', []))
+                    ->filter(function (array $model): bool {
+                        $type = strtolower((string) ($model['type'] ?? ''));
+                        $tags = collect($model['tags'] ?? [])
+                            ->map(fn ($tag) => strtolower((string) $tag));
+
+                        $outputModalities = collect(data_get($model, 'modalities.output', []))
+                            ->map(fn ($modality) => strtolower((string) $modality));
+
+                        return $type === 'image'
+                            || $tags->contains('image-generation')
+                            || $outputModalities->contains('image');
+                    })
+                    ->map(function (array $model): array {
+                        $id = trim((string) ($model['id'] ?? ''));
+                        $name = trim((string) ($model['name'] ?? $id));
+                        $provider = str_contains($id, '/')
+                            ? (string) str($id)->before('/')
+                            : ((string) ($model['owned_by'] ?? 'Vercel AI Gateway'));
+
+                        return [
+                            'id' => $id,
+                            'value' => $id,
+                            'label' => $name !== '' ? $name : $id,
+                            'description' => 'Vercel AI Gateway · ' . $provider,
+                            'icon' => 'AI',
+                            'owned_by' => $provider,
+                            'type' => 'image',
+                        ];
+                    })
+                    ->filter(fn (array $model): bool => $model['id'] !== '')
+                    ->unique('id')
+                    ->values();
+
+                if ($models->isEmpty()) {
+                    return $this->defaultImageModelFallback();
+                }
+
+                $default = self::DEFAULT_IMAGE_MODEL;
+
+                return $models
+                    ->sortBy(function (array $model) use ($default): array {
+                        return [
+                            $model['id'] === $default ? 0 : 1,
+                            strtolower((string) $model['label']),
+                            strtolower((string) $model['id']),
+                        ];
+                    })
+                    ->values()
+                    ->all();
+            } catch (Throwable $e) {
+                report($e);
+
+                return $this->defaultImageModelFallback();
+            }
+        });
+    }
+
+    private function defaultImageModelFallback(): array
+    {
+        return [[
+            'id' => self::DEFAULT_IMAGE_MODEL,
+            'value' => self::DEFAULT_IMAGE_MODEL,
+            'label' => self::DEFAULT_IMAGE_MODEL,
+            'description' => 'Vercel AI Gateway · Default image model',
+            'icon' => 'AI',
+            'owned_by' => 'Vercel AI Gateway',
+            'type' => 'image',
+        ]];
+    }
 
     public function generate(
         User $user,
@@ -36,7 +136,7 @@ class OpenAiImageService
         $httpErrorLogged = false;
         $hasInstalledReference = (bool) $imageTwo;
         $hasTemplateReference = $this->hasTemplateReference($template);
-        $attachTemplateReference = $hasTemplateReference && $hasInstalledReference;
+        $attachTemplateReference = $hasTemplateReference;
         $hasStoreLogo = $this->hasStoreLogo($store);
         $generationMode = $this->generationMode($hasInstalledReference);
         $customTitle = $this->normalizeCustomTitle($customTitle);
@@ -49,8 +149,8 @@ class OpenAiImageService
         $this->activity()->processing(
             action: 'generate_openai_image',
             category: 'generator',
-            title: 'Generate AI image dimulai.',
-            description: 'Generator menerima request dan mulai menyiapkan input untuk OpenAI.',
+            title: 'Generate AI image via Vercel dimulai.',
+            description: 'Generator menerima request dan mulai menyiapkan input untuk Vercel AI Gateway.',
             metadata: [
                 'source' => 'dashboard_generator',
                 'store_id' => $store->id,
@@ -62,6 +162,7 @@ class OpenAiImageService
                 'generation_mode' => $generationMode,
                 'title_source' => $titleSource,
                 'custom_title' => $customTitle,
+                'final_title' => $customTitle,
                 'has_template_reference' => $hasTemplateReference,
                 'template_reference_attached' => $attachTemplateReference,
                 'has_product_reference' => true,
@@ -72,11 +173,11 @@ class OpenAiImageService
             ],
         );
 
-        $settings = \App\Models\OpenAiSetting::query()->first();
-        $apiKey = $settings?->api_key;
+        $credential = $this->apiPool()->acquire($user->id);
+        $apiKey = $credential['key'] ?? null;
 
         if (! filled($apiKey)) {
-            $message = 'API Key OpenAI belum tersimpan. Buka Settings → OpenAI API.';
+            $message = 'Belum ada Vercel AI Gateway API Key yang tersedia. Buka Settings → AI Gateway.';
 
             $this->activity()->error(
                 action: 'generate_openai_image',
@@ -93,7 +194,7 @@ class OpenAiImageService
             throw new RuntimeException($message);
         }
 
-        $model = trim($model);
+        $model = $this->normalizeGatewayImageModel($model);
 
         if ($model === '') {
             $message = 'Model OpenAI belum dipilih.';
@@ -137,6 +238,7 @@ class OpenAiImageService
                 'generation_mode' => $generationMode,
                 'title_source' => $titleSource,
                 'custom_title' => $customTitle,
+                'final_title' => $customTitle,
                 'has_template_reference' => $hasTemplateReference,
                 'template_reference_attached' => $attachTemplateReference,
                 'has_product_reference' => true,
@@ -246,9 +348,9 @@ class OpenAiImageService
             $this->activity()->processing(
                 action: 'generate_openai_image',
                 category: 'generator',
-                title: 'Mengirim request ke OpenAI.',
+                title: 'Mengirim request ke Vercel AI Gateway.',
                 description: sprintf(
-                    'POST /v1/images/edits dengan %d attachment, model %s.',
+                    'Vercel AI Gateway POST /v1/images/edits dengan %d attachment, model %s.',
                     count($attachments),
                     $model
                 ),
@@ -264,46 +366,36 @@ class OpenAiImageService
                 ],
             );
 
-            $request = Http::acceptJson()
-                ->withToken($apiKey)
-                ->connectTimeout(15)
-                ->timeout(240);
+            $payload = [
+                'model' => $model,
+                'prompt' => $prompt,
+                'n' => max(1, min(4, $imageCount)),
+                'size' => $this->mapSize($aspectRatio),
+                'quality' => $this->mapQuality($quality),
+                'output_format' => 'png',
+            ];
 
-            $handles = [];
-
-            try {
-                foreach ($attachments as [$path, $filename]) {
-                    $handle = fopen($path, 'rb');
-
-                    if ($handle === false) {
-                        throw new RuntimeException('File input tidak dapat dibuka: ' . $filename);
-                    }
-
-                    $handles[] = $handle;
-                    $request = $request->attach('image[]', $handle, $filename);
-                }
-
-                $payload = [
-                    'model' => $model,
-                    'prompt' => $prompt,
-                    'n' => max(1, min(4, $imageCount)),
-                    'size' => $this->mapSize($aspectRatio),
-                    'quality' => $this->mapQuality($quality),
-                    'output_format' => 'png',
-                ];
-
-                if ($negativePrompt !== '') {
-                    $payload['prompt'] .= "\n\nAvoid: " . $negativePrompt;
-                }
-
-                $response = $request->post(self::BASE_URL . '/images/edits', $payload);
-            } finally {
-                foreach ($handles as $handle) {
-                    if (is_resource($handle)) {
-                        fclose($handle);
-                    }
-                }
+            if ($negativePrompt !== '') {
+                $payload['prompt'] .= "\n\nAvoid: " . $negativePrompt;
             }
+
+            [$response, $usedCredential] = $this->postImageEditsWithFailover(
+                userId: $user->id,
+                preferredCredential: $credential,
+                attachments: $attachments,
+                payload: $payload,
+                generationId: $generation->id,
+                source: 'openai_image_service',
+            );
+            $apiKey = $usedCredential['key'];
+
+            $generation->update([
+                'metadata' => array_merge($generation->metadata ?? [], [
+                    'gateway_key_id' => $usedCredential['id'] ?? null,
+                    'gateway_key_name' => $usedCredential['name'] ?? null,
+                    'gateway_key_source' => $usedCredential['source'] ?? null,
+                ]),
+            ]);
 
             $durationMs = $this->durationMs($startedAt);
 
@@ -313,7 +405,7 @@ class OpenAiImageService
                 $this->activity()->error(
                     action: 'generate_openai_image',
                     category: 'generator',
-                    title: 'OpenAI image generation gagal.',
+                    title: 'Vercel AI Gateway image generation gagal.',
                     description: $error,
                     metadata: [
                         'source' => 'openai_image_service',
@@ -333,15 +425,15 @@ class OpenAiImageService
             $data = $response->json('data', []);
 
             if (! is_array($data) || $data === []) {
-                throw new RuntimeException('OpenAI tidak mengembalikan gambar.');
+                throw new RuntimeException('Vercel AI Gateway tidak mengembalikan gambar.');
             }
 
             $this->activity()->processing(
                 action: 'generate_openai_image',
                 category: 'generator',
-                title: 'Response OpenAI diterima.',
+                title: 'Response Vercel AI Gateway diterima.',
                 description: sprintf(
-                    'OpenAI mengembalikan %d item image. Server mulai menyimpan hasil.',
+                    'Vercel AI Gateway mengembalikan %d item image. Server mulai menyimpan hasil.',
                     count($data)
                 ),
                 metadata: [
@@ -363,7 +455,7 @@ class OpenAiImageService
                     $this->activity()->error(
                         action: 'generate_openai_image',
                         category: 'generator',
-                        title: 'Hasil image gagal diambil.',
+                        title: 'Hasil image dari Vercel gagal diambil.',
                         description: $e->getMessage(),
                         metadata: [
                             'source' => 'openai_image_service',
@@ -378,7 +470,7 @@ class OpenAiImageService
 
                 if ($binary === null || $binary === '') {
                     throw new RuntimeException(
-                        'OpenAI mengembalikan item image #' . ($index + 1) . ' tanpa binary image yang dapat dibaca.'
+                        'Vercel AI Gateway mengembalikan item image #' . ($index + 1) . ' tanpa binary image yang dapat dibaca.'
                     );
                 }
 
@@ -435,7 +527,7 @@ class OpenAiImageService
 
             if ($saved === 0) {
                 throw new RuntimeException(
-                    'OpenAI mengembalikan response tanpa binary image yang dapat disimpan.'
+                    'Vercel AI Gateway mengembalikan response tanpa binary image yang dapat disimpan.'
                 );
             }
 
@@ -451,7 +543,7 @@ class OpenAiImageService
             $this->activity()->success(
                 action: 'generate_openai_image',
                 category: 'generator',
-                title: 'Generate AI image berhasil.',
+                title: 'Generate AI image via Vercel berhasil.',
                 description: sprintf(
                     '%d gambar berhasil dibuat dan disimpan. Generation #%d.',
                     $saved,
@@ -524,16 +616,14 @@ class OpenAiImageService
         ?string $customTitle = null,
     ): Generation {
         $startedAt = microtime(true);
-        $settings = \App\Models\OpenAiSetting::query()->first();
-        $apiKey = $settings?->api_key;
 
-        if (! filled($apiKey)) {
-            throw new RuntimeException('API Key OpenAI belum tersimpan. Buka Settings → OpenAI API.');
+        if (! $this->apiPool()->hasAvailableKey($user->id)) {
+            throw new RuntimeException('Belum ada Vercel AI Gateway API Key yang tersedia. Buka Settings → AI Gateway.');
         }
 
         $model = trim($model);
         if ($model === '') {
-            throw new RuntimeException('Model OpenAI belum dipilih.');
+            throw new RuntimeException('Model image Vercel AI Gateway belum dipilih.');
         }
 
         $sourceOne = $imageOne->store('generations/source', 'public');
@@ -545,7 +635,7 @@ class OpenAiImageService
 
         $hasInstalledReference = (bool) $imageTwo;
         $hasTemplateReference = $this->hasTemplateReference($template);
-        $attachTemplateReference = $hasTemplateReference && $hasInstalledReference;
+        $attachTemplateReference = $hasTemplateReference;
         $hasStoreLogo = $this->hasStoreLogo($store);
         $generationMode = $this->generationMode($hasInstalledReference);
         $customTitle = $this->normalizeCustomTitle($customTitle);
@@ -637,10 +727,10 @@ class OpenAiImageService
         $metadata = $generation->metadata ?? [];
         $hasInstalledReference = ! empty($generation->product_image_2_path);
         $hasTemplateReference = $this->hasTemplateReference($template);
-        $attachTemplateReference = $hasTemplateReference && $hasInstalledReference;
+        $attachTemplateReference = $hasTemplateReference;
         $hasStoreLogo = $this->hasStoreLogo($store);
         $generationMode = (string) ($metadata['generation_mode'] ?? $this->generationMode($hasInstalledReference));
-        $customTitle = $this->normalizeCustomTitle($metadata['custom_title'] ?? null);
+        $customTitle = $this->normalizeCustomTitle($metadata['custom_title'] ?? $metadata['final_title'] ?? null);
         $titleSource = $customTitle !== null ? 'custom' : (string) ($metadata['title_source'] ?? 'ai');
         $referenceCount = ($attachTemplateReference ? 1 : 0)
             + 1
@@ -682,15 +772,18 @@ class OpenAiImageService
                 throw new RuntimeException('Store atau Template generation tidak ditemukan.');
             }
 
-            $settings = \App\Models\OpenAiSetting::query()->first();
-            $apiKey = $settings?->api_key;
+            $credential = $this->apiPool()->acquire($generation->user_id);
+            $apiKey = $credential['key'] ?? null;
             if (! filled($apiKey)) {
-                throw new RuntimeException('API Key OpenAI belum tersimpan.');
+                throw new RuntimeException('Belum ada Vercel AI Gateway API Key yang tersedia.');
             }
 
-            $model = trim((string) $generation->model);
+            $model = $this->normalizeGatewayImageModel((string) $generation->model);
             if ($model === '') {
-                throw new RuntimeException('Model OpenAI belum dipilih.');
+                throw new RuntimeException('Model image Vercel AI Gateway belum dipilih.');
+            }
+            if ($generation->model !== $model) {
+                $generation->update(['model' => $model]);
             }
 
             $productOnePath = Storage::disk('public')->path($generation->product_image_1_path);
@@ -733,7 +826,7 @@ class OpenAiImageService
                             'final_title' => $customTitle,
                             'title_source' => 'ai',
                             'custom_title' => null,
-                            'title_model' => config('services.openai.title_model', 'gpt-5.6-luna'),
+                            'title_model' => config('services.vercel.title_model', self::DEFAULT_TITLE_MODEL),
                             'title_engine' => 'motorcycle_part_vision_v2',
                         ]),
                     ]);
@@ -791,8 +884,8 @@ class OpenAiImageService
             $this->activity()->processing(
                 action: 'generate_openai_image',
                 category: 'generator',
-                title: 'Mengirim request ke OpenAI.',
-                description: sprintf('POST /v1/images/edits dengan %d attachment, model %s.', count($attachments), $model),
+                title: 'Mengirim request ke Vercel AI Gateway.',
+                description: sprintf('Vercel AI Gateway POST /v1/images/edits dengan %d attachment, model %s.', count($attachments), $model),
                 metadata: [
                     'source' => 'openai_image_queue',
                     'generation_id' => $generation->id,
@@ -803,35 +896,35 @@ class OpenAiImageService
                 ],
             );
 
-            $request = Http::acceptJson()->withToken($apiKey)->connectTimeout(15)->timeout(240);
-            $handles = [];
-            try {
-                foreach ($attachments as [$path, $filename]) {
-                    $handle = fopen($path, 'rb');
-                    if ($handle === false) {
-                        throw new RuntimeException('File input tidak dapat dibuka: ' . $filename);
-                    }
-                    $handles[] = $handle;
-                    $request = $request->attach('image[]', $handle, $filename);
-                }
-
-                $payload = [
-                    'model' => $model,
-                    'prompt' => (string) $generation->prompt,
-                    'n' => max(1, min(4, (int) (($generation->metadata ?? [])['requested_image_count'] ?? 1))),
-                    'size' => $this->mapSize((string) $generation->aspect_ratio),
-                    'quality' => $this->mapQuality((string) $generation->output_quality),
-                    'output_format' => 'png',
-                ];
-                if (filled($generation->negative_prompt)) {
-                    $payload['prompt'] .= "\n\nAvoid: " . $generation->negative_prompt;
-                }
-                $response = $request->post(self::BASE_URL . '/images/edits', $payload);
-            } finally {
-                foreach ($handles as $handle) {
-                    if (is_resource($handle)) fclose($handle);
-                }
+            $payload = [
+                'model' => $model,
+                'prompt' => (string) $generation->prompt,
+                'n' => max(1, min(4, (int) (($generation->metadata ?? [])['requested_image_count'] ?? 1))),
+                'size' => $this->mapSize((string) $generation->aspect_ratio),
+                'quality' => $this->mapQuality((string) $generation->output_quality),
+                'output_format' => 'png',
+            ];
+            if (filled($generation->negative_prompt)) {
+                $payload['prompt'] .= "\n\nAvoid: " . $generation->negative_prompt;
             }
+
+            [$response, $usedCredential] = $this->postImageEditsWithFailover(
+                userId: $generation->user_id,
+                preferredCredential: $credential,
+                attachments: $attachments,
+                payload: $payload,
+                generationId: $generation->id,
+                source: 'openai_image_queue',
+            );
+            $apiKey = $usedCredential['key'];
+
+            $generation->update([
+                'metadata' => array_merge($generation->metadata ?? [], [
+                    'gateway_key_id' => $usedCredential['id'] ?? null,
+                    'gateway_key_name' => $usedCredential['name'] ?? null,
+                    'gateway_key_source' => $usedCredential['source'] ?? null,
+                ]),
+            ]);
 
             if (! $response->successful()) {
                 $error = $this->extractError($response);
@@ -839,7 +932,7 @@ class OpenAiImageService
                 $this->activity()->error(
                     action: 'generate_openai_image',
                     category: 'generator',
-                    title: 'OpenAI image generation gagal.',
+                    title: 'Vercel AI Gateway image generation gagal.',
                     description: $error,
                     metadata: [
                         'source' => 'openai_image_queue',
@@ -866,7 +959,7 @@ class OpenAiImageService
 
             $data = $response->json('data', []);
             if (! is_array($data) || $data === []) {
-                throw new RuntimeException('OpenAI tidak mengembalikan gambar.');
+                throw new RuntimeException('Vercel AI Gateway tidak mengembalikan gambar.');
             }
 
             $saved = 0;
@@ -877,7 +970,7 @@ class OpenAiImageService
                 }
                 $binary = $this->resolveImageBinary($item);
                 if ($binary === null || $binary === '') {
-                    throw new RuntimeException('OpenAI mengembalikan item image #' . ($index + 1) . ' tanpa binary image.');
+                    throw new RuntimeException('Vercel AI Gateway mengembalikan item image #' . ($index + 1) . ' tanpa binary image.');
                 }
 
                 $filename = 'generation-' . $generation->id . '-' . ($index + 1) . '-' . uniqid() . '.png';
@@ -935,7 +1028,7 @@ class OpenAiImageService
             $this->activity()->success(
                 action: 'generate_openai_image',
                 category: 'generator',
-                title: 'Generate AI image berhasil.',
+                title: 'Generate AI image via Vercel berhasil.',
                 description: sprintf('%d gambar berhasil dibuat dan disimpan. Generation #%d.', $saved, $generation->id),
                 metadata: [
                     'source' => 'openai_image_queue',
@@ -997,7 +1090,7 @@ class OpenAiImageService
     ): string
     {
         $hasTemplateReference = $templateReferenceAttached ?? $this->hasTemplateReference($template);
-        $attachTemplateReference = $hasTemplateReference && $hasInstalledReference;
+        $attachTemplateReference = $hasTemplateReference;
         $hasStoreLogo = $this->hasStoreLogo($store);
 
         $referenceRoles = [
@@ -1050,12 +1143,12 @@ class OpenAiImageService
                 '- Do not let the installed reference redesign the Template.',
             ]
             : [
-                'GENERATION MODE: PRODUCT-ONLY — HARD ISOLATION / ZERO FABRICATION',
-                '- There is NO installed/in-use reference. The actual product image is the ONLY photographic authority for the product.',
-                '- CRITICAL: the Template master photographic image is intentionally NOT attached in PRODUCT-ONLY mode. Do not reconstruct, imitate, borrow or copy any photographic scene from the Template master.',
-                '- The Template prompt remains the design-system authority for typography, hierarchy, graphic language, colors, spacing, framing and callout styling.',
-                '- Use the Template as a GRAPHIC DESIGN SPECIFICATION, NOT as a photographic scene reference.',
-                '- NEVER inherit a motorcycle, scooter, vehicle body, wheel, road, rider, mechanic, hand, workshop, garage, showroom, engine bay or installation environment from the Template.',
+                'GENERATION MODE: PRODUCT-ONLY — TEMPLATE DESIGN REFERENCE + ZERO PRODUCT FABRICATION',
+                '- There is NO installed/in-use reference. The actual product image is the ONLY authority for the product identity, geometry, materials and visible details.',
+                '- The selected Template master image IS attached when available and is the visual master for composition, layout, typography placement, graphic hierarchy, background treatment, badges, icons, framing and overall design language.',
+                '- CRITICAL: copy the Template MASTER DESIGN SYSTEM, NOT its example product. Replace the example product/content with the actual supplied product.',
+                '- The Template prompt is also mandatory creative direction and must be combined with the Template master image.',
+                '- NEVER inherit a motorcycle, scooter, vehicle body, wheel, road, rider, mechanic, hand, workshop, garage, showroom, engine bay or installation environment from the Template unless such an environment is explicitly required by the Template prompt AND supported by an installed reference.',
                 '- NEVER create an installation scene merely because the Template example contains one.',
                 '- NEVER place the actual product on, inside, attached to, mounted on, held by or being used on a motorcycle or vehicle.',
                 '- NEVER create a contextual product photograph that suggests how the product is installed.',
@@ -1092,13 +1185,25 @@ class OpenAiImageService
             'TEMPLATE CONSISTENCY — CRITICAL:',
             '- Every generation that uses the SAME Template must look like part of the SAME design series.',
             '- Treat the selected Template as a reusable fixed design system, not as a loose inspiration.',
+            '- When a Template master image exists, use it as the PRIMARY VISUAL STYLE REFERENCE for the composition.',
+            '- Recreate the Template master composition as closely as practical: same hierarchy, major zones, headline placement, product presentation area, decorative motifs, badges/icons, spacing rhythm, framing, background treatment and overall premium advertising feel.',
+            '- Replace only the example product/content with the actual supplied product. Do not copy the Template example product.',
             '- Do not redesign, reinterpret, randomize or significantly rearrange the Template for a new product.',
             '- Keep the same composition logic, visual hierarchy, typography placement, graphic motifs, decorative language, border/frame treatment, callout style, badge/icon zones, spacing rhythm, background style and overall art direction.',
             '- Only the product-specific content, product imagery and factual installation context (when supplied) should change.',
             '- Changing the product reference must NOT cause a new layout, new background concept, new graphic system, new typography style or new composition.',
             '',
-            'TEMPLATE CREATIVE DIRECTION:',
+            'SELECTED TEMPLATE PROMPT INJECTION — HIGH PRIORITY:',
+            '- The following instructions are injected directly from the selected Template record.',
+            '- EXECUTE these Template instructions as the creative design direction for this generation.',
+            '- The Template prompt controls the visual treatment, design language, composition preferences, graphic elements, typography direction and marketing presentation requested by the Template.',
+            '- Do not discard, summarize, weaken or silently replace the Template prompt.',
+            '- Resolve conflicts by preserving product/reference/branding truth first, then execute the Template prompt as fully as possible.',
+            '- If the Template prompt requests attractive graphic elements, badges, callouts, technical lines, panels, textures or other visual details, actually include them when they are compatible with the supplied references.',
+            '- The Template prompt is NOT optional:',
+            '--- BEGIN SELECTED TEMPLATE PROMPT ---',
             trim((string) $template->prompt),
+            '--- END SELECTED TEMPLATE PROMPT ---',
             '',
             ...$referenceRoles,
             '',
@@ -1109,8 +1214,14 @@ class OpenAiImageService
             'Marketplace: ' . ($store->marketplace ?: 'Marketplace'),
             'Brand description: ' . ($store->description ?: 'Use the selected store visual identity consistently.'),
             $hasStoreLogo
-                ? 'The official Store logo is supplied as an image reference. Use it as branding and preserve its identity.'
+                ? 'The official Store logo is supplied as an image reference. It is the ONLY authoritative store identity. Use that exact logo; the Template logo is layout-only and must never replace it.'
                 : 'No Store logo asset is configured. Do not invent one.',
+            '',
+            'BRANDING PRIORITY — ABSOLUTE:',
+            '- SUPPLIED STORE LOGO is authoritative for store identity.',
+            '- Any logo visible in the Template master is reference-only and must NOT be copied.',
+            '- Never invent, redraw, approximate, merge or substitute a Store logo.',
+            '- Preserve the supplied Store logo identity, proportions and recognizable details.',
             '',
             'GLOBAL PRODUCT RULES:',
             '- Product identity and reference fidelity have higher priority than creative embellishment.',
@@ -1119,7 +1230,9 @@ class OpenAiImageService
             '- Never invent or reconstruct unseen product geometry just to satisfy a composition, callout, label or decorative element.',
             '- Do not add random text, prices, discounts, specifications, badges, watermarks, logos or unrelated objects unless explicitly requested by the Template.',
             '- Keep the product visually clean, commercially attractive and suitable for an online marketplace.',
-            '- Follow the Template master/reference and Template prompt for composition, visual hierarchy, typography direction, color direction and aspect ratio.',
+            '- Follow the Template master/reference and the injected Template prompt for composition, visual hierarchy, typography direction, color direction, graphic elements and aspect ratio.',
+            '- The final design should have deliberate visual richness: use tasteful graphic accents, callout frames, badges, separators, technical motifs and depth elements when requested by the Template and supported by the available space.',
+            '- Never simplify a rich Template into a plain poster merely because the product is different.',
             '- Use realistic lighting, believable materials and clean edges.',
             '- Avoid accidental duplicate products, malformed geometry, melted details, distorted logos and invented accessories.',
             '',
@@ -1143,12 +1256,31 @@ class OpenAiImageService
             '- If a detail cannot be sourced from visible product pixels, remove the detail instead of inventing it.',
             '- The actual product reference must remain the only source of product geometry and identity.',
             '',
+            'SUNBURST — COMMERCIAL ART DIRECTION:',
+            '- Favor a clean, bold, high-contrast marketplace composition that is immediately readable at thumbnail size.',
+            '- Treat the Template master image as the composition blueprint: preserve its major visual zones and design rhythm before adding creative variation.',
+            '- Make the product large enough to be the obvious hero subject.',
+            '- Use controlled cinematic lighting, realistic reflections, crisp edges, premium dark/automotive tones and restrained accent colors derived from the Template.',
+            '- Use layered depth: background atmosphere behind the product, a strong hero product plane, and restrained foreground graphic accents.',
+            '- Prefer precise reference-image editing over freeform reinterpretation; when the Template shows a specific graphic element, preserve its placement and visual role.',
+            '- Keep typography short, bold and highly legible; never fill the composition with paragraphs.',
+            '- Use 2–4 concise supporting visual callouts only when supported by the product reference or explicitly defined by the Template prompt.',
+            '- Prefer premium automotive aftermarket advertising aesthetics: sporty, technical, clean, aggressive but not cluttered.',
+            '- Do not turn the image into a generic AI poster; it must look like a real professional marketplace creative built directly from the selected Template master and prompt.',
+            '',
             'OUTPUT REQUIREMENTS:',
             '- Produce a polished, premium, marketplace-ready commercial image.',
             '- Preserve Template-to-Template consistency above creative variation.',
             '- Prioritize clarity of the actual product over decorative effects.',
             '- Keep the composition intentional and uncluttered.',
             '- Respect the requested aspect ratio.',
+            '',
+            'FINAL COMPOSITION CHECK:',
+            '- The selected Template design must be recognizable in the final composition.',
+            '- The supplied product must remain the unmistakable hero product.',
+            '- The Store logo must be used only as official branding when supplied.',
+            '- Do not create a collage or side-by-side comparison of references.',
+            '- Produce ONE cohesive final advertisement.',
         ];
 
         return implode("\n", array_filter(
@@ -1388,7 +1520,7 @@ PROMPT;
                 ->connectTimeout(10)
                 ->timeout(45)
                 ->post(self::BASE_URL . '/responses', [
-                    'model' => config('services.openai.title_model', 'gpt-5.6-luna'),
+                    'model' => config('services.vercel.title_model', self::DEFAULT_TITLE_MODEL),
                     'input' => [[
                         'role' => 'user',
                         'content' => [
@@ -1432,6 +1564,153 @@ PROMPT;
         } catch (Throwable) {
             return null;
         }
+    }
+
+    /**
+     * Resolve the credential used by Vercel AI Gateway.
+     *
+     * AI_GATEWAY_API_KEY is preferred so production can keep the gateway
+     * credential outside the database. The existing OpenAiSetting value is
+     * kept as a backwards-compatible fallback for the current Settings UI.
+     */
+    private function gatewayApiKey(?string $storedKey, ?int $userId = null): ?string
+    {
+        $credential = $this->apiPool()->acquire($userId, $storedKey);
+
+        return $credential['key'] ?? null;
+    }
+
+    private function apiPool(): VercelGatewayKeyPool
+    {
+        return app(VercelGatewayKeyPool::class);
+    }
+
+    /**
+     * Send an image edit request and automatically fail over across the Vercel
+     * API-key pool when the current key is exhausted, invalid, rate-limited,
+     * or temporarily unavailable.
+     *
+     * @return array{0: Response, 1: array{id:int|null,key:string,name:string,source:string}}
+     */
+    private function postImageEditsWithFailover(
+        int $userId,
+        ?array $preferredCredential,
+        array $attachments,
+        array $payload,
+        int $generationId,
+        string $source,
+    ): array {
+        $lastError = null;
+        $attemptedIds = [];
+        $maxAttempts = max(1, $this->apiPool()->totalCount($userId) + 1);
+
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            if ($attempt === 1 && is_array($preferredCredential) && filled($preferredCredential['key'] ?? null)) {
+                $credential = $preferredCredential;
+            } else {
+                $credential = $this->apiPool()->acquire($userId, null, $attemptedIds);
+            }
+
+            if (! $credential || ($credential['id'] !== null && in_array($credential['id'], $attemptedIds, true))) {
+                break;
+            }
+
+            if ($credential['id'] !== null) {
+                $attemptedIds[] = $credential['id'];
+            }
+
+            $request = Http::acceptJson()
+                ->withToken($credential['key'])
+                ->connectTimeout(15)
+                ->timeout(240);
+
+            $handles = [];
+            try {
+                foreach ($attachments as [$path, $filename]) {
+                    $handle = fopen($path, 'rb');
+                    if ($handle === false) {
+                        throw new RuntimeException('File input tidak dapat dibuka: ' . $filename);
+                    }
+                    $handles[] = $handle;
+                    $request = $request->attach('image[]', $handle, $filename);
+                }
+
+                $response = $request->post(self::BASE_URL . '/images/edits', $payload);
+            } finally {
+                foreach ($handles as $handle) {
+                    if (is_resource($handle)) {
+                        fclose($handle);
+                    }
+                }
+            }
+
+            if ($response->successful()) {
+                $this->apiPool()->reportSuccess($credential['id'], $userId);
+
+                return [$response, $credential];
+            }
+
+            $detail = $this->extractError($response);
+            $classification = $this->apiPool()->reportFailure(
+                $credential['id'],
+                $userId,
+                $response,
+                $detail,
+            );
+
+            $lastError = $detail;
+
+            if (! $classification['retry']) {
+                throw new RuntimeException($detail);
+            }
+
+            $this->activity()->warning(
+                action: 'generate_openai_image',
+                category: 'api',
+                title: 'Automatic API failover dijalankan.',
+                description: sprintf(
+                    'Key "%s" tidak dapat digunakan (%s). Mencoba API key berikutnya.',
+                    $credential['name'],
+                    $classification['reason'],
+                ),
+                metadata: [
+                    'source' => $source,
+                    'generation_id' => $generationId,
+                    'api_key_id' => $credential['id'],
+                    'api_key_name' => $credential['name'],
+                    'classification' => $classification,
+                    'http_status' => $response->status(),
+                ],
+                httpStatus: $response->status(),
+            );
+        }
+
+        throw new RuntimeException(
+            $lastError ?: 'Semua Vercel AI Gateway API key yang tersedia gagal digunakan.'
+        );
+    }
+
+    /**
+     * AI Gateway image models use creator/model IDs.
+     * Keep compatibility with the existing UI/database values.
+     */
+    private function normalizeGatewayImageModel(string $model): string
+    {
+        $model = trim($model);
+
+        if ($model === '' || strcasecmp($model, 'OpenAI Image Generation') === 0) {
+            return self::DEFAULT_IMAGE_MODEL;
+        }
+
+        if (str_starts_with($model, 'openai/')) {
+            return $model;
+        }
+
+        if (str_starts_with($model, 'gpt-image-')) {
+            return 'openai/' . $model;
+        }
+
+        return $model;
     }
 
     private function normalizeCustomTitle(?string $customTitle): ?string
@@ -1503,7 +1782,7 @@ PROMPT;
             $binary = base64_decode($item['b64_json'], true);
 
             if ($binary === false) {
-                throw new RuntimeException('OpenAI mengembalikan b64_json yang tidak valid.');
+                throw new RuntimeException('Vercel AI Gateway mengembalikan b64_json yang tidak valid.');
             }
 
             return $binary;
@@ -1514,7 +1793,7 @@ PROMPT;
 
             if (! $response->successful()) {
                 throw new RuntimeException(
-                    'Gagal mengambil hasil image dari URL OpenAI. HTTP ' . $response->status() . '.'
+                    'Gagal mengambil hasil image dari URL Vercel AI Gateway. HTTP ' . $response->status() . '.'
                 );
             }
 
@@ -1539,7 +1818,7 @@ PROMPT;
             return trim($message) . ' (HTTP ' . $response->status() . ')';
         }
 
-        return 'OpenAI image generation gagal. HTTP ' . $response->status() . '.';
+        return 'Vercel AI Gateway image generation gagal. HTTP ' . $response->status() . '.';
     }
 
     private function safeResponseBody(Response $response): ?string

@@ -3,12 +3,17 @@
 namespace App\Services;
 
 use App\Models\ActivityLog;
+use App\Models\Generation;
 use Illuminate\Support\Facades\Auth;
 
 class ActivityLogService
 {
     /**
      * Create a generic activity log.
+     *
+     * Queue workers do not have an authenticated HTTP session, so when a
+     * generation log is written from a background job we resolve the owner
+     * from the generation_id stored in metadata.
      */
     public function log(
         string $action,
@@ -20,11 +25,6 @@ class ActivityLogService
         ?int $durationMs = null,
         ?int $httpStatus = null,
     ): ActivityLog {
-        /*
-         * Keep technical metrics in metadata so the activity
-         * system stays flexible for API, Generator, Store,
-         * Template, Account, and future features.
-         */
         if ($durationMs !== null) {
             $metadata['duration_ms'] = $durationMs;
         }
@@ -33,26 +33,28 @@ class ActivityLogService
             $metadata['http_status'] = $httpStatus;
         }
 
+        $userId = Auth::id();
+
+        // Queue/worker context: Auth::id() is normally null.
+        // Resolve the owner from the Generation so generator activity logs
+        // remain attached to the correct user and visible in the dashboard.
+        if ($userId === null && ! empty($metadata['generation_id'])) {
+            $userId = Generation::query()
+                ->whereKey((int) $metadata['generation_id'])
+                ->value('user_id');
+        }
+
         return ActivityLog::query()->create([
-            'user_id' => Auth::id(),
-
+            'user_id' => $userId,
             'action' => $action,
-
             'category' => $category,
-
             'status' => $status,
-
             'title' => $title,
-
             'description' => $description,
-
             'metadata' => $metadata,
         ]);
     }
 
-    /**
-     * Success activity.
-     */
     public function success(
         string $action,
         string $category,
@@ -74,9 +76,6 @@ class ActivityLogService
         );
     }
 
-    /**
-     * Error activity.
-     */
     public function error(
         string $action,
         string $category,
@@ -98,9 +97,6 @@ class ActivityLogService
         );
     }
 
-    /**
-     * Warning activity.
-     */
     public function warning(
         string $action,
         string $category,
@@ -122,9 +118,6 @@ class ActivityLogService
         );
     }
 
-    /**
-     * Processing activity.
-     */
     public function processing(
         string $action,
         string $category,
@@ -146,9 +139,6 @@ class ActivityLogService
         );
     }
 
-    /**
-     * Informational activity.
-     */
     public function info(
         string $action,
         string $category,

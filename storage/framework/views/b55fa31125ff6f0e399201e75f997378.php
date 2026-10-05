@@ -1,442 +1,9 @@
 <?php
-
 use App\Models\Store;
 use App\Models\Template;
 use App\Models\Generation;
 use Livewire\Component;
 use Livewire\WithFileUploads;
-
-new class extends Component
-{
-    use WithFileUploads;
-
-    public ?int $selectedStoreId = null;
-    public ?int $selectedTemplateId = null;
-    public string $templateSearch = '';
-    public string $templateCategory = 'all';
-    public bool $historyOpen = true;
-    public bool $useInstalledReference = true;
-    public bool $useCustomTitle = false;
-    public string $customTitle = '';
-    public string $historyStatus = 'all';
-    public string $historySearch = '';
-    public ?int $historyStoreId = null;
-    public ?int $historyTemplateId = null;
-
-    public $imageOne = null;
-    public $imageTwo = null;
-
-    public string $model = '';
-    public string $aspectRatio = '1:1';
-    public string $quality = 'high';
-    public int $imageCount = 1;
-    public bool $isGenerating = false;
-    public ?int $latestGenerationId = null;
-
-    public function getStoresProperty()
-    {
-        return Store::query()
-            ->where('is_active', true)
-            ->with('templates')
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get();
-    }
-
-    public function getSelectedStoreProperty(): ?Store
-    {
-        return $this->selectedStoreId
-            ? $this->stores->firstWhere('id', $this->selectedStoreId)
-            : null;
-    }
-
-    public function getTemplatesProperty()
-    {
-        if (!$this->selectedStoreId) {
-            return collect();
-        }
-
-        return Template::query()
-            ->where('store_id', $this->selectedStoreId)
-            ->where('is_active', true)
-            ->when($this->templateSearch !== '', function ($query) {
-                $keyword = '%' . trim($this->templateSearch) . '%';
-
-                $query->where(function ($q) use ($keyword) {
-                    $q->where('name', 'like', $keyword)
-                        ->orWhere('description', 'like', $keyword);
-                });
-            })
-            ->when($this->templateCategory !== 'all', function ($query) {
-                $query->where(function ($q) {
-                    $q->where('name', 'like', '%' . $this->templateCategory . '%')
-                        ->orWhere('description', 'like', '%' . $this->templateCategory . '%');
-                });
-            })
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get();
-    }
-
-    public function getSelectedTemplateProperty(): ?Template
-    {
-        return $this->selectedTemplateId
-            ? $this->templates->firstWhere('id', $this->selectedTemplateId)
-            : null;
-    }
-
-    public function getRecentGenerationsProperty()
-    {
-        return Generation::query()
-            ->with(['store', 'template', 'generatedImages'])
-            ->where('user_id', auth()->id())
-            ->when($this->historyStatus !== 'all', fn ($q) => $q->where('status', $this->historyStatus))
-            ->when($this->historyStoreId, fn ($q) => $q->where('store_id', $this->historyStoreId))
-            ->when($this->historyTemplateId, fn ($q) => $q->where('template_id', $this->historyTemplateId))
-            ->where(function ($q) {
-                /*
-                 * IMPORTANT:
-                 * JSON metadata is normally non-null and does not contain
-                 * "hidden". Using metadata->hidden != true alone can make
-                 * MySQL exclude rows where the JSON key is missing.
-                 * Only records explicitly marked hidden=true should disappear.
-                 */
-                $q->whereNull('metadata')
-                    ->orWhereRaw("JSON_EXTRACT(metadata, '$.hidden') IS NULL")
-                    ->orWhereRaw("JSON_EXTRACT(metadata, '$.hidden') <> true");
-            })
-            ->when(trim($this->historySearch) !== '', function ($q) {
-                $keyword = '%' . trim($this->historySearch) . '%';
-                $q->where(function ($inner) use ($keyword) {
-                    $inner->whereHas('store', fn ($store) => $store->where('name', 'like', $keyword))
-                        ->orWhereHas('template', fn ($template) => $template->where('name', 'like', $keyword))
-                        ->orWhere('id', 'like', $keyword)
-                        ->orWhere('metadata->final_title', 'like', $keyword)
-                        ->orWhere('metadata->custom_title', 'like', $keyword);
-                });
-            })
-            ->latest()
-            ->limit(12)
-            ->get();
-    }
-
-    public function getHasActiveGenerationsProperty(): bool
-    {
-        return Generation::query()
-            ->whereIn('status', ['queued', 'processing'])
-            ->exists();
-    }
-
-    public function getHistoryTemplatesProperty()
-    {
-        return Template::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']);
-    }
-
-    public function getLatestGenerationProperty(): ?Generation
-    {
-        if ($this->latestGenerationId) {
-            return Generation::query()
-                ->with(['store', 'template', 'generatedImages'])
-                ->find($this->latestGenerationId);
-        }
-
-        return Generation::query()
-            ->with(['store', 'template', 'generatedImages'])
-            ->whereIn('status', ['completed', 'success', 'succeeded'])
-            ->latest()
-            ->first();
-    }
-
-    public function getAvailableModelsProperty(): array
-    {
-        try {
-            return app(\App\Services\OpenAiImageService::class)->availableImageModels();
-        } catch (\Throwable $e) {
-            report($e);
-            return [];
-        }
-    }
-
-    public function mount(): void
-    {
-        $settings = \App\Models\OpenAiSetting::query()->first();
-        $imageService = app(\App\Services\OpenAiImageService::class);
-
-        // DEFAULT_IMAGE_MODEL dari OpenAiImageService adalah source of truth.
-        // Settings lama tetap dipakai untuk aspect ratio dan quality saja.
-        $this->model = $imageService->defaultImageModel();
-        $this->aspectRatio = $settings?->default_aspect_ratio ?: '1:1';
-        $this->quality = $settings?->default_quality ?: 'high';
-
-        $latest = Generation::query()
-            ->whereIn('status', ['completed', 'success', 'succeeded'])
-            ->latest()
-            ->value('id');
-
-        $this->latestGenerationId = $latest ? (int) $latest : null;
-
-        // Pastikan default service memang tersedia di katalog Gateway.
-        $availableIds = collect($this->availableModels)->pluck('id');
-        if (! $availableIds->contains($this->model)) {
-            $this->model = $availableIds->first() ?: $imageService->defaultImageModel();
-        }
-    }
-
-    public function selectStore(int $storeId): void
-    {
-        $this->selectedStoreId = $storeId;
-        $this->selectedTemplateId = null;
-        $this->templateSearch = '';
-    }
-
-    public function toggleTemplate(int $templateId): void
-    {
-        $template = Template::query()
-            ->where('id', $templateId)
-            ->where('store_id', $this->selectedStoreId)
-            ->where('is_active', true)
-            ->firstOrFail();
-
-        if ($this->selectedTemplateId === $templateId) {
-            $this->selectedTemplateId = null;
-            return;
-        }
-
-        $this->selectedTemplateId = $templateId;
-
-        // Template adalah source of truth untuk default generator settings.
-        $this->aspectRatio = $template->aspect_ratio ?: '1:1';
-        $this->quality = $template->output_quality ?: 'high';
-    }
-
-    public function generate(): void
-    {
-        $startedAt = microtime(true);
-        $activity = app(\App\Services\ActivityLogService::class);
-
-        if (! $this->useInstalledReference) {
-            $this->imageTwo = null;
-        }
-
-        if (! $this->useCustomTitle) {
-            $this->customTitle = '';
-        } else {
-            $this->customTitle = trim($this->customTitle);
-        }
-
-        try {
-            $this->validate([
-                'selectedStoreId' => ['required', 'integer', 'exists:stores,id'],
-                'selectedTemplateId' => ['required', 'integer', 'exists:templates,id'],
-                'imageOne' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
-                'imageTwo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
-                'customTitle' => $this->useCustomTitle
-                    ? ['required', 'string', 'max:120']
-                    : ['nullable', 'string', 'max:120'],
-                'model' => ['required', 'string', 'max:150'],
-                'aspectRatio' => ['required', 'in:1:1,4:5,3:4,16:9,9:16'],
-                'quality' => ['required', 'in:standard,high'],
-                'imageCount' => ['required', 'integer', 'min:1', 'max:4'],
-            ], [
-                'selectedStoreId.required' => 'Pilih Store terlebih dahulu.',
-                'selectedTemplateId.required' => 'Pilih Template terlebih dahulu.',
-                'imageOne.required' => 'Gambar utama wajib diupload.',
-                'customTitle.required' => 'Isi judul custom terlebih dahulu atau matikan opsi Judul Produk.',
-                'imageTwo.image' => 'Foto referensi pemasangan harus berupa gambar yang valid.',
-                'imageTwo.mimes' => 'Foto referensi harus JPG, PNG, atau WEBP.',
-                'imageTwo.max' => 'Foto referensi maksimal 10MB.',
-                'model.required' => 'Model Vercel AI Gateway belum tersedia. Pastikan koneksi Gateway dapat diakses.',
-            ]);
-
-            $template = Template::query()
-                ->whereKey($this->selectedTemplateId)
-                ->where('store_id', $this->selectedStoreId)
-                ->where('is_active', true)
-                ->firstOrFail();
-
-            $this->aspectRatio = $template->aspect_ratio ?: $this->aspectRatio;
-            $this->quality = $template->output_quality ?: $this->quality;
-
-            $generation = app(\App\Services\OpenAiImageService::class)->queueGeneration(
-                user: auth()->user(),
-                store: $this->selectedStore,
-                template: $template,
-                imageOne: $this->imageOne,
-                imageTwo: $this->useInstalledReference ? $this->imageTwo : null,
-                customTitle: $this->useCustomTitle ? $this->customTitle : null,
-                model: $this->model,
-                aspectRatio: $this->aspectRatio,
-                quality: $this->quality,
-                imageCount: $this->imageCount,
-            );
-
-            \App\Jobs\GenerateOpenAiImageJob::dispatch($generation->id);
-
-            $this->latestGenerationId = $generation->id;
-            $this->isGenerating = false;
-
-            $this->dispatch(
-                'toast',
-                type: 'success',
-                title: 'Generation masuk antrean',
-                message: 'Kamu bisa langsung membuat generate lain. Proses berjalan di Recent History.'
-            );
-
-            $this->dispatch('activity-log-refresh');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            $message = $e->validator->errors()->first();
-
-            $activity->error(
-                action: 'generate_openai_image',
-                category: 'generator',
-                title: 'Generate AI image gagal pada validasi.',
-                description: $message,
-                metadata: [
-                    'source' => 'generator_component',
-                    'reason' => 'validation',
-                    'store_id' => $this->selectedStoreId,
-                    'template_id' => $this->selectedTemplateId,
-                ],
-                durationMs: (int) round((microtime(true) - $startedAt) * 1000),
-            );
-
-            $this->dispatch('activity-log-refresh');
-            throw $e;
-        } catch (\Throwable $e) {
-            report($e);
-            $activity->error(
-                action: 'generate_openai_image',
-                category: 'generator',
-                title: 'Generation gagal dimasukkan ke antrean.',
-                description: $e->getMessage(),
-                metadata: [
-                    'source' => 'generator_component',
-                    'reason' => 'queue_dispatch',
-                    'store_id' => $this->selectedStoreId,
-                    'template_id' => $this->selectedTemplateId,
-                ],
-                durationMs: (int) round((microtime(true) - $startedAt) * 1000),
-            );
-
-            $this->dispatch('activity-log-refresh');
-            $this->dispatch('toast', type: 'error', title: 'Tidak bisa memulai generate', message: $e->getMessage());
-        }
-    }
-
-    protected function ownedGeneration(int $generationId): Generation
-    {
-        return Generation::query()->whereKey($generationId)->where('user_id', auth()->id())->firstOrFail();
-    }
-
-    public function cancelGeneration(int $generationId): void
-    {
-        $generation = $this->ownedGeneration($generationId);
-        if (! in_array($generation->status, ['queued', 'processing'], true)) return;
-        $generation->update([
-            'status' => 'cancelled', 'error_message' => null, 'completed_at' => now(),
-            'metadata' => array_merge($generation->metadata ?? [], [
-                'progress_stage' => 'Dibatalkan', 'cancelled_at' => now()->toIso8601String(),
-            ]),
-        ]);
-        $this->dispatch('toast', type: 'success', title: 'Generation dibatalkan', message: 'Proses tidak akan dilanjutkan.');
-    }
-
-    public function retryGeneration(int $generationId): void
-    {
-        $generation = $this->ownedGeneration($generationId);
-        if (in_array($generation->status, ['queued', 'processing'], true)) {
-            $generation->update([
-                'status' => 'cancelled', 'completed_at' => now(),
-                'metadata' => array_merge($generation->metadata ?? [], [
-                    'progress_stage' => 'Dibatalkan untuk retry', 'cancelled_at' => now()->toIso8601String(),
-                ]),
-            ]);
-        } elseif (! in_array($generation->status, ['failed', 'cancelled', 'completed'], true)) return;
-
-        $metadata = array_merge($generation->metadata ?? [], [
-            'progress' => 4, 'progress_stage' => 'Menunggu worker queue',
-            'queued_at' => now()->toIso8601String(), 'retry_of' => $generation->id,
-        ]);
-        unset($metadata['started_at'], $metadata['completed_at'], $metadata['failed_at'], $metadata['cancelled_at']);
-
-        $retry = $generation->replicate();
-        $retry->status = 'queued';
-        $retry->error_message = null;
-        $retry->started_at = null;
-        $retry->completed_at = null;
-        $retry->metadata = $metadata;
-        $retry->save();
-        \App\Jobs\GenerateOpenAiImageJob::dispatch($retry->id);
-        $this->latestGenerationId = $retry->id;
-        $this->dispatch('toast', type: 'success', title: 'Retry dimulai', message: 'Generation baru masuk antrean.');
-    }
-
-    public function deleteGeneration(int $generationId): void
-    {
-        $generation = $this->ownedGeneration($generationId);
-        $active = in_array($generation->status, ['queued', 'processing'], true);
-
-        if ($active) {
-            $generation->update([
-                'status' => 'cancelled',
-                'completed_at' => now(),
-                'metadata' => array_merge($generation->metadata ?? [], [
-                    'progress_stage' => 'Dihapus oleh pengguna',
-                    'cancelled_at' => now()->toIso8601String(),
-                    'hidden' => true,
-                ]),
-            ]);
-        } else {
-            foreach ($generation->generatedImages as $image) {
-                if ($image->image_path) \Illuminate\Support\Facades\Storage::disk('public')->delete($image->image_path);
-            }
-            foreach ([$generation->product_image_1_path, $generation->product_image_2_path] as $path) {
-                if ($path) \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
-            }
-            $generation->delete();
-        }
-
-        if ($this->latestGenerationId === $generationId) $this->latestGenerationId = null;
-        $this->dispatch('toast', type: 'success', title: 'Generation dihapus', message: $active ? 'Generation dihentikan dan disembunyikan dari history.' : 'History dan file hasilnya sudah dihapus.');
-    }
-
-    public function setReferenceMode(bool $enabled): void
-    {
-        $this->useInstalledReference = $enabled;
-
-        if (! $enabled) {
-            $this->imageTwo = null;
-        }
-    }
-
-    public function setCustomTitleMode(bool $enabled): void
-    {
-        $this->useCustomTitle = $enabled;
-
-        if (! $enabled) {
-            $this->customTitle = '';
-        }
-    }
-
-    public function selectModel(string $model): void
-    {
-        if (! collect($this->availableModels)->pluck('id')->contains($model)) {
-            return;
-        }
-
-        $this->model = $model;
-    }
-
-    public function clearImageOne(): void
-    {
-        $this->imageOne = null;
-    }
-
-    public function clearImageTwo(): void
-    {
-        $this->imageTwo = null;
-    }
-};
 ?>
 
 <div
@@ -503,21 +70,21 @@ new class extends Component
 
                     <div class="rms-generator-store-select" x-data="{ open:false }" x-on:click.outside="open=false">
                         <button type="button" class="rms-generator-store-trigger" :class="{ 'is-open': open }" x-on:click="open=!open">
-                            @if($this->selectedStore)
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($this->selectedStore): ?>
                                 <span class="rms-generator-store-logo">
-                                    @if($this->selectedStore->logo_path)
-                                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($this->selectedStore->logo_path) }}" alt="">
-                                    @else
-                                        <b>{{ strtoupper(substr($this->selectedStore->name, 0, 1)) }}</b>
-                                    @endif
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($this->selectedStore->logo_path): ?>
+                                        <img src="<?php echo e(\Illuminate\Support\Facades\Storage::disk('public')->url($this->selectedStore->logo_path)); ?>" alt="">
+                                    <?php else: ?>
+                                        <b><?php echo e(strtoupper(substr($this->selectedStore->name, 0, 1))); ?></b>
+                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                 </span>
                                 <span class="rms-generator-store-copy">
-                                    <strong>{{ $this->selectedStore->name }}</strong>
-                                    <small>{{ $this->selectedStore->marketplace ?: 'Marketplace' }}</small>
+                                    <strong><?php echo e($this->selectedStore->name); ?></strong>
+                                    <small><?php echo e($this->selectedStore->marketplace ?: 'Marketplace'); ?></small>
                                 </span>
-                            @else
+                            <?php else: ?>
                                 <span class="rms-generator-store-placeholder">Pilih Store</span>
-                            @endif
+                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                             <span class="rms-generator-chevron" :class="{ 'is-open': open }">
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 9 5 5 5-5"/></svg>
                             </span>
@@ -529,85 +96,86 @@ new class extends Component
                                     <span>SELECT STORE</span>
                                     <small>Template owner</small>
                                 </div>
-                                <b>{{ $this->stores->count() }}</b>
+                                <b><?php echo e($this->stores->count()); ?></b>
                             </div>
 
-                            @forelse($this->stores as $store)
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__empty_1 = true; $__currentLoopData = $this->stores; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $store): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
                                 <button type="button"
-                                    class="{{ (int)$selectedStoreId === (int)$store->id ? 'selected' : '' }}"
-                                    wire:click="selectStore({{ $store->id }})"
+                                    class="<?php echo e((int)$selectedStoreId === (int)$store->id ? 'selected' : ''); ?>"
+                                    wire:click="selectStore(<?php echo e($store->id); ?>)"
                                     x-on:click="open=false">
                                     <span class="rms-generator-option-logo">
-                                        @if($store->logo_path)
-                                            <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($store->logo_path) }}" alt="">
-                                        @else
-                                            <b>{{ strtoupper(substr($store->name, 0, 1)) }}</b>
-                                        @endif
+                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($store->logo_path): ?>
+                                            <img src="<?php echo e(\Illuminate\Support\Facades\Storage::disk('public')->url($store->logo_path)); ?>" alt="">
+                                        <?php else: ?>
+                                            <b><?php echo e(strtoupper(substr($store->name, 0, 1))); ?></b>
+                                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                     </span>
                                     <span>
-                                        <strong>{{ $store->name }}</strong>
-                                        <small>{{ $store->marketplace ?: 'Marketplace' }} · {{ $store->templates->count() }} template</small>
+                                        <strong><?php echo e($store->name); ?></strong>
+                                        <small><?php echo e($store->marketplace ?: 'Marketplace'); ?> · <?php echo e($store->templates->count()); ?> template</small>
                                     </span>
-                                    <i>{{ (int)$selectedStoreId === (int)$store->id ? '✓' : '' }}</i>
+                                    <i><?php echo e((int)$selectedStoreId === (int)$store->id ? '✓' : ''); ?></i>
                                 </button>
-                            @empty
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
                                 <div class="rms-generator-empty-mini">Belum ada Store aktif.</div>
-                            @endforelse
+                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         </div>
                     </div>
 
                     <div class="rms-generator-template-heading">
                         <label class="rms-generator-field-label">Template <em>*</em></label>
-                        @if($this->selectedStore)
-                            <span>{{ $this->templates->count() }} tersedia</span>
-                        @endif
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($this->selectedStore): ?>
+                            <span><?php echo e($this->templates->count()); ?> tersedia</span>
+                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     </div>
 
                     <div class="rms-generator-search">
                         <span>⌕</span>
                         <input type="text" wire:model.live.debounce.250ms="templateSearch"
-                            placeholder="{{ $this->selectedStore ? 'Cari template...' : 'Pilih Store terlebih dahulu' }}"
-                            @disabled(!$this->selectedStore)>
+                            placeholder="<?php echo e($this->selectedStore ? 'Cari template...' : 'Pilih Store terlebih dahulu'); ?>"
+                            <?php if(!$this->selectedStore): echo 'disabled'; endif; ?>>
                     </div>
 
                     <div class="rms-generator-chips rms-filter-drag">
-                        @foreach(['all' => 'All', 'promo' => 'Promo', 'product' => 'Product', 'lifestyle' => 'Lifestyle', 'detail' => 'Detail'] as $key => $label)
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = ['all' => 'All', 'promo' => 'Promo', 'product' => 'Product', 'lifestyle' => 'Lifestyle', 'detail' => 'Detail']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key => $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
                             <button type="button"
-                                class="rms-filter-chip {{ $templateCategory === $key ? 'active' : '' }}"
-                                wire:click="$set('templateCategory','{{ $key }}')"
-                                @disabled(!$this->selectedStore)>
-                                {{ $label }}
+                                class="rms-filter-chip <?php echo e($templateCategory === $key ? 'active' : ''); ?>"
+                                wire:click="$set('templateCategory','<?php echo e($key); ?>')"
+                                <?php if(!$this->selectedStore): echo 'disabled'; endif; ?>>
+                                <?php echo e($label); ?>
+
                             </button>
-                        @endforeach
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
                     </div>
 
                     <div class="rms-generator-template-grid">
-                        @forelse($this->templates as $template)
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__empty_1 = true; $__currentLoopData = $this->templates; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $template): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
                             <button type="button"
-                                class="rms-generator-template-card {{ (int)$selectedTemplateId === (int)$template->id ? 'selected' : '' }}"
-                                wire:click="toggleTemplate({{ $template->id }})" x-on:click="$nextTick(() => activeStep = (selectedTemplateId === {{ $template->id }}) ? 2 : 1)">
+                                class="rms-generator-template-card <?php echo e((int)$selectedTemplateId === (int)$template->id ? 'selected' : ''); ?>"
+                                wire:click="toggleTemplate(<?php echo e($template->id); ?>)" x-on:click="$nextTick(() => activeStep = (selectedTemplateId === <?php echo e($template->id); ?>) ? 2 : 1)">
                                 <div class="rms-generator-template-image">
-                                    @if($template->example_image_path)
-                                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($template->example_image_path) }}" alt="">
-                                    @else
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($template->example_image_path): ?>
+                                        <img src="<?php echo e(\Illuminate\Support\Facades\Storage::disk('public')->url($template->example_image_path)); ?>" alt="">
+                                    <?php else: ?>
                                         <div class="rms-generator-template-placeholder">AI</div>
-                                    @endif
-                                    @if((int)$selectedTemplateId === (int)$template->id)
+                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if((int)$selectedTemplateId === (int)$template->id): ?>
                                         <i>✓</i>
-                                    @endif
+                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                 </div>
                                 <div class="rms-generator-template-copy">
-                                    <strong>{{ $template->name }}</strong>
-                                    <small>{{ $template->aspect_ratio ?: '1:1' }}</small>
+                                    <strong><?php echo e($template->name); ?></strong>
+                                    <small><?php echo e($template->aspect_ratio ?: '1:1'); ?></small>
                                 </div>
                             </button>
-                        @empty
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
                             <div class="rms-generator-no-template">
                                 <span>✦</span>
-                                <strong>{{ $this->selectedStore ? 'Belum ada template aktif' : 'Pilih Store terlebih dahulu' }}</strong>
-                                <small>{{ $this->selectedStore ? 'Tambahkan template dari Template Library.' : 'Template akan muncul otomatis setelah Store dipilih.' }}</small>
+                                <strong><?php echo e($this->selectedStore ? 'Belum ada template aktif' : 'Pilih Store terlebih dahulu'); ?></strong>
+                                <small><?php echo e($this->selectedStore ? 'Tambahkan template dari Template Library.' : 'Template akan muncul otomatis setelah Store dipilih.'); ?></small>
                             </div>
-                        @endforelse
+                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     </div>
                 </section>
 
@@ -630,14 +198,14 @@ new class extends Component
                                 <div><strong>Foto Produk Utama <em>*</em></strong><small>Packaging / part motor sebagai sumber identitas produk.</small></div>
                                 <span class="rms-upload-badge required">REQUIRED</span>
                             </div>
-                            @if($imageOne)
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($imageOne): ?>
                                 <div class="rms-upload-preview-wrap">
-                                    <img src="{{ $imageOne->temporaryUrl() }}" alt="">
+                                    <img src="<?php echo e($imageOne->temporaryUrl()); ?>" alt="">
                                     <div class="rms-upload-preview-shade"></div>
                                     <button type="button" class="rms-generator-remove" wire:click="clearImageOne">×</button>
                                     <span class="rms-upload-complete">✓ Uploaded</span>
                                 </div>
-                            @else
+                            <?php else: ?>
                                 <div class="rms-generator-upload-placeholder">
                                     <div class="rms-generator-upload-icon">
                                         <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 20h14"/></svg>
@@ -650,7 +218,7 @@ new class extends Component
                                     </label>
                                     <em>JPG, PNG, WEBP · Maks. 10MB</em>
                                 </div>
-                            @endif
+                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         </div>
 
                         <div class="rms-generator-upload-box rms-upload-reference" :class="{ 'has-image': imageTwo, 'is-disabled': !useInstalledReference }">
@@ -659,14 +227,14 @@ new class extends Component
                                 <div><strong>Foto Produk Terpasang</strong><small>Referensi bentuk, posisi, dan penggunaan part pada motor.</small></div>
                                 <span class="rms-upload-badge optional">OPTIONAL</span>
                             </div>
-                            @if($imageTwo)
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($imageTwo): ?>
                                 <div class="rms-upload-preview-wrap">
-                                    <img src="{{ $imageTwo->temporaryUrl() }}" alt="">
+                                    <img src="<?php echo e($imageTwo->temporaryUrl()); ?>" alt="">
                                     <div class="rms-upload-preview-shade"></div>
                                     <button type="button" class="rms-generator-remove" wire:click="clearImageTwo">×</button>
                                     <span class="rms-upload-complete">✓ Reference ready</span>
                                 </div>
-                            @elseif($useInstalledReference)
+                            <?php elseif($useInstalledReference): ?>
                                 <div class="rms-generator-upload-placeholder">
                                     <div class="rms-generator-upload-icon reference">
                                         <svg viewBox="0 0 24 24"><path d="M4 17.5V6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5Z"/><circle cx="9" cy="9" r="1.5"/><path d="m5.5 17 4.2-4.2 3 3 2.3-2.3 3.5 3.5"/></svg>
@@ -679,13 +247,13 @@ new class extends Component
                                     </label>
                                     <em>JPG, PNG, WEBP · Maks. 10MB</em>
                                 </div>
-                            @else
+                            <?php else: ?>
                                 <div class="rms-upload-disabled-state">
                                     <span>✦</span>
                                     <strong>Mode tanpa foto terpasang</strong>
                                     <small>AI akan membuat konteks visual berdasarkan produk dan template.</small>
                                 </div>
-                            @endif
+                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         </div>
                     </div>
 
@@ -698,14 +266,14 @@ new class extends Component
                             </div>
                         </div>
                         <div class="rms-reference-toggle">
-                            <button type="button" class="{{ $useInstalledReference ? 'active' : '' }}" wire:click="setReferenceMode(true)">Gunakan Foto Terpasang</button>
-                            <button type="button" class="{{ ! $useInstalledReference ? 'active' : '' }}" wire:click="setReferenceMode(false)">Tanpa Foto Terpasang</button>
+                            <button type="button" class="<?php echo e($useInstalledReference ? 'active' : ''); ?>" wire:click="setReferenceMode(true)">Gunakan Foto Terpasang</button>
+                            <button type="button" class="<?php echo e(! $useInstalledReference ? 'active' : ''); ?>" wire:click="setReferenceMode(false)">Tanpa Foto Terpasang</button>
                         </div>
                     </div>
 
                     <div
-                        class="rms-custom-title-card {{ $useCustomTitle ? 'is-active' : '' }}"
-                        x-data="{ open: @entangle('useCustomTitle').live }"
+                        class="rms-custom-title-card <?php echo e($useCustomTitle ? 'is-active' : ''); ?>"
+                        x-data="{ open: <?php if ((object) ('useCustomTitle') instanceof \Livewire\WireDirective) : ?>window.Livewire.find('<?php echo e($__livewire->getId()); ?>').entangle('<?php echo e('useCustomTitle'->value()); ?>')<?php echo e('useCustomTitle'->hasModifier('live') ? '.live' : ''); ?><?php else : ?>window.Livewire.find('<?php echo e($__livewire->getId()); ?>').entangle('<?php echo e('useCustomTitle'); ?>')<?php endif; ?>.live }"
                         :class="{ 'is-active': open }"
                     >
                         <div class="rms-custom-title-head">
@@ -754,7 +322,7 @@ new class extends Component
                             <div class="rms-custom-title-input-wrap">
                                 <div class="rms-custom-title-input-head">
                                     <label for="custom-product-title">Judul custom</label>
-                                    <span>{{ mb_strlen($customTitle) }}/120</span>
+                                    <span><?php echo e(mb_strlen($customTitle)); ?>/120</span>
                                 </div>
 
                                 <div class="rms-custom-title-input-shell">
@@ -775,9 +343,16 @@ new class extends Component
                                     <span>Judul ini menjadi headline utama. Layout, style, logo, dan komposisi tetap mengikuti Template.</span>
                                 </div>
 
-                                @error('customTitle')
-                                    <div class="rms-custom-title-error">{{ $message }}</div>
-                                @enderror
+                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__errorArgs = ['customTitle'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                    <div class="rms-custom-title-error"><?php echo e($message); ?></div>
+                                <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -787,13 +362,13 @@ new class extends Component
                         <div class="rms-flow-items">
                             <div class="rms-flow-item ready"><b>01</b><span>Product</span><small>Uploaded</small></div>
                             <i>+</i>
-                            <div class="rms-flow-item {{ ! $useInstalledReference ? 'muted' : ($imageTwo ? 'ready' : '') }}"><b>02</b><span>Installed</span><small>{{ ! $useInstalledReference ? 'Skipped' : ($imageTwo ? 'Uploaded' : 'Optional') }}</small></div>
+                            <div class="rms-flow-item <?php echo e(! $useInstalledReference ? 'muted' : ($imageTwo ? 'ready' : '')); ?>"><b>02</b><span>Installed</span><small><?php echo e(! $useInstalledReference ? 'Skipped' : ($imageTwo ? 'Uploaded' : 'Optional')); ?></small></div>
                             <i>+</i>
                             <div class="rms-flow-item ready"><b>03</b><span>Store Logo</span><small>Automatic</small></div>
                         </div>
                     </div>
 
-                    {{-- Preview hasil dipusatkan di Recent Generations. Modal preview tetap tersedia saat card hasil diklik. --}}
+                    
 
                         <div class="rms-generator-settings">
                         <div class="rms-generator-subhead">
@@ -811,49 +386,49 @@ new class extends Component
                                 <span class="rms-custom-select-label">Model Vercel AI Gateway</span>
                                 <button type="button" class="rms-custom-select-trigger" :class="{ 'is-open': open }" x-on:click="open=!open">
                                     <span>
-                                        <b>{{ $model ?: 'Model belum tersedia' }}</b>
-                                        <small>{{ count($this->availableModels) }} model image tersedia dari Vercel AI Gateway</small>
+                                        <b><?php echo e($model ?: 'Model belum tersedia'); ?></b>
+                                        <small><?php echo e(count($this->availableModels)); ?> model image tersedia dari Vercel AI Gateway</small>
                                     </span>
                                     <i><svg viewBox="0 0 24 24"><path d="m7 9 5 5 5-5"/></svg></i>
                                 </button>
                                 <div class="rms-custom-select-menu" x-show="open" x-transition.opacity.scale.origin.top style="display:none">
-                                    @forelse($this->availableModels as $openAiModel)
-                                        <button type="button" class="{{ $model === $openAiModel['id'] ? 'selected' : '' }}" wire:click="selectModel('{{ addslashes($openAiModel['id']) }}')" x-on:click="open=false">
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__empty_1 = true; $__currentLoopData = $this->availableModels; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $openAiModel): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
+                                        <button type="button" class="<?php echo e($model === $openAiModel['id'] ? 'selected' : ''); ?>" wire:click="selectModel('<?php echo e(addslashes($openAiModel['id'])); ?>')" x-on:click="open=false">
                                             <span class="rms-option-model">AI</span>
                                             <span>
-                                                <strong>{{ $openAiModel['id'] }}</strong>
-                                                <small>{{ $openAiModel['owned_by'] ?? 'Vercel AI Gateway' }}</small>
+                                                <strong><?php echo e($openAiModel['id']); ?></strong>
+                                                <small><?php echo e($openAiModel['owned_by'] ?? 'Vercel AI Gateway'); ?></small>
                                             </span>
-                                            <i>{{ $model === $openAiModel['id'] ? '✓' : '' }}</i>
+                                            <i><?php echo e($model === $openAiModel['id'] ? '✓' : ''); ?></i>
                                         </button>
-                                    @empty
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
                                         <div class="rms-generator-empty-mini">Model image tidak ditemukan dari Vercel AI Gateway. Cek koneksi Gateway.</div>
-                                    @endforelse
+                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                 </div>
                             </div>
                             <div class="rms-custom-select rms-custom-select-enhanced" x-data="{ open:false }" x-on:click.outside="open=false">
                                 <span class="rms-custom-select-label">Aspect Ratio</span>
                                 <button type="button" class="rms-custom-select-trigger" :class="{ 'is-open': open }" x-on:click="open=!open">
                                     <span>
-                                        <b x-text="aspectRatioLabel('{{ $aspectRatio }}')"></b>
+                                        <b x-text="aspectRatioLabel('<?php echo e($aspectRatio); ?>')"></b>
                                         <small>Canvas output</small>
                                     </span>
                                     <i><svg viewBox="0 0 24 24"><path d="m7 9 5 5 5-5"/></svg></i>
                                 </button>
                                 <div class="rms-custom-select-menu" x-show="open" x-transition.opacity.scale.origin.top style="display:none">
-                                    @foreach([
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = [
                                         '1:1' => ['1:1 (Square)', 'Perfect for marketplace & catalog'],
                                         '4:5' => ['4:5 (Portrait)', 'Social & product feed'],
                                         '3:4' => ['3:4 (Portrait)', 'Portrait product visual'],
                                         '16:9' => ['16:9 (Landscape)', 'Banner & marketplace hero'],
                                         '9:16' => ['9:16 (Story)', 'Story & vertical content'],
-                                    ] as $value => $meta)
-                                        <button type="button" class="{{ $aspectRatio === $value ? 'selected' : '' }}" x-on:click="setLivewireValue('aspectRatio','{{ $value }}'); open=false">
-                                            <span class="rms-option-ratio">{{ $value }}</span>
-                                            <span><strong>{{ $meta[0] }}</strong><small>{{ $meta[1] }}</small></span>
-                                            <i>{{ $aspectRatio === $value ? '✓' : '' }}</i>
+                                    ]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $value => $meta): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
+                                        <button type="button" class="<?php echo e($aspectRatio === $value ? 'selected' : ''); ?>" x-on:click="setLivewireValue('aspectRatio','<?php echo e($value); ?>'); open=false">
+                                            <span class="rms-option-ratio"><?php echo e($value); ?></span>
+                                            <span><strong><?php echo e($meta[0]); ?></strong><small><?php echo e($meta[1]); ?></small></span>
+                                            <i><?php echo e($aspectRatio === $value ? '✓' : ''); ?></i>
                                         </button>
-                                    @endforeach
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
                                 </div>
                             </div>
 
@@ -861,21 +436,21 @@ new class extends Component
                                 <span class="rms-custom-select-label">Quality</span>
                                 <button type="button" class="rms-custom-select-trigger" :class="{ 'is-open': open }" x-on:click="open=!open">
                                     <span>
-                                        <b x-text="qualityLabel('{{ $quality }}')"></b>
+                                        <b x-text="qualityLabel('<?php echo e($quality); ?>')"></b>
                                         <small>Output quality</small>
                                     </span>
                                     <i><svg viewBox="0 0 24 24"><path d="m7 9 5 5 5-5"/></svg></i>
                                 </button>
                                 <div class="rms-custom-select-menu" x-show="open" x-transition.opacity.scale.origin.top style="display:none">
-                                    <button type="button" class="{{ $quality === 'standard' ? 'selected' : '' }}" x-on:click="setLivewireValue('quality','standard'); open=false">
+                                    <button type="button" class="<?php echo e($quality === 'standard' ? 'selected' : ''); ?>" x-on:click="setLivewireValue('quality','standard'); open=false">
                                         <span class="rms-option-quality standard">S</span>
                                         <span><strong>Standard</strong><small>Balanced speed & quality</small></span>
-                                        <i>{{ $quality === 'standard' ? '✓' : '' }}</i>
+                                        <i><?php echo e($quality === 'standard' ? '✓' : ''); ?></i>
                                     </button>
-                                    <button type="button" class="{{ $quality === 'high' ? 'selected' : '' }}" x-on:click="setLivewireValue('quality','high'); open=false">
+                                    <button type="button" class="<?php echo e($quality === 'high' ? 'selected' : ''); ?>" x-on:click="setLivewireValue('quality','high'); open=false">
                                         <span class="rms-option-quality high">H</span>
                                         <span><strong>High Quality</strong><small>Maximum visual detail</small></span>
-                                        <i>{{ $quality === 'high' ? '✓' : '' }}</i>
+                                        <i><?php echo e($quality === 'high' ? '✓' : ''); ?></i>
                                     </button>
                                 </div>
                             </div>
@@ -884,19 +459,19 @@ new class extends Component
                                 <span class="rms-custom-select-label">Jumlah Gambar</span>
                                 <button type="button" class="rms-custom-select-trigger" :class="{ 'is-open': open }" x-on:click="open=!open">
                                     <span>
-                                        <b>{{ $imageCount }} {{ $imageCount === 1 ? 'Gambar' : 'Gambar' }}</b>
+                                        <b><?php echo e($imageCount); ?> <?php echo e($imageCount === 1 ? 'Gambar' : 'Gambar'); ?></b>
                                         <small>Jumlah hasil yang akan dibuat</small>
                                     </span>
                                     <i><svg viewBox="0 0 24 24"><path d="m7 9 5 5 5-5"/></svg></i>
                                 </button>
                                 <div class="rms-custom-select-menu" x-show="open" x-transition.opacity.scale.origin.top style="display:none">
-                                    @foreach([1,2,3,4] as $count)
-                                        <button type="button" class="{{ (int)$imageCount === $count ? 'selected' : '' }}" x-on:click="setLivewireValue('imageCount', {{ $count }}); open=false">
-                                            <span class="rms-option-count">{{ $count }}</span>
-                                            <span><strong>{{ $count }} {{ $count === 1 ? 'Gambar' : 'Gambar' }}</strong><small>{{ $count === 1 ? 'Satu hasil utama' : $count . ' variasi hasil' }}</small></span>
-                                            <i>{{ (int)$imageCount === $count ? '✓' : '' }}</i>
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = [1,2,3,4]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $count): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
+                                        <button type="button" class="<?php echo e((int)$imageCount === $count ? 'selected' : ''); ?>" x-on:click="setLivewireValue('imageCount', <?php echo e($count); ?>); open=false">
+                                            <span class="rms-option-count"><?php echo e($count); ?></span>
+                                            <span><strong><?php echo e($count); ?> <?php echo e($count === 1 ? 'Gambar' : 'Gambar'); ?></strong><small><?php echo e($count === 1 ? 'Satu hasil utama' : $count . ' variasi hasil'); ?></small></span>
+                                            <i><?php echo e((int)$imageCount === $count ? '✓' : ''); ?></i>
                                         </button>
-                                    @endforeach
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -933,638 +508,7 @@ new class extends Component
         </section>
 
 
-<style>
-/* ============================================================
-   RMS GENERATOR — MOTION / INTERACTION V3
-   Pure CSS animation layer. Tidak mengubah fungsi Livewire/Alpine.
-   ============================================================ */
 
-.rms-generator-workspace-animated{
-    --rms-red:#ef233c;
-    --rms-red-dark:#c9142a;
-    --rms-ink:#17181b;
-    --rms-muted:#8b9099;
-    --rms-line:#e8e9ed;
-    --rms-soft:#f7f8fa;
-    --rms-shadow:0 18px 55px rgba(20,22,28,.08);
-    position:relative;
-    isolation:isolate;
-}
-
-/* ---------- Ambient background ---------- */
-.rms-generator-workspace-animated::before,
-.rms-generator-workspace-animated::after{
-    content:"";
-    position:absolute;
-    z-index:-1;
-    pointer-events:none;
-    border-radius:999px;
-    filter:blur(2px);
-    opacity:.45;
-}
-.rms-generator-workspace-animated::before{
-    width:280px;height:280px;
-    top:30px;right:-90px;
-    background:radial-gradient(circle,rgba(239,35,60,.10),transparent 68%);
-    animation:rmsAmbientFloat 8s ease-in-out infinite;
-}
-.rms-generator-workspace-animated::after{
-    width:240px;height:240px;
-    left:-90px;bottom:180px;
-    background:radial-gradient(circle,rgba(120,130,150,.08),transparent 68%);
-    animation:rmsAmbientFloat 10s ease-in-out infinite reverse;
-}
-@keyframes rmsAmbientFloat{
-    0%,100%{transform:translate3d(0,0,0) scale(1)}
-    50%{transform:translate3d(12px,-14px,0) scale(1.08)}
-}
-
-/* ---------- Staggered page entrance ---------- */
-.rms-generator-workspace-animated .rms-generator-stepbar{
-    animation:rmsFadeUp .55s cubic-bezier(.2,.75,.25,1) both;
-}
-.rms-generator-workspace-animated .rms-generator-columns{
-    animation:rmsFadeUp .65s .08s cubic-bezier(.2,.75,.25,1) both;
-}
-.rms-generator-workspace-animated .rms-generator-columns > section:first-child{
-    animation:rmsCardIn .65s .12s cubic-bezier(.2,.8,.25,1) both;
-}
-.rms-generator-workspace-animated .rms-generator-columns > section:nth-child(2){
-    animation:rmsCardIn .65s .2s cubic-bezier(.2,.8,.25,1) both;
-}
-@keyframes rmsFadeUp{
-    from{opacity:0;transform:translateY(18px)}
-    to{opacity:1;transform:translateY(0)}
-}
-@keyframes rmsCardIn{
-    from{opacity:0;transform:translateY(24px) scale(.985)}
-    to{opacity:1;transform:translateY(0) scale(1)}
-}
-
-/* ---------- Step bar ---------- */
-.rms-generator-workspace-animated .rms-generator-stepbar{
-    position:relative;
-}
-.rms-generator-workspace-animated .rms-generator-step{
-    position:relative;
-    transition:transform .3s cubic-bezier(.2,.8,.2,1),filter .3s ease;
-}
-.rms-generator-workspace-animated .rms-generator-step:hover{
-    transform:translateY(-2px);
-}
-.rms-generator-workspace-animated .rms-generator-step b{
-    position:relative;
-    transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s ease;
-}
-.rms-generator-workspace-animated .rms-generator-step.is-active b{
-    animation:rmsStepPulse 2.2s ease-in-out infinite;
-}
-.rms-generator-workspace-animated .rms-generator-step.is-complete b{
-    animation:rmsCompletePop .45s cubic-bezier(.2,1.5,.4,1) both;
-}
-@keyframes rmsStepPulse{
-    0%,100%{box-shadow:0 0 0 0 rgba(239,35,60,0)}
-    50%{box-shadow:0 0 0 7px rgba(239,35,60,.10)}
-}
-@keyframes rmsCompletePop{
-    0%{transform:scale(.72) rotate(-12deg)}
-    70%{transform:scale(1.14) rotate(3deg)}
-    100%{transform:scale(1) rotate(0)}
-}
-.rms-generator-workspace-animated .rms-generator-stepbar > i{
-    position:relative;
-    overflow:hidden;
-}
-.rms-generator-workspace-animated .rms-generator-stepbar > i.is-filled::after{
-    content:"";
-    position:absolute;
-    inset:0;
-    transform:translateX(-100%);
-    background:linear-gradient(90deg,transparent,rgba(239,35,60,.45),transparent);
-    animation:rmsConnectorFill .7s ease both;
-}
-@keyframes rmsConnectorFill{
-    to{transform:translateX(100%)}
-}
-
-/* ---------- Cards ---------- */
-.rms-generator-workspace-animated .rms-generator-card{
-    position:relative;
-    transition:
-        transform .35s cubic-bezier(.2,.8,.2,1),
-        box-shadow .35s ease,
-        border-color .35s ease;
-}
-.rms-generator-workspace-animated .rms-generator-card::before{
-    content:"";
-    position:absolute;
-    inset:0;
-    border-radius:inherit;
-    pointer-events:none;
-    opacity:0;
-    background:linear-gradient(115deg,transparent 20%,rgba(255,255,255,.62) 50%,transparent 80%);
-    transform:translateX(-120%);
-    transition:opacity .2s ease;
-}
-.rms-generator-workspace-animated .rms-generator-card:hover{
-    transform:translateY(-3px);
-    box-shadow:var(--rms-shadow);
-}
-.rms-generator-workspace-animated .rms-generator-card:hover::before{
-    opacity:1;
-    animation:rmsCardShine .9s ease both;
-}
-@keyframes rmsCardShine{
-    to{transform:translateX(120%)}
-}
-
-/* ---------- Card headings ---------- */
-.rms-generator-workspace-animated .rms-generator-card-head > div > span,
-.rms-generator-workspace-animated .rms-generator-subhead strong{
-    transition:color .25s ease;
-}
-.rms-generator-workspace-animated .rms-generator-card:hover .rms-generator-card-head > div > span{
-    color:var(--rms-red);
-}
-.rms-generator-workspace-animated .rms-generator-card-head h2{
-    transition:letter-spacing .3s ease,transform .3s ease;
-}
-.rms-generator-workspace-animated .rms-generator-card:hover .rms-generator-card-head h2{
-    letter-spacing:-.02em;
-    transform:translateX(2px);
-}
-
-/* ---------- Store selector ---------- */
-.rms-generator-workspace-animated .rms-generator-store-trigger{
-    position:relative;
-    overflow:hidden;
-    transition:
-        transform .25s cubic-bezier(.2,.8,.2,1),
-        border-color .25s ease,
-        box-shadow .25s ease,
-        background .25s ease;
-}
-.rms-generator-workspace-animated .rms-generator-store-trigger::after{
-    content:"";
-    position:absolute;
-    top:0;bottom:0;
-    width:55%;
-    left:-80%;
-    pointer-events:none;
-    background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);
-    transform:skewX(-18deg);
-}
-.rms-generator-workspace-animated .rms-generator-store-trigger:hover{
-    transform:translateY(-2px);
-    box-shadow:0 10px 25px rgba(20,22,28,.08);
-}
-.rms-generator-workspace-animated .rms-generator-store-trigger:hover::after{
-    animation:rmsSweep .8s ease;
-}
-@keyframes rmsSweep{
-    to{left:130%}
-}
-.rms-generator-workspace-animated .rms-generator-store-logo,
-.rms-generator-workspace-animated .rms-generator-option-logo{
-    transition:transform .35s cubic-bezier(.2,.9,.25,1),box-shadow .35s ease;
-}
-.rms-generator-workspace-animated .rms-generator-store-trigger:hover .rms-generator-store-logo{
-    transform:scale(1.06) rotate(-2deg);
-    box-shadow:0 5px 16px rgba(20,20,25,.12);
-}
-.rms-generator-workspace-animated .rms-generator-chevron{
-    transition:transform .3s ease;
-}
-.rms-generator-workspace-animated .rms-generator-chevron.is-open{
-    transform:rotate(180deg);
-}
-.rms-generator-workspace-animated .rms-generator-store-menu{
-    transform-origin:top center;
-    animation:rmsMenuIn .22s cubic-bezier(.2,.8,.2,1) both;
-}
-@keyframes rmsMenuIn{
-    from{opacity:0;transform:translateY(-7px) scale(.98)}
-    to{opacity:1;transform:translateY(0) scale(1)}
-}
-.rms-generator-workspace-animated .rms-generator-store-menu button{
-    transition:background .2s ease,transform .2s ease,padding-left .2s ease;
-}
-.rms-generator-workspace-animated .rms-generator-store-menu button:hover{
-    transform:translateX(3px);
-}
-
-/* ---------- Search ---------- */
-.rms-generator-workspace-animated .rms-generator-search{
-    transition:border-color .25s ease,box-shadow .25s ease,transform .25s ease;
-}
-.rms-generator-workspace-animated .rms-generator-search:focus-within{
-    transform:translateY(-1px);
-    border-color:rgba(239,35,60,.45);
-    box-shadow:0 0 0 4px rgba(239,35,60,.07),0 8px 22px rgba(20,22,28,.05);
-}
-.rms-generator-workspace-animated .rms-generator-search > span{
-    transition:transform .3s ease,color .3s ease;
-}
-.rms-generator-workspace-animated .rms-generator-search:focus-within > span{
-    color:var(--rms-red);
-    transform:scale(1.15) rotate(-8deg);
-}
-
-/* ---------- Filter chips ---------- */
-.rms-generator-workspace-animated .rms-filter-chip{
-    position:relative;
-    overflow:hidden;
-    transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s ease,color .25s ease,background .25s ease;
-}
-.rms-generator-workspace-animated .rms-filter-chip::after{
-    content:"";
-    position:absolute;
-    width:20px;height:20px;
-    border-radius:50%;
-    background:rgba(255,255,255,.4);
-    transform:scale(0);
-    left:50%;top:50%;
-    translate:-50% -50%;
-    pointer-events:none;
-}
-.rms-generator-workspace-animated .rms-filter-chip:active::after{
-    animation:rmsChipRipple .4s ease;
-}
-.rms-generator-workspace-animated .rms-filter-chip:hover{
-    transform:translateY(-2px);
-}
-@keyframes rmsChipRipple{
-    to{transform:scale(8);opacity:0}
-}
-
-/* ---------- Template cards ---------- */
-.rms-generator-workspace-animated .rms-generator-template-card{
-    position:relative;
-    overflow:hidden;
-    transition:
-        transform .35s cubic-bezier(.2,.8,.2,1),
-        box-shadow .35s ease,
-        border-color .3s ease;
-}
-.rms-generator-workspace-animated .rms-generator-template-card::before{
-    content:"";
-    position:absolute;
-    z-index:3;
-    top:-20%;
-    left:-70%;
-    width:42%;
-    height:140%;
-    background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);
-    transform:skewX(-18deg);
-    pointer-events:none;
-}
-.rms-generator-workspace-animated .rms-generator-template-card:hover{
-    transform:translateY(-7px) scale(1.012);
-    box-shadow:0 16px 30px rgba(20,22,28,.12);
-}
-.rms-generator-workspace-animated .rms-generator-template-card:hover::before{
-    animation:rmsTemplateSweep .8s ease both;
-}
-@keyframes rmsTemplateSweep{
-    to{left:135%}
-}
-.rms-generator-workspace-animated .rms-generator-template-image{
-    overflow:hidden;
-}
-.rms-generator-workspace-animated .rms-generator-template-image img{
-    transition:transform .6s cubic-bezier(.2,.8,.2,1),filter .4s ease;
-}
-.rms-generator-workspace-animated .rms-generator-template-card:hover .rms-generator-template-image img{
-    transform:scale(1.065);
-    filter:saturate(1.08);
-}
-.rms-generator-workspace-animated .rms-generator-template-card > .rms-generator-template-image > i{
-    animation:rmsSelectedBadge .45s cubic-bezier(.2,1.5,.4,1) both;
-}
-@keyframes rmsSelectedBadge{
-    0%{opacity:0;transform:scale(.3) rotate(-20deg)}
-    70%{transform:scale(1.18) rotate(4deg)}
-    100%{opacity:1;transform:scale(1) rotate(0)}
-}
-
-/* ---------- Upload boxes ---------- */
-.rms-generator-workspace-animated .rms-generator-upload-box{
-    position:relative;
-    overflow:hidden;
-    transition:
-        transform .35s cubic-bezier(.2,.8,.2,1),
-        border-color .3s ease,
-        box-shadow .35s ease,
-        background .3s ease;
-}
-.rms-generator-workspace-animated .rms-generator-upload-box::after{
-    content:"";
-    position:absolute;
-    inset:0;
-    pointer-events:none;
-    opacity:0;
-    border-radius:inherit;
-    box-shadow:inset 0 0 0 1px rgba(239,35,60,.35);
-    transition:opacity .25s ease;
-}
-.rms-generator-workspace-animated .rms-generator-upload-box:hover{
-    transform:translateY(-4px);
-    border-color:#d5d8de;
-    box-shadow:0 14px 30px rgba(20,22,28,.08);
-}
-.rms-generator-workspace-animated .rms-generator-upload-box:hover::after{
-    opacity:1;
-}
-.rms-generator-workspace-animated .rms-generator-upload-icon{
-    transition:transform .35s cubic-bezier(.2,.9,.25,1),box-shadow .35s ease;
-}
-.rms-generator-workspace-animated .rms-generator-upload-box:hover .rms-generator-upload-icon{
-    transform:translateY(-4px) scale(1.05) rotate(-2deg);
-}
-.rms-generator-workspace-animated .rms-generator-upload-button{
-    position:relative;
-    overflow:hidden;
-    transition:transform .25s ease,box-shadow .25s ease;
-}
-.rms-generator-workspace-animated .rms-generator-upload-button:hover{
-    transform:translateY(-2px);
-    box-shadow:0 8px 18px rgba(20,22,28,.10);
-}
-.rms-generator-workspace-animated .rms-generator-upload-button span{
-    display:inline-block;
-    transition:transform .3s ease;
-}
-.rms-generator-workspace-animated .rms-generator-upload-button:hover span{
-    transform:translateY(-2px);
-}
-.rms-generator-workspace-animated .rms-upload-preview-wrap{
-    animation:rmsPreviewReveal .5s cubic-bezier(.2,.8,.2,1) both;
-}
-@keyframes rmsPreviewReveal{
-    from{opacity:0;transform:scale(.94);filter:blur(4px)}
-    to{opacity:1;transform:scale(1);filter:blur(0)}
-}
-.rms-generator-workspace-animated .rms-upload-complete{
-    animation:rmsStatusIn .45s .15s cubic-bezier(.2,1.4,.4,1) both;
-}
-@keyframes rmsStatusIn{
-    from{opacity:0;transform:translateY(8px)}
-    to{opacity:1;transform:translateY(0)}
-}
-.rms-generator-workspace-animated .rms-generator-remove{
-    transition:transform .25s ease,background .25s ease,box-shadow .25s ease;
-}
-.rms-generator-workspace-animated .rms-generator-remove:hover{
-    transform:scale(1.08) rotate(6deg);
-    box-shadow:0 6px 16px rgba(0,0,0,.16);
-}
-
-/* ---------- Reference mode ---------- */
-.rms-generator-workspace-animated .rms-reference-mode{
-    transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease;
-}
-.rms-generator-workspace-animated .rms-reference-mode:hover{
-    transform:translateY(-2px);
-    box-shadow:0 10px 25px rgba(20,22,28,.06);
-}
-.rms-generator-workspace-animated .rms-reference-icon{
-    animation:rmsSparkle 2.4s ease-in-out infinite;
-}
-@keyframes rmsSparkle{
-    0%,100%{transform:scale(1) rotate(0);opacity:.75}
-    50%{transform:scale(1.13) rotate(8deg);opacity:1}
-}
-.rms-generator-workspace-animated .rms-reference-toggle button{
-    position:relative;
-    overflow:hidden;
-    transition:transform .25s ease,background .25s ease,color .25s ease,box-shadow .25s ease;
-}
-.rms-generator-workspace-animated .rms-reference-toggle button:hover{
-    transform:translateY(-1px);
-}
-.rms-generator-workspace-animated .rms-reference-toggle button.active{
-    box-shadow:0 7px 18px rgba(239,35,60,.12);
-}
-.rms-generator-workspace-animated .rms-flow-item{
-    transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s ease,opacity .3s ease;
-}
-.rms-generator-workspace-animated .rms-flow-item.ready{
-    animation:rmsFlowReady .55s cubic-bezier(.2,1.2,.3,1) both;
-}
-.rms-generator-workspace-animated .rms-flow-item:hover{
-    transform:translateY(-4px) scale(1.02);
-    box-shadow:0 9px 20px rgba(20,22,28,.07);
-}
-.rms-generator-workspace-animated .rms-flow-items > i{
-    animation:rmsPlusFloat 1.8s ease-in-out infinite;
-}
-@keyframes rmsFlowReady{
-    from{opacity:0;transform:translateY(9px) scale(.94)}
-    to{opacity:1;transform:translateY(0) scale(1)}
-}
-@keyframes rmsPlusFloat{
-    0%,100%{transform:translateX(0);opacity:.55}
-    50%{transform:translateX(2px);opacity:1}
-}
-
-/* ---------- Settings ---------- */
-.rms-generator-workspace-animated .rms-settings-collapse{
-    transition:transform .3s ease,box-shadow .3s ease,background .25s ease;
-}
-.rms-generator-workspace-animated .rms-settings-collapse:hover{
-    transform:translateY(-2px);
-    box-shadow:0 7px 18px rgba(20,22,28,.08);
-}
-.rms-generator-workspace-animated .rms-settings-collapse svg{
-    transition:transform .35s cubic-bezier(.2,.8,.2,1);
-}
-.rms-generator-workspace-animated .rms-settings-collapse.is-open svg{
-    transform:rotate(180deg);
-}
-.rms-generator-workspace-animated .rms-generator-settings-grid{
-    transform-origin:top;
-}
-.rms-generator-workspace-animated .rms-custom-select-trigger{
-    transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease;
-}
-.rms-generator-workspace-animated .rms-custom-select-trigger:hover{
-    transform:translateY(-2px);
-    box-shadow:0 8px 20px rgba(20,22,28,.06);
-}
-.rms-generator-workspace-animated .rms-custom-select-trigger.is-open{
-    border-color:rgba(239,35,60,.38);
-    box-shadow:0 0 0 4px rgba(239,35,60,.06);
-}
-.rms-generator-workspace-animated .rms-custom-select-trigger > i{
-    transition:transform .3s ease;
-}
-.rms-generator-workspace-animated .rms-custom-select-trigger.is-open > i{
-    transform:rotate(180deg);
-}
-.rms-generator-workspace-animated .rms-custom-select-menu{
-    transform-origin:top center;
-    animation:rmsMenuIn .22s cubic-bezier(.2,.8,.2,1) both;
-}
-.rms-generator-workspace-animated .rms-custom-select-menu button{
-    transition:transform .2s ease,background .2s ease,padding-left .2s ease;
-}
-.rms-generator-workspace-animated .rms-custom-select-menu button:hover{
-    transform:translateX(4px);
-}
-
-/* ---------- Generate CTA ---------- */
-.rms-generator-workspace-animated .rms-generator-generate{
-    position:relative;
-    overflow:hidden;
-    isolation:isolate;
-    transition:
-        transform .3s cubic-bezier(.2,.8,.2,1),
-        box-shadow .3s ease,
-        filter .3s ease;
-}
-.rms-generator-workspace-animated .rms-generator-generate::before{
-    content:"";
-    position:absolute;
-    z-index:-1;
-    inset:-2px;
-    background:linear-gradient(110deg,transparent 18%,rgba(255,255,255,.30) 42%,rgba(255,255,255,.62) 50%,transparent 68%);
-    transform:translateX(-120%);
-}
-.rms-generator-workspace-animated .rms-generator-generate:hover{
-    transform:translateY(-4px);
-    box-shadow:0 18px 35px rgba(239,35,60,.24);
-    filter:saturate(1.08);
-}
-.rms-generator-workspace-animated .rms-generator-generate:hover::before{
-    animation:rmsGenerateShine 1s ease both;
-}
-@keyframes rmsGenerateShine{
-    to{transform:translateX(120%)}
-}
-.rms-generator-workspace-animated .rms-generator-generate:active{
-    transform:translateY(-1px) scale(.985);
-}
-.rms-generator-workspace-animated .rms-generate-icon{
-    display:inline-grid;
-    place-items:center;
-    transition:transform .35s ease;
-}
-.rms-generator-workspace-animated .rms-generator-generate:hover .rms-generate-icon{
-    transform:rotate(18deg) scale(1.15);
-}
-.rms-generator-workspace-animated .rms-generator-generate:not([disabled]) .rms-generate-icon{
-    animation:rmsGenerateIcon 2.5s ease-in-out infinite;
-}
-@keyframes rmsGenerateIcon{
-    0%,70%,100%{transform:rotate(0) scale(1)}
-    78%{transform:rotate(12deg) scale(1.12)}
-    86%{transform:rotate(-8deg) scale(1.08)}
-}
-.rms-generator-workspace-animated .rms-generator-generate > b{
-    transition:transform .3s ease;
-}
-.rms-generator-workspace-animated .rms-generator-generate:hover > b{
-    transform:translateX(5px);
-}
-
-/* Loading state: don't keep the idle sparkle animation while generating */
-.rms-generator-workspace-animated .rms-generator-generate[disabled]{
-    cursor:wait;
-    filter:saturate(.75);
-}
-.rms-generator-workspace-animated .rms-generator-generate[disabled] .rms-generate-icon{
-    animation:rmsLoadingSpin 1s linear infinite;
-}
-@keyframes rmsLoadingSpin{
-    to{transform:rotate(360deg)}
-}
-
-/* ---------- ETA ---------- */
-.rms-generator-workspace-animated .rms-generator-eta-card{
-    position:relative;
-    overflow:hidden;
-    transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease;
-}
-.rms-generator-workspace-animated .rms-generator-eta-card::before{
-    content:"";
-    position:absolute;
-    inset:0;
-    background:linear-gradient(100deg,transparent,rgba(239,35,60,.04),transparent);
-    transform:translateX(-100%);
-    animation:rmsEtaSweep 4s ease-in-out infinite;
-}
-@keyframes rmsEtaSweep{
-    0%,45%{transform:translateX(-100%)}
-    70%,100%{transform:translateX(100%)}
-}
-.rms-generator-workspace-animated .rms-generator-eta-card:hover{
-    transform:translateY(-2px);
-    box-shadow:0 10px 24px rgba(20,22,28,.06);
-}
-.rms-generator-workspace-animated .rms-generator-eta-icon{
-    animation:rmsClockPulse 2s ease-in-out infinite;
-}
-@keyframes rmsClockPulse{
-    0%,100%{transform:scale(1);opacity:.8}
-    50%{transform:scale(1.1);opacity:1}
-}
-
-/* ---------- Disabled / empty ---------- */
-.rms-generator-workspace-animated .rms-generator-upload-box.is-disabled{
-    transition:opacity .3s ease,filter .3s ease,transform .3s ease;
-}
-.rms-generator-workspace-animated .rms-generator-upload-box.is-disabled:hover{
-    transform:none;
-    box-shadow:none;
-}
-.rms-generator-workspace-animated .rms-generator-no-template,
-.rms-generator-workspace-animated .rms-generator-empty-mini{
-    animation:rmsEmptyFloat 3s ease-in-out infinite;
-}
-@keyframes rmsEmptyFloat{
-    0%,100%{transform:translateY(0)}
-    50%{transform:translateY(-3px)}
-}
-
-/* ---------- Small polish ---------- */
-.rms-generator-workspace-animated button{
-    -webkit-tap-highlight-color:transparent;
-}
-.rms-generator-workspace-animated button:focus-visible,
-.rms-generator-workspace-animated input:focus-visible{
-    outline:2px solid rgba(239,35,60,.45);
-    outline-offset:3px;
-}
-.rms-generator-workspace-animated img{
-    backface-visibility:hidden;
-}
-
-/* ---------- Responsive ---------- */
-@media (max-width:760px){
-    .rms-generator-workspace-animated .rms-generator-card:hover{
-        transform:none;
-        box-shadow:none;
-    }
-    .rms-generator-workspace-animated .rms-generator-template-card:hover{
-        transform:translateY(-3px) scale(1.005);
-    }
-    .rms-generator-workspace-animated .rms-generator-upload-box:hover{
-        transform:translateY(-2px);
-    }
-}
-
-/* ---------- Accessibility ---------- */
-@media (prefers-reduced-motion:reduce){
-    .rms-generator-workspace-animated *,
-    .rms-generator-workspace-animated *::before,
-    .rms-generator-workspace-animated *::after{
-        animation-duration:.01ms!important;
-        animation-iteration-count:1!important;
-        scroll-behavior:auto!important;
-        transition-duration:.01ms!important;
-    }
-}
-</style>
 
 
 
@@ -1572,7 +516,7 @@ new class extends Component
 
     <section
         class="rms-generator-history rms-generator-history-bottom rms-generator-history-mobile-safe"
-        wire:key="generation-history"
+        <?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::$currentLoop['key'] = 'generation-history'; ?>wire:key="generation-history"
         x-data="{
             confirmOpen: false,
             confirmTitle: '',
@@ -1624,7 +568,7 @@ new class extends Component
                         <small>Generate berikutnya bisa langsung dibuat tanpa menunggu proses sebelumnya selesai.</small>
                     </div>
                 </div>
-                <div class="rms-history-count"><i></i>{{ $this->recentGenerations->count() }} result</div>
+                <div class="rms-history-count"><i></i><?php echo e($this->recentGenerations->count()); ?> result</div>
             </div>
 
             <div class="rms-history-toolbar">
@@ -1635,46 +579,46 @@ new class extends Component
                 <div class="rms-history-filter-group">
                     <div class="rms-history-filter" x-data="{ open:false }" x-on:click.outside="open=false">
                         <button type="button" x-on:click="open=!open" :class="{ 'is-open': open }">
-                            <span>Status</span><b>{{ $historyStatus === 'all' ? 'All Status' : ucfirst($historyStatus) }}</b><i>⌄</i>
+                            <span>Status</span><b><?php echo e($historyStatus === 'all' ? 'All Status' : ucfirst($historyStatus)); ?></b><i>⌄</i>
                         </button>
                         <div class="rms-history-filter-menu" x-show="open" x-transition.opacity.scale.origin.top.right x-cloak>
-                            @foreach(['all'=>'All Status','queued'=>'Queued','processing'=>'Processing','completed'=>'Completed','failed'=>'Failed'] as $value => $label)
-                                <button type="button" class="{{ $historyStatus === $value ? 'selected' : '' }}" wire:click="$set('historyStatus','{{ $value }}')" x-on:click="open=false">
-                                    <span>{{ $label }}</span><i>{{ $historyStatus === $value ? '✓' : '' }}</i>
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = ['all'=>'All Status','queued'=>'Queued','processing'=>'Processing','completed'=>'Completed','failed'=>'Failed']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $value => $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
+                                <button type="button" class="<?php echo e($historyStatus === $value ? 'selected' : ''); ?>" wire:click="$set('historyStatus','<?php echo e($value); ?>')" x-on:click="open=false">
+                                    <span><?php echo e($label); ?></span><i><?php echo e($historyStatus === $value ? '✓' : ''); ?></i>
                                 </button>
-                            @endforeach
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
                         </div>
                     </div>
 
                     <div class="rms-history-filter" x-data="{ open:false }" x-on:click.outside="open=false">
                         <button type="button" x-on:click="open=!open" :class="{ 'is-open': open }">
-                            <span>Store</span><b>{{ $historyStoreId ? optional($this->stores->firstWhere('id',$historyStoreId))->name : 'All Stores' }}</b><i>⌄</i>
+                            <span>Store</span><b><?php echo e($historyStoreId ? optional($this->stores->firstWhere('id',$historyStoreId))->name : 'All Stores'); ?></b><i>⌄</i>
                         </button>
                         <div class="rms-history-filter-menu" x-show="open" x-transition.opacity.scale.origin.top.right x-cloak>
-                            <button type="button" class="{{ ! $historyStoreId ? 'selected' : '' }}" wire:click="$set('historyStoreId',null)" x-on:click="open=false">
-                                <span>All Stores</span><i>{{ ! $historyStoreId ? '✓' : '' }}</i>
+                            <button type="button" class="<?php echo e(! $historyStoreId ? 'selected' : ''); ?>" wire:click="$set('historyStoreId',null)" x-on:click="open=false">
+                                <span>All Stores</span><i><?php echo e(! $historyStoreId ? '✓' : ''); ?></i>
                             </button>
-                            @foreach($this->stores as $store)
-                                <button type="button" class="{{ (int)$historyStoreId === (int)$store->id ? 'selected' : '' }}" wire:click="$set('historyStoreId',{{ $store->id }})" x-on:click="open=false">
-                                    <span>{{ $store->name }}</span><i>{{ (int)$historyStoreId === (int)$store->id ? '✓' : '' }}</i>
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = $this->stores; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $store): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
+                                <button type="button" class="<?php echo e((int)$historyStoreId === (int)$store->id ? 'selected' : ''); ?>" wire:click="$set('historyStoreId',<?php echo e($store->id); ?>)" x-on:click="open=false">
+                                    <span><?php echo e($store->name); ?></span><i><?php echo e((int)$historyStoreId === (int)$store->id ? '✓' : ''); ?></i>
                                 </button>
-                            @endforeach
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
                         </div>
                     </div>
 
                     <div class="rms-history-filter" x-data="{ open:false }" x-on:click.outside="open=false">
                         <button type="button" x-on:click="open=!open" :class="{ 'is-open': open }">
-                            <span>Template</span><b>{{ $historyTemplateId ? optional($this->historyTemplates->firstWhere('id',$historyTemplateId))->name : 'All Templates' }}</b><i>⌄</i>
+                            <span>Template</span><b><?php echo e($historyTemplateId ? optional($this->historyTemplates->firstWhere('id',$historyTemplateId))->name : 'All Templates'); ?></b><i>⌄</i>
                         </button>
                         <div class="rms-history-filter-menu" x-show="open" x-transition.opacity.scale.origin.top.right x-cloak>
-                            <button type="button" class="{{ ! $historyTemplateId ? 'selected' : '' }}" wire:click="$set('historyTemplateId',null)" x-on:click="open=false">
-                                <span>All Templates</span><i>{{ ! $historyTemplateId ? '✓' : '' }}</i>
+                            <button type="button" class="<?php echo e(! $historyTemplateId ? 'selected' : ''); ?>" wire:click="$set('historyTemplateId',null)" x-on:click="open=false">
+                                <span>All Templates</span><i><?php echo e(! $historyTemplateId ? '✓' : ''); ?></i>
                             </button>
-                            @foreach($this->historyTemplates as $template)
-                                <button type="button" class="{{ (int)$historyTemplateId === (int)$template->id ? 'selected' : '' }}" wire:click="$set('historyTemplateId',{{ $template->id }})" x-on:click="open=false">
-                                    <span>{{ $template->name }}</span><i>{{ (int)$historyTemplateId === (int)$template->id ? '✓' : '' }}</i>
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = $this->historyTemplates; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $template): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
+                                <button type="button" class="<?php echo e((int)$historyTemplateId === (int)$template->id ? 'selected' : ''); ?>" wire:click="$set('historyTemplateId',<?php echo e($template->id); ?>)" x-on:click="open=false">
+                                    <span><?php echo e($template->name); ?></span><i><?php echo e((int)$historyTemplateId === (int)$template->id ? '✓' : ''); ?></i>
                                 </button>
-                            @endforeach
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -1682,12 +626,12 @@ new class extends Component
 
             <div
                 class="rms-generator-history-list rms-generator-history-grid"
-                @if($this->hasActiveGenerations)
+                <?php if($this->hasActiveGenerations): ?>
                     wire:poll.4s.visible
-                @endif
+                <?php endif; ?>
             >
-                @forelse($this->recentGenerations as $generation)
-                    @php
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__empty_1 = true; $__currentLoopData = $this->recentGenerations; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $generation): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
+                    <?php
                         $meta = $generation->metadata ?? [];
                         $status = $generation->status;
                         $progress = max(0, min(100, (int) ($meta['progress'] ?? ($status === 'completed' ? 100 : 8))));
@@ -1708,16 +652,16 @@ new class extends Component
                         $etaLabel = $eta !== null
                             ? ($eta < 60 ? '± ' . $eta . ' detik' : '± ' . ceil($eta / 60) . ' menit')
                             : '± 20–60 detik / gambar';
-                    @endphp
+                    ?>
 
-                    <article wire:key="generation-history-{{ $generation->id }}" class="rms-generator-history-item rms-generation-card status-{{ $status }}">
+                    <article <?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::$currentLoop['key'] = 'generation-history-'.e($generation->id).''; ?>wire:key="generation-history-<?php echo e($generation->id); ?>" class="rms-generator-history-item rms-generation-card status-<?php echo e($status); ?>">
                         <div class="rms-generation-card-head">
-                            <div class="rms-history-item-meta"><span>{{ optional($generation->created_at)->format('d M Y · H:i') }}</span><small>#{{ $generation->id }}</small></div>
-                            <span class="rms-history-status {{ $status }}"><i></i>{{ $statusLabel }}</span>
+                            <div class="rms-history-item-meta"><span><?php echo e(optional($generation->created_at)->format('d M Y · H:i')); ?></span><small>#<?php echo e($generation->id); ?></small></div>
+                            <span class="rms-history-status <?php echo e($status); ?>"><i></i><?php echo e($statusLabel); ?></span>
                         </div>
 
-                        @if($status === 'completed' && $hero)
-                            @php
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($status === 'completed' && $hero): ?>
+                            <?php
                                 $heroPreview = [
                                     'id' => (int) $hero->id,
                                     'url' => \Illuminate\Support\Facades\Storage::disk('public')->url($hero->image_path),
@@ -1728,55 +672,57 @@ new class extends Component
                                     'template' => $generation->template?->name ?? 'Generated Image',
                                     'store' => $generation->store?->name ?? 'Store',
                                 ];
-                            @endphp
-                            <button type="button" class="rms-generation-image" style="aspect-ratio: {{ $ratio }}" x-on:click="openPreview({{ \Illuminate\Support\Js::from($heroPreview) }})">
-                                <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($hero->image_path) }}" alt="Generated image" loading="lazy">
+                            ?>
+                            <button type="button" class="rms-generation-image" style="aspect-ratio: <?php echo e($ratio); ?>" x-on:click="openPreview(<?php echo e(\Illuminate\Support\Js::from($heroPreview)); ?>)">
+                                <img src="<?php echo e(\Illuminate\Support\Facades\Storage::disk('public')->url($hero->image_path)); ?>" alt="Generated image" loading="lazy">
                                 <span class="rms-generation-image-overlay"><b>⌕</b> Lihat preview</span>
                             </button>
-                        @elseif(in_array($status, ['queued','processing']))
+                        <?php elseif(in_array($status, ['queued','processing'])): ?>
                             <div class="rms-generation-processing-visual">
-                                @if($hero)
-                                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($hero->image_path) }}" alt="Processing preview" loading="lazy">
-                                @else
-                                    <div class="rms-processing-placeholder"><span class="rms-processing-orbit"></span><b>{{ $progress }}%</b><small>AI PROCESSING</small></div>
-                                @endif
-                                <div class="rms-processing-progress-ring" style="--progress: {{ $progress }}%"><span>{{ $progress }}%</span></div>
+                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($hero): ?>
+                                    <img src="<?php echo e(\Illuminate\Support\Facades\Storage::disk('public')->url($hero->image_path)); ?>" alt="Processing preview" loading="lazy">
+                                <?php else: ?>
+                                    <div class="rms-processing-placeholder"><span class="rms-processing-orbit"></span><b><?php echo e($progress); ?>%</b><small>AI PROCESSING</small></div>
+                                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                <div class="rms-processing-progress-ring" style="--progress: <?php echo e($progress); ?>%"><span><?php echo e($progress); ?>%</span></div>
                             </div>
-                            <div class="rms-generation-eta"><span class="rms-generation-eta-clock">◷</span><div><strong>Estimasi waktu selesai</strong><b>{{ $etaLabel }}</b></div></div>
+                            <div class="rms-generation-eta"><span class="rms-generation-eta-clock">◷</span><div><strong>Estimasi waktu selesai</strong><b><?php echo e($etaLabel); ?></b></div></div>
                             <div class="rms-generation-stage">
-                                <div class="rms-generation-stage-item active"><i></i><span>{{ $stage }}</span></div>
-                                <div class="rms-generation-stage-item {{ $progress >= 78 ? 'active' : '' }}"><i></i><span>Membuat gambar</span></div>
-                                <div class="rms-generation-stage-item {{ $progress >= 96 ? 'active' : '' }}"><i></i><span>Menyimpan hasil</span></div>
+                                <div class="rms-generation-stage-item active"><i></i><span><?php echo e($stage); ?></span></div>
+                                <div class="rms-generation-stage-item <?php echo e($progress >= 78 ? 'active' : ''); ?>"><i></i><span>Membuat gambar</span></div>
+                                <div class="rms-generation-stage-item <?php echo e($progress >= 96 ? 'active' : ''); ?>"><i></i><span>Menyimpan hasil</span></div>
                             </div>
-                        @elseif($status === 'failed')
-                            <div class="rms-generation-state rms-generation-state-error"><span>!</span><div><strong>Generate gagal</strong><small>{{ \Illuminate\Support\Str::limit($generation->error_message ?: 'Terjadi error saat memproses generation.', 180) }}</small></div></div>
-                        @else
+                        <?php elseif($status === 'failed'): ?>
+                            <div class="rms-generation-state rms-generation-state-error"><span>!</span><div><strong>Generate gagal</strong><small><?php echo e(\Illuminate\Support\Str::limit($generation->error_message ?: 'Terjadi error saat memproses generation.', 180)); ?></small></div></div>
+                        <?php else: ?>
                             <div class="rms-generation-state rms-generation-state-cancelled"><span>×</span><div><strong>Generation dibatalkan</strong><small>Proses dihentikan oleh pengguna.</small></div></div>
-                        @endif
+                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
-                        @php
+                        <?php
                             $generationTitle = data_get($generation->metadata, 'final_title')
                                 ?: data_get($generation->metadata, 'custom_title');
                             $titleSource = data_get($generation->metadata, 'title_source', 'ai');
-                        @endphp
+                        ?>
                         <div class="rms-generation-card-info">
                             <div>
-                                <strong>{{ $generationTitle ?: ($generation->template?->name ?? 'Generated Image') }}</strong>
+                                <strong><?php echo e($generationTitle ?: ($generation->template?->name ?? 'Generated Image')); ?></strong>
                                 <small>
-                                    {{ $generation->store?->name ?? 'Store' }} · {{ $generation->model }}
-                                    @if($generationTitle)
-                                        · {{ $titleSource === 'custom' ? 'Custom title' : 'AI title' }}
-                                    @endif
+                                    <?php echo e($generation->store?->name ?? 'Store'); ?> · <?php echo e($generation->model); ?>
+
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($generationTitle): ?>
+                                        · <?php echo e($titleSource === 'custom' ? 'Custom title' : 'AI title'); ?>
+
+                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                 </small>
                             </div>
-                            <span>{{ $generation->generatedImages->count() }} image{{ $generation->generatedImages->count() === 1 ? '' : 's' }}</span>
+                            <span><?php echo e($generation->generatedImages->count()); ?> image<?php echo e($generation->generatedImages->count() === 1 ? '' : 's'); ?></span>
                         </div>
 
                         <div class="rms-generation-actions rms-generation-actions-v2">
-                            @if($status === 'completed')
-                                @if($hero)
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($status === 'completed'): ?>
+                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($hero): ?>
                                     <button type="button"
-                                        x-on:click="openPreview({{ \Illuminate\Support\Js::from($heroPreview) }})"
+                                        x-on:click="openPreview(<?php echo e(\Illuminate\Support\Js::from($heroPreview)); ?>)"
                                         class="rms-generation-action rms-action-preview">
                                         <span class="rms-action-icon">
                                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.8 12s3.1-5.2 9.2-5.2S21.2 12 21.2 12s-3.1 5.2-9.2 5.2S2.8 12 2.8 12Z"/><circle cx="12" cy="12" r="2.4"/></svg>
@@ -1787,10 +733,10 @@ new class extends Component
                                         </span>
                                         <svg class="rms-action-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-5 5 5-5 5"/></svg>
                                     </button>
-                                @endif
+                                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
                                 <button type="button"
-                                    wire:click="retryGeneration({{ $generation->id }})"
+                                    wire:click="retryGeneration(<?php echo e($generation->id); ?>)"
                                     class="rms-generation-action rms-action-retry">
                                     <span class="rms-action-icon">
                                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.9-3.8L3 9m0 0V4.5M3 9h4.5"/><path d="M4 13a8 8 0 0 0 14.9 3.8L21 15m0 0v4.5M21 15h-4.5"/></svg>
@@ -1802,16 +748,16 @@ new class extends Component
                                 </button>
 
                                 <button type="button"
-                                    x-on:click="askConfirm('delete', {{ $generation->id }}, 'Hapus generation?', 'Generation ini beserta file hasilnya akan dihapus. Tindakan ini tidak dapat dibatalkan.')"
+                                    x-on:click="askConfirm('delete', <?php echo e($generation->id); ?>, 'Hapus generation?', 'Generation ini beserta file hasilnya akan dihapus. Tindakan ini tidak dapat dibatalkan.')"
                                     class="rms-generation-action rms-action-delete"
                                     title="Hapus generation"
                                     aria-label="Hapus generation">
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="m7 7 .7 12.2a1.8 1.8 0 0 0 1.8 1.7h5a1.8 1.8 0 0 0 1.8-1.7L17 7"/><path d="M10 11v6M14 11v6"/></svg>
                                 </button>
 
-                            @elseif(in_array($status, ['queued','processing']))
+                            <?php elseif(in_array($status, ['queued','processing'])): ?>
                                 <button type="button"
-                                    x-on:click="askConfirm('cancel', {{ $generation->id }}, 'Batalkan generation?', 'Proses yang sedang berjalan akan dihentikan dan dipindahkan ke status cancelled.')"
+                                    x-on:click="askConfirm('cancel', <?php echo e($generation->id); ?>, 'Batalkan generation?', 'Proses yang sedang berjalan akan dihentikan dan dipindahkan ke status cancelled.')"
                                     class="rms-generation-action rms-action-cancel">
                                     <span class="rms-action-icon">
                                         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m9 9 6 6m0-6-6 6"/></svg>
@@ -1823,7 +769,7 @@ new class extends Component
                                 </button>
 
                                 <button type="button"
-                                    x-on:click="askConfirm('retry', {{ $generation->id }}, 'Restart generation?', 'Proses saat ini akan dibatalkan lalu generation baru akan dibuat ulang.')"
+                                    x-on:click="askConfirm('retry', <?php echo e($generation->id); ?>, 'Restart generation?', 'Proses saat ini akan dibatalkan lalu generation baru akan dibuat ulang.')"
                                     class="rms-generation-action rms-action-retry">
                                     <span class="rms-action-icon">
                                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.9-3.8L3 9m0 0V4.5M3 9h4.5"/><path d="M4 13a8 8 0 0 0 14.9 3.8L21 15m0 0v4.5M21 15h-4.5"/></svg>
@@ -1835,16 +781,16 @@ new class extends Component
                                 </button>
 
                                 <button type="button"
-                                    x-on:click="askConfirm('delete', {{ $generation->id }}, 'Hapus generation?', 'Generation ini akan dihapus dari Recent Generations.')"
+                                    x-on:click="askConfirm('delete', <?php echo e($generation->id); ?>, 'Hapus generation?', 'Generation ini akan dihapus dari Recent Generations.')"
                                     class="rms-generation-action rms-action-delete"
                                     title="Hapus generation"
                                     aria-label="Hapus generation">
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="m7 7 .7 12.2a1.8 1.8 0 0 0 1.8-1.7h5a1.8 1.8 0 0 0 1.8-1.7L17 7"/><path d="M10 11v6M14 11v6"/></svg>
                                 </button>
 
-                            @elseif($status === 'failed' || $status === 'cancelled')
+                            <?php elseif($status === 'failed' || $status === 'cancelled'): ?>
                                 <button type="button"
-                                    wire:click="retryGeneration({{ $generation->id }})"
+                                    wire:click="retryGeneration(<?php echo e($generation->id); ?>)"
                                     class="rms-generation-action rms-action-retry rms-action-retry-primary">
                                     <span class="rms-action-icon">
                                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.9-3.8L3 9m0 0V4.5M3 9h4.5"/><path d="M4 13a8 8 0 0 0 14.9 3.8L21 15m0 0v4.5M21 15h-4.5"/></svg>
@@ -1857,7 +803,7 @@ new class extends Component
                                 </button>
 
                                 <button type="button"
-                                    x-on:click="askConfirm('delete', {{ $generation->id }}, 'Hapus generation?', 'Generation ini akan dihapus dari Recent Generations.')"
+                                    x-on:click="askConfirm('delete', <?php echo e($generation->id); ?>, 'Hapus generation?', 'Generation ini akan dihapus dari Recent Generations.')"
                                     class="rms-generation-action rms-action-delete rms-action-delete-wide"
                                     title="Hapus generation"
                                     aria-label="Hapus generation">
@@ -1867,21 +813,14 @@ new class extends Component
                                         <small>Remove dari history</small>
                                     </span>
                                 </button>
-                            @endif
+                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         </div>
                     </article>
-                @empty
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
                     <div class="rms-history-empty"><span>✦</span><strong>Belum ada generation</strong><small>Hasil baru akan muncul di sini. Kamu bisa menjalankan beberapa generation tanpa menunggu satu per satu.</small></div>
-                @endforelse
+                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
             </div>
-        {{-- ============================================================
-            CUSTOM CONFIRM POPUP
-            IMPORTANT:
-            - Di-teleport langsung ke <body> agar selalu berada di atas
-              topbar + sidebar + seluruh dashboard.
-            - Background full viewport, dark + blur seperti Preview modal.
-            - Modal tetap bisa di-scroll pada viewport pendek/mobile.
-            ============================================================ --}}
+        
         <template x-teleport="body">
             <div
                 x-cloak
@@ -3550,10 +2489,7 @@ new class extends Component
 
 </style>
 
-    {{-- ============================================================
-     CUSTOM GENERATED IMAGE PREVIEW
-     Simplified Alpine modal: no x-teleport / x-if nesting.
-     ============================================================ --}}
+    
     <template x-teleport="body">
         <div
             x-cloak
@@ -3718,4 +2654,4 @@ new class extends Component
         </div>
         </div>
     </template>
-</div>
+</div><?php /**PATH D:\Website\Tools Generating Image Rizky Motoshop\rizky-moto-ai\storage\framework\views/livewire/views/fd330c0f.blade.php ENDPATH**/ ?>
