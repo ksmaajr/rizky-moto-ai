@@ -1436,24 +1436,46 @@ public function getUserInitialsProperty(): string
 
                 <div class="worker-mini-divider"></div>
 
-                <div class="worker-status-line">
-                    <span class="api-status-dot {{ $this->workerStatus['running'] ? 'is-connected' : 'is-error' }}"></span>
-                    <div class="worker-status-copy">
-                        <strong>{{ $this->workerStatus['running'] ? 'Worker Running' : 'Worker Stopped' }}</strong>
-                        <span>{{ $this->workerStatus['running'] ? 'Queue siap memproses generation' : 'Generation queue sedang berhenti' }}</span>
+                <div class="worker-fleet-head">
+                    <div class="worker-status-line">
+                        <span class="api-status-dot {{ $this->workerStatus['healthy'] ? 'is-connected' : ($this->workerStatus['running'] ? 'is-error' : 'is-error') }}"></span>
+                        <div class="worker-status-copy">
+                            <strong>Queue Workers</strong>
+                            <span>{{ $this->workerStatus['running_count'] }}/{{ $this->workerStatus['target_workers'] }} process aktif</span>
+                        </div>
                     </div>
-                    <span class="api-status-badge">{{ $this->workerStatus['running'] ? 'LIVE' : 'OFF' }}</span>
+                    <span class="api-status-badge">{{ $this->workerStatus['healthy'] ? 'LIVE' : 'OFF' }}</span>
                 </div>
 
-                <div class="worker-meta-grid">
-                    <div>
-                        <small>QUEUE</small>
-                        <strong>{{ $this->workerStatus['queue'] }}</strong>
-                    </div>
-                    <div>
-                        <small>PID</small>
-                        <strong>{{ $this->workerStatus['pid'] ?: '—' }}</strong>
-                    </div>
+                <div class="worker-fleet-summary">
+                    <span><small>QUEUE</small><strong>{{ $this->workerStatus['queue'] }}</strong></span>
+                    <span><small>ACTIVE</small><strong>{{ $this->workerStatus['running_count'] }}/{{ $this->workerStatus['target_workers'] }}</strong></span>
+                </div>
+
+                <div class="worker-fleet-list">
+                    @php
+                        $workerRows = $this->workerStatus['workers'] ?? [];
+                        $targetWorkers = max(1, (int) ($this->workerStatus['target_workers'] ?? 3));
+                    @endphp
+
+                    @for ($workerIndex = 0; $workerIndex < $targetWorkers; $workerIndex++)
+                        @php
+                            $worker = $workerRows[$workerIndex] ?? [];
+                            $workerId = $worker['id'] ?? ($workerIndex + 1);
+                            $workerRunning = (bool) ($worker['running'] ?? false);
+                            $workerPid = $worker['pid'] ?? null;
+                            $workerName = $worker['name'] ?? ('Worker ' . $workerId);
+                        @endphp
+
+                        <div class="worker-fleet-row {{ $workerRunning ? 'is-running' : 'is-stopped' }}">
+                            <div class="worker-fleet-indicator"></div>
+                            <div class="worker-fleet-copy">
+                                <strong>W{{ $workerId }}</strong>
+                                <span>{{ $workerRunning ? 'Running' : 'Stopped' }}</span>
+                            </div>
+                            <code>{{ $workerPid ?: '—' }}</code>
+                        </div>
+                    @endfor
                 </div>
 
                 <div class="worker-actions">
