@@ -58,6 +58,11 @@ class extends Component
     
     public array $workerStatus = [
         'running' => false,
+        'healthy' => false,
+        'running_count' => 0,
+        'worker_count' => 0,
+        'target_workers' => 3,
+        'workers' => [],
         'pid' => null,
         'queue' => 'database',
         'started_at' => null,
@@ -510,13 +515,15 @@ class extends Component
         try {
             $this->assertWorkerControlAccess();
 
-            // Keep all OS/process detection in QueueWorkerManager.
-            // This prevents the Dashboard and the Artisan command from having
-            // two different definitions of "worker running".
             $status = app(QueueWorkerManager::class)->status();
 
             $this->workerStatus = [
                 'running' => (bool) ($status['running'] ?? false),
+                'healthy' => (bool) ($status['healthy'] ?? false),
+                'running_count' => (int) ($status['running_count'] ?? 0),
+                'worker_count' => (int) ($status['worker_count'] ?? 0),
+                'target_workers' => (int) ($status['target_workers'] ?? 3),
+                'workers' => $status['workers'] ?? [],
                 'pid' => $status['pid'] ?? null,
                 'queue' => (string) ($status['queue'] ?? config('queue.default', 'database')),
                 'started_at' => $status['started_at'] ?? null,
@@ -526,6 +533,11 @@ class extends Component
 
             $this->workerStatus = [
                 'running' => false,
+                'healthy' => false,
+                'running_count' => 0,
+                'worker_count' => 0,
+                'target_workers' => 3,
+                'workers' => [],
                 'pid' => null,
                 'queue' => (string) config('queue.default', 'database'),
                 'started_at' => null,
