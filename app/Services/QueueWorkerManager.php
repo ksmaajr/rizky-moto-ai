@@ -382,10 +382,8 @@ PS1;
     {
         if ($this->usesSupervisor()) {
             $supervisor = $this->supervisorStatus();
-            $workers = array_values(array_filter(
-                $supervisor['workers'],
-                static fn (array $worker) => (int) preg_replace('/\D+/', '', $worker['name']) <= 999
-            ));
+            // supervisorctl status program:* already scopes the result to our
+            // worker pool, so every parsed entry belongs to this application.
 
             $runningWorkers = array_values(array_filter(
                 $workers,
