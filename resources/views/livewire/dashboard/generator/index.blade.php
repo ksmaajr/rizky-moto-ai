@@ -122,6 +122,132 @@ new class extends Component
             ->get();
     }
 
+    protected function generationEstimate(Generation $generation): array
+    {
+        static $baselineSeconds = null;
+        static $workerCount = null;
+
+        $metadata = $generation->metadata ?? [];
+        $requestedImages = max(1, (int) data_get($metadata, 'requested_image_count', 1));
+
+        if ($baselineSeconds === null) {
+            $durations = Generation::query()
+                ->where('user_id', auth()->id())
+                ->whereIn('status', ['completed', 'success', 'succeeded'])
+                ->whereNotNull('started_at')
+                ->whereNotNull('completed_at')
+                ->latest('completed_at')
+                ->limit(24)
+                ->get(['started_at', 'completed_at', 'metadata'])
+                ->map(function (Generation $item): ?float {
+                    $seconds = $item->started_at && $item->completed_at
+                        ? $item->started_at->diffInSeconds($item->completed_at)
+                        : 0;
+
+                    if ($seconds <= 0) {
+                        $durationMs = (int) data_get($item->metadata, 'duration_ms', 0);
+                        $seconds = $durationMs > 0 ? (int) ceil($durationMs / 1000) : 0;
+                    }
+
+                    $count = max(1, (int) data_get($item->metadata, 'requested_image_count', 1));
+
+                    return $seconds > 0 ? max(5, $seconds / $count) : null;
+                })
+                ->filter(fn ($seconds) => $seconds !== null)
+                ->sort()
+                ->values();
+
+            if ($durations->isEmpty()) {
+                $baselineSeconds = 45.0;
+            } else {
+                $middle = (int) floor($durations->count() / 2);
+                $baselineSeconds = $durations->count() % 2
+                    ? (float) $durations->get($middle)
+                    : ((float) $durations->get(max(0, $middle - 1)) + (float) $durations->get($middle)) / 2;
+            }
+
+            $baselineSeconds = max(15.0, min(180.0, $baselineSeconds));
+        }
+
+        if ($workerCount === null) {
+            try {
+                $workerCount = max(1, (int) app(\App\Services\QueueWorkerManager::class)->status()['running_count']);
+            } catch (\Throwable) {
+                $workerCount = 1;
+            }
+        }
+
+        $totalExpected = max(15, (int) ceil($baselineSeconds * $requestedImages));
+        $status = (string) $generation->status;
+
+        if ($status === 'queued') {
+            $processingAhead = Generation::query()
+                ->whereIn('status', ['queued', 'processing'])
+                ->where(function ($query) use ($generation) {
+                    $query->where('created_at', '<', $generation->created_at)
+                        ->orWhere(function ($nested) use ($generation) {
+                            $nested->where('created_at', $generation->created_at)
+                                ->where('id', '<', $generation->id);
+                        });
+                })
+                ->count();
+
+            $batchesAhead = (int) ceil(($processingAhead + 1) / max(1, $workerCount));
+            $etaSeconds = max(10, (int) ceil($baselineSeconds * $batchesAhead));
+
+            return [
+                'seconds' => $etaSeconds,
+                'label' => $this->formatEtaLabel($etaSeconds),
+                'confidence' => $durationsCount ?? null,
+                'basis' => 'historical',
+            ];
+        }
+
+        if ($status !== 'processing' || ! $generation->started_at) {
+            return [
+                'seconds' => null,
+                'label' => 'Menghitung estimasi…',
+                'confidence' => null,
+                'basis' => 'waiting',
+            ];
+        }
+
+        $elapsed = max(0, $generation->started_at->diffInSeconds(now()));
+
+        /*
+         * Progress is a pipeline stage, not a time percentage.
+         * Therefore ETA is based on historical duration + current elapsed time,
+         * not on the visual progress value.
+         */
+        $remaining = max(5, $totalExpected - $elapsed);
+
+        if ($elapsed > ($totalExpected * 1.35)) {
+            $remaining = max(5, (int) ceil($baselineSeconds * .25));
+        }
+
+        return [
+            'seconds' => $remaining,
+            'label' => $this->formatEtaLabel($remaining),
+            'confidence' => 'historical',
+            'basis' => 'historical',
+        ];
+    }
+
+    protected function formatEtaLabel(?int $seconds): string
+    {
+        if ($seconds === null) {
+            return 'Menghitung estimasi…';
+        }
+
+        if ($seconds < 60) {
+            return '± ' . max(5, $seconds) . ' detik';
+        }
+
+        $minutes = (int) ceil($seconds / 60);
+
+        return '± ' . $minutes . ' menit';
+    }
+
     public function getHasActiveGenerationsProperty(): bool
     {
         return Generation::query()
