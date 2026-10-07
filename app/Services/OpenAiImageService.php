@@ -17,7 +17,7 @@ class OpenAiImageService
 {
     private const BASE_URL = 'https://ai-gateway.vercel.sh/v1';
 
-    private const DEFAULT_IMAGE_MODEL = 'bytedance/seedream-5.0-pro';
+    private const DEFAULT_IMAGE_MODEL = 'openai/gpt-image-2.5-sunburst';
 
     private const DEFAULT_TITLE_MODEL = 'openai/gpt-5.6-luna';
 
@@ -163,6 +163,7 @@ class OpenAiImageService
                 'generation_mode' => $generationMode,
                 'title_source' => $titleSource,
                 'custom_title' => $customTitle,
+                'requested_custom_title' => $customTitle,
                 'final_title' => $customTitle,
                 'has_template_reference' => $hasTemplateReference,
                 'template_reference_attached' => $attachTemplateReference,
@@ -239,6 +240,7 @@ class OpenAiImageService
                 'generation_mode' => $generationMode,
                 'title_source' => $titleSource,
                 'custom_title' => $customTitle,
+                'requested_custom_title' => $customTitle,
                 'final_title' => $customTitle,
                 'has_template_reference' => $hasTemplateReference,
                 'template_reference_attached' => $attachTemplateReference,
@@ -289,7 +291,30 @@ class OpenAiImageService
                 'product_image_2_path' => $sourceTwo,
             ]);
 
-            if ($customTitle === null) {
+            if ($requestedCustomTitle !== null) {
+                // The user-supplied title is immutable. Rebuild the prompt here in the
+                // worker so an old/stale queued prompt can never cause an AI-generated
+                // headline to replace the user's exact title.
+                $customTitle = $requestedCustomTitle;
+                $titleSource = 'custom';
+                $resolvedPrompt = $this->buildPrompt(
+                    $store,
+                    $template,
+                    $hasInstalledReference,
+                    $customTitle,
+                    $attachTemplateReference
+                );
+
+                $generation->update([
+                    'prompt' => $resolvedPrompt,
+                    'metadata' => array_merge($generation->metadata ?? [], [
+                        'requested_custom_title' => $requestedCustomTitle,
+                        'final_title' => $requestedCustomTitle,
+                        'title_source' => 'custom',
+                        'custom_title' => $requestedCustomTitle,
+                    ]),
+                ]);
+            } elseif ($customTitle === null) {
                 $autoTitle = $this->resolveAutomaticProductTitle(
                     apiKey: $apiKey,
                     productPath: $productOnePath,
@@ -727,8 +752,11 @@ class OpenAiImageService
         $attachTemplateReference = $hasTemplateReference;
         $hasStoreLogo = $this->hasStoreLogo($store);
         $generationMode = (string) ($metadata['generation_mode'] ?? $this->generationMode($hasInstalledReference));
-        $customTitle = $this->normalizeCustomTitle($metadata['custom_title'] ?? $metadata['final_title'] ?? null);
-        $titleSource = $customTitle !== null ? 'custom' : (string) ($metadata['title_source'] ?? 'ai');
+        $requestedCustomTitle = $this->normalizeCustomTitle($metadata['requested_custom_title'] ?? null);
+        $customTitle = $requestedCustomTitle ?? $this->normalizeCustomTitle($metadata['custom_title'] ?? $metadata['final_title'] ?? null);
+        $titleSource = $requestedCustomTitle !== null
+            ? 'custom'
+            : ($customTitle !== null ? (string) ($metadata['title_source'] ?? 'ai') : 'ai');
         $referenceCount = ($attachTemplateReference ? 1 : 0)
             + 1
             + ($hasInstalledReference ? 1 : 0)
@@ -1149,6 +1177,7 @@ class OpenAiImageService
                 '- There is NO installed/in-use reference. The actual product image is the ONLY authority for the product identity, geometry, materials and visible details.',
                 '- The selected Template master image IS attached when available and is the visual master for composition, layout, typography placement, graphic hierarchy, background treatment, badges, icons, framing and overall design language.',
                 '- CRITICAL: copy the Template MASTER DESIGN SYSTEM, NOT its example product. Replace the example product/content with the actual supplied product.',
+                '- ALL TEXT visible inside the Template master (old product names, headlines, specifications, badges and labels) is EXAMPLE CONTENT unless explicitly defined as a fixed Template text element. Never copy the old product title when a custom title is supplied.',
                 '- The Template prompt is also mandatory creative direction and must be combined with the Template master image.',
                 '- NEVER inherit a motorcycle, scooter, vehicle body, wheel, road, rider, mechanic, hand, workshop, garage, showroom, engine bay or installation environment from the Template unless such an environment is explicitly required by the Template prompt AND supported by an installed reference.',
                 '- NEVER create an installation scene merely because the Template example contains one.',
@@ -1180,10 +1209,29 @@ class OpenAiImageService
                 '- NO photographic content copied from the Template example.',
             ];
 
+        $headlineLock = $customTitle !== null
+            ? [
+                'CUSTOM HEADLINE LOCK — ABSOLUTE PRIORITY:',
+                '- The user explicitly supplied the product headline. It is NOT an AI suggestion.',
+                '- EXACT MAIN HEADLINE TO RENDER: "' . $customTitle . '"',
+                '- Render that exact title as the main product headline. Do not paraphrase, translate, shorten, expand, reinterpret, replace or generate another product name.',
+                '- The exact headline string above overrides every title, headline, product name, slogan or text visible inside the Template master reference.',
+                '- Text visible inside the Template master is layout/style reference only. NEVER copy the Template master product title into the final image.',
+                '- If the Template master contains a different product name, treat that text as EXAMPLE CONTENT and ignore it completely.',
+                '- Keep the exact wording of the custom title; only line breaks, font styling, capitalization and placement may change to fit the Template.',
+                '',
+            ]
+            : [
+                'HEADLINE MODE:',
+                '- No custom headline was supplied. If a headline is needed, use only the resolved title supplied by the application or infer it from the primary product reference.',
+                '',
+            ];
+
         $parts = [
             'ROLE:',
             'You are a professional commercial product-art director creating a premium marketplace product image.',
             '',
+            ...$headlineLock,
             'TEMPLATE CONSISTENCY — CRITICAL:',
             '- Every generation that uses the SAME Template must look like part of the SAME design series.',
             '- Treat the selected Template as a reusable fixed design system, not as a loose inspiration.',
@@ -1278,6 +1326,9 @@ class OpenAiImageService
             '- Respect the requested aspect ratio.',
             '',
             'FINAL COMPOSITION CHECK:',
+            ...($customTitle !== null ? [
+                '- CUSTOM TITLE FINAL CHECK: the main headline MUST read exactly "' . $customTitle . '". If the Template master shows a different title, ignore the Template title.',
+            ] : []),
             '- The selected Template design must be recognizable in the final composition.',
             '- The supplied product must remain the unmistakable hero product.',
             '- When an installed reference is supplied, the installed product view must be visibly present in the final advertisement.',

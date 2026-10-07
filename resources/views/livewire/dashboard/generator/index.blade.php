@@ -115,8 +115,10 @@ new class extends Component
                         ->orWhere('metadata->custom_title', 'like', $keyword);
                 });
             })
+            // Tampilkan seluruh generation milik user yang belum dihapus.
+            // Jangan batasi history hanya ke 12 item karena generation lama
+            // harus tetap muncul di Recent Generations.
             ->latest()
-            ->limit(12)
             ->get();
     }
 
