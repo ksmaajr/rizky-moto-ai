@@ -616,6 +616,52 @@ new class extends Component
                 </div>
             </div>
 
+            <div class="rms-generator-context-strip">
+                <div class="rms-generator-context-intro">
+                    <span class="rms-context-spark">✦</span>
+                    <div>
+                        <strong>Generation setup</strong>
+                        <small>Semua aset di bawah akan dikunci untuk generation ini.</small>
+                    </div>
+                </div>
+
+                <div class="rms-generator-context-items">
+                    <div class="rms-context-item {{ $this->selectedStore ? 'is-ready' : '' }}">
+                        <span class="rms-context-icon">
+                            @if($this->selectedStore?->logo_path)
+                                <img src="{{ IlluminateSupportFacadesStorage::disk('public')->url($this->selectedStore->logo_path) }}" alt="">
+                            @else
+                                <b>{{ $this->selectedStore ? strtoupper(substr($this->selectedStore->name, 0, 1)) : 'S' }}</b>
+                            @endif
+                        </span>
+                        <div>
+                            <small>STORE</small>
+                            <strong>{{ $this->selectedStore?->name ?? 'Belum dipilih' }}</strong>
+                        </div>
+                    </div>
+
+                    <span class="rms-context-arrow">→</span>
+
+                    <div class="rms-context-item {{ $this->selectedTemplate ? 'is-ready' : '' }}">
+                        <span class="rms-context-icon rms-context-template-icon">✦</span>
+                        <div>
+                            <small>TEMPLATE</small>
+                            <strong>{{ $this->selectedTemplate?->name ?? 'Belum dipilih' }}</strong>
+                        </div>
+                    </div>
+
+                    <span class="rms-context-arrow">→</span>
+
+                    <div class="rms-context-item is-reference">
+                        <span class="rms-context-icon rms-context-reference-icon">03</span>
+                        <div>
+                            <small>REFERENCE SET</small>
+                            <strong x-text="useInstalledReference ? 'Product + Installed + Logo' : 'Product + Logo'"></strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="rms-generator-columns">
 
                 <section id="generator-step-1" class="rms-generator-card rms-generator-selection">
