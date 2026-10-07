@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Process;
+use App\Services\ActivityLogService;
 use RuntimeException;
 use Throwable;
 
@@ -136,6 +137,13 @@ class QueueWorkerManager
                 );
             }
 
+            $this->logActivity(
+                'success',
+                'Queue worker Supervisor aktif.',
+                sprintf('%d/%d worker aktif.', $status['running_count'], $this->workerCount()),
+                $status,
+            );
+
             return [
                 'success' => true,
                 'message' => sprintf(
@@ -181,6 +189,13 @@ class QueueWorkerManager
                 . ($error !== '' ? ' ' . trim($error) : '')
             );
         }
+
+        $this->logActivity(
+            'success',
+            'Queue worker lokal aktif.',
+            sprintf('%d/%d worker aktif (%d process baru dibuat).', $status['running_count'], $target, $started),
+            $status,
+        );
 
         return [
             'success' => true,
@@ -337,10 +352,21 @@ PS1;
 
         $this->clearState();
 
+        $finalStatus = $this->status();
+
+        if ($stopped > 0) {
+            $this->logActivity(
+                'success',
+                'Queue worker dihentikan.',
+                sprintf('%d worker dihentikan.', $stopped),
+                $finalStatus,
+            );
+        }
+
         return [
             'success' => $stopped > 0,
             'message' => sprintf('%d queue worker berhasil dihentikan.', $stopped),
-            ...$this->status(),
+            ...$finalStatus,
         ];
     }
 
@@ -764,6 +790,26 @@ PS1;
     private function stderrFile(int $worker): string
     {
         return self::STDERR_PREFIX . $worker . '.log';
+    }
+
+    private function logActivity(string $status, string $title, string $description, array $metadata = []): void
+    {
+        try {
+            app(ActivityLogService::class)->log(
+                action: 'queue_worker',
+                category: 'worker',
+                status: $status,
+                title: $title,
+                description: $description,
+                metadata: [
+                    'target_workers' => $this->workerCount(),
+                    'platform' => PHP_OS_FAMILY,
+                    ...$metadata,
+                ],
+            );
+        } catch (Throwable) {
+            // Activity logging must never prevent worker control.
+        }
     }
 
     private function joinPowerShellArguments(array $arguments): string
