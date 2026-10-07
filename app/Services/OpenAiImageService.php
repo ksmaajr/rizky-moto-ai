@@ -7,6 +7,9 @@ use App\Models\Generation;
 use App\Models\Store;
 use App\Models\Template;
 use App\Models\User;
+use App\Services\AI\DTO\ImageGenerationRequest;
+use App\Services\AI\DTO\ReferenceImage;
+use App\Services\AI\ProviderManager;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -397,15 +400,46 @@ class OpenAiImageService
                 $payload['prompt'] .= "\n\nAvoid: " . $negativePrompt;
             }
 
-            [$response, $usedCredential] = $this->postImageEditsWithFailover(
-                userId: $user->id,
-                preferredCredential: $credential,
-                attachments: $attachments,
-                payload: $payload,
-                generationId: $generation->id,
-                source: 'openai_image_service',
+            $references = array_map(
+                static fn (array $reference): ReferenceImage => new ReferenceImage(
+                    role: $reference['role'],
+                    path: $reference['path'],
+                    filename: $reference['filename'],
+                ),
+                $referenceManifest,
             );
-            $apiKey = $usedCredential['key'];
+
+            $providerResult = app(ProviderManager::class)->generate(
+                new ImageGenerationRequest(
+                    model: $model,
+                    prompt: $prompt,
+                    references: $references,
+                    imageCount: $imageCount,
+                    size: $this->mapSize($aspectRatio),
+                    quality: $this->mapQuality($quality),
+                    outputFormat: 'png',
+                    userId: $user->id,
+                    generationId: $generation->id,
+                    metadata: [
+                        'attachments' => $attachments,
+                        'negative_prompt' => $negativePrompt,
+                        'source' => 'openai_image_service',
+                    ],
+                ),
+            );
+
+            $providerMetadata = $providerResult->metadata;
+            $generation->update([
+                'metadata' => array_merge($generation->metadata ?? [], [
+                    'provider' => $providerResult->provider,
+                    'gateway_key_id' => $providerMetadata['gateway_key_id'] ?? null,
+                    'gateway_key_name' => $providerMetadata['gateway_key_name'] ?? null,
+                    'gateway_key_source' => $providerMetadata['gateway_key_source'] ?? null,
+                ]),
+            ]);
+
+            $data = $providerResult->images;
+            $responseStatus = (int) ($providerMetadata['http_status'] ?? 200);
 
             $generation->update([
                 'metadata' => array_merge($generation->metadata ?? [], [
@@ -417,51 +451,28 @@ class OpenAiImageService
 
             $durationMs = $this->durationMs($startedAt);
 
-            if (! $response->successful()) {
-                $error = $this->extractError($response);
-
-                $this->activity()->error(
-                    action: 'generate_openai_image',
-                    category: 'generator',
-                    title: 'Vercel AI Gateway image generation gagal.',
-                    description: $error,
-                    metadata: [
-                        'source' => 'openai_image_service',
-                        'generation_id' => $generation->id,
-                        'endpoint' => '/v1/images/edits',
-                        'model' => $model,
-                        'response_body' => $this->safeResponseBody($response),
-                    ],
-                    durationMs: $durationMs,
-                    httpStatus: $response->status(),
-                );
-
-                $httpErrorLogged = true;
-                throw new RuntimeException($error);
-            }
-
-            $data = $response->json('data', []);
-
             if (! is_array($data) || $data === []) {
-                throw new RuntimeException('Vercel AI Gateway tidak mengembalikan gambar.');
+                throw new RuntimeException('AI image provider tidak mengembalikan gambar.');
             }
 
             $this->activity()->processing(
                 action: 'generate_openai_image',
                 category: 'generator',
-                title: 'Response Vercel AI Gateway diterima.',
+                title: 'Response AI image provider diterima.',
                 description: sprintf(
-                    'Vercel AI Gateway mengembalikan %d item image. Server mulai menyimpan hasil.',
+                    '%s mengembalikan %d item image. Server mulai menyimpan hasil.',
+                    $providerResult->provider,
                     count($data)
                 ),
                 metadata: [
                     'source' => 'openai_image_service',
                     'generation_id' => $generation->id,
-                    'model' => $model,
+                    'provider' => $providerResult->provider,
+                    'model' => $providerResult->model,
                     'response_items' => count($data),
                 ],
                 durationMs: $durationMs,
-                httpStatus: $response->status(),
+                httpStatus: $responseStatus,
             );
 
             $saved = 0;
@@ -580,7 +591,7 @@ class OpenAiImageService
                     'quality' => $quality,
                 ],
                 durationMs: $this->durationMs($startedAt),
-                httpStatus: $response->status(),
+                httpStatus: $responseStatus,
             );
 
             return $generation->fresh(['generatedImages', 'store', 'template']);
