@@ -387,7 +387,68 @@
                         </div>
 
                     {{-- GLOBAL ACTIVITY LOGS --}}
-                    <section class="rms-openai-logs rms-vg-activity rms-global-activity" wire:poll.3s="refreshActivityLogs">
+                    <section
+                        class="rms-openai-logs rms-vg-activity rms-global-activity"
+                        wire:poll.3s="refreshActivityLogs"
+                        x-data="{
+                            selected: [],
+                            copied: false,
+                            get checkboxes() {
+                                return Array.from(this.$root.querySelectorAll('.global-log-select'));
+                            },
+                            get visibleIds() {
+                                return this.checkboxes.map(el => String(el.value));
+                            },
+                            toggleAll() {
+                                const ids = this.visibleIds;
+                                const allSelected = ids.length > 0 && ids.every(id => this.selected.includes(id));
+                                this.selected = allSelected
+                                    ? this.selected.filter(id => !ids.includes(id))
+                                    : [...new Set([...this.selected, ...ids])];
+                            },
+                            toggle(id) {
+                                id = String(id);
+                                this.selected = this.selected.includes(id)
+                                    ? this.selected.filter(item => item !== id)
+                                    : [...this.selected, id];
+                            },
+                            async copyLogs(mode = 'selected') {
+                                const wanted = mode === 'all'
+                                    ? this.checkboxes
+                                    : this.checkboxes.filter(el => this.selected.includes(String(el.value)));
+
+                                if (!wanted.length) return;
+
+                                const text = wanted
+                                    .map(el => {
+                                        try {
+                                            return JSON.parse(atob(el.dataset.copy));
+                                        } catch (_) {
+                                            return '';
+                                        }
+                                    })
+                                    .filter(Boolean)
+                                    .join('\n\n------------------------------------------------------------\n\n');
+
+                                try {
+                                    await navigator.clipboard.writeText(text);
+                                    this.copied = true;
+                                    window.setTimeout(() => this.copied = false, 1800);
+                                } catch (_) {
+                                    const area = document.createElement('textarea');
+                                    area.value = text;
+                                    area.style.position = 'fixed';
+                                    area.style.opacity = '0';
+                                    document.body.appendChild(area);
+                                    area.select();
+                                    document.execCommand('copy');
+                                    area.remove();
+                                    this.copied = true;
+                                    window.setTimeout(() => this.copied = false, 1800);
+                                }
+                            }
+                        }"
+                    >
                         <div class="rms-openai-logs-head">
                             <div class="rms-openai-logs-title">
                                 <span class="rms-openai-terminal">&gt;_</span>
@@ -408,6 +469,28 @@
 
                                 <button
                                     type="button"
+                                    class="rms-global-copy-button"
+                                    @click="copyLogs('selected')"
+                                    :disabled="selected.length === 0"
+                                    :class="{ 'is-disabled': selected.length === 0 }"
+                                    title="Copy selected logs"
+                                >
+                                    <span x-show="!copied">Copy Selected (<span x-text="selected.length"></span>)</span>
+                                    <span x-show="copied">Copied ✓</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    class="rms-global-copy-all"
+                                    @click="copyLogs('all')"
+                                    :disabled="checkboxes.length === 0"
+                                    title="Copy all visible logs"
+                                >
+                                    Copy Visible
+                                </button>
+
+                                <button
+                                    type="button"
                                     wire:click="clearActivityLogs"
                                     wire:confirm="Hapus seluruh global activity log? Tindakan ini tidak dapat dibatalkan."
                                     wire:loading.attr="disabled"
@@ -424,12 +507,7 @@
                         <div class="rms-global-activity-toolbar">
                             <label>
                                 <span>SEARCH</span>
-                                <input
-                                    type="search"
-                                    wire:model.live.debounce.350ms="activitySearch"
-                                    placeholder="Search activity..."
-                                    autocomplete="off"
-                                >
+                                <input type="search" wire:model.live.debounce.350ms="activitySearch" placeholder="Search activity..." autocomplete="off">
                             </label>
 
                             <label>
@@ -463,6 +541,13 @@
                                     <option value="30d">30 days</option>
                                 </select>
                             </label>
+
+                            <div class="rms-global-select-actions">
+                                <button type="button" @click="toggleAll()" :disabled="checkboxes.length === 0">
+                                    <span x-text="visibleIds.length > 0 && visibleIds.every(id => selected.includes(id)) ? 'Deselect Visible' : 'Select Visible'"></span>
+                                </button>
+                                <span><strong x-text="selected.length"></strong> selected</span>
+                            </div>
                         </div>
 
                         <div class="rms-vg-activity-list rms-global-activity-list">
@@ -475,10 +560,18 @@
                                     $logUser = $log['user_name'] ?? 'System';
                                 @endphp
 
-                                <article
-                                    class="rms-openai-log-item is-{{ $logStatus }}"
-                                    wire:key="global-activity-{{ $log['id'] ?? $loop->index }}"
-                                >
+                                <article class="rms-openai-log-item is-{{ $logStatus }}" wire:key="global-activity-{{ $log['id'] ?? $loop->index }}">
+                                    <label class="rms-global-log-select-wrap" title="Select log">
+                                        <input
+                                            type="checkbox"
+                                            class="global-log-select"
+                                            value="{{ $log['id'] ?? $loop->index }}"
+                                            data-copy="{{ base64_encode(json_encode($log['copy_text'] ?? '', JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) }}"
+                                            @change="toggle($event.target.value)"
+                                        >
+                                        <span class="rms-global-log-checkbox"></span>
+                                    </label>
+
                                     <span class="rms-openai-log-dot"></span>
 
                                     <div class="rms-openai-log-content">
@@ -495,18 +588,10 @@
                                         @endif
 
                                         <div class="rms-vg-log-meta">
-                                            @if (!empty($log['action']))
-                                                <span>{{ $log['action'] }}</span>
-                                            @endif
-                                            @if (!empty($log['http_status']))
-                                                <span>HTTP {{ $log['http_status'] }}</span>
-                                            @endif
-                                            @if (!empty($log['duration_ms']))
-                                                <span>{{ $log['duration_ms'] }} ms</span>
-                                            @endif
-                                            @if (!empty($log['entity_type']))
-                                                <span>{{ $log['entity_type'] }} #{{ $log['entity_id'] }}</span>
-                                            @endif
+                                            @if (!empty($log['action'])) <span>{{ $log['action'] }}</span> @endif
+                                            @if (!empty($log['http_status'])) <span>HTTP {{ $log['http_status'] }}</span> @endif
+                                            @if (!empty($log['duration_ms'])) <span>{{ $log['duration_ms'] }} ms</span> @endif
+                                            @if (!empty($log['entity_type'])) <span>{{ $log['entity_type'] }} #{{ $log['entity_id'] }}</span> @endif
                                         </div>
                                     </div>
                                 </article>
