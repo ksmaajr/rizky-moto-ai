@@ -384,6 +384,7 @@ PS1;
             $supervisor = $this->supervisorStatus();
             // supervisorctl status program:* already scopes the result to our
             // worker pool, so every parsed entry belongs to this application.
+            $workers = $supervisor['workers'];
 
             $runningWorkers = array_values(array_filter(
                 $workers,
