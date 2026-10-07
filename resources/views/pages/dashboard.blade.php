@@ -3273,7 +3273,34 @@ public function getUserInitialsProperty(): string
 
         @media(max-width:640px){.rms-universal-toast{left:12px;right:12px;top:12px;width:auto;padding:12px}.rms-toast-icon{width:35px;height:35px;flex-basis:35px}.rms-toast-copy strong{font-size:10px}.rms-toast-copy span{font-size:9px}}
 
-        @media(prefers-reduced-motion:reduce){.rms-universal-toast{animation:none}.rms-toast-icon{animation:none}}
+        @media(max-width:1100px){
+    .worker-widget-expanded .worker-fleet-summary{gap:5px}
+    .worker-widget-expanded .worker-fleet-row{padding-left:6px;padding-right:6px}
+    .worker-widget-expanded .worker-fleet-copy{grid-template-columns:26px 1fr}
+}
+@media(max-width:900px){
+    .worker-widget-shell{margin-top:4px}
+    .worker-widget-expanded .worker-fleet-list{gap:4px}
+    .worker-widget-expanded .worker-fleet-row{min-height:25px}
+    .worker-widget-expanded .worker-actions{margin-top:8px}
+    .worker-widget-expanded .worker-started-at{font-size:6.5px}
+}
+@media(max-width:640px){
+    .worker-widget-mini{min-height:46px;padding:6px 8px}
+    .worker-widget-mini-icon{width:29px;height:29px;flex-basis:29px}
+    .worker-widget-expanded .worker-meta-grid{grid-template-columns:1fr 1fr}
+    .worker-widget-expanded .worker-fleet-summary{grid-template-columns:1fr 1fr}
+    .worker-widget-expanded .worker-fleet-copy{grid-template-columns:28px 1fr}
+    .worker-widget-expanded .worker-action{height:30px}
+}
+@media(max-width:380px){
+    .worker-widget-expanded .worker-fleet-copy span{font-size:6.5px}
+    .worker-widget-expanded .worker-fleet-row code{max-width:54px;font-size:6.3px}
+    .worker-widget-expanded .worker-action{padding:0 7px;font-size:7px}
+    .worker-widget-expanded .worker-api-footer{gap:5px}
+    .worker-widget-expanded .worker-step{font-size:5.5px}
+}
+@media(prefers-reduced-motion:reduce){.rms-universal-toast{animation:none}.rms-toast-icon{animation:none}}
 
         .api-status-dot.is-connected{background:#16a34a;box-shadow:0 0 0 4px rgba(22,163,74,.10)}
 
