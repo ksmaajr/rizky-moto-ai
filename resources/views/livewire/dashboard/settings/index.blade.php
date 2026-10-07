@@ -386,88 +386,126 @@
 
                         </div>
 
-                    {{-- VERCEL KEY ACTIVITY LOGS --}}
-                    @php
-                        $vercelGatewayLogs = is_iterable($this->vercelGatewayLogs ?? null)
-                            ? $this->vercelGatewayLogs
-                            : [];
-                        $openAiLogs = is_array($this->openAiLogs ?? null)
-                            ? $this->openAiLogs
-                            : [];
-                    @endphp
-
-                    <section class="rms-openai-logs rms-vg-activity" wire:poll.3s="loadVercelGatewayLogs">
+                    {{-- GLOBAL ACTIVITY LOGS --}}
+                    <section class="rms-openai-logs rms-vg-activity rms-global-activity" wire:poll.3s="refreshActivityLogs">
                         <div class="rms-openai-logs-head">
                             <div class="rms-openai-logs-title">
                                 <span class="rms-openai-terminal">&gt;_</span>
                                 <div>
-                                    <strong>API Key Activity</strong>
-                                    <small>Riwayat test koneksi, generate, failover, dan error setiap Vercel API key.</small>
+                                    <strong>Global Activity</strong>
+                                    <small>Audit terpusat untuk worker, provider, API key, generation, failover, dan error dari seluruh workspace.</small>
                                 </div>
                             </div>
 
                             <div class="rms-openai-log-actions">
-                                <span class="rms-openai-log-counter {{ count($vercelGatewayLogs) > 0 ? 'has-events' : '' }}">
+                                <span class="rms-global-scope-badge">GLOBAL</span>
+                                <span class="rms-openai-log-counter {{ $this->activityLogCount > 0 ? 'has-events' : '' }}">
                                     <i></i>
                                     <span>
-                                        @if (count($vercelGatewayLogs) > 0)
-                                            {{ count($vercelGatewayLogs) }} EVENT{{ count($vercelGatewayLogs) > 1 ? 'S' : '' }}
-                                        @else
-                                            WAITING FOR TEST
-                                        @endif
+                                        {{ $this->activityLogCount }} EVENT{{ $this->activityLogCount === 1 ? '' : 'S' }}
                                     </span>
                                 </span>
 
                                 <button
                                     type="button"
-                                    wire:click="clearVercelGatewayLogs"
+                                    wire:click="clearActivityLogs"
+                                    wire:confirm="Hapus seluruh global activity log? Tindakan ini tidak dapat dibatalkan."
                                     wire:loading.attr="disabled"
-                                    wire:target="clearVercelGatewayLogs"
-                                    @disabled(count($vercelGatewayLogs) === 0)
-                                    class="{{ count($vercelGatewayLogs) === 0 ? 'is-disabled' : '' }}"
+                                    wire:target="clearActivityLogs"
+                                    @disabled($this->activityLogCount === 0)
+                                    class="{{ $this->activityLogCount === 0 ? 'is-disabled' : '' }}"
                                 >
-                                    <span wire:loading.remove wire:target="clearVercelGatewayLogs">Clear</span>
-                                    <span wire:loading wire:target="clearVercelGatewayLogs">Clearing...</span>
+                                    <span wire:loading.remove wire:target="clearActivityLogs">Clear</span>
+                                    <span wire:loading wire:target="clearActivityLogs">Clearing...</span>
                                 </button>
                             </div>
                         </div>
 
-                        <div class="rms-vg-activity-list">
-                            @forelse ($vercelGatewayLogs as $log)
+                        <div class="rms-global-activity-toolbar">
+                            <label>
+                                <span>SEARCH</span>
+                                <input
+                                    type="search"
+                                    wire:model.live.debounce.350ms="activitySearch"
+                                    placeholder="Search activity..."
+                                    autocomplete="off"
+                                >
+                            </label>
+
+                            <label>
+                                <span>CATEGORY</span>
+                                <select wire:model.live="activityCategory">
+                                    <option value="all">All</option>
+                                    <option value="worker">Worker</option>
+                                    <option value="api">API</option>
+                                    <option value="generation">Generation</option>
+                                    <option value="system">System</option>
+                                </select>
+                            </label>
+
+                            <label>
+                                <span>STATUS</span>
+                                <select wire:model.live="activityStatus">
+                                    <option value="all">All</option>
+                                    <option value="success">Success</option>
+                                    <option value="info">Info</option>
+                                    <option value="warning">Warning</option>
+                                    <option value="error">Error</option>
+                                </select>
+                            </label>
+
+                            <label>
+                                <span>RANGE</span>
+                                <select wire:model.live="activityTimeframe">
+                                    <option value="all">All time</option>
+                                    <option value="today">Today</option>
+                                    <option value="7d">7 days</option>
+                                    <option value="30d">30 days</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <div class="rms-vg-activity-list rms-global-activity-list">
+                            @forelse ($this->activityLogs as $log)
                                 @php
                                     $logStatus = $log['status'] ?? 'info';
-                                    $logKeyName = $log['key_name'] ?? $log['name'] ?? 'Unknown key';
-                                    $logKeyMasked = $log['masked_key'] ?? 'vck_••••••••';
+                                    $logCategory = $log['category'] ?? 'system';
+                                    $logTitle = $log['title'] ?? ($log['action'] ?? 'Activity');
+                                    $logDescription = $log['description'] ?? '';
+                                    $logUser = $log['user_name'] ?? 'System';
                                 @endphp
 
-                                <article class="rms-openai-log-item is-{{ $logStatus }}" wire:key="vercel-log-{{ $log['id'] ?? ($log['created_at'] ?? $loop->index) }}">
+                                <article
+                                    class="rms-openai-log-item is-{{ $logStatus }}"
+                                    wire:key="global-activity-{{ $log['id'] ?? $loop->index }}"
+                                >
                                     <span class="rms-openai-log-dot"></span>
 
                                     <div class="rms-openai-log-content">
                                         <div class="rms-openai-log-top">
-                                            <span class="rms-openai-log-type">{{ strtoupper($logStatus) }}</span>
-                                            <span class="rms-vg-log-key">{{ $logKeyName }} · {{ $logKeyMasked }}</span>
-                                            <time>{{ $log['tested_at'] ?? $log['created_at'] ?? '-' }}</time>
+                                            <span class="rms-global-log-category">{{ strtoupper($logCategory) }}</span>
+                                            <span class="rms-global-log-user">{{ $logUser }}</span>
+                                            <time>{{ $log['created_at'] ?? '-' }}</time>
                                         </div>
 
-                                        <strong>{{ $log['message'] ?? 'Gateway activity' }}</strong>
+                                        <strong>{{ $logTitle }}</strong>
 
-                                        @if (!empty($log['detail']))
-                                            <small>{{ $log['detail'] }}</small>
+                                        @if ($logDescription !== '')
+                                            <small>{{ $logDescription }}</small>
                                         @endif
 
                                         <div class="rms-vg-log-meta">
+                                            @if (!empty($log['action']))
+                                                <span>{{ $log['action'] }}</span>
+                                            @endif
                                             @if (!empty($log['http_status']))
                                                 <span>HTTP {{ $log['http_status'] }}</span>
                                             @endif
                                             @if (!empty($log['duration_ms']))
                                                 <span>{{ $log['duration_ms'] }} ms</span>
                                             @endif
-                                            @if (!empty($log['model']))
-                                                <span>{{ $log['model'] }}</span>
-                                            @endif
-                                            @if (!empty($log['error_type']))
-                                                <span>{{ $log['error_type'] }}</span>
+                                            @if (!empty($log['entity_type']))
+                                                <span>{{ $log['entity_type'] }} #{{ $log['entity_id'] }}</span>
                                             @endif
                                         </div>
                                     </div>
@@ -475,15 +513,15 @@
                             @empty
                                 <div class="rms-vg-log-empty">
                                     <div class="rms-vg-empty-terminal">&gt;_</div>
-                                    <strong>No API key activity yet.</strong>
-                                    <p>Test salah satu key di atas untuk membuat activity log per credential.</p>
+                                    <strong>No global activity yet.</strong>
+                                    <p>Worker lifecycle, API activity, generation, dan provider events akan muncul di sini.</p>
                                 </div>
                             @endforelse
                         </div>
 
                         <div class="rms-openai-logs-footer">
-                            <span><i></i> Key activity monitor</span>
-                            <span>Vercel AI Gateway</span>
+                            <span><i></i> Global activity monitor · {{ $this->filteredActivityLogCount }} shown</span>
+                            <span>All users · All providers</span>
                         </div>
                     </section>
 
