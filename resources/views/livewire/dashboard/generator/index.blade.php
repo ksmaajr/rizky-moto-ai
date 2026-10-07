@@ -1910,7 +1910,7 @@ new class extends Component
                             <div class="rms-generation-meta-grid">
                                 <span class="rms-generation-meta-chip">
                                     <i>AI</i>
-                                    <b>{{ \Illuminate\Support\Str::afterLast($generation->model, '/') ?: $generation->model }}</b>
+                                    <b title="{{ $generation->model }}">Vercel · {{ \Illuminate\Support\Str::afterLast($generation->model, '/') ?: $generation->model }}</b>
                                 </span>
                                 <span class="rms-generation-meta-chip">
                                     <i>AR</i>
@@ -4522,6 +4522,535 @@ new class extends Component
 
     .rms-generator-selection .rms-generator-template-grid{
         max-height:none;
+    }
+}
+
+/* ============================================================
+   GENERATOR V6 — DENSITY / VISUAL HIERARCHY
+   Reduce oversized controls and make Recent Generations
+   behave like compact SaaS result cards.
+   ============================================================ */
+
+/* Main workflow should feel like a focused workspace, not a
+   full-width form stretched across the dashboard. */
+.rms-generator-columns{
+    width:min(1180px,100%) !important;
+    margin-inline:auto !important;
+    gap:14px !important;
+}
+
+.rms-generator-columns > .rms-generator-card{
+    padding:20px !important;
+    border-radius:20px !important;
+    box-shadow:0 10px 30px rgba(20,22,28,.045) !important;
+}
+
+.rms-generator-card-head{
+    margin-bottom:13px !important;
+}
+
+.rms-generator-card-head > div > span{
+    font-size:8px !important;
+    letter-spacing:.14em !important;
+}
+
+.rms-generator-card-head h2{
+    font-size:18px !important;
+}
+
+.rms-generator-card-head p{
+    font-size:11px !important;
+    color:#92969f !important;
+}
+
+/* Store control: compact but still premium. */
+.rms-generator-selection .rms-generator-store-trigger{
+    min-height:58px !important;
+    padding:8px 12px !important;
+    border-radius:13px !important;
+}
+
+.rms-generator-store-logo{
+    width:40px !important;
+    height:40px !important;
+    border-radius:10px !important;
+}
+
+.rms-generator-store-copy strong{
+    font-size:11px !important;
+}
+
+.rms-generator-store-copy small{
+    font-size:8px !important;
+}
+
+/* Template area: don't allow one template to create a giant
+   vertical card. */
+.rms-generator-selection .rms-generator-template-heading{
+    margin-top:15px !important;
+}
+
+.rms-generator-selection .rms-generator-search{
+    min-height:45px !important;
+    border-radius:12px !important;
+}
+
+.rms-generator-selection .rms-generator-chips{
+    margin-top:8px !important;
+}
+
+.rms-generator-selection .rms-generator-template-grid{
+    max-height:205px !important;
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    gap:8px !important;
+    margin-top:10px !important;
+}
+
+.rms-generator-selection .rms-generator-template-card{
+    min-height:0 !important;
+    border-radius:12px !important;
+    overflow:hidden !important;
+}
+
+.rms-generator-selection .rms-generator-template-image{
+    aspect-ratio:16/9 !important;
+    max-height:110px !important;
+}
+
+.rms-generator-selection .rms-generator-template-copy{
+    padding:8px 9px !important;
+}
+
+.rms-generator-selection .rms-generator-template-copy strong{
+    font-size:9px !important;
+}
+
+.rms-generator-selection .rms-generator-template-copy small{
+    font-size:6px !important;
+    margin-top:2px !important;
+    padding:2px 5px !important;
+}
+
+/* Upload: keep two assets side-by-side on desktop, but make
+   the drop zones substantially shorter. */
+.rms-generator-upload-grid-v2{
+    gap:10px !important;
+}
+
+.rms-generator-upload-box{
+    min-height:0 !important;
+    border-radius:14px !important;
+}
+
+.rms-generator-upload .rms-upload-label-row{
+    min-height:56px !important;
+    padding:10px !important;
+}
+
+.rms-generator-upload .rms-upload-label-row > div strong{
+    font-size:9px !important;
+}
+
+.rms-generator-upload .rms-upload-label-row > div small{
+    font-size:7px !important;
+    line-height:1.3 !important;
+}
+
+.rms-generator-upload .rms-upload-number{
+    width:28px !important;
+    height:28px !important;
+    font-size:8px !important;
+}
+
+.rms-generator-upload .rms-generator-upload-placeholder{
+    min-height:205px !important;
+    padding:18px !important;
+}
+
+.rms-generator-upload .rms-generator-upload-icon{
+    width:44px !important;
+    height:44px !important;
+    border-radius:12px !important;
+}
+
+.rms-generator-upload .rms-generator-upload-placeholder strong{
+    font-size:10px !important;
+    margin-top:8px !important;
+}
+
+.rms-generator-upload .rms-generator-upload-placeholder small{
+    max-width:220px !important;
+    font-size:7px !important;
+}
+
+.rms-generator-upload .rms-generator-upload-button{
+    min-height:38px !important;
+    margin-top:10px !important;
+    border-radius:10px !important;
+    font-size:8px !important;
+}
+
+.rms-generator-upload .rms-reference-mode{
+    padding:10px 12px !important;
+}
+
+.rms-generator-upload .rms-reference-mode small{
+    font-size:7px !important;
+}
+
+.rms-generator-upload .rms-custom-title-card{
+    margin-top:10px !important;
+}
+
+.rms-generator-upload .rms-reference-flow{
+    margin-top:10px !important;
+}
+
+/* Settings: compact control surface. */
+.rms-generator-settings-card{
+    width:min(1180px,100%) !important;
+}
+
+.rms-generator-settings{
+    padding:0 !important;
+    border:0 !important;
+    background:transparent !important;
+}
+
+.rms-generator-subhead{
+    padding-bottom:10px !important;
+}
+
+.rms-generator-settings-grid{
+    gap:8px !important;
+}
+
+.rms-custom-select-label{
+    margin-bottom:5px !important;
+    font-size:7px !important;
+}
+
+.rms-custom-select-trigger,
+.rms-custom-select.full .rms-custom-select-trigger{
+    min-height:50px !important;
+    padding:7px 10px !important;
+    border-radius:11px !important;
+}
+
+.rms-custom-select-trigger b{
+    font-size:9px !important;
+}
+
+.rms-custom-select-trigger small{
+    font-size:6.5px !important;
+    margin-top:2px !important;
+}
+
+.rms-generator-generate{
+    min-height:58px !important;
+    margin-top:10px !important;
+    border-radius:14px !important;
+}
+
+.rms-generator-generate strong{
+    font-size:11px !important;
+}
+
+.rms-generator-generate small{
+    font-size:7px !important;
+}
+
+.rms-generator-eta-card{
+    min-height:58px !important;
+    margin-top:8px !important;
+    padding:9px 12px !important;
+}
+
+/* ---------------- Recent Generations ---------------- */
+.rms-generator-history{
+    width:min(1280px,100%) !important;
+    margin-inline:auto !important;
+}
+
+.rms-generator-history-head{
+    margin-bottom:10px !important;
+}
+
+.rms-history-title strong{
+    font-size:15px !important;
+}
+
+.rms-history-title small{
+    font-size:8px !important;
+}
+
+.rms-history-toolbar{
+    gap:8px !important;
+    margin-bottom:12px !important;
+}
+
+.rms-history-search{
+    min-height:40px !important;
+    border-radius:10px !important;
+}
+
+.rms-history-filter > button{
+    min-height:40px !important;
+    border-radius:10px !important;
+}
+
+/* 3-column desktop cards with tighter internal rhythm. */
+.rms-generator-history-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    gap:12px !important;
+    align-items:start !important;
+}
+
+.rms-generator-history-item{
+    border-radius:16px !important;
+    box-shadow:0 8px 24px rgba(20,22,28,.045) !important;
+}
+
+/* Header becomes a compact utility row. */
+.rms-generation-card-head{
+    min-height:31px !important;
+    padding:10px 11px 6px !important;
+}
+
+.rms-history-item-meta{
+    gap:4px !important;
+}
+
+.rms-history-item-meta span{
+    font-size:6.5px !important;
+}
+
+.rms-history-item-meta small{
+    font-size:6px !important;
+}
+
+.rms-history-status{
+    min-height:22px !important;
+    padding:0 7px !important;
+    font-size:6px !important;
+}
+
+/* Keep generated previews visual, but stop them dominating the
+   whole card. */
+.rms-generator-history-item .rms-generation-image{
+    width:calc(100% - 16px) !important;
+    margin:0 8px !important;
+    aspect-ratio:auto !important;
+    height:280px !important;
+    border-radius:12px !important;
+    background:#f6f7f8 !important;
+}
+
+.rms-generator-history-item .rms-generation-image img{
+    width:100% !important;
+    height:100% !important;
+    object-fit:contain !important;
+}
+
+.rms-generation-image-overlay{
+    font-size:7px !important;
+}
+
+/* Failed/cancelled cards should be compact placeholders. */
+.rms-generation-state{
+    min-height:150px !important;
+    margin:0 8px !important;
+    border-radius:12px !important;
+    padding:18px !important;
+}
+
+.rms-generation-state > span{
+    width:38px !important;
+    height:38px !important;
+}
+
+.rms-generation-state strong{
+    font-size:10px !important;
+}
+
+.rms-generation-state small{
+    font-size:7px !important;
+}
+
+/* Metadata hierarchy: title first, then one clean line of
+   generation facts. */
+.rms-generation-card-info-v3{
+    gap:7px !important;
+    padding:10px 11px 8px !important;
+}
+
+.rms-generation-title-block{
+    gap:3px !important;
+}
+
+.rms-generation-title-block > strong{
+    font-size:11px !important;
+}
+
+.rms-generation-template-line{
+    font-size:6.5px !important;
+}
+
+.rms-meta-label{
+    height:14px !important;
+    font-size:5px !important;
+}
+
+.rms-generation-meta-grid{
+    gap:5px !important;
+}
+
+.rms-generation-meta-chip{
+    min-height:24px !important;
+    padding:3px 5px !important;
+    border-radius:7px !important;
+}
+
+.rms-generation-meta-chip i{
+    width:15px !important;
+    height:15px !important;
+    font-size:4.5px !important;
+}
+
+.rms-generation-meta-chip b{
+    font-size:5.8px !important;
+}
+
+/* Completed actions: Preview is primary, retry is secondary,
+   delete stays a small icon button. */
+.rms-generation-actions-v2{
+    display:grid !important;
+    grid-template-columns:minmax(0,1.45fr) minmax(0,1fr) 38px !important;
+    gap:6px !important;
+    padding:0 8px 8px !important;
+}
+
+.rms-generation-action{
+    min-height:39px !important;
+    border-radius:10px !important;
+    padding:6px 8px !important;
+}
+
+.rms-generation-action .rms-action-icon{
+    width:25px !important;
+    height:25px !important;
+    flex:0 0 25px !important;
+}
+
+.rms-generation-action .rms-action-copy strong{
+    font-size:7px !important;
+}
+
+.rms-generation-action .rms-action-copy small{
+    font-size:5.5px !important;
+}
+
+.rms-generation-action .rms-action-arrow{
+    width:13px !important;
+}
+
+.rms-generation-actions-v2 .rms-action-delete{
+    width:38px !important;
+    min-width:38px !important;
+    padding:0 !important;
+    display:grid !important;
+    place-items:center !important;
+}
+
+.rms-generation-actions-v2 .rms-action-delete svg{
+    width:14px !important;
+    height:14px !important;
+}
+
+/* Processing cards use the same compact media height. */
+.rms-generation-processing-visual{
+    min-height:0 !important;
+    margin:0 8px !important;
+}
+
+.rms-processing-placeholder{
+    min-height:240px !important;
+}
+
+.rms-generation-eta-v3{
+    margin:7px 8px 0 !important;
+    padding:8px 9px !important;
+}
+
+.rms-generation-eta-v3 strong{
+    font-size:7px !important;
+}
+
+.rms-generation-eta-v3 b{
+    font-size:8px !important;
+}
+
+.rms-generation-eta-v3 small{
+    font-size:5.5px !important;
+}
+
+.rms-generation-stage{
+    padding:7px 9px 8px !important;
+}
+
+/* Mobile: cards become single-column and actions remain usable. */
+@media(max-width:1100px){
+    .rms-generator-history-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    }
+}
+
+@media(max-width:820px){
+    .rms-generator-columns,
+    .rms-generator-history{
+        width:100% !important;
+    }
+
+    .rms-generator-selection .rms-generator-template-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    }
+
+    .rms-generator-history-grid{
+        grid-template-columns:1fr !important;
+    }
+
+    .rms-generator-history-item .rms-generation-image{
+        height:320px !important;
+    }
+}
+
+@media(max-width:620px){
+    .rms-generator-columns > .rms-generator-card{
+        padding:15px !important;
+        border-radius:16px !important;
+    }
+
+    .rms-generator-selection .rms-generator-template-grid{
+        max-height:220px !important;
+    }
+
+    .rms-generator-upload-grid-v2{
+        grid-template-columns:1fr !important;
+    }
+
+    .rms-generator-history-item .rms-generation-image{
+        height:auto !important;
+        aspect-ratio:1/1 !important;
+    }
+
+    .rms-generation-actions-v2{
+        grid-template-columns:minmax(0,1fr) minmax(0,1fr) 38px !important;
+    }
+}
+
+@media(prefers-reduced-motion:reduce){
+    .rms-generator-history-item{
+        transition:none !important;
     }
 }
 </style>
