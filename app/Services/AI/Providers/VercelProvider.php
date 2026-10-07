@@ -289,7 +289,7 @@ final class VercelProvider implements ImageProviderInterface
         }
 
         return array_values(array_map(
-            static fn ($item): array => [
+            fn ($item): array => [
                 'b64_json' => is_array($item) ? ($item['b64_json'] ?? null) : null,
                 'url' => is_array($item) ? ($item['url'] ?? null) : null,
                 'provider' => $this->name(),
