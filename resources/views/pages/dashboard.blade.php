@@ -286,11 +286,72 @@ class extends Component
                 'created_at' => $log->created_at?->format('d M Y, H:i:s'),
 
                 'created_at_human' => $log->created_at?->diffForHumans(),
+                'copy_text' => $this->formatActivityLogForCopy($log),
 
             ])
 
             ->toArray();
 
+    }
+
+
+
+    private function formatActivityLogForCopy(\App\Models\ActivityLog $log): string
+    {
+        $metadata = is_array($log->metadata) ? $log->metadata : [];
+
+        $redact = function ($value) use (&$redact) {
+            if (is_array($value)) {
+                $clean = [];
+
+                foreach ($value as $key => $item) {
+                    $keyString = strtolower((string) $key);
+
+                    if (preg_match('/api[_-]?key|access[_-]?token|refresh[_-]?token|authorization|password|secret|credential/i', $keyString)) {
+                        $clean[$key] = '[REDACTED]';
+                        continue;
+                    }
+
+                    $clean[$key] = $redact($item);
+                }
+
+                return $clean;
+            }
+
+            return is_scalar($value) || $value === null ? $value : (string) $value;
+        };
+
+        $safeMetadata = $redact($metadata);
+
+        $lines = [
+            '=== GLOBAL ACTIVITY LOG ===',
+            'ID: ' . $log->id,
+            'Time: ' . ($log->created_at?->format('Y-m-d H:i:s') ?? '-'),
+            'Category: ' . ($log->category ?: '-'),
+            'Status: ' . ($log->status ?: '-'),
+            'Actor: ' . ($log->user?->name ?? 'System'),
+            'Title: ' . ($log->title ?: '-'),
+            'Description: ' . ($log->description ?: '-'),
+            'Action: ' . ($log->action ?: '-'),
+        ];
+
+        if ($log->http_status !== null) {
+            $lines[] = 'HTTP: ' . $log->http_status;
+        }
+
+        if ($log->duration_ms !== null) {
+            $lines[] = 'Duration: ' . $log->duration_ms . ' ms';
+        }
+
+        if ($log->entity_type !== null || $log->entity_id !== null) {
+            $lines[] = 'Entity: ' . ($log->entity_type ?: '-') . ' #' . ($log->entity_id ?: '-');
+        }
+
+        if ($safeMetadata !== []) {
+            $lines[] = 'Metadata: ' . json_encode($safeMetadata, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
+
+        return implode(PHP_EOL, $lines);
     }
 
 
