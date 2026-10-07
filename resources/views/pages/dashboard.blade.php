@@ -1423,8 +1423,56 @@ public function getUserInitialsProperty(): string
 
 
         {{-- AI ENGINE / QUEUE WORKER STATUS --}}
-        <div class="sidebar-api">
-            <div class="api-status-card worker-status-card">
+        <div
+            class="sidebar-api worker-widget-shell"
+            x-data="{
+                workerOpen: true,
+                init() {
+                    try {
+                        const saved = window.localStorage.getItem('rms-worker-widget-open');
+                        if (saved !== null) this.workerOpen = saved === '1';
+                    } catch (_) {}
+                    this.$watch('workerOpen', value => {
+                        try {
+                            window.localStorage.setItem('rms-worker-widget-open', value ? '1' : '0');
+                        } catch (_) {}
+                    });
+                }
+            }"
+        >
+            <div
+                class="worker-widget-collapsed"
+                x-show="!workerOpen"
+                x-cloak
+                x-transition:enter="worker-widget-enter"
+                x-transition:enter-start="worker-widget-enter-start"
+                x-transition:enter-end="worker-widget-enter-end"
+                x-transition:leave="worker-widget-leave"
+                x-transition:leave-start="worker-widget-leave-start"
+                x-transition:leave-end="worker-widget-leave-end"
+            >
+                <button type="button" class="worker-widget-mini" @click="workerOpen = true" aria-label="Show queue worker status">
+                    <span class="worker-widget-mini-icon">AI</span>
+                    <span class="worker-widget-mini-copy">
+                        <strong>Workers</strong>
+                        <small>{{ $this->workerStatus['running_count'] }}/{{ $this->workerStatus['target_workers'] }} active</small>
+                    </span>
+                    <span class="worker-widget-mini-state {{ $this->workerStatus['running'] ? 'is-running' : 'is-stopped' }}"></span>
+                    <span class="worker-widget-chevron">⌃</span>
+                </button>
+            </div>
+
+            <div
+                class="api-status-card worker-status-card worker-widget-expanded"
+                x-show="workerOpen"
+                x-cloak
+                x-transition:enter="worker-widget-enter"
+                x-transition:enter-start="worker-widget-enter-start"
+                x-transition:enter-end="worker-widget-enter-end"
+                x-transition:leave="worker-widget-leave"
+                x-transition:leave-start="worker-widget-leave-start"
+                x-transition:leave-end="worker-widget-leave-end"
+            >
                 <div class="api-status-top">
                     <div class="api-brand">
                         <span class="api-mark">AI</span>
@@ -1433,14 +1481,24 @@ public function getUserInitialsProperty(): string
                             <div class="api-subtitle">Creative generation</div>
                         </div>
                     </div>
-                    <span class="api-live-dot {{ $this->workerStatus['running'] ? 'worker-live' : 'worker-offline' }}" aria-hidden="true"></span>
+
+                    <div class="worker-widget-top-actions">
+                        <span class="api-live-dot {{ $this->workerStatus['running'] ? 'worker-live' : 'worker-offline' }}" aria-hidden="true"></span>
+                        <button
+                            type="button"
+                            class="worker-collapse"
+                            @click="workerOpen = false"
+                            aria-label="Hide queue worker status"
+                            title="Hide worker status"
+                        >⌄</button>
+                    </div>
                 </div>
 
                 <div class="worker-mini-divider"></div>
 
                 <div class="worker-fleet-head">
                     <div class="worker-status-line">
-                        <span class="api-status-dot {{ $this->workerStatus['healthy'] ? 'is-connected' : ($this->workerStatus['running'] ? 'is-error' : 'is-error') }}"></span>
+                        <span class="api-status-dot {{ $this->workerStatus['healthy'] ? 'is-connected' : 'is-error' }}"></span>
                         <div class="worker-status-copy">
                             <strong>Queue Workers</strong>
                             <span>{{ $this->workerStatus['running_count'] }}/{{ $this->workerStatus['target_workers'] }} process aktif</span>
@@ -1466,7 +1524,6 @@ public function getUserInitialsProperty(): string
                             $workerId = $worker['id'] ?? ($workerIndex + 1);
                             $workerRunning = (bool) ($worker['running'] ?? false);
                             $workerPid = $worker['pid'] ?? null;
-                            $workerName = $worker['name'] ?? ('Worker ' . $workerId);
                         @endphp
 
                         <div class="worker-fleet-row {{ $workerRunning ? 'is-running' : 'is-stopped' }}">
@@ -1513,10 +1570,12 @@ public function getUserInitialsProperty(): string
                         <span wire:loading.remove wire:target="refreshWorkerStatus">↻</span>
                         <span wire:loading wire:target="refreshWorkerStatus" class="worker-spinner">◌</span>
                     </button>
+
                     <span>
                         <i class="worker-footer-dot {{ $this->openAiStatus['state'] === 'connected' ? 'is-online' : '' }}"></i>
                         API {{ $this->openAiStatus['label'] }}
                     </span>
+
                     <span class="worker-step">{{ $this->workerStatus['running'] ? 'ENGINE READY' : 'ENGINE PAUSED' }}</span>
                 </div>
             </div>
