@@ -422,7 +422,8 @@
                                 const text = wanted
                                     .map(el => {
                                         try {
-                                            return JSON.parse(atob(el.dataset.copy));
+                                            const bytes = Uint8Array.from(atob(el.dataset.copy), char => char.charCodeAt(0));
+                                            return JSON.parse(new TextDecoder().decode(bytes));
                                         } catch (_) {
                                             return '';
                                         }
