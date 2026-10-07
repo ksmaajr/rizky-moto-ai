@@ -616,52 +616,6 @@ new class extends Component
                 </div>
             </div>
 
-            <div class="rms-generator-context-strip">
-                <div class="rms-generator-context-intro">
-                    <span class="rms-context-spark">✦</span>
-                    <div>
-                        <strong>Generation setup</strong>
-                        <small>Semua aset di bawah akan dikunci untuk generation ini.</small>
-                    </div>
-                </div>
-
-                <div class="rms-generator-context-items">
-                    <div class="rms-context-item {{ $this->selectedStore ? 'is-ready' : '' }}">
-                        <span class="rms-context-icon">
-                            @if($this->selectedStore?->logo_path)
-                                <img src="{{ IlluminateSupportFacadesStorage::disk('public')->url($this->selectedStore->logo_path) }}" alt="">
-                            @else
-                                <b>{{ $this->selectedStore ? strtoupper(substr($this->selectedStore->name, 0, 1)) : 'S' }}</b>
-                            @endif
-                        </span>
-                        <div>
-                            <small>STORE</small>
-                            <strong>{{ $this->selectedStore?->name ?? 'Belum dipilih' }}</strong>
-                        </div>
-                    </div>
-
-                    <span class="rms-context-arrow">→</span>
-
-                    <div class="rms-context-item {{ $this->selectedTemplate ? 'is-ready' : '' }}">
-                        <span class="rms-context-icon rms-context-template-icon">✦</span>
-                        <div>
-                            <small>TEMPLATE</small>
-                            <strong>{{ $this->selectedTemplate?->name ?? 'Belum dipilih' }}</strong>
-                        </div>
-                    </div>
-
-                    <span class="rms-context-arrow">→</span>
-
-                    <div class="rms-context-item is-reference">
-                        <span class="rms-context-icon rms-context-reference-icon">03</span>
-                        <div>
-                            <small>REFERENCE SET</small>
-                            <strong x-text="useInstalledReference ? 'Product + Installed + Logo' : 'Product + Logo'"></strong>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <div class="rms-generator-columns">
 
                 <section id="generator-step-1" class="rms-generator-card rms-generator-selection">
@@ -669,7 +623,7 @@ new class extends Component
                         <div>
                             <span>STEP 01</span>
                             <h2>Pilih Store & Template</h2>
-                            <p>Template akan menyesuaikan dengan Store yang dipilih.</p>
+                            <p>Store menentukan logo dan template yang tersedia.</p>
                         </div>
                     </div>
 
@@ -790,7 +744,7 @@ new class extends Component
                         <div>
                             <span>STEP 02</span>
                             <h2>Upload Gambar Produk</h2>
-                            <p>Foto produk wajib. Foto terpasang bersifat opsional sebagai referensi penggunaan.</p>
+                            <p>Foto produk wajib · foto terpasang opsional.</p>
                         </div>
                         <div class="rms-upload-requirement" :class="{ 'optional-mode': !useInstalledReference }">
                             <i></i> <span x-text="useInstalledReference ? '3 reference images' : '2 reference images'"></span>
@@ -969,7 +923,10 @@ new class extends Component
 
                     {{-- Preview hasil dipusatkan di Recent Generations. Modal preview tetap tersedia saat card hasil diklik. --}}
 
-                        <div class="rms-generator-settings">
+                    </section>
+
+                <section class="rms-generator-card rms-generator-settings-card">
+                    <div class="rms-generator-settings">
                         <div class="rms-generator-subhead">
                             <div>
                                 <strong>Pengaturan Tambahan</strong>
@@ -4479,6 +4436,92 @@ new class extends Component
     .rms-generation-eta-v3::after{
         animation:none!important;
         transition:none!important;
+    }
+}
+
+/* ============================================================
+   GENERATOR V5 — COMPACT STACKED WORKFLOW
+   Store & Template → Upload → Settings
+   ============================================================ */
+.rms-generator-columns{
+    display:flex !important;
+    flex-direction:column !important;
+    gap:18px !important;
+    align-items:stretch !important;
+}
+
+.rms-generator-columns > .rms-generator-card{
+    width:100% !important;
+    min-width:0 !important;
+}
+
+.rms-generator-selection{
+    padding-bottom:20px !important;
+}
+
+.rms-generator-upload{
+    padding-bottom:20px !important;
+}
+
+.rms-generator-card-head{
+    margin-bottom:16px !important;
+}
+
+.rms-generator-card-head h2{
+    font-size:20px !important;
+    line-height:1.2 !important;
+    letter-spacing:-.025em !important;
+}
+
+.rms-generator-card-head p{
+    margin-top:5px !important;
+    font-size:12px !important;
+}
+
+.rms-generator-selection .rms-generator-template-grid{
+    max-height:280px;
+    overflow:auto;
+    padding-right:3px;
+}
+
+.rms-generator-upload-grid-v2{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:14px !important;
+}
+
+.rms-generator-upload-box{
+    min-height:300px !important;
+}
+
+.rms-generator-settings-card{
+    padding-top:20px !important;
+}
+
+.rms-generator-settings-card .rms-generator-settings{
+    margin-top:0 !important;
+}
+
+@media (max-width:820px){
+    .rms-generator-upload-grid-v2{
+        grid-template-columns:1fr !important;
+    }
+
+    .rms-generator-upload-box{
+        min-height:260px !important;
+    }
+}
+
+@media (max-width:620px){
+    .rms-generator-columns{
+        gap:12px !important;
+    }
+
+    .rms-generator-card-head h2{
+        font-size:18px !important;
+    }
+
+    .rms-generator-selection .rms-generator-template-grid{
+        max-height:none;
     }
 }
 </style>
