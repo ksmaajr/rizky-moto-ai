@@ -863,6 +863,28 @@
 .rms-vg-empty-orbit{display:grid;place-items:center;width:38px;height:38px;margin-bottom:9px;border:1px solid #e4e4e7;border-radius:11px;background:#fff;color:#18181b;font-size:17px;box-shadow:0 6px 16px rgba(0,0,0,.05);animation:rmsVgFloat 2.6s ease-in-out infinite}
 .rms-vg-empty-keys strong{color:#52525b;font-size:10px;font-weight:750}.rms-vg-empty-keys p{margin:4px 0 0;color:#a1a1aa;font-size:8px}
 .rms-vg-activity{margin-top:22px}
+.rms-global-activity{position:relative}
+.rms-global-scope-badge{display:inline-flex;align-items:center;height:22px;padding:0 7px;border:1px solid #e4e4e7;border-radius:6px;background:#fafafa;color:#52525b;font-size:6.5px;font-weight:900;letter-spacing:.09em}
+.rms-global-activity-toolbar{display:grid;grid-template-columns:minmax(180px,1.6fr) repeat(3,minmax(95px,.55fr));gap:8px;padding:11px 18px;border-top:1px solid #f0f0f2;border-bottom:1px solid #f0f0f2;background:#fafafa}
+.rms-global-activity-toolbar label{display:grid;gap:5px;min-width:0}
+.rms-global-activity-toolbar label>span{font-size:6.5px;line-height:1;color:#a1a1aa;letter-spacing:.12em;font-weight:900}
+.rms-global-activity-toolbar input,.rms-global-activity-toolbar select{width:100%;height:32px;min-width:0;padding:0 9px;border:1px solid #e4e4e7;border-radius:8px;background:#fff;color:#3f3f46;outline:none;font-family:inherit;font-size:8px}
+.rms-global-activity-toolbar input:focus,.rms-global-activity-toolbar select:focus{border-color:#18181b;box-shadow:0 0 0 3px rgba(24,24,27,.04)}
+.rms-global-activity-toolbar input::placeholder{color:#c4c4c9}
+.rms-global-activity-list{max-height:390px}
+.rms-global-log-category{display:inline-flex;align-items:center;height:17px;padding:0 5px;border-radius:5px;background:#f4f4f5;color:#52525b;font-size:6px;font-weight:900;letter-spacing:.06em}
+.rms-global-log-user{max-width:145px;overflow:hidden;color:#a1a1aa;font-size:7px;text-overflow:ellipsis;white-space:nowrap}
+.rms-global-activity .rms-openai-log-item.is-success .rms-global-log-category{background:#f0fdf4;color:#15803d}
+.rms-global-activity .rms-openai-log-item.is-error .rms-global-log-category{background:#fef2f2;color:#b91c1c}
+.rms-global-activity .rms-openai-log-item.is-warning .rms-global-log-category{background:#fffbeb;color:#a16207}
+.rms-global-activity .rms-openai-log-item.is-info .rms-global-log-category{background:#eff6ff;color:#1d4ed8}
+.rms-global-activity .rms-openai-log-top{gap:7px}
+@media(max-width:760px){
+    .rms-global-activity-toolbar{grid-template-columns:1fr 1fr}
+    .rms-global-activity-toolbar label:first-child{grid-column:1/-1}
+    .rms-global-log-user{max-width:90px}
+}
+
 .rms-vg-activity-list{max-height:330px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#d4d4d8 transparent}
 .rms-vg-log-key{overflow:hidden;max-width:230px;color:#71717a;font-family:"SFMono-Regular",Consolas,monospace;font-size:7px;text-overflow:ellipsis;white-space:nowrap}
 .rms-vg-log-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:7px;color:#a1a1aa;font-size:7px}
