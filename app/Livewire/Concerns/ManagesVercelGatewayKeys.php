@@ -91,6 +91,19 @@ trait ManagesVercelGatewayKeys
             'priority' => ((int) ($keys->max('priority') ?? 0)) + 1,
         ]);
 
+        app(\App\Services\ActivityLogService::class)->success(
+            action: 'vercel_api_key_added',
+            category: 'api',
+            title: 'Vercel AI Gateway API key ditambahkan.',
+            description: "{$name} berhasil disimpan ke database dan langsung tersedia untuk worker.",
+            metadata: [
+                'provider' => 'vercel',
+                'gateway_key_id' => $key->id,
+                'gateway_key_name' => $name,
+                'user_id' => auth()->id(),
+            ],
+        );
+
         $this->newVercelKeyName = '';
         $this->newVercelApiKey = '';
 
@@ -297,6 +310,24 @@ trait ManagesVercelGatewayKeys
                 'tested_at' => now(),
             ]);
 
+            app(\App\Services\ActivityLogService::class)->log(
+                action: 'vercel_api_key_health_check',
+                category: 'api',
+                status: $status === 'success' ? 'success' : 'error',
+                title: $status === 'success'
+                    ? 'Vercel API key health check berhasil.'
+                    : 'Vercel API key health check gagal.',
+                description: $key->name . ': ' . $message,
+                metadata: [
+                    'provider' => 'vercel',
+                    'gateway_key_id' => $key->id,
+                    'gateway_key_name' => $key->name,
+                    'error_type' => $errorType,
+                ],
+                durationMs: $duration,
+                httpStatus: $httpStatus,
+            );
+
             $this->loadVercelGatewayLogs();
 
             if ($notify) {
@@ -342,6 +373,21 @@ trait ManagesVercelGatewayKeys
                 'error_type' => $errorType,
                 'tested_at' => now(),
             ]);
+
+            app(\App\Services\ActivityLogService::class)->error(
+                action: 'vercel_api_key_health_check',
+                category: 'api',
+                title: 'Vercel API key health check exception.',
+                description: $key->name . ': ' . $e->getMessage(),
+                metadata: [
+                    'provider' => 'vercel',
+                    'gateway_key_id' => $key->id,
+                    'gateway_key_name' => $key->name,
+                    'error_type' => $errorType,
+                    'exception' => get_class($e),
+                ],
+                durationMs: $duration,
+            );
 
             $this->loadVercelGatewayLogs();
 
