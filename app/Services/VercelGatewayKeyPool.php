@@ -44,7 +44,13 @@ class VercelGatewayKeyPool
             ->orderBy('id');
 
         if ($userId !== null) {
-            $query->where('user_id', $userId);
+            // Prefer keys owned by the current account, but also allow keys
+            // intentionally saved as global/system credentials. This makes the
+            // credential registry shared across tabs, devices and workers.
+            $query->where(function ($q) use ($userId) {
+                $q->where('user_id', $userId)
+                    ->orWhereNull('user_id');
+            });
         }
 
         if ($excludeIds !== []) {
@@ -102,7 +108,10 @@ class VercelGatewayKeyPool
     {
         $query = VercelGatewayApiKey::query();
         if ($userId !== null) {
-            $query->where('user_id', $userId);
+            $query->where(function ($q) use ($userId) {
+                $q->where('user_id', $userId)
+                    ->orWhereNull('user_id');
+            });
         }
         return $query->count();
     }
@@ -118,7 +127,10 @@ class VercelGatewayKeyPool
             });
 
         if ($userId !== null) {
-            $query->where('user_id', $userId);
+            $query->where(function ($q) use ($userId) {
+                $q->where('user_id', $userId)
+                    ->orWhereNull('user_id');
+            });
         }
 
         return $query->count();
