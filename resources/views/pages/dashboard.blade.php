@@ -124,8 +124,10 @@ class extends Component
 
         $this->loadVercelGatewayLogs();
 
-        // Worker status is loaded on explicit user action only.
-        // Do not execute OS process checks during Dashboard mount; on Windows this can block the HTTP request.
+        // Worker state is server-side. Resolve it on every dashboard mount so a
+        // new tab/device reflects the real process state instead of Livewire's
+        // initial default values.
+        $this->refreshWorkerStatus();
 
     }
 
