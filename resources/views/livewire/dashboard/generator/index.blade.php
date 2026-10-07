@@ -122,7 +122,7 @@ new class extends Component
             ->get();
     }
 
-    protected function generationEstimate(Generation $generation): array
+    public function generationEstimate(Generation $generation): array
     {
         static $baselineSeconds = null;
         static $workerCount = null;
