@@ -8,16 +8,25 @@ use Throwable;
 
 class QueueWorkerManager
 {
-    private const PID_FILE = 'framework/queue-worker.pid';
+    private const PID_PREFIX = 'framework/queue-worker-';
     private const STARTED_FILE = 'framework/queue-worker.started';
-    private const STDOUT_LOG = 'logs/queue-worker.log';
-    private const STDERR_LOG = 'logs/queue-worker-error.log';
+    private const STDOUT_PREFIX = 'logs/queue-worker-';
+    private const STDERR_PREFIX = 'logs/queue-worker-error-';
 
     private const SLEEP = 2;
     private const TRIES = 3;
     private const TIMEOUT = 300;
     private const MAX_JOBS = 100;
     private const MAX_TIME = 3600;
+    private const MAX_WORKERS = 3;
+
+    public function workerCount(): int
+    {
+        return max(1, min(
+            self::MAX_WORKERS,
+            (int) env('QUEUE_WORKER_COUNT', 3)
+        ));
+    }
 
     private function usesSupervisor(): bool
     {
@@ -30,45 +39,63 @@ class QueueWorkerManager
         return (string) env('QUEUE_WORKER_SUPERVISOR_PROGRAM', 'rizky-moto-ai-worker');
     }
 
-    private function supervisorCommand(string $action): array
+    private function supervisorBinary(): string
     {
-        $program = $this->supervisorProgram();
-        $binary = (string) env('QUEUE_WORKER_SUPERVISOR_BIN', '/usr/bin/supervisorctl');
+        return (string) env('QUEUE_WORKER_SUPERVISOR_BIN', '/usr/bin/supervisorctl');
+    }
+
+    private function supervisorCommand(string $action, bool $wildcard = false): array
+    {
+        $program = $this->supervisorProgram() . ($wildcard ? ':*' : '');
 
         return [
-            'sudo', '-n', $binary, $action, $program,
+            'sudo',
+            '-n',
+            $this->supervisorBinary(),
+            $action,
+            $program,
         ];
     }
 
     private function supervisorStatus(): array
     {
-        $result = Process::run($this->supervisorCommand('status'));
+        $result = Process::run($this->supervisorCommand('status', true));
         $output = trim($result->output() . PHP_EOL . $result->errorOutput());
-        $program = preg_quote($this->supervisorProgram(), '/');
 
         if ($result->failed()) {
             return [
                 'running' => false,
-                'pid' => null,
-                'command' => null,
-                'supervisor_error' => $output,
+                'workers' => [],
+                'supervisor_error' => $output !== '' ? $output : 'Supervisor status gagal.',
             ];
         }
 
-        if (preg_match('/^' . $program . '\s+RUNNING\s+pid\s+(\d+)/mi', $result->output(), $m) === 1) {
-            return [
-                'running' => true,
-                'pid' => (int) $m[1],
-                'command' => 'supervisor:' . $this->supervisorProgram(),
-                'supervisor_error' => null,
+        $workers = [];
+        $prefix = preg_quote($this->supervisorProgram(), '/');
+
+        foreach (preg_split('/\R+/', trim($result->output())) as $line) {
+            if ($line === '') {
+                continue;
+            }
+
+            if (preg_match('/^(' . $prefix . '(?:_[0-9]+|:[0-9]+)?)\s+(RUNNING|STOPPED|STARTING|FATAL|EXITED|BACKOFF)\s*(?:pid\s+(\d+))?/i', trim($line), $m) !== 1) {
+                continue;
+            }
+
+            $workers[] = [
+                'name' => $m[1],
+                'status' => strtoupper($m[2]),
+                'running' => strtoupper($m[2]) === 'RUNNING',
+                'pid' => isset($m[3]) && $m[3] !== '' ? (int) $m[3] : null,
             ];
         }
+
+        usort($workers, static fn (array $a, array $b) => strcmp($a['name'], $b['name']));
 
         return [
-            'running' => false,
-            'pid' => null,
-            'command' => 'supervisor:' . $this->supervisorProgram(),
-            'supervisor_error' => $output !== '' ? $output : null,
+            'running' => collect($workers)->contains(fn (array $worker) => $worker['running']),
+            'workers' => $workers,
+            'supervisor_error' => null,
         ];
     }
 
@@ -76,16 +103,17 @@ class QueueWorkerManager
     {
         $current = $this->status();
 
-        if ($current['running']) {
+        if (($current['running_count'] ?? 0) >= $this->workerCount()) {
             return [
                 'success' => false,
-                'message' => 'Queue worker sudah berjalan.',
+                'message' => sprintf('Semua %d queue worker sudah berjalan.', $this->workerCount()),
                 ...$current,
             ];
         }
 
         if ($this->usesSupervisor()) {
-            $result = Process::run($this->supervisorCommand('start'));
+            $result = Process::run($this->supervisorCommand('start', true));
+
             if ($result->failed()) {
                 $message = trim($result->errorOutput() ?: $result->output());
                 throw new RuntimeException(
@@ -99,42 +127,86 @@ class QueueWorkerManager
                 LOCK_EX
             );
 
-            usleep(1000000);
+            usleep(1200000);
             $status = $this->status();
 
-            if (! $status['running']) {
+            if (($status['running_count'] ?? 0) === 0) {
                 throw new RuntimeException(
-                    'Supervisor start berhasil dipanggil, tetapi worker belum RUNNING.'
+                    'Supervisor start berhasil dipanggil, tetapi tidak ada worker yang RUNNING.'
                 );
             }
 
             return [
                 'success' => true,
-                'message' => 'Queue worker berhasil dijalankan melalui Supervisor.',
+                'message' => sprintf(
+                    '%d/%d queue worker berhasil dijalankan melalui Supervisor.',
+                    $status['running_count'],
+                    $this->workerCount()
+                ),
                 ...$status,
             ];
         }
 
         $this->ensureRuntimeDirectories();
-        $this->clearStaleState();
+        $this->cleanupStalePidFiles();
 
+        $target = $this->workerCount();
+        $current = $this->status();
+        $started = 0;
+
+        for ($worker = 1; $worker <= $target; $worker++) {
+            $existing = $current['workers'][$worker - 1] ?? null;
+
+            if ($existing && $existing['running']) {
+                continue;
+            }
+
+            $this->startLocalWorker($worker);
+            $started++;
+        }
+
+        file_put_contents(
+            storage_path(self::STARTED_FILE),
+            now()->toIso8601String(),
+            LOCK_EX
+        );
+
+        usleep(1200000);
+        $status = $this->status();
+
+        if (($status['running_count'] ?? 0) === 0) {
+            $error = $this->tail($this->stderrFile(1), 30);
+            throw new RuntimeException(
+                'Tidak ada queue worker yang berhasil berjalan.'
+                . ($error !== '' ? ' ' . trim($error) : '')
+            );
+        }
+
+        return [
+            'success' => true,
+            'message' => sprintf(
+                '%d/%d queue worker aktif (%d process baru dibuat).',
+                $status['running_count'],
+                $target,
+                $started
+            ),
+            ...$status,
+        ];
+    }
+
+    private function startLocalWorker(int $workerNumber): void
+    {
         $php = PHP_BINARY;
         $artisan = base_path('artisan');
         $queue = (string) config('queue.default', 'database');
-        $stdout = storage_path(self::STDOUT_LOG);
-        $stderr = storage_path(self::STDERR_LOG);
+        $stdout = storage_path($this->stdoutFile($workerNumber));
+        $stderr = storage_path($this->stderrFile($workerNumber));
+        $pidFile = storage_path($this->pidFile($workerNumber));
 
         if (! is_file($artisan)) {
             throw new RuntimeException("File artisan tidak ditemukan: {$artisan}");
         }
 
-        if (! is_file($php) && PHP_OS_FAMILY !== 'Windows') {
-            throw new RuntimeException("PHP CLI tidak ditemukan: {$php}");
-        }
-
-        // Windows Start-Process receives ArgumentList as one command line.
-        // Use a relative `artisan` path there so project paths containing spaces
-        // (for example `D:\Website\Tools Generating Image ...`) are not split.
         $arguments = [
             PHP_OS_FAMILY === 'Windows' ? 'artisan' : $artisan,
             'queue:work',
@@ -146,130 +218,81 @@ class QueueWorkerManager
             '--max-time=' . self::MAX_TIME,
         ];
 
-        try {
-            if (PHP_OS_FAMILY === 'Windows') {
-                /*
-                 * On Windows, use Start-Process so queue:work is detached from
-                 * the Livewire/HTTP request. Laravel Process::start() can keep
-                 * the child tied to the request and the PHP process may exit.
-                 */
-                $script = storage_path('framework/start-queue-worker.ps1');
+        if (PHP_OS_FAMILY === 'Windows') {
+            $script = storage_path('framework/start-queue-worker-' . $workerNumber . '.ps1');
+            $psArguments = array_map(
+                static fn (string $argument): string => "'" . str_replace("'", "''", $argument) . "'",
+                $arguments
+            );
 
-                $psArguments = [];
-                foreach ($arguments as $argument) {
-                    $escaped = str_replace("'", "''", $argument);
-                    $psArguments[] = "'{$escaped}'";
-                }
+            $phpEscaped = str_replace("'", "''", $php);
+            $stdoutEscaped = str_replace("'", "''", $stdout);
+            $stderrEscaped = str_replace("'", "''", $stderr);
+            $pidEscaped = str_replace("'", "''", $pidFile);
+            $workingDirectory = str_replace("'", "''", base_path());
 
-                $phpEscaped = str_replace("'", "''", $php);
-                $stdoutEscaped = str_replace("'", "''", $stdout);
-                $stderrEscaped = str_replace("'", "''", $stderr);
-                $workingDirectory = str_replace("'", "''", base_path());
-
-                $scriptContents = <<<PS1
+            $scriptContents = <<<PS1
 \$ErrorActionPreference = 'Stop'
 \$proc = Start-Process -FilePath '{$phpEscaped}' -ArgumentList @(
     {$this->joinPowerShellArguments($psArguments)}
 ) -WorkingDirectory '{$workingDirectory}' -WindowStyle Hidden -RedirectStandardOutput '{$stdoutEscaped}' -RedirectStandardError '{$stderrEscaped}' -PassThru
-Set-Content -Path '{$this->escapePowerShellSingleQuote(storage_path(self::PID_FILE))}' -Value \$proc.Id -Encoding ascii
+Set-Content -Path '{$pidEscaped}' -Value \$proc.Id -Encoding ascii
 PS1;
 
-                file_put_contents($script, $scriptContents, LOCK_EX);
+            file_put_contents($script, $scriptContents, LOCK_EX);
 
-                $result = Process::run([
-                    'powershell',
-                    '-NoProfile',
-                    '-NonInteractive',
-                    '-ExecutionPolicy',
-                    'Bypass',
-                    '-File',
-                    $script,
-                ]);
+            $result = Process::run([
+                'powershell',
+                '-NoProfile',
+                '-NonInteractive',
+                '-ExecutionPolicy',
+                'Bypass',
+                '-File',
+                $script,
+            ]);
 
-                @unlink($script);
+            @unlink($script);
 
-                if ($result->failed()) {
-                    $error = trim($result->errorOutput());
-                    throw new RuntimeException($error !== '' ? $error : 'PowerShell gagal membuat background worker.');
-                }
-            } else {
-                $process = Process::path(base_path())
-                    ->timeout(0)
-                    ->start(array_merge([$php], $arguments));
-
-                $pid = $process->id();
-
-                if (! $pid) {
-                    throw new RuntimeException('OS tidak mengembalikan PID worker.');
-                }
-
-                file_put_contents(
-                    storage_path(self::PID_FILE),
-                    (string) $pid,
-                    LOCK_EX
+            if ($result->failed()) {
+                $error = trim($result->errorOutput() ?: $result->output());
+                throw new RuntimeException(
+                    $error !== '' ? $error : "Worker #{$workerNumber} gagal dibuat."
                 );
             }
 
-            file_put_contents(
-                storage_path(self::STARTED_FILE),
-                now()->toIso8601String(),
-                LOCK_EX
-            );
-
-            // Give the detached worker enough time to initialize Laravel.
-            usleep(1200000);
-
-            $status = $this->status();
-
-            if (! $status['running']) {
-                $error = $this->tail(self::STDERR_LOG, 30);
-
-                $message = 'Worker process gagal tetap berjalan.';
-                if ($error !== '') {
-                    $message .= ' ' . trim($error);
-                }
-
-                $this->clearState();
-
-                return [
-                    'success' => false,
-                    'message' => $message,
-                    ...$status,
-                ];
-            }
-
-            return [
-                'success' => true,
-                'message' => 'Queue worker berhasil dijalankan.',
-                ...$status,
-            ];
-        } catch (Throwable $e) {
-            $this->clearState();
-
-            throw new RuntimeException(
-                'Gagal menjalankan queue worker: ' . $e->getMessage(),
-                previous: $e
-            );
+            return;
         }
+
+        $process = Process::path(base_path())
+            ->timeout(0)
+            ->start(array_merge([$php], $arguments));
+
+        $pid = $process->id();
+
+        if (! $pid) {
+            throw new RuntimeException("OS tidak mengembalikan PID worker #{$workerNumber}.");
+        }
+
+        file_put_contents($pidFile, (string) $pid, LOCK_EX);
     }
 
     public function stop(): array
     {
         $status = $this->status();
 
-        if (! $status['running'] || ! $status['pid']) {
+        if (($status['running_count'] ?? 0) === 0) {
             $this->clearState();
 
             return [
                 'success' => false,
-                'message' => 'Queue worker tidak sedang berjalan.',
-                'running' => false,
-                'pid' => null,
+                'message' => 'Tidak ada queue worker yang sedang berjalan.',
+                ...$status,
             ];
         }
 
         if ($this->usesSupervisor()) {
-            $result = Process::run($this->supervisorCommand('stop'));
+            $result = Process::run($this->supervisorCommand('stop', true));
+
             if ($result->failed()) {
                 $message = trim($result->errorOutput() ?: $result->output());
                 throw new RuntimeException(
@@ -281,51 +304,44 @@ PS1;
 
             return [
                 'success' => true,
-                'message' => 'Queue worker berhasil dihentikan melalui Supervisor.',
-                'running' => false,
-                'pid' => null,
+                'message' => 'Semua queue worker berhasil dihentikan melalui Supervisor.',
+                ...$this->status(),
             ];
         }
 
-        $pid = (int) $status['pid'];
+        $stopped = 0;
 
-        try {
-            if (PHP_OS_FAMILY === 'Windows') {
-                Process::run([
-                    'taskkill',
-                    '/PID',
-                    (string) $pid,
-                    '/T',
-                    '/F',
-                ]);
-            } else {
-                /*
-                 * SIGTERM gives Laravel Queue Worker a chance to shut down
-                 * cleanly after its current job.
-                 */
-                if (function_exists('posix_kill')) {
-                    @posix_kill($pid, SIGTERM);
-                } else {
-                    Process::run(['kill', '-TERM', (string) $pid]);
-                }
+        foreach ($status['workers'] as $worker) {
+            if (! $worker['running'] || ! $worker['pid']) {
+                continue;
             }
 
-            $this->waitUntilStopped($pid);
+            $pid = (int) $worker['pid'];
 
-            $this->clearState();
+            if (PHP_OS_FAMILY === 'Windows') {
+                Process::run(['taskkill', '/PID', (string) $pid, '/T', '/F']);
+            } elseif (function_exists('posix_kill')) {
+                @posix_kill($pid, SIGTERM);
+            } else {
+                Process::run(['kill', '-TERM', (string) $pid]);
+            }
 
-            return [
-                'success' => true,
-                'message' => 'Queue worker berhasil dihentikan.',
-                'running' => false,
-                'pid' => null,
-            ];
-        } catch (Throwable $e) {
-            throw new RuntimeException(
-                'Gagal menghentikan queue worker: ' . $e->getMessage(),
-                previous: $e
-            );
+            $stopped++;
         }
+
+        foreach ($status['workers'] as $worker) {
+            if ($worker['pid']) {
+                $this->waitUntilStopped((int) $worker['pid']);
+            }
+        }
+
+        $this->clearState();
+
+        return [
+            'success' => $stopped > 0,
+            'message' => sprintf('%d queue worker berhasil dihentikan.', $stopped),
+            ...$this->status(),
+        ];
     }
 
     public function restart(): array
@@ -340,67 +356,110 @@ PS1;
     {
         if ($this->usesSupervisor()) {
             $supervisor = $this->supervisorStatus();
+            $workers = array_values(array_filter(
+                $supervisor['workers'],
+                static fn (array $worker) => (int) preg_replace('/\D+/', '', $worker['name']) <= 999
+            ));
+
+            $runningWorkers = array_values(array_filter(
+                $workers,
+                static fn (array $worker) => $worker['running']
+            ));
 
             return [
-                'running' => $supervisor['running'],
-                'pid' => $supervisor['pid'],
+                'running' => $runningWorkers !== [],
+                'healthy' => count($runningWorkers) >= $this->workerCount(),
+                'running_count' => count($runningWorkers),
+                'worker_count' => count($workers),
+                'target_workers' => $this->workerCount(),
+                'workers' => $workers,
+                'pid' => $runningWorkers[0]['pid'] ?? null,
                 'queue' => (string) config('queue.default', 'database'),
-                'started_at' => $supervisor['running'] ? $this->readStartedAt() : null,
-                'command' => $supervisor['command'],
+                'started_at' => $runningWorkers !== [] ? $this->readStartedAt() : null,
+                'command' => 'supervisor:' . $this->supervisorProgram(),
                 'discovered' => false,
                 'supervisor_error' => $supervisor['supervisor_error'],
             ];
         }
 
-        $pid = $this->readPid();
+        $workers = [];
 
-        if ($pid) {
-            $processInfo = $this->inspectProcess($pid);
+        for ($worker = 1; $worker <= $this->workerCount(); $worker++) {
+            $pid = $this->readPid($worker);
 
-            if ($processInfo['running']) {
-                return [
-                    'running' => true,
-                    'pid' => $pid,
-                    'queue' => (string) config('queue.default', 'database'),
-                    'started_at' => $this->readStartedAt(),
-                    'command' => $processInfo['command'],
-                ];
+            if ($pid) {
+                $info = $this->inspectProcess($pid);
+
+                if ($info['running']) {
+                    $workers[] = [
+                        'id' => $worker,
+                        'pid' => $pid,
+                        'running' => true,
+                        'command' => $info['command'],
+                    ];
+                    continue;
+                }
+
+                @unlink($this->pidFile($worker));
             }
 
-            $this->clearState();
-        }
-
-        /*
-         * Discover a worker that was started manually outside this manager.
-         * This is deliberately an explicit status action, never mount-time
-         * dashboard logic.
-         */
-        $discovered = $this->discoverWorker();
-
-        if ($discovered) {
-            file_put_contents(
-                storage_path(self::PID_FILE),
-                (string) $discovered['pid'],
-                LOCK_EX
-            );
-
-            return [
-                'running' => true,
-                'pid' => $discovered['pid'],
-                'queue' => (string) config('queue.default', 'database'),
-                'started_at' => $this->readStartedAt(),
-                'command' => $discovered['command'],
-                'discovered' => true,
+            $workers[] = [
+                'id' => $worker,
+                'pid' => null,
+                'running' => false,
+                'command' => null,
             ];
         }
 
+        // Recover processes started before this request/tab existed.
+        $discovered = $this->discoverWorkers();
+
+        foreach ($discovered as $found) {
+            $alreadyTracked = collect($workers)->contains(
+                fn (array $worker) => (int) ($worker['pid'] ?? 0) === (int) $found['pid']
+            );
+
+            if ($alreadyTracked) {
+                continue;
+            }
+
+            $emptyIndex = collect($workers)->search(
+                fn (array $worker) => ! $worker['running']
+            );
+
+            if ($emptyIndex !== false) {
+                $workers[$emptyIndex] = [
+                    'id' => $workers[$emptyIndex]['id'],
+                    'pid' => $found['pid'],
+                    'running' => true,
+                    'command' => $found['command'],
+                ];
+                file_put_contents(
+                    $this->pidFile($workers[$emptyIndex]['id']),
+                    (string) $found['pid'],
+                    LOCK_EX
+                );
+            }
+        }
+
+        $runningWorkers = array_values(array_filter(
+            $workers,
+            static fn (array $worker) => $worker['running']
+        ));
+
         return [
-            'running' => false,
-            'pid' => null,
+            'running' => $runningWorkers !== [],
+            'healthy' => count($runningWorkers) >= $this->workerCount(),
+            'running_count' => count($runningWorkers),
+            'worker_count' => count($workers),
+            'target_workers' => $this->workerCount(),
+            'workers' => array_values($workers),
+            'pid' => $runningWorkers[0]['pid'] ?? null,
             'queue' => (string) config('queue.default', 'database'),
-            'started_at' => null,
-            'command' => null,
-            'discovered' => false,
+            'started_at' => $runningWorkers !== [] ? $this->readStartedAt() : null,
+            'command' => $runningWorkers[0]['command'] ?? null,
+            'discovered' => $discovered !== [],
+            'supervisor_error' => null,
         ];
     }
 
@@ -411,20 +470,43 @@ PS1;
 
     public function logs(int $lines = 50): array
     {
+        $stdout = '';
+        $stderr = '';
+
+        for ($worker = 1; $worker <= $this->workerCount(); $worker++) {
+            $out = $this->tail($this->stdoutFile($worker), $lines);
+            $err = $this->tail($this->stderrFile($worker), $lines);
+
+            if ($out !== '') {
+                $stdout .= "===== WORKER {$worker} =====\n{$out}\n";
+            }
+
+            if ($err !== '') {
+                $stderr .= "===== WORKER {$worker} =====\n{$err}\n";
+            }
+        }
+
         return [
-            'stdout' => $this->tail(self::STDOUT_LOG, $lines),
-            'stderr' => $this->tail(self::STDERR_LOG, $lines),
+            'stdout' => $stdout,
+            'stderr' => $stderr,
         ];
     }
 
     public function paths(): array
     {
-        return [
-            'pid' => storage_path(self::PID_FILE),
-            'started' => storage_path(self::STARTED_FILE),
-            'stdout' => storage_path(self::STDOUT_LOG),
-            'stderr' => storage_path(self::STDERR_LOG),
-        ];
+        $paths = [];
+
+        for ($worker = 1; $worker <= $this->workerCount(); $worker++) {
+            $paths["worker_{$worker}"] = [
+                'pid' => storage_path($this->pidFile($worker)),
+                'stdout' => storage_path($this->stdoutFile($worker)),
+                'stderr' => storage_path($this->stderrFile($worker)),
+            ];
+        }
+
+        $paths['started'] = storage_path(self::STARTED_FILE);
+
+        return $paths;
     }
 
     private function inspectProcess(int $pid): array
@@ -434,8 +516,6 @@ PS1;
         }
 
         if (PHP_OS_FAMILY === 'Windows') {
-            // tasklist only tells us that *some* process owns the PID.
-            // We must verify that the PID is really our Laravel queue:work process.
             $result = Process::run([
                 'powershell',
                 '-NoProfile',
@@ -457,7 +537,7 @@ PS1;
             $name = strtolower((string) ($decoded['Name'] ?? ''));
             $command = trim((string) ($decoded['CommandLine'] ?? ''));
 
-            $isPhp = $name === 'php.exe' || str_ends_with($name, '\php.exe');
+            $isPhp = $name === 'php.exe' || str_ends_with($name, '\\php.exe');
             $isQueueWorker = preg_match('~(?:^|[\s"\\\\])artisan(?:\.php)?\s+queue:work(?:\s|$)~i', $command) === 1;
 
             return [
@@ -481,17 +561,14 @@ PS1;
         $command = trim($result->output());
 
         return [
-            'running' => $command !== '',
-            'command' => $command,
+            'running' => $command !== '' && preg_match('~(?:^|[\s/])artisan(?:\.php)?\s+queue:work(?:\s|$)~', $command) === 1,
+            'command' => $command !== '' ? $command : null,
         ];
     }
 
-    private function discoverWorker(): ?array
+    private function discoverWorkers(): array
     {
         if (PHP_OS_FAMILY === 'Windows') {
-            // IMPORTANT: the old query matched its own PowerShell command line
-            // because the query itself contained the text "artisan queue:work".
-            // Restrict discovery to actual php.exe processes and validate the command.
             $result = Process::run([
                 'powershell',
                 '-NoProfile',
@@ -501,36 +578,38 @@ PS1;
             ]);
 
             if ($result->failed() || trim($result->output()) === '') {
-                return null;
+                return [];
             }
 
             $decoded = json_decode(trim($result->output()), true);
 
             if (! is_array($decoded)) {
-                return null;
+                return [];
             }
 
             if (isset($decoded['ProcessId'])) {
                 $decoded = [$decoded];
             }
 
+            $found = [];
+
             foreach ($decoded as $item) {
                 $candidate = (int) ($item['ProcessId'] ?? 0);
-                $command = (string) ($item['CommandLine'] ?? '');
+                $command = trim((string) ($item['CommandLine'] ?? ''));
 
                 if (
                     $candidate > 0 &&
                     $candidate !== getmypid() &&
                     preg_match('~(?:^|[\s"\\\\])artisan(?:\.php)?\s+queue:work(?:\s|$)~i', $command) === 1
                 ) {
-                    return [
+                    $found[] = [
                         'pid' => $candidate,
                         'command' => $command,
                     ];
                 }
             }
 
-            return null;
+            return $found;
         }
 
         $result = Process::run([
@@ -540,8 +619,10 @@ PS1;
         ]);
 
         if ($result->failed()) {
-            return null;
+            return [];
         }
+
+        $found = [];
 
         foreach (preg_split('/\R+/', trim($result->output())) as $line) {
             if ($line === '') {
@@ -556,25 +637,19 @@ PS1;
 
             $candidate = (int) $pid;
 
-            if ($candidate > 0 && $candidate !== getmypid()) {
-                return [
+            if (
+                $candidate > 0 &&
+                $candidate !== getmypid() &&
+                preg_match('~(?:^|[\s/])artisan(?:\.php)?\s+queue:work(?:\s|$)~', $command) === 1
+            ) {
+                $found[] = [
                     'pid' => $candidate,
                     'command' => $command,
                 ];
             }
         }
 
-        return null;
-    }
-
-    private function joinPowerShellArguments(array $arguments): string
-    {
-        return implode(",\n    ", $arguments);
-    }
-
-    private function escapePowerShellSingleQuote(string $value): string
-    {
-        return str_replace("'", "''", $value);
+        return $found;
     }
 
     private function waitUntilStopped(int $pid): void
@@ -589,11 +664,6 @@ PS1;
             usleep(150000);
         }
 
-        /*
-         * Windows taskkill /F should normally terminate immediately.
-         * On Unix, if SIGTERM did not stop the process within 5 seconds,
-         * escalate to SIGKILL so the dashboard never reports a false stop.
-         */
         if (PHP_OS_FAMILY !== 'Windows' && $this->inspectProcess($pid)['running']) {
             if (function_exists('posix_kill')) {
                 @posix_kill($pid, SIGKILL);
@@ -603,23 +673,29 @@ PS1;
         }
     }
 
-    private function ensureRuntimeDirectories(): void
+    private function clearState(): void
     {
-        foreach ([
-            storage_path('framework'),
-            storage_path('logs'),
-        ] as $directory) {
-            if (! is_dir($directory)) {
-                if (! @mkdir($directory, 0775, true) && ! is_dir($directory)) {
-                    throw new RuntimeException("Tidak dapat membuat directory: {$directory}");
-                }
+        for ($worker = 1; $worker <= self::MAX_WORKERS; $worker++) {
+            @unlink(storage_path($this->pidFile($worker)));
+        }
+
+        @unlink(storage_path(self::STARTED_FILE));
+    }
+
+    private function cleanupStalePidFiles(): void
+    {
+        for ($worker = 1; $worker <= self::MAX_WORKERS; $worker++) {
+            $pid = $this->readPid($worker);
+
+            if ($pid && ! $this->inspectProcess($pid)['running']) {
+                @unlink(storage_path($this->pidFile($worker)));
             }
         }
     }
 
-    private function readPid(): ?int
+    private function readPid(int $worker): ?int
     {
-        $path = storage_path(self::PID_FILE);
+        $path = storage_path($this->pidFile($worker));
 
         if (! is_file($path)) {
             return null;
@@ -643,20 +719,16 @@ PS1;
         return $value !== '' ? $value : null;
     }
 
-    private function clearStaleState(): void
+    private function ensureRuntimeDirectories(): void
     {
-        foreach ([self::PID_FILE, self::STARTED_FILE] as $relative) {
-            $path = storage_path($relative);
-
-            if (is_file($path)) {
-                @unlink($path);
+        foreach ([
+            storage_path('framework'),
+            storage_path('logs'),
+        ] as $directory) {
+            if (! is_dir($directory)) {
+                mkdir($directory, 0775, true);
             }
         }
-    }
-
-    private function clearState(): void
-    {
-        $this->clearStaleState();
     }
 
     private function tail(string $relativePath, int $lines): string
@@ -667,12 +739,35 @@ PS1;
             return '';
         }
 
-        $content = file($path, FILE_IGNORE_NEW_LINES);
+        $content = (string) @file_get_contents($path);
 
-        if (! $content) {
+        if ($content === '') {
             return '';
         }
 
-        return implode(PHP_EOL, array_slice($content, -max(1, $lines)));
+        return implode(
+            PHP_EOL,
+            array_slice(preg_split('/\R/', $content) ?: [], -max(1, $lines))
+        );
+    }
+
+    private function pidFile(int $worker): string
+    {
+        return self::PID_PREFIX . $worker . '.pid';
+    }
+
+    private function stdoutFile(int $worker): string
+    {
+        return self::STDOUT_PREFIX . $worker . '.log';
+    }
+
+    private function stderrFile(int $worker): string
+    {
+        return self::STDERR_PREFIX . $worker . '.log';
+    }
+
+    private function joinPowerShellArguments(array $arguments): string
+    {
+        return implode(",\n    ", $arguments);
     }
 }
