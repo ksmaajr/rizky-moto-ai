@@ -198,7 +198,7 @@ new class extends Component
             return [
                 'seconds' => $etaSeconds,
                 'label' => $this->formatEtaLabel($etaSeconds),
-                'confidence' => $durationsCount ?? null,
+                'confidence' => 'historical',
                 'basis' => 'historical',
             ];
         }
