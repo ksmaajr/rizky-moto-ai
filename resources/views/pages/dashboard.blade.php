@@ -176,7 +176,7 @@ class extends Component
     {
 
         $query = \App\Models\ActivityLog::query()
-
+            ->with('user:id,name')
             ->latest('created_at');
 
 
@@ -280,6 +280,8 @@ class extends Component
                 'entity_type' => $log->entity_type,
 
                 'entity_id' => $log->entity_id,
+                'user_id' => $log->user_id,
+                'user_name' => $log->user?->name ?? 'System',
 
                 'created_at' => $log->created_at?->format('d M Y, H:i:s'),
 
