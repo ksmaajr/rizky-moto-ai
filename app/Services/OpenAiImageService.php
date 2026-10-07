@@ -10,7 +10,6 @@ use App\Models\User;
 use App\Services\AI\DTO\ImageGenerationRequest;
 use App\Services\AI\DTO\ReferenceImage;
 use App\Services\AI\ProviderManager;
-use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
@@ -1914,125 +1913,6 @@ PROMPT;
     }
 
     /**
-     * Send an image edit request and automatically fail over across the Vercel
-     * API-key pool when the current key is exhausted, invalid, rate-limited,
-     * or temporarily unavailable.
-     *
-     * @return array{0: Response, 1: array{id:int|null,key:string,name:string,source:string}}
-     */
-    private function postImageEditsWithFailover(
-        int $userId,
-        ?array $preferredCredential,
-        array $attachments,
-        array $payload,
-        int $generationId,
-        string $source,
-    ): array {
-        $lastError = null;
-        $attemptedIds = [];
-        $maxAttempts = max(1, $this->apiPool()->totalCount($userId) + 1);
-
-        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
-            if ($attempt === 1 && is_array($preferredCredential) && filled($preferredCredential['key'] ?? null)) {
-                $credential = $preferredCredential;
-            } else {
-                $credential = $this->apiPool()->acquire($userId, null, $attemptedIds);
-            }
-
-            if (! $credential || ($credential['id'] !== null && in_array($credential['id'], $attemptedIds, true))) {
-                break;
-            }
-
-            if ($credential['id'] !== null) {
-                $attemptedIds[] = $credential['id'];
-            }
-
-            $request = Http::acceptJson()
-                ->withToken($credential['key'])
-                ->connectTimeout(15)
-                ->timeout(240);
-
-            $handles = [];
-            try {
-                foreach ($attachments as [$path, $filename, $role, $temporary]) {
-                    $handle = fopen($path, 'rb');
-                    if ($handle === false) {
-                        throw new RuntimeException('File input tidak dapat dibuka: ' . $filename);
-                    }
-                    $handles[] = $handle;
-                    $request = $request->attach('image[]', $handle, $filename);
-                }
-
-                $response = $request->post(self::BASE_URL . '/images/edits', $payload);
-            } finally {
-                foreach ($handles as $handle) {
-                    if (is_resource($handle)) {
-                        fclose($handle);
-                    }
-                }
-            }
-
-            if ($response->successful()) {
-                $this->apiPool()->reportSuccess($credential['id'], $userId);
-
-                $this->cleanupTemporaryReferenceAttachments($attachments);
-                return [$response, $credential];
-            }
-
-            $detail = $this->extractError($response);
-            $classification = $this->apiPool()->reportFailure(
-                $credential['id'],
-                $userId,
-                $response,
-                $detail,
-            );
-
-            $lastError = $detail;
-
-            if (! $classification['retry']) {
-                throw new RuntimeException($detail);
-            }
-
-            $this->activity()->warning(
-                action: 'generate_openai_image',
-                category: 'api',
-                title: 'Automatic API failover dijalankan.',
-                description: sprintf(
-                    'Key "%s" tidak dapat digunakan (%s). Mencoba API key berikutnya.',
-                    $credential['name'],
-                    $classification['reason'],
-                ),
-                metadata: [
-                    'source' => $source,
-                    'generation_id' => $generationId,
-                    'api_key_id' => $credential['id'],
-                    'api_key_name' => $credential['name'],
-                    'classification' => $classification,
-                    'http_status' => $response->status(),
-                ],
-                httpStatus: $response->status(),
-            );
-        }
-
-        $this->cleanupTemporaryReferenceAttachments($attachments);
-
-        throw new RuntimeException(
-            $lastError ?: 'Semua Vercel AI Gateway API key yang tersedia gagal digunakan.'
-        );
-    }
-
-    private function cleanupTemporaryReferenceAttachments(array $attachments): void
-    {
-        foreach ($attachments as $attachment) {
-            $path = $attachment[0] ?? null;
-            $temporary = (bool) ($attachment[3] ?? false);
-            if ($temporary && is_string($path) && is_file($path)) {
-                @unlink($path);
-            }
-        }
-    }
-
-    /**
      * AI Gateway image models use creator/model IDs.
      * Keep compatibility with the existing UI/database values.
      */
@@ -2150,29 +2030,6 @@ PROMPT;
         $size = @getimagesize($path);
 
         return [$size[0] ?? null, $size[1] ?? null];
-    }
-
-    private function extractError(Response $response): string
-    {
-        $message = $response->json('error.message');
-
-        if (is_string($message) && trim($message) !== '') {
-            return trim($message) . ' (HTTP ' . $response->status() . ')';
-        }
-
-        return 'Vercel AI Gateway image generation gagal. HTTP ' . $response->status() . '.';
-    }
-
-    private function safeResponseBody(Response $response): ?string
-    {
-        $body = trim($response->body());
-
-        if ($body === '') {
-            return null;
-        }
-
-        // Never expose the API key or authorization header in Activity Logs.
-        return mb_substr($body, 0, 1000);
     }
 
     private function activity(): ActivityLogService
