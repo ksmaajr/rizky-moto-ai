@@ -1953,7 +1953,7 @@ new class extends Component
                             <div class="rms-generation-meta-grid">
                                 <span class="rms-generation-meta-chip">
                                     <i>AI</i>
-                                    <b>{{ IlluminateSupportStr::afterLast($generation->model, '/') ?: $generation->model }}</b>
+                                    <b>{{ \Illuminate\Support\Str::afterLast($generation->model, '/') ?: $generation->model }}</b>
                                 </span>
                                 <span class="rms-generation-meta-chip">
                                     <i>AR</i>
