@@ -5,6 +5,8 @@ namespace App\Providers;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use App\Services\AI\ProviderManager;
+use App\Services\AI\Providers\VercelProvider;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -15,7 +17,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(ProviderManager::class, function ($app): ProviderManager {
+            return new ProviderManager([
+                $app->make(VercelProvider::class),
+            ]);
+        });
     }
 
     /**
