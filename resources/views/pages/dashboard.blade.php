@@ -1425,6 +1425,7 @@ public function getUserInitialsProperty(): string
         {{-- AI ENGINE / QUEUE WORKER STATUS --}}
         <div
             class="sidebar-api worker-widget-shell"
+            :class="workerOpen ? 'is-open' : 'is-collapsed'"
             x-data="{
                 workerOpen: true,
                 init() {
@@ -1440,17 +1441,7 @@ public function getUserInitialsProperty(): string
                 }
             }"
         >
-            <div
-                class="worker-widget-collapsed"
-                x-show="!workerOpen"
-                x-cloak
-                x-transition:enter="worker-widget-enter"
-                x-transition:enter-start="worker-widget-enter-start"
-                x-transition:enter-end="worker-widget-enter-end"
-                x-transition:leave="worker-widget-leave"
-                x-transition:leave-start="worker-widget-leave-start"
-                x-transition:leave-end="worker-widget-leave-end"
-            >
+            <div class="worker-widget-collapsed">
                 <button type="button" class="worker-widget-mini" @click="workerOpen = true" aria-label="Show queue worker status">
                     <span class="worker-widget-mini-icon">AI</span>
                     <span class="worker-widget-mini-copy">
@@ -1462,17 +1453,7 @@ public function getUserInitialsProperty(): string
                 </button>
             </div>
 
-            <div
-                class="api-status-card worker-status-card worker-widget-expanded"
-                x-show="workerOpen"
-                x-cloak
-                x-transition:enter="worker-widget-enter"
-                x-transition:enter-start="worker-widget-enter-start"
-                x-transition:enter-end="worker-widget-enter-end"
-                x-transition:leave="worker-widget-leave"
-                x-transition:leave-start="worker-widget-leave-start"
-                x-transition:leave-end="worker-widget-leave-end"
-            >
+            <div class="api-status-card worker-status-card worker-widget-expanded">
                 <div class="api-status-top">
                     <div class="api-brand">
                         <span class="api-mark">AI</span>
