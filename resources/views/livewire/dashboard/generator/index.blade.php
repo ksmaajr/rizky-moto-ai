@@ -1829,13 +1829,12 @@ new class extends Component
                         $ratio = $hero && $hero->width && $hero->height
                             ? ((int) $hero->width . ' / ' . (int) $hero->height)
                             : str_replace(':', ' / ', $generation->aspect_ratio ?: '1:1');
-                        $started = $generation->started_at;
-                        $elapsed = $started ? max(1, $started->diffInSeconds(now())) : 0;
-                        $eta = ($status === 'processing' && $progress > 0)
-                            ? max(5, (int) ceil($elapsed * (100 - $progress) / $progress)) : null;
-                        $etaLabel = $eta !== null
-                            ? ($eta < 60 ? '± ' . $eta . ' detik' : '± ' . ceil($eta / 60) . ' menit')
-                            : '± 20–60 detik / gambar';
+                        $estimate = in_array($status, ['queued', 'processing'], true)
+                            ? $this->generationEstimate($generation)
+                            : ['seconds' => null, 'label' => null, 'basis' => null];
+                        $etaLabel = $estimate['label'] ?? 'Menghitung estimasi…';
+                        $requestedImages = max(1, (int) data_get($meta, 'requested_image_count', $generation->generatedImages->count() ?: 1));
+                        $savedImages = $generation->generatedImages->count();
                     @endphp
 
                     <article wire:key="generation-history-{{ $generation->id }}" class="rms-generator-history-item rms-generation-card status-{{ $status }}">
@@ -1870,7 +1869,14 @@ new class extends Component
                                 @endif
                                 <div class="rms-processing-progress-ring" style="--progress: {{ $progress }}%"><span>{{ $progress }}%</span></div>
                             </div>
-                            <div class="rms-generation-eta"><span class="rms-generation-eta-clock">◷</span><div><strong>Estimasi waktu selesai</strong><b>{{ $etaLabel }}</b></div></div>
+                            <div class="rms-generation-eta rms-generation-eta-v3">
+                                <span class="rms-generation-eta-clock">◷</span>
+                                <div>
+                                    <strong>{{ $status === 'queued' ? 'Estimasi antrean' : 'Estimasi tersisa' }}</strong>
+                                    <b>{{ $etaLabel }}</b>
+                                    <small>Estimasi diperbarui dari durasi generation sebelumnya + kondisi queue.</small>
+                                </div>
+                            </div>
                             <div class="rms-generation-stage">
                                 <div class="rms-generation-stage-item active"><i></i><span>{{ $stage }}</span></div>
                                 <div class="rms-generation-stage-item {{ $progress >= 78 ? 'active' : '' }}"><i></i><span>Membuat gambar</span></div>
@@ -1887,17 +1893,35 @@ new class extends Component
                                 ?: data_get($generation->metadata, 'custom_title');
                             $titleSource = data_get($generation->metadata, 'title_source', 'ai');
                         @endphp
-                        <div class="rms-generation-card-info">
-                            <div>
-                                <strong>{{ $generationTitle ?: ($generation->template?->name ?? 'Generated Image') }}</strong>
-                                <small>
-                                    {{ $generation->store?->name ?? 'Store' }} · {{ $generation->model }}
-                                    @if($generationTitle)
-                                        · {{ $titleSource === 'custom' ? 'Custom title' : 'AI title' }}
-                                    @endif
+                        <div class="rms-generation-card-info rms-generation-card-info-v3">
+                            <div class="rms-generation-title-block">
+                                <strong>{{ $generationTitle ?: ('Generation #' . $generation->id) }}</strong>
+                                <small class="rms-generation-template-line">
+                                    <span class="rms-meta-label">TEMPLATE</span>
+                                    <span>{{ $generation->template?->name ?? 'Template' }}</span>
+                                    <span class="rms-meta-separator">·</span>
+                                    <span>{{ $generation->store?->name ?? 'Store' }}</span>
                                 </small>
                             </div>
-                            <span>{{ $generation->generatedImages->count() }} image{{ $generation->generatedImages->count() === 1 ? '' : 's' }}</span>
+
+                            <div class="rms-generation-meta-grid">
+                                <span class="rms-generation-meta-chip">
+                                    <i>AI</i>
+                                    <b>{{ IlluminateSupportStr::afterLast($generation->model, '/') ?: $generation->model }}</b>
+                                </span>
+                                <span class="rms-generation-meta-chip">
+                                    <i>AR</i>
+                                    <b>{{ $generation->aspect_ratio ?: '1:1' }}</b>
+                                </span>
+                                <span class="rms-generation-meta-chip">
+                                    <i>Q</i>
+                                    <b>{{ ucfirst($generation->output_quality ?: 'standard') }}</b>
+                                </span>
+                                <span class="rms-generation-meta-chip">
+                                    <i>IMG</i>
+                                    <b>{{ $savedImages ?: $requestedImages }}/{{ $requestedImages }}</b>
+                                </span>
+                            </div>
                         </div>
 
                         <div class="rms-generation-actions rms-generation-actions-v2">
