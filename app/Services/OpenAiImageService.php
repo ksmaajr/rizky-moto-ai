@@ -468,6 +468,25 @@ class OpenAiImageService
 
             $saved = 0;
 
+            // Cancellation is cooperative: never commit provider output after the
+            // user has cancelled the generation while the provider request was in flight.
+            $generation->refresh();
+            if ($generation->status === 'cancelled') {
+                $this->activity()->processing(
+                    action: 'generation_cancelled',
+                    category: 'generator',
+                    title: 'Hasil provider diabaikan karena generation dibatalkan.',
+                    description: 'Provider selesai, tetapi generation sudah dibatalkan sebelum hasil disimpan.',
+                    metadata: [
+                        'generation_id' => $generation->id,
+                        'provider' => $providerResult->provider,
+                        'model' => $providerResult->model,
+                    ],
+                );
+
+                return $generation->fresh(['generatedImages', 'store', 'template']);
+            }
+
             foreach ($data as $index => $item) {
                 try {
                     $binary = $this->resolveImageBinary($item);
@@ -549,6 +568,22 @@ class OpenAiImageService
                 throw new RuntimeException(
                     'Vercel AI Gateway mengembalikan response tanpa binary image yang dapat disimpan.'
                 );
+            }
+
+            $generation->refresh();
+            if ($generation->status === 'cancelled') {
+                $this->activity()->processing(
+                    action: 'generation_cancelled',
+                    category: 'generator',
+                    title: 'Generation tetap dibatalkan.',
+                    description: 'Hasil yang sudah tersimpan tidak mengubah status generation menjadi completed.',
+                    metadata: [
+                        'generation_id' => $generation->id,
+                        'saved_images' => $saved,
+                    ],
+                );
+
+                return $generation->fresh(['generatedImages', 'store', 'template']);
             }
 
             $generation->update([
