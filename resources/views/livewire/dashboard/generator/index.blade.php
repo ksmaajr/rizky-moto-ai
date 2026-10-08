@@ -285,7 +285,7 @@ new class extends Component
         }
     }
 
-    public function mount(): void
+    public function mount(?int $focusGenerationId = null): void
     {
         $settings = \App\Models\OpenAiSetting::query()->first();
         $imageService = app(\App\Services\OpenAiImageService::class);
@@ -302,6 +302,12 @@ new class extends Component
             ->value('id');
 
         $this->latestGenerationId = $latest ? (int) $latest : null;
+
+        if ($focusGenerationId) {
+            $this->latestGenerationId = $focusGenerationId;
+            $this->historySearch = (string) $focusGenerationId;
+            $this->historyOpen = true;
+        }
 
         // Pastikan default service memang tersedia di katalog Gateway.
         $availableIds = collect($this->availableModels)->pluck('id');
