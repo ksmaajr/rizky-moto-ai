@@ -556,8 +556,14 @@
                                 <span>Configuration is stored server-side and applied to new generations.</span>
                             </div>
                             <button type="button" class="rms-ai-save-button" wire:click="saveAiProviderConfiguration" wire:loading.attr="disabled" wire:target="saveAiProviderConfiguration">
-                                <span wire:loading.remove wire:target="saveAiProviderConfiguration">Save AI Configuration <b>→</b></span>
-                                <span wire:loading wire:target="saveAiProviderConfiguration"><i></i> Saving...</span>
+                                <span class="rms-save-content" wire:loading.remove wire:target="saveAiProviderConfiguration">
+                                    <span>Save AI Configuration</span>
+                                    <b aria-hidden="true">→</b>
+                                </span>
+                                <span class="rms-save-loading" wire:loading wire:target="saveAiProviderConfiguration">
+                                    <i aria-hidden="true"></i>
+                                    <span>Saving...</span>
+                                </span>
                             </button>
                         </div>
                     </section>
@@ -2934,5 +2940,55 @@
     .rms-provider-block-failover .rms-ai-save-button,
     .rms-provider-block-failover .rms-ai-save-button b{transition:none}
     .rms-provider-block-failover .rms-ai-save-button::before{display:none}
+}
+</style><style>
+/* SAVE BUTTON — fix content alignment and keep text + arrow on one row */
+.rms-provider-block-failover .rms-ai-save-button{
+    flex-direction:row!important;
+    white-space:nowrap!important;
+}
+.rms-provider-block-failover .rms-ai-save-button .rms-save-content,
+.rms-provider-block-failover .rms-ai-save-button .rms-save-loading{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:10px!important;
+    width:auto!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:0!important;
+    flex:0 0 auto!important;
+    line-height:1!important;
+}
+.rms-provider-block-failover .rms-ai-save-button .rms-save-content>span{
+    display:inline!important;
+    width:auto!important;
+    margin:0!important;
+    padding:0!important;
+    font-size:10px!important;
+    line-height:1!important;
+}
+.rms-provider-block-failover .rms-ai-save-button .rms-save-loading{
+    gap:8px!important;
+}
+.rms-provider-block-failover .rms-ai-save-button .rms-save-loading>span{
+    display:inline!important;
+    width:auto!important;
+    margin:0!important;
+    padding:0!important;
+    line-height:1!important;
+}
+.rms-provider-block-failover .rms-ai-save-button .rms-save-content>b{
+    display:grid!important;
+    flex:0 0 25px!important;
+    place-items:center!important;
+    width:25px!important;
+    height:25px!important;
+    margin:0!important;
+}
+@media(max-width:760px){
+    .rms-provider-block-failover .rms-ai-save-button{
+        min-height:50px!important;
+    }
 }
 </style>
