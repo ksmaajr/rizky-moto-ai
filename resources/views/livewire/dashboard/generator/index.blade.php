@@ -2238,6 +2238,8 @@ new class extends Component
                                 ?: (str_contains((string) $generation->model, '/') ? str((string) $generation->model)->before('/') : 'Gateway');
                             $keySource = data_get($generation->metadata, 'gateway_key_name')
                                 ?: data_get($generation->metadata, 'gateway_key_source');
+                            $workerLabel = data_get($generation->metadata, 'worker_label')
+                                ?: (data_get($generation->metadata, 'worker_pid') ? 'PID ' . data_get($generation->metadata, 'worker_pid') : null);
                             $durationMs = (int) data_get($generation->metadata, 'duration_ms', 0);
                             $durationSeconds = $durationMs > 0
                                 ? $durationMs / 1000
@@ -2262,6 +2264,9 @@ new class extends Component
                             <span><b>Provider</b><strong>{{ $provider }}</strong></span>
                             <span><b>Duration</b><strong>{{ $durationSeconds !== null ? number_format($durationSeconds, 1) . 's' : '—' }}</strong></span>
                             <span><b>Completed</b><strong>{{ $generation->completed_at ? $generation->completed_at->format('d M · H:i') : '—' }}</strong></span>
+                            @if($workerLabel)
+                                <span><b>Worker</b><strong>{{ $workerLabel }}</strong></span>
+                            @endif
                             @if($keySource)
                                 <span><b>Key</b><strong>{{ $keySource }}</strong></span>
                             @endif
