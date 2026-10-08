@@ -9492,13 +9492,13 @@
    Only the interaction changes: it slides in/out. */
 @media(max-width:900px){
     .dashboard-sidebar{
-        top:96px!important;
+        top:158px!important;
         left:0!important;
         right:auto!important;
         bottom:0!important;
         width:278px!important;
         max-width:278px!important;
-        max-height:calc(100dvh - 96px)!important;
+        max-height:calc(100dvh - 158px)!important;
         height:auto!important;
         border-radius:0!important;
         border:0!important;
