@@ -11259,3 +11259,44 @@
 @media(max-width:480px){
     .rms-engine-health-grid{grid-template-columns:1fr!important}
 }
+
+/* =========================================================
+   DASHBOARD V28 — AI ENGINE HEALTH READABILITY
+   Four core engine cards. Worker monitoring lives only in
+   the dedicated Queue & Workers panel below.
+   ========================================================= */
+.rms-engine-health-panel{padding:22px!important;border-radius:20px!important}
+.rms-engine-health-head{padding:2px 2px 20px!important;gap:24px!important}
+.rms-engine-health-head .section-kicker{font-size:9px!important;letter-spacing:.12em!important}
+.rms-engine-health-head h3{font-size:18px!important;line-height:1.2!important;margin:6px 0 5px!important}
+.rms-engine-health-head p{font-size:9px!important;line-height:1.5!important}
+.rms-engine-health-meta small{font-size:8px!important}
+.rms-engine-health-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px!important}
+.rms-engine-health-card{padding:16px!important;border-radius:15px!important;min-height:166px!important}
+.rms-engine-health-icon{width:36px!important;height:36px!important;border-radius:10px!important;font-size:13px!important}
+.rms-engine-health-state{padding:5px 8px!important;font-size:7px!important}
+.rms-engine-health-state i{width:6px!important;height:6px!important}
+.rms-engine-health-card>span.rms-engine-health-label{margin-top:13px!important;font-size:7px!important;letter-spacing:.1em!important}
+.rms-engine-health-card>strong{margin-top:6px!important;font-size:11px!important;line-height:1.35!important}
+.rms-engine-health-card>small{min-height:36px!important;margin-top:6px!important;font-size:8px!important;line-height:1.55!important}
+.rms-engine-health-metrics{gap:8px!important;margin-top:11px!important;padding-top:10px!important}
+.rms-engine-health-metrics span{font-size:7px!important}
+.rms-engine-health-metrics b{font-size:8px!important}
+
+@media(max-width:1200px){
+    .rms-engine-health-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:760px){
+    .rms-engine-health-panel{padding:16px!important;border-radius:17px!important}
+    .rms-engine-health-head{padding-bottom:15px!important}
+    .rms-engine-health-head h3{font-size:16px!important}
+    .rms-engine-health-head p{font-size:8px!important}
+    .rms-engine-health-grid{grid-template-columns:1fr 1fr!important;gap:9px!important}
+    .rms-engine-health-card{padding:13px!important;min-height:145px!important}
+    .rms-engine-health-card>strong{font-size:10px!important}
+    .rms-engine-health-card>small{font-size:7px!important}
+}
+@media(max-width:480px){
+    .rms-engine-health-grid{grid-template-columns:1fr!important}
+    .rms-engine-health-card{min-height:0!important}
+}
