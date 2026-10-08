@@ -288,6 +288,14 @@
                                     <button type="button" class="ghost" wire:click="toggleStatus({{ $template->id }})">
                                         {{ $template->is_active ? 'Pause' : 'Activate' }}
                                     </button>
+                                    <button type="button" class="rms-template-delete-inline" wire:click="confirmDelete({{ $template->id }})" aria-label="Delete {{ $template->name }}">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                            <path d="M4 7h16"/>
+                                            <path d="M9 7V4h6v3"/>
+                                            <path d="M7 7l1 13h8l1-13"/>
+                                            <path d="M10 11v5M14 11v5"/>
+                                        </svg>
+                                    </button>
                                 </div>
                             </div>
                         </article>
@@ -648,4 +656,25 @@
         .rms-template-delete-actions-v2{gap:9px!important;margin-top:22px!important}
         .rms-template-delete-actions-v2 button{min-height:50px!important}
     }
+</style>
+
+<style>
+.rms-template-card-actions-v2{display:grid!important;grid-template-columns:minmax(0,1fr) auto 44px!important;gap:10px!important}
+.rms-template-delete-inline{
+    width:44px!important;height:100%!important;min-height:54px!important;
+    display:grid!important;place-items:center!important;
+    border:1px solid rgba(239,68,68,.18)!important;
+    border-radius:14px!important;background:#fff!important;color:#ef233c!important;
+    cursor:pointer!important;transition:all .22s cubic-bezier(.22,1,.36,1)!important;
+}
+.rms-template-delete-inline svg{width:18px;height:18px}
+.rms-template-delete-inline:hover{
+    color:#fff!important;background:#ef233c!important;border-color:#ef233c!important;
+    box-shadow:0 10px 24px rgba(239,35,60,.2)!important;transform:translateY(-1px)
+}
+.rms-template-delete-inline:active{transform:scale(.96)!important}
+@media(max-width:720px){
+    .rms-template-card-actions-v2{grid-template-columns:minmax(0,1fr) 44px!important}
+    .rms-template-card-actions-v2 .ghost{display:none!important}
+}
 </style>
