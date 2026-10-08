@@ -5,6 +5,7 @@
 use Livewire\Attributes\Layout;
 
 use Livewire\Component;
+use Livewire\Attributes\On;
 
 use App\Models\Store;
 use App\Services\QueueWorkerManager;
@@ -575,6 +576,7 @@ class extends Component
     // Worker status is refreshed on mount and after every worker action.
     // Intentionally no wire:poll here: this dashboard has global Livewire loading
     // indicators, so continuous polling makes the whole page appear to load forever.
+    #[On('worker-status-refresh')]
     public function refreshWorkerStatus(): void
     {
         try {
