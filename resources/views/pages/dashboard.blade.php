@@ -21,6 +21,7 @@ class extends Component
 {
 
     use \App\Livewire\Concerns\ManagesVercelGatewayKeys;
+    use \App\Livewire\Concerns\ManagesAiProviderSettings;
 
 
 
