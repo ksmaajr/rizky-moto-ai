@@ -8957,3 +8957,233 @@
 .rms-recent-card-v3{position:relative;overflow:visible!important}
 .rms-recent-card-v3 .rms-history-menu{z-index:2147480000}
 .rms-recent-card-v3 .rms-history-scroll{position:relative;z-index:1}
+
+
+/* =========================================================
+   DASHBOARD V11 — MOBILE POLISH / TYPOGRAPHY / LAYERING
+   ========================================================= */
+.rms-filter-chevron,
+.rms-history-control>button>b,
+.rms-collapse-button b,
+.rms-collapse-button-lg b{
+    width:18px;
+    height:18px;
+    display:grid;
+    place-items:center;
+    margin:0;
+    line-height:1;
+    flex:0 0 18px;
+    transform-origin:center;
+}
+.rms-filter-chevron{font-size:12px}
+.rms-history-control>button>b{font-size:11px}
+.rms-collapse-button b,.rms-collapse-button-lg b{font-size:12px}
+.rms-filter-dropdown.is-open .rms-filter-chevron{transform:rotate(180deg)}
+.rms-history-control.is-open>button>b{transform:rotate(180deg)}
+.rms-collapse-button b.is-closed{transform:rotate(-90deg)}
+
+@media(max-width:900px){
+    /* Mobile drawer starts below the topbar instead of sitting underneath it. */
+    .dashboard-sidebar{
+        top:76px!important;
+        bottom:12px!important;
+        left:10px!important;
+        right:auto!important;
+        width:min(320px,calc(100vw - 20px))!important;
+        height:auto!important;
+        max-height:calc(100dvh - 88px)!important;
+        border:1px solid rgba(255,255,255,.09);
+        border-radius:0 20px 20px 0;
+        box-shadow:18px 18px 55px rgba(0,0,0,.28);
+        z-index:10040!important;
+    }
+    .dashboard-sidebar .sidebar-brand{min-height:82px}
+    .dashboard-sidebar .sidebar-scroll{padding:18px 12px 18px}
+    .dashboard-sidebar .mobile-close{display:flex}
+    .dashboard-overlay{
+        z-index:10030!important;
+        inset:0!important;
+    }
+    .topbar{
+        position:relative;
+        z-index:10050!important;
+        padding:10px 12px 12px!important;
+        min-height:68px;
+    }
+    .topbar-left{flex:0 0 auto}
+    .topbar-right{
+        min-width:0;
+        flex:1;
+        display:flex;
+        flex-wrap:wrap;
+        justify-content:flex-end;
+        align-items:center;
+        gap:8px;
+    }
+    .top-search{
+        order:10;
+        flex:0 0 100%!important;
+        width:100%!important;
+        height:44px!important;
+        margin-top:2px;
+    }
+    .top-search input{
+        height:44px!important;
+        padding-left:40px!important;
+        padding-right:14px!important;
+        border-radius:13px!important;
+        font-size:12px!important;
+    }
+    .top-search>svg{left:13px;width:16px;height:16px}
+    .search-shortcut{display:none!important}
+    .rms-global-search-results{
+        top:50px!important;
+        left:0!important;
+        right:0!important;
+        width:100%!important;
+        max-height:min(55vh,390px)!important;
+        border-radius:14px!important;
+    }
+    .rms-global-search-item{
+        grid-template-columns:58px minmax(0,1fr) 18px;
+        padding:11px 10px;
+    }
+    .rms-global-search-item>span{font-size:7px}
+    .rms-global-search-item strong{font-size:10px}
+    .rms-global-search-item small{font-size:8px}
+    .notification-dropdown{
+        position:fixed!important;
+        top:78px!important;
+        left:auto!important;
+        right:12px!important;
+        width:min(390px,calc(100vw - 24px))!important;
+        max-height:min(72dvh,620px)!important;
+        border-radius:18px!important;
+        z-index:10070!important;
+        overflow:hidden;
+    }
+    .notification-dropdown::before,
+    .notification-dropdown::after{display:none!important}
+    .notification-dropdown-head{padding:17px 16px 14px!important}
+    .notification-dropdown-head h3{font-size:18px!important}
+    .notification-dropdown-head p{font-size:9px!important}
+    .notification-mark-read{min-height:34px!important;padding:0 10px!important;font-size:8px!important}
+    .notification-list{max-height:min(50dvh,390px)!important}
+    .notification-item{
+        grid-template-columns:38px minmax(0,1fr)!important;
+        gap:10px!important;
+        padding:11px 12px!important;
+    }
+    .notification-item-icon{width:38px!important;height:38px!important;border-radius:11px!important}
+    .notification-item-content strong{font-size:10px!important}
+    .notification-item-content span{font-size:8.5px!important;line-height:1.45!important}
+    .notification-item-content small{font-size:7.5px!important}
+    .notification-dropdown-footer{padding:11px 13px!important}
+    .notification-dropdown-footer span,
+    .notification-dropdown-footer button{font-size:8px!important}
+
+    /* Dashboard content gets breathing room around every major section. */
+    .dashboard-main{padding-bottom:28px}
+    .rms-dashboard-live{gap:14px}
+    .rms-dashboard-card{border-radius:17px}
+    .rms-dashboard-card-head{padding:17px 16px 13px!important}
+    .rms-dashboard-card-head h3{font-size:17px!important}
+    .rms-dashboard-card-head p{font-size:9px!important;line-height:1.45}
+    .rms-kpi-label{font-size:9px!important}
+    .rms-kpi small{font-size:8px!important}
+    .rms-kpi strong{font-size:27px!important}
+    .rms-health-details span{font-size:8px!important}
+    .rms-health-details b{font-size:11px!important}
+    .rms-health-note{font-size:8px!important;line-height:1.4}
+    .rms-workspace-health-strip strong{font-size:11px!important}
+    .rms-workspace-health-strip small{font-size:6px!important}
+    .rms-filter-trigger{min-height:52px;padding:8px 12px}
+    .rms-filter-copy small{font-size:7px!important}
+    .rms-filter-copy strong{font-size:11px!important}
+    .rms-filter-chevron{font-size:12px!important}
+    .rms-filter-option{padding:11px 10px;font-size:9px!important}
+    .rms-history-search{height:44px}
+    .rms-history-search input{font-size:11px!important}
+    .rms-history-control>button{height:46px}
+    .rms-history-control small{font-size:6.5px!important}
+    .rms-history-control strong{font-size:9px!important}
+    .rms-history-menu button{padding:11px 10px;font-size:8.5px!important}
+    .rms-history-count{font-size:8px!important}
+    .rms-collapse-button-lg{height:44px;font-size:9px!important}
+    .rms-generation-card-v2 .rms-generation-card-title-row strong{font-size:11px!important}
+    .rms-generation-card-meta{font-size:8px!important}
+    .rms-generation-card-engine{font-size:7.5px!important}
+    .rms-generation-card-v2 .rms-generation-card-actions button,
+    .rms-generation-card-v2 .rms-generation-card-actions a{height:32px;font-size:8px!important;padding:0 10px}
+    .rms-generation-no-output{font-size:8px!important}
+}
+
+@media(max-width:640px){
+    .topbar{
+        flex-wrap:wrap;
+        gap:8px;
+    }
+    .topbar-left{width:auto}
+    .topbar-right{
+        width:calc(100% - 50px);
+    }
+    .topbar-button{
+        width:42px!important;
+        height:42px!important;
+        flex-basis:42px!important;
+    }
+    .profile-button{
+        width:42px!important;
+        min-width:42px!important;
+        height:42px!important;
+        padding:4px!important;
+    }
+    .top-search{margin-top:1px}
+    .rms-dashboard-toolbar h2{font-size:24px!important}
+    .rms-dashboard-toolbar p{font-size:10px!important}
+    .rms-dashboard-filters{gap:8px!important}
+    .rms-filter-dropdown:last-child{grid-column:1/-1}
+    .rms-kpi{padding:14px!important;border-radius:15px}
+    .rms-kpi-icon{width:34px;height:34px}
+    .rms-kpi-label{margin-top:13px;font-size:8.5px!important}
+    .rms-kpi strong{font-size:25px!important}
+    .rms-kpi small{font-size:7.5px!important}
+    .rms-trend-point small{font-size:6px!important}
+    .rms-trend-point b{font-size:8px!important}
+    .rms-health-score{padding:14px!important}
+    .rms-health-note{margin:0 14px 14px}
+    .rms-history-toolbar{padding:12px!important}
+    .rms-history-controls{gap:7px!important}
+    .rms-history-scroll{padding:10px!important;gap:9px}
+    .rms-generation-card-v2{
+        grid-template-columns:78px minmax(0,1fr)!important;
+        min-height:100px!important;
+        padding:10px!important;
+    }
+    .rms-generation-card-media-lg{width:78px!important;height:78px!important}
+    .rms-generation-card-v2 .rms-generation-card-title-row strong{font-size:10px!important}
+    .rms-generation-card-meta{font-size:7.5px!important}
+    .rms-generation-card-engine{font-size:7px!important}
+    .rms-generation-card-v2 .rms-generation-card-actions{gap:6px!important}
+    .rms-generation-card-v2 .rms-generation-card-actions button,
+    .rms-generation-card-v2 .rms-generation-card-actions a{height:30px!important;font-size:7.5px!important;padding:0 9px!important}
+    .rms-generation-preview-v2{padding:7px!important}
+    .rms-generation-preview-panel-v2{height:94dvh!important;max-height:94dvh!important}
+}
+
+@media(max-width:390px){
+    .topbar-right{width:calc(100% - 47px)}
+    .topbar-button,.profile-button{width:40px!important;min-width:40px!important;height:40px!important}
+    .rms-dashboard-filters{grid-template-columns:1fr}
+    .rms-filter-dropdown:last-child{grid-column:auto}
+    .rms-dashboard-kpis{grid-template-columns:1fr 1fr}
+    .rms-kpi strong{font-size:23px!important}
+    .rms-generation-card-v2{grid-template-columns:68px minmax(0,1fr)!important}
+    .rms-generation-card-media-lg{width:68px!important;height:68px!important}
+    .rms-generation-card-v2 .rms-generation-card-actions button,
+    .rms-generation-card-v2 .rms-generation-card-actions a{padding:0 7px!important}
+}
+
+/* Never open the raw generated image in a new tab from dashboard actions. */
+.rms-generation-preview-footer a,
+.rms-generation-card-actions a{target-name:current!important}
