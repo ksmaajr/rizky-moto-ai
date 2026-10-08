@@ -1858,3 +1858,131 @@
  .rms-activity-select-menu{min-width:0;width:100%}
 }
 </style>
+<style>
+/* FINAL ACTIVITY LAYOUT — aligned actions + compact responsive mobile */
+.rms-global-activity .rms-openai-logs-head{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:center!important;
+    gap:20px!important;
+}
+.rms-global-activity .rms-openai-log-actions{
+    display:grid!important;
+    grid-template-columns:auto auto repeat(3,minmax(104px,auto));
+    align-items:center!important;
+    justify-content:end!important;
+    gap:8px!important;
+    width:auto!important;
+    flex-wrap:nowrap!important;
+}
+.rms-global-activity .rms-openai-log-actions>button{
+    width:auto!important;
+    min-width:104px!important;
+    height:38px!important;
+    margin:0!important;
+    white-space:nowrap;
+}
+.rms-global-activity .rms-global-scope-badge,
+.rms-global-activity .rms-openai-log-counter{
+    height:38px!important;
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    white-space:nowrap;
+}
+.rms-global-activity .rms-openai-log-counter{padding:0 9px!important}
+.rms-global-activity-toolbar{
+    grid-template-columns:minmax(230px,1.7fr) repeat(3,minmax(160px,.75fr))!important;
+    align-items:end!important;
+    gap:10px!important;
+}
+.rms-global-activity-toolbar .rms-filter-field{min-width:0}
+.rms-global-select-actions{
+    grid-column:1/-1!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    min-height:34px;
+    margin-top:0!important;
+    padding-top:10px!important;
+    border-top:1px solid #ededf0;
+}
+.rms-global-select-actions button{height:31px!important;font-size:8px!important;padding:0 10px!important}
+
+/* Tablet */
+@media(max-width:1100px){
+    .rms-global-activity .rms-openai-logs-head{grid-template-columns:1fr!important;gap:14px!important}
+    .rms-global-activity .rms-openai-log-actions{
+        width:100%!important;
+        grid-template-columns:auto auto repeat(3,minmax(0,1fr))!important;
+        justify-content:stretch!important;
+    }
+    .rms-global-activity .rms-openai-log-actions>button{width:100%!important;min-width:0!important}
+    .rms-global-activity-toolbar{grid-template-columns:minmax(200px,1.5fr) repeat(3,minmax(130px,1fr))!important}
+}
+
+/* Mobile: keep it compact instead of creating a very tall control stack */
+@media(max-width:640px){
+    .rms-global-activity .rms-openai-logs-head{
+        padding:15px!important;
+        gap:12px!important;
+    }
+    .rms-global-activity .rms-openai-log-actions{
+        display:grid!important;
+        grid-template-columns:1fr 1fr!important;
+        width:100%!important;
+        gap:7px!important;
+    }
+    .rms-global-activity .rms-openai-log-actions .rms-global-scope-badge{
+        justify-self:start!important;
+        width:max-content!important;
+        min-width:0!important;
+        height:32px!important;
+    }
+    .rms-global-activity .rms-openai-log-actions .rms-openai-log-counter{
+        justify-self:end!important;
+        width:max-content!important;
+        height:32px!important;
+    }
+    .rms-global-activity .rms-openai-log-actions>button{
+        min-width:0!important;
+        height:38px!important;
+    }
+    .rms-global-activity .rms-openai-log-actions>button:last-child{
+        grid-column:1/-1!important;
+    }
+
+    .rms-global-activity-toolbar{
+        grid-template-columns:1fr 1fr!important;
+        gap:9px!important;
+        padding:12px!important;
+    }
+    .rms-global-activity-toolbar>label:first-child{
+        grid-column:1/-1!important;
+    }
+    .rms-global-activity-toolbar .rms-filter-field{
+        width:100%;
+    }
+    .rms-activity-select-trigger{height:43px!important}
+    .rms-global-activity-toolbar>label:first-child input{
+        height:43px!important;
+    }
+    .rms-global-select-actions{
+        grid-column:1/-1!important;
+        min-height:35px!important;
+        padding-top:9px!important;
+    }
+}
+
+/* Very small phones */
+@media(max-width:390px){
+    .rms-global-activity .rms-openai-logs-head{padding:13px!important}
+    .rms-global-activity .rms-openai-log-actions{gap:6px!important}
+    .rms-global-activity .rms-openai-log-actions>button{height:36px!important;font-size:8px!important}
+    .rms-global-activity-toolbar{gap:8px!important;padding:10px!important}
+    .rms-global-activity-toolbar .rms-filter-field .rms-filter-label{font-size:7px!important}
+    .rms-activity-select-trigger{padding:0 9px!important}
+    .rms-activity-select-copy strong{font-size:9px!important}
+    .rms-activity-select-copy small{font-size:7px!important}
+}
+</style>
