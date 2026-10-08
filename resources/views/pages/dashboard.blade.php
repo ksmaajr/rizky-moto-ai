@@ -956,6 +956,18 @@ class extends Component
                 ->whereNotNull('model')
                 ->latest('created_at')
                 ->first(['model', 'created_at']);
+            
+            $recentModels = \App\Models\Generation::query()
+                ->whereNotNull('model')
+                ->where('model', '<>', '')
+                ->latest('created_at')
+                ->pluck('model')
+                ->map(fn ($model) => \Illuminate\Support\Str::afterLast((string) $model, '/'))
+                ->filter()
+                ->unique()
+                ->take(6)
+                ->values()
+                ->all();
 
             $totalRequests = (int) ($apiMetrics?->total_requests ?? 0);
             $successfulRequests = (int) ($apiMetrics?->successful_requests ?? 0);
@@ -983,6 +995,7 @@ class extends Component
                     'model' => $latestGeneration?->model
                         ? \Illuminate\Support\Str::afterLast($latestGeneration->model, '/')
                         : 'Belum ada generation',
+                    'models' => $recentModels,
                     'last_status' => $latestApi?->status,
                     'last_http' => $latestApi?->http_status,
                     'last_at' => $latestApi?->created_at?->diffForHumans(),
@@ -2954,17 +2967,21 @@ public function getUserInitialsProperty(): string
                 </section>
 
                 @php $engine = $this->dashboardEngine; @endphp
-                <section class="rms-engine-health-panel reveal reveal-3">
+                <section class="rms-engine-health-panel reveal reveal-3" x-data="{ engineOpen: true }" :class="{ 'is-collapsed': !engineOpen }">
                     <div class="rms-engine-health-head">
                         <div>
                             <span class="section-kicker">AI ENGINE HEALTH</span>
                             <h3>Generation infrastructure</h3>
-                            <p>Gateway dan provider generation dipantau dari satu control center.</p>
+                            <p>Gateway, model routing, provider, dan agent layer dipantau dari satu control center.</p>
                         </div>
                         <div class="rms-engine-health-meta">
                             <span class="rms-health-pill {{ $engine['gateway']['state'] === 'online' ? 'is-ok' : 'is-off' }}"><i></i>{{ $engine['gateway']['state'] === 'online' ? 'SYSTEM READY' : 'ATTENTION' }}</span>
                             <small>Checked {{ $engine['checked_at'] }}</small>
                         </div>
+                        <button type="button" class="rms-engine-mobile-toggle" @click="engineOpen = !engineOpen" :aria-expanded="engineOpen.toString()">
+                            <span x-text="engineOpen ? 'Collapse health' : 'Show health'"></span>
+                            <b :class="{ 'is-open': engineOpen }">⌄</b>
+                        </button>
                     </div>
 
                     <div class="rms-engine-health-grid">
@@ -2975,19 +2992,26 @@ public function getUserInitialsProperty(): string
                             </div>
                             <span class="rms-engine-health-label">API GATEWAY</span>
                             <strong>{{ $engine['gateway']['label'] }}</strong>
-                            <small>{{ $engine['gateway']['keys_active'] }} active keys · {{ $engine['gateway']['keys_total'] }} registered</small>
-                            <div class="rms-engine-health-metrics"><span><b>{{ $engine['gateway']['keys_cooldown'] }}</b> cooldown</span><span><b>{{ $engine['gateway']['keys_unavailable'] }}</b> unavailable</span></div>
+                            <small>{{ $engine['gateway']['keys_active'] }} active keys · {{ $engine['gateway']['keys_total'] }} registered · {{ $engine['gateway']['keys_cooldown'] }} cooldown</small>
+                            <div class="rms-engine-health-metrics"><span><b>{{ $engine['gateway']['keys_unavailable'] }}</b> unavailable</span><span><b>{{ $engine['provider']['requests_24h'] }}</b> requests / 24h</span></div>
                         </article>
 
-                        <article class="rms-engine-health-card">
+                        <article class="rms-engine-health-card rms-engine-routing-card">
                             <div class="rms-engine-health-card-top">
                                 <span class="rms-engine-health-icon violet">AI</span>
                                 <span class="rms-engine-health-state {{ $engine['provider']['last_status'] === 'success' ? 'is-online' : 'is-idle' }}"><i></i>{{ $engine['provider']['last_status'] ? strtoupper($engine['provider']['last_status']) : 'IDLE' }}</span>
                             </div>
-                            <span class="rms-engine-health-label">VERCEL PROVIDER</span>
+                            <span class="rms-engine-health-label">VERCEL AI GATEWAY · MODEL ROUTING</span>
                             <strong>{{ $engine['provider']['name'] }}</strong>
-                            <small>{{ $engine['provider']['model'] }} · Last API {{ $engine['provider']['last_at'] ?? '—' }}</small>
-                            <div class="rms-engine-health-metrics"><span><b>{{ $engine['provider']['requests_24h'] }}</b> req / 24h</span><span><b>{{ $engine['provider']['success_rate_24h'] !== null ? $engine['provider']['success_rate_24h'].'%' : '—' }}</b> success</span><span><b>{{ $engine['provider']['avg_duration_ms_24h'] !== null ? round($engine['provider']['avg_duration_ms_24h']) : '—' }}</b> ms avg</span></div>
+                            <small>Multi-provider gateway · active model: <b>{{ $engine['provider']['model'] }}</b></small>
+                            <div class="rms-engine-model-list">
+                                @forelse($engine['provider']['models'] as $model)
+                                    <span>{{ $model }}</span>
+                                @empty
+                                    <span>No model history yet</span>
+                                @endforelse
+                            </div>
+                            <div class="rms-engine-health-metrics"><span><b>{{ $engine['provider']['success_rate_24h'] !== null ? $engine['provider']['success_rate_24h'].'%' : '—' }}</b> success</span><span><b>{{ $engine['provider']['avg_duration_ms_24h'] !== null ? round($engine['provider']['avg_duration_ms_24h']) : '—' }}</b> ms avg</span></div>
                         </article>
 
                         <article class="rms-engine-health-card">
@@ -2995,10 +3019,10 @@ public function getUserInitialsProperty(): string
                                 <span class="rms-engine-health-icon green">◎</span>
                                 <span class="rms-engine-health-state {{ $engine['openai']['state'] === 'configured' ? 'is-online' : 'is-idle' }}"><i></i>{{ strtoupper($engine['openai']['state']) }}</span>
                             </div>
-                            <span class="rms-engine-health-label">OPENAI PROVIDER</span>
+                            <span class="rms-engine-health-label">DIRECT PROVIDER</span>
                             <strong>{{ $engine['openai']['label'] }}</strong>
                             <small>{{ $engine['openai']['detail'] }}</small>
-                            <div class="rms-engine-health-metrics"><span><b>{{ $engine['gateway']['legacy'] ? 'YES' : 'NO' }}</b> credential</span></div>
+                            <div class="rms-engine-health-metrics"><span><b>{{ $engine['gateway']['legacy'] ? 'YES' : 'NO' }}</b> direct credential</span></div>
                         </article>
 
                         <article class="rms-engine-health-card">
