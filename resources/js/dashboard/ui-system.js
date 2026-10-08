@@ -201,11 +201,7 @@
         }
 
         if (target.closest('#notificationMarkRead')) {
-            event.preventDefault();
-            document.querySelectorAll('#notificationDropdown .notification-unread-dot').forEach(el => el.remove());
-            $('.notification-dot')?.classList.add('is-hidden');
-            $('.notification-count')?.classList.add('is-hidden');
-            RMS.toast.info('Notifikasi', 'Semua notifikasi ditandai sudah dibaca.');
+            closeNotification();
             return;
         }
 
