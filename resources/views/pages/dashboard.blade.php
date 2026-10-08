@@ -53,6 +53,7 @@ class extends Component
     public string $defaultQuality = 'standard';
 
     public bool $hasOpenAiKey = false;
+    public bool $saved = false;
 
 
 
@@ -120,6 +121,8 @@ class extends Component
     public function mount(): void
 
     {
+
+        $this->loadAiProviderSettings();
 
         $settings = \App\Models\OpenAiSetting::query()->first();
 
@@ -1534,21 +1537,15 @@ public function getUserInitialsProperty(): string
 
     {
 
-        if (! in_array($tab, ['general', 'openai'], true)) {
+        if (! in_array($tab, ['general', 'provider', 'activity', 'openai'], true)) {
 
             return;
 
         }
 
+        $this->activeTab = $tab === 'openai' ? 'provider' : $tab;
 
-
-        $this->activeTab = $tab;
-
-        $this->activeSection = $tab === 'openai'
-
-            ? 'settings-openai'
-
-            : 'settings-general';
+        $this->activeSection = 'settings-general';
 
     }
 
