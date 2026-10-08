@@ -4031,6 +4031,166 @@ public function getUserInitialsProperty(): string
         }
 
 
+        /* V25 — unify AI Engine Health typography across desktop + mobile */
+        .rms-engine-health-panel{
+            font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+        }
+        .rms-engine-health-head h3{
+            font-size:22px!important;
+            line-height:1.15!important;
+            letter-spacing:-.035em!important;
+            font-weight:850!important;
+        }
+        .rms-engine-health-head p{
+            font-size:11px!important;
+            line-height:1.5!important;
+        }
+        .rms-engine-health-meta small{
+            font-size:9px!important;
+            line-height:1.2!important;
+        }
+        .rms-engine-health-card{
+            font-size:10px;
+        }
+        .rms-engine-health-card-top{
+            min-height:34px;
+        }
+        .rms-engine-health-icon{
+            font-size:13px!important;
+            font-weight:850!important;
+        }
+        .rms-engine-health-state{
+            font-size:8.5px!important;
+            line-height:1!important;
+            letter-spacing:.035em!important;
+            font-weight:850!important;
+            padding:6px 9px!important;
+        }
+        .rms-engine-health-label{
+            display:block;
+            margin-top:15px!important;
+            font-size:9px!important;
+            line-height:1.15!important;
+            letter-spacing:.105em!important;
+            font-weight:850!important;
+        }
+        .rms-engine-health-card>strong{
+            display:block;
+            margin-top:7px!important;
+            font-size:16px!important;
+            line-height:1.2!important;
+            letter-spacing:-.02em!important;
+            font-weight:850!important;
+        }
+        .rms-engine-health-card>small{
+            display:block;
+            margin-top:7px!important;
+            font-size:10px!important;
+            line-height:1.45!important;
+            letter-spacing:0!important;
+        }
+        .rms-engine-model-list{
+            gap:6px!important;
+            margin-top:14px!important;
+        }
+        .rms-engine-model-list span{
+            padding:6px 9px!important;
+            font-size:8.5px!important;
+            line-height:1!important;
+            font-weight:750!important;
+        }
+        .rms-engine-health-metrics{
+            margin-top:15px!important;
+            padding-top:12px!important;
+            font-size:9px!important;
+            line-height:1.3!important;
+        }
+        .rms-engine-health-metrics b{
+            font-size:10px!important;
+            font-weight:850!important;
+        }
+        @media(max-width:760px){
+            .rms-engine-health-head h3{
+                font-size:18px!important;
+                line-height:1.15!important;
+            }
+            .rms-engine-health-head p{
+                font-size:9px!important;
+                line-height:1.45!important;
+            }
+            .rms-engine-health-meta small{
+                font-size:8px!important;
+            }
+            .rms-engine-health-card{
+                font-size:10px!important;
+            }
+            .rms-engine-health-card-top{
+                min-height:32px!important;
+            }
+            .rms-engine-health-label{
+                margin-top:13px!important;
+                font-size:8px!important;
+                letter-spacing:.09em!important;
+            }
+            .rms-engine-health-card>strong{
+                margin-top:6px!important;
+                font-size:13px!important;
+                line-height:1.25!important;
+            }
+            .rms-engine-health-card>small{
+                margin-top:6px!important;
+                font-size:8.5px!important;
+                line-height:1.45!important;
+            }
+            .rms-engine-health-state{
+                font-size:7.5px!important;
+                padding:5px 8px!important;
+            }
+            .rms-engine-health-icon{
+                font-size:12px!important;
+            }
+            .rms-engine-model-list{
+                gap:5px!important;
+                margin-top:11px!important;
+            }
+            .rms-engine-model-list span{
+                padding:5px 7px!important;
+                font-size:7.5px!important;
+            }
+            .rms-engine-health-metrics{
+                margin-top:12px!important;
+                padding-top:10px!important;
+                font-size:7.5px!important;
+            }
+            .rms-engine-health-metrics b{
+                font-size:8.5px!important;
+            }
+            .rms-engine-mobile-toggle strong{
+                font-size:9px!important;
+            }
+        }
+        @media(max-width:420px){
+            .rms-engine-health-head h3{
+                font-size:17px!important;
+            }
+            .rms-engine-health-head p{
+                font-size:8.5px!important;
+            }
+            .rms-engine-health-label{
+                font-size:7.8px!important;
+            }
+            .rms-engine-health-card>strong{
+                font-size:12.5px!important;
+            }
+            .rms-engine-health-card>small{
+                font-size:8px!important;
+            }
+            .rms-engine-model-list span{
+                font-size:7.2px!important;
+            }
+        }
+
+
     </style>
 
 </div>
