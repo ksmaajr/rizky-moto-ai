@@ -98,6 +98,9 @@ class extends Component
     public string $dashboardStatus = 'all';
     public string $dashboardStore = 'all';
     public string $globalSearch = '';
+    public string $pendingStoreSearch = '';
+    public string $pendingTemplateSearch = '';
+    public ?int $pendingGenerationId = null;
     public array $dashboardData = [];
     public ?string $notificationReadAt = null;
     public array $generationHistory = [];
@@ -1121,19 +1124,43 @@ class extends Component
 
     public function navigateGlobalSearch(string $action, ?int $id = null): void
     {
+        $term = trim($this->globalSearch);
         $this->globalSearch = '';
 
-        match ($action) {
-            'stores' => $this->openStore(),
-            'templates' => $this->openTemplates(),
-            'settings' => $this->openSettings(),
-            'generator' => $this->openGenerator(),
-            default => $this->openDashboard(),
-        };
+        $this->pendingStoreSearch = '';
+        $this->pendingTemplateSearch = '';
+        $this->pendingGenerationId = null;
 
-        if ($id && $action === 'generator') {
-            $this->dispatch('generation-focus', generationId: $id);
+        if ($action === 'stores' && $id) {
+            $this->pendingStoreSearch = (string) (Store::query()->whereKey($id)->value('name') ?: $term);
+            $this->openStore();
+            return;
         }
+
+        if ($action === 'templates' && $id) {
+            $this->pendingTemplateSearch = (string) (\App\Models\Template::query()->whereKey($id)->value('name') ?: $term);
+            $this->openTemplates();
+            return;
+        }
+
+        if ($action === 'generator' && $id) {
+            $this->pendingGenerationId = $id;
+            $this->openGenerator();
+            return;
+        }
+
+        if ($action === 'activity') {
+            $this->activitySearch = $term;
+            $this->openSettings();
+            return;
+        }
+
+        if ($action === 'settings') {
+            $this->openSettings();
+            return;
+        }
+
+        $this->openDashboard();
     }
 
     /**
@@ -2069,6 +2096,21 @@ public function getUserInitialsProperty(): string
                     @endif
                 </div>
 
+                {{-- GLOBAL SEARCH KEYBOARD SHORTCUTS --}}
+                <script>
+                    document.addEventListener('keydown', (event) => {
+                        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+                            event.preventDefault();
+                            document.querySelector('.top-search input')?.focus();
+                        }
+
+                        if (event.key === 'Escape') {
+                            const input = document.querySelector('.top-search input');
+                            if (document.activeElement === input) input.blur();
+                        }
+                    });
+                </script>
+
                 {{-- NOTIFICATION MENU --}}
 
                 <div class="notification-menu" id="notificationMenu">
@@ -2979,7 +3021,10 @@ public function getUserInitialsProperty(): string
 
                 >
 
-                    <livewire:stores />
+                    <livewire:stores
+                        :initial-search="$pendingStoreSearch"
+                        wire:key="workspace-stores-{{ md5($pendingStoreSearch) }}"
+                    />
 
                 </div>
 
@@ -2995,7 +3040,10 @@ public function getUserInitialsProperty(): string
 
                 >
 
-                    <livewire:dashboard.templates.index />
+                    <livewire:dashboard.templates.index
+                        :initial-search="$pendingTemplateSearch"
+                        wire:key="workspace-templates-{{ md5($pendingTemplateSearch) }}"
+                    />
 
                 </div>
 
@@ -3011,7 +3059,10 @@ public function getUserInitialsProperty(): string
 
                 >
 
-                    <livewire:dashboard.generator.index />
+                    <livewire:dashboard.generator.index
+                        :focus-generation-id="$pendingGenerationId"
+                        wire:key="workspace-generator-{{ $pendingGenerationId ?? 'default' }}"
+                    />
 
                 </div>
 
