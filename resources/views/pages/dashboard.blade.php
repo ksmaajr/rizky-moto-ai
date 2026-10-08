@@ -1147,7 +1147,7 @@ public function getUserInitialsProperty(): string
 
 
 
-<div class="min-h-screen bg-[#f4f4f5] text-zinc-950">
+<div class="min-h-screen bg-[#f4f4f5] text-zinc-950" x-data="{ sidebarCollapsed:false, sidebarGroups:{workspace:true,management:true,activity:true,system:true}, init(){ try{this.sidebarCollapsed=localStorage.getItem('rms-sidebar-collapsed')==='1'; Object.assign(this.sidebarGroups,JSON.parse(localStorage.getItem('rms-sidebar-groups')||'{}'));}catch(e){} this.$watch('sidebarCollapsed',v=>{try{localStorage.setItem('rms-sidebar-collapsed',v?'1':'0')}catch(e){}}); this.$watch('sidebarGroups',v=>{try{localStorage.setItem('rms-sidebar-groups',JSON.stringify(v))}catch(e){}})}, toggleGroup(g){this.sidebarGroups[g]=!this.sidebarGroups[g]} }" :class="{ 'sidebar-is-collapsed': sidebarCollapsed }">
 
 
 
@@ -1201,7 +1201,11 @@ public function getUserInitialsProperty(): string
 
 
 
-            <button
+                        <button type="button" class="sidebar-collapse-toggle" @click="sidebarCollapsed = !sidebarCollapsed" :aria-label="sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5l7 7-7 7"/></svg>
+            </button>
+
+<button
 
                 type="button"
 
@@ -1226,264 +1230,52 @@ public function getUserInitialsProperty(): string
 
 
         {{-- NAVIGATION --}}
-
         <div class="sidebar-scroll">
-
-
-
-            <div class="nav-section">
-
-                <div class="nav-heading">Workspace</div>
-
-
-
-                <div class="nav-list">
-
+            <div class="sidebar-nav-section" :class="{ 'is-collapsed': !sidebarGroups.workspace }">
+                <button type="button" class="nav-heading-toggle" @click="toggleGroup('workspace')"><span>Workspace</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m7 9 5 5 5-5"/></svg></button>
+                <div class="nav-section-body"><div class="nav-list">
                     <button type="button" class="nav-item {{ $activeSection === 'dashboard' ? 'active' : '' }}" wire:click="openDashboard">
-
-                        <span class="nav-icon">
-
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-
-                                <rect x="3" y="3" width="7" height="7" rx="1.5"/>
-
-                                <rect x="14" y="3" width="7" height="7" rx="1.5"/>
-
-                                <rect x="3" y="14" width="7" height="7" rx="1.5"/>
-
-                                <rect x="14" y="14" width="7" height="7" rx="1.5"/>
-
-                            </svg>
-
-                        </span>
-
-                        <span class="nav-label">Dashboard</span>
-
+                        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
+                        <span class="nav-label">Dashboard</span><span class="nav-item-arrow">›</span>
                     </button>
-
-
-
-                    <button type="button" class="nav-item">
-
-                        <span class="nav-icon">
-
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-
-                                <path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/>
-
-                                <path d="m19 16 .8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z"/>
-
-                            </svg>
-
-                        </span>
-
-                        <span class="nav-label">Product Generator</span>
-
-                        <span class="nav-pill">AI</span>
-
+                    <button type="button" class="nav-item nav-item-generator {{ $activeSection === 'generator' ? 'active' : '' }}" wire:click="openGenerator">
+                        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/><path d="m19 16 .8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z"/></svg></span>
+                        <span class="nav-label">Product Generator</span><span class="nav-pill">AI</span>
                     </button>
-
-                </div>
-
+                </div></div>
             </div>
-
-
-
-            <div class="nav-section">
-
-                <div class="nav-heading">Management</div>
-
-
-
-                <div class="nav-list">
-
+            <div class="sidebar-nav-section" :class="{ 'is-collapsed': !sidebarGroups.management }">
+                <button type="button" class="nav-heading-toggle" @click="toggleGroup('management')"><span>Management</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m7 9 5 5 5-5"/></svg></button>
+                <div class="nav-section-body"><div class="nav-list">
                     <button type="button" class="nav-item {{ $activeSection === 'stores' ? 'active' : '' }}" wire:click="openStore">
-
-                        <span class="nav-icon">
-
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-
-                                <path d="M4 10h16"/>
-
-                                <path d="M5 10v9h14v-9"/>
-
-                                <path d="M3 10 5 4h14l2 6"/>
-
-                                <path d="M8 14h8"/>
-
-                            </svg>
-
-                        </span>
-
-                        <span class="nav-label">Stores</span>
-
+                        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 10h16"/><path d="M5 10v9h14v-9"/><path d="M3 10 5 4h14l2 6"/><path d="M8 14h8"/></svg></span>
+                        <span class="nav-label">Stores</span><span class="nav-item-arrow">›</span>
                     </button>
-
-
-
-                    <button
-
-                        type="button"
-
-                        class="nav-item {{ $activeSection === 'templates' ? 'active' : '' }}"
-
-                        wire:click="openTemplates"
-
-                        wire:loading.attr="disabled"
-
-                        wire:target="openTemplates"
-
-                    >
-
-                        <span class="nav-icon">
-
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-
-                                <rect x="3" y="3" width="7" height="7" rx="1.5"/>
-
-                                <rect x="14" y="3" width="7" height="7" rx="1.5"/>
-
-                                <rect x="3" y="14" width="18" height="7" rx="1.5"/>
-
-                            </svg>
-
-                        </span>
-
-                        <span class="nav-label">Templates</span>
-
+                    <button type="button" class="nav-item {{ $activeSection === 'templates' ? 'active' : '' }}" wire:click="openTemplates">
+                        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="18" height="7" rx="1.5"/></svg></span>
+                        <span class="nav-label">Templates</span><span class="nav-item-arrow">›</span>
                     </button>
-
-
-
-                    <button type="button" class="nav-item" :class="{ active: $wire.activeSection === 'generator' }" wire:click="openGenerator">
-
-                        <span class="nav-icon">
-
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-
-                                <rect x="3" y="3" width="18" height="18" rx="3"/>
-
-                                <path d="m7 16 4-4 3 3 3-5"/>
-
-                            </svg>
-
-                        </span>
-
-                        <span class="nav-label">Generations</span>
-
-                    </button>
-
-
-
-                    <button type="button" class="nav-item">
-
-                        <span class="nav-icon">
-
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-
-                                <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/>
-
-                            </svg>
-
-                        </span>
-
-                        <span class="nav-label">Favorites</span>
-
-                    </button>
-
-                </div>
-
+                </div></div>
             </div>
-
-
-
-            {{-- =========================================================
-
-                SETTINGS NAVIGATION
-
-                ========================================================= --}}
-
-            <div class="nav-section rms-settings-nav">
-
-                <div class="nav-heading">System</div>
-
-
-
-                <div class="nav-list">
-
-
-
-                    <button
-
-                        type="button"
-
-                        class="nav-item {{ str_starts_with($activeSection, 'settings-') ? 'active' : '' }}"
-
-                        wire:click="openSettings"
-
-                        wire:loading.attr="disabled"
-
-                        wire:target="openSettings"
-
-                    >
-
-                        <span class="nav-icon">
-
-                            <svg
-
-                                viewBox="0 0 24 24"
-
-                                fill="none"
-
-                                stroke="currentColor"
-
-                                stroke-width="1.7"
-
-                            >
-
-                                <path d="M12 3v2"/>
-
-                                <path d="M12 19v2"/>
-
-                                <path d="m4.2 4.2 1.4 1.4"/>
-
-                                <path d="m18.4 18.4 1.4 1.4"/>
-
-                                <path d="M3 12h2"/>
-
-                                <path d="M19 12h2"/>
-
-                                <path d="m4.2 19.8 1.4-1.4"/>
-
-                                <path d="m18.4 5.6 1.4-1.4"/>
-
-                                <circle cx="12" cy="12" r="4"/>
-
-                            </svg>
-
-                        </span>
-
-
-
-                        <span class="nav-label">
-
-                            Settings
-
-                        </span>
-
+            <div class="sidebar-nav-section" :class="{ 'is-collapsed': !sidebarGroups.activity }">
+                <button type="button" class="nav-heading-toggle" @click="toggleGroup('activity')"><span>Generation</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m7 9 5 5 5-5"/></svg></button>
+                <div class="nav-section-body"><div class="nav-list">
+                    <button type="button" class="nav-item {{ $activeSection === 'generator' ? 'active' : '' }}" wire:click="openGenerator">
+                        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="m7 16 4-4 3 3 3-5"/></svg></span>
+                        <span class="nav-label">Generations</span><span class="nav-item-caption">Generator & history</span>
                     </button>
-
-
-
-                </div>
-
+                </div></div>
             </div>
-
-
-
+            <div class="sidebar-nav-section rms-settings-nav" :class="{ 'is-collapsed': !sidebarGroups.system }">
+                <button type="button" class="nav-heading-toggle" @click="toggleGroup('system')"><span>System</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m7 9 5 5 5-5"/></svg></button>
+                <div class="nav-section-body"><div class="nav-list">
+                    <button type="button" class="nav-item {{ str_starts_with($activeSection, 'settings-') ? 'active' : '' }}" wire:click="openSettings">
+                        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v2"/><path d="M12 19v2"/><path d="m4.2 4.2 1.4 1.4"/><path d="m18.4 18.4 1.4 1.4"/><path d="M3 12h2"/><path d="M19 12h2"/><path d="m4.2 19.8 1.4-1.4"/><path d="m18.4 5.6 1.4-1.4"/><circle cx="12" cy="12" r="3.5"/></svg></span>
+                        <span class="nav-label">Settings</span><span class="nav-item-arrow">›</span>
+                    </button>
+                </div></div>
+            </div>
         </div>
-
-
 
         {{-- AI ENGINE / QUEUE WORKER STATUS --}}
         <div
