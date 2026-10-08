@@ -3033,7 +3033,6 @@
 .rms-provider-block-failover .rms-ai-save-button .rms-save-loading{
     position:absolute!important;
     inset:0!important;
-    display:flex!important;
     flex-direction:row!important;
     flex-wrap:nowrap!important;
     align-items:center!important;
