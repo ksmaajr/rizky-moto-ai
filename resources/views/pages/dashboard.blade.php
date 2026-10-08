@@ -3350,7 +3350,7 @@ public function getUserInitialsProperty(): string
 
                     <livewire:dashboard.settings.index
     :initial-tab="$activeTab === 'openai' ? 'provider' : $activeTab'"
-    :wire:key="'dashboard-settings-' . ($activeTab === 'openai' ? 'provider' : $activeTab)"
+    :key="'dashboard-settings-' . ($activeTab === 'openai' ? 'provider' : $activeTab)"
 />
 
                 </div>
