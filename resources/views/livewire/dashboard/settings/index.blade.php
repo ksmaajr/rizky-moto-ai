@@ -1623,3 +1623,91 @@
     .rms-settings-activity-footer{align-items:flex-start;flex-direction:column;justify-content:center;padding:10px 0;gap:5px}
 }
 </style>
+
+<style>
+/* FINAL TYPOGRAPHY PASS — readable desktop, tablet and mobile */
+.rms-settings-panel,
+.rms-settings-panel *{box-sizing:border-box}
+.rms-settings-activity-copy h2{font-size:clamp(20px,1.55vw,25px)!important;line-height:1.15!important}
+.rms-settings-activity-copy p{font-size:clamp(11px,.78vw,13px)!important;line-height:1.55!important}
+.rms-settings-activity-eyebrow span,
+.rms-settings-activity-eyebrow b{font-size:9px!important;height:23px!important;padding:0 9px!important}
+.rms-settings-activity-live span{font-size:9px!important}
+.rms-settings-activity-live small{font-size:8px!important}
+.rms-settings-activity-note-copy>span{font-size:8px!important}
+.rms-settings-activity-note-copy strong{font-size:12px!important;line-height:1.35!important}
+.rms-settings-activity-note-copy small{font-size:10px!important;line-height:1.45!important}
+.rms-settings-activity-note-badge{font-size:8px!important;height:29px!important}
+.rms-settings-activity-footer{font-size:10px!important}
+.rms-settings-activity-footer strong{font-size:9px!important}
+
+.rms-global-activity .rms-openai-logs-title strong{font-size:15px!important}
+.rms-global-activity .rms-openai-logs-title small{font-size:10px!important;line-height:1.45!important}
+.rms-global-scope-badge{font-size:8px!important;height:29px!important}
+.rms-global-activity .rms-openai-log-counter{font-size:9px!important}
+.rms-global-copy-button,
+.rms-global-copy-all,
+.rms-global-activity .rms-openai-log-actions>button{font-size:9px!important;height:34px!important;padding:0 12px!important}
+.rms-global-activity-toolbar label>span{font-size:8px!important}
+.rms-global-activity-toolbar input,
+.rms-global-activity-toolbar select{height:40px!important;font-size:10px!important}
+.rms-global-select-actions button{height:30px!important;font-size:8px!important}
+.rms-global-select-actions>span{font-size:8px!important}
+
+.rms-global-activity .rms-openai-log-item{min-height:88px!important;padding:16px 18px!important}
+.rms-global-log-category{font-size:8px!important;height:21px!important;padding:0 7px!important}
+.rms-global-log-user{font-size:9px!important}
+.rms-global-activity .rms-openai-log-top time{font-size:9px!important}
+.rms-global-activity .rms-openai-log-content>strong{font-size:12px!important;line-height:1.45!important}
+.rms-global-activity .rms-openai-log-content>small{font-size:10px!important;line-height:1.5!important}
+.rms-global-activity .rms-vg-log-meta{font-size:9px!important}
+.rms-global-activity .rms-vg-log-meta span{padding:4px 7px!important}
+.rms-global-activity .rms-openai-logs-footer{font-size:9px!important;min-height:46px!important}
+
+@media(max-width:900px){
+ .rms-settings-activity-hero{gap:16px}
+ .rms-global-activity .rms-openai-log-actions{gap:7px}
+ .rms-global-activity .rms-openai-log-item{min-height:0!important}
+}
+@media(max-width:640px){
+ .rms-settings-activity-hero{padding:16px!important;border-radius:15px!important}
+ .rms-settings-activity-hero-main{align-items:flex-start}
+ .rms-settings-activity-mark{width:42px!important;height:42px!important;flex-basis:42px!important}
+ .rms-settings-activity-copy h2{font-size:19px!important}
+ .rms-settings-activity-copy p{font-size:11px!important}
+ .rms-settings-activity-eyebrow span,.rms-settings-activity-eyebrow b{font-size:7.5px!important;height:21px!important}
+ .rms-settings-activity-live{width:max-content}
+ .rms-global-activity .rms-openai-logs-head{padding:15px!important}
+ .rms-global-activity .rms-openai-logs-title strong{font-size:14px!important}
+ .rms-global-activity .rms-openai-logs-title small{font-size:9px!important}
+ .rms-global-activity .rms-openai-log-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));width:100%!important}
+ .rms-global-activity .rms-openai-log-actions .rms-global-scope-badge,
+ .rms-global-activity .rms-openai-log-actions .rms-openai-log-counter{justify-self:start}
+ .rms-global-copy-button,.rms-global-copy-all,
+ .rms-global-activity .rms-openai-log-actions>button{width:100%!important}
+ .rms-global-activity .rms-openai-log-item{
+   grid-template-columns:22px 7px minmax(0,1fr)!important;
+   padding:15px 13px!important;
+ }
+ .rms-global-activity .rms-openai-log-content>strong{font-size:11px!important}
+ .rms-global-activity .rms-openai-log-content>small{font-size:9.5px!important}
+ .rms-global-activity .rms-openai-log-top time{margin-left:0!important;width:100%!important;font-size:8.5px!important}
+ .rms-settings-activity-note-upgraded{padding:13px!important}
+ .rms-settings-activity-note-copy strong{font-size:11px!important}
+ .rms-settings-activity-note-copy small{font-size:9px!important}
+ .rms-settings-activity-note-badge{margin-left:42px!important}
+ .rms-settings-activity-footer{font-size:9px!important}
+}
+@media(max-width:420px){
+ .rms-settings-activity-copy h2{font-size:17px!important}
+ .rms-settings-activity-copy p{font-size:10px!important}
+ .rms-settings-activity-eyebrow{flex-wrap:wrap}
+ .rms-global-activity .rms-openai-log-item{grid-template-columns:20px 6px minmax(0,1fr)!important;padding:14px 10px!important}
+ .rms-global-activity .rms-openai-log-content>strong{font-size:10.5px!important}
+ .rms-global-activity .rms-openai-log-content>small{font-size:9px!important}
+ .rms-global-activity .rms-vg-log-meta{font-size:8px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .rms-settings-activity-hero,.rms-settings-activity-note-upgraded{animation:none!important}
+}
+</style>
