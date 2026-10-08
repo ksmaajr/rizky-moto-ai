@@ -1334,9 +1334,11 @@ public function getUserInitialsProperty(): string
 
 
 
-    public function openStore(): void
-
+    public function openStore(bool $preserveSearch = false): void
     {
+        if (! $preserveSearch) {
+            $this->pendingStoreSearch = '';
+        }
 
         $this->activeSection = 'stores';
 
@@ -1349,9 +1351,10 @@ public function getUserInitialsProperty(): string
 
 
     public function openDashboard(): void
-
     {
-
+        $this->pendingStoreSearch = '';
+        $this->pendingTemplateSearch = '';
+        $this->pendingGenerationId = null;
         $this->activeSection = 'dashboard';
 
 
@@ -1362,9 +1365,11 @@ public function getUserInitialsProperty(): string
 
 
 
-    public function openTemplates(): void
-
+    public function openTemplates(bool $preserveSearch = false): void
     {
+        if (! $preserveSearch) {
+            $this->pendingTemplateSearch = '';
+        }
 
         $this->activeSection = 'templates';
 
@@ -1372,9 +1377,11 @@ public function getUserInitialsProperty(): string
 
 
 
-    public function openGenerator(): void
-
+    public function openGenerator(bool $preserveFocus = false): void
     {
+        if (! $preserveFocus) {
+            $this->pendingGenerationId = null;
+        }
 
         $this->activeSection = 'generator';
 
