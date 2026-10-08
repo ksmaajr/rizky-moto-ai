@@ -683,3 +683,91 @@
     .rms-template-card-actions-v2 .ghost{display:none!important}
 }
 </style>
+
+
+<style>
+/* V27 — template actions aligned to generation-history action language */
+.rms-template-card-actions-v2{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) minmax(108px,112px) 60px!important;
+    gap:10px!important;
+    align-items:stretch!important;
+}
+.rms-template-card-actions-v2 > button{
+    min-width:0!important;
+    height:54px!important;
+    min-height:54px!important;
+    margin:0!important;
+    padding:0 18px!important;
+    box-sizing:border-box!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:8px!important;
+    border-radius:14px!important;
+    white-space:nowrap!important;
+    line-height:1!important;
+}
+.rms-template-card-actions-v2 > button:first-child{
+    padding-left:20px!important;
+    padding-right:16px!important;
+    justify-content:center!important;
+}
+.rms-template-card-actions-v2 > button:first-child span{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+}
+.rms-template-card-actions-v2 > button:first-child b{
+    display:inline-flex!important;
+    margin-left:2px!important;
+    line-height:1!important;
+}
+.rms-template-card-actions-v2 > .ghost{
+    padding-left:16px!important;
+    padding-right:16px!important;
+}
+.rms-template-delete-inline{
+    width:60px!important;
+    height:54px!important;
+    min-height:54px!important;
+    padding:0!important;
+    display:grid!important;
+    place-items:center!important;
+    border:1px solid rgba(239,68,68,.18)!important;
+    border-radius:14px!important;
+    background:#fff!important;
+    color:#ef233c!important;
+    box-sizing:border-box!important;
+}
+.rms-template-delete-inline svg{
+    width:18px!important;
+    height:18px!important;
+    display:block!important;
+}
+.rms-template-delete-inline:hover{
+    color:#fff!important;
+    background:#ef233c!important;
+    border-color:#ef233c!important;
+    box-shadow:0 10px 24px rgba(239,35,60,.2)!important;
+    transform:translateY(-1px);
+}
+.rms-template-delete-inline:active{
+    transform:scale(.97)!important;
+}
+@media(max-width:720px){
+    .rms-template-card-actions-v2{
+        grid-template-columns:minmax(0,1fr) 54px!important;
+        gap:9px!important;
+    }
+    .rms-template-card-actions-v2 .ghost{display:none!important}
+    .rms-template-card-actions-v2 > button:first-child{
+        padding-left:16px!important;
+        padding-right:14px!important;
+    }
+    .rms-template-delete-inline{
+        width:54px!important;
+        height:54px!important;
+    }
+}
+</style>
