@@ -10520,3 +10520,59 @@
     .rms-global-search-foot{gap:6px!important;padding:8px!important}
     .rms-global-search-foot span:nth-child(3){display:none!important}
 }
+
+/* =========================================================
+   DASHBOARD V22 — GENERATION HISTORY CONTROL CENTER
+   ========================================================= */
+.rms-history-summary{
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:8px!important;
+    padding:0 20px 14px!important;
+}
+.rms-history-summary>div{
+    min-width:0!important;
+    padding:12px 13px!important;
+    border:1px solid #ececef!important;
+    border-radius:13px!important;
+    background:#fafafa!important;
+}
+.rms-history-summary span,.rms-history-summary strong,.rms-history-summary small{display:block!important}
+.rms-history-summary span{color:#a1a1aa!important;font-size:5.5px!important;font-weight:950!important;letter-spacing:.13em!important}
+.rms-history-summary strong{margin-top:3px!important;color:#27272a!important;font-size:18px!important;font-weight:950!important;line-height:1!important}
+.rms-history-summary small{margin-top:4px!important;color:#a1a1aa!important;font-size:6px!important;font-weight:650!important}
+.rms-history-summary .is-success{background:#f7fdf9!important;border-color:#dcfce7!important}
+.rms-history-summary .is-success strong{color:#16a34a!important}
+.rms-history-summary .is-active{background:#fffcf5!important;border-color:#fef3c7!important}
+.rms-history-summary .is-active strong{color:#d97706!important}
+.rms-history-summary .is-failed{background:#fff8f8!important;border-color:#fee2e2!important}
+.rms-history-summary .is-failed strong{color:#dc2626!important}
+.rms-history-load-more{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:12px!important;
+    padding:12px 20px 18px!important;
+    border-top:1px solid #f4f4f5!important;
+}
+.rms-history-load-more>span{color:#a1a1aa!important;font-size:7px!important;font-weight:750!important}
+.rms-history-load-more button{
+    min-height:34px!important;
+    padding:0 13px!important;
+    border:1px solid #e4e4e7!important;
+    border-radius:9px!important;
+    background:#fff!important;
+    color:#27272a!important;
+    font-size:7px!important;
+    font-weight:900!important;
+    cursor:pointer!important;
+    transition:.2s ease!important;
+}
+.rms-history-load-more button:hover{border-color:#fecaca!important;background:#fff7f7!important;color:#dc2626!important}
+@media(max-width:640px){
+    .rms-history-summary{grid-template-columns:1fr 1fr!important;padding-inline:13px!important}
+    .rms-history-summary>div{padding:10px!important}
+    .rms-history-summary strong{font-size:16px!important}
+    .rms-history-load-more{padding-inline:13px!important;align-items:stretch!important;flex-direction:column!important}
+    .rms-history-load-more button{width:100%!important}
+}
