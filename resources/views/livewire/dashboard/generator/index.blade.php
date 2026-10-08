@@ -4659,5 +4659,29 @@ new class extends Component
 .rms-processing-visual-badge i{width:7px;height:7px;border-radius:50%;background:#f4c62b;box-shadow:0 0 0 3px rgba(244,198,43,.13);animation:rmsLiveDotV5 1.25s ease-in-out infinite}.rms-processing-visual-badge span{color:#fff;font-size:8px;font-weight:850}.rms-processing-visual-badge b{padding-left:7px;border-left:1px solid rgba(255,255,255,.15);color:#d5d8de;font-size:6px;letter-spacing:.08em}
 .rms-processing-stage-label{position:absolute;z-index:10;right:12px;bottom:12px;display:flex;align-items:center;gap:7px;max-width:52%;padding:7px 9px;border:1px solid rgba(24,24,27,.07);border-radius:9px;background:rgba(255,255,255,.78);color:#777c85;backdrop-filter:blur(8px)}.rms-processing-stage-label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:7px;font-weight:750}.rms-processing-stage-label b{color:#ef233c;font-size:7px;font-weight:950}
 .rms-processing-source-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.42;filter:saturate(.72) blur(.35px)}.rms-processing-image-wash{position:absolute;inset:0;background:linear-gradient(180deg,rgba(247,248,250,.66),rgba(247,248,250,.30) 50%,rgba(247,248,250,.72)),radial-gradient(circle at 50% 48%,rgba(239,35,60,.11),transparent 34%);animation:rmsImageWashV5 2.8s ease-in-out infinite}@keyframes rmsImageWashV5{0%,100%{opacity:.65}50%{opacity:.9}}
-@media(max-width:760px){.rms-generation-processing-visual-v3{min-height:190px}.rms-generation-processing-visual-v3 .rms-processing-topline{right:78px;top:10px;left:10px;min-height:28px;padding:0 8px}.rms-processing-topline small{display:none}.rms-generation-processing-visual-v3 .rms-processing-progress-ring{top:10px;right:10px;width:54px;height:54px}.rms-processing-core-ring{width:78px;height:78px}.rms-processing-core-ring b{font-size:21px}.rms-processing-orbit.orbit-two{width:148px;height:148px}.rms-processing-orbit.orbit-three{width:195px;height:195px}.rms-processing-visual-badge{left:10px;bottom:10px;padding:6px 8px}.rms-processing-stage-label{right:10px;bottom:10px;max-width:48%;padding:6px 8px}}@media(max-width:420px){.rms-processing-visual-badge b{display:none}.rms-processing-stage-label{max-width:46%}.rms-processing-stage-label span{font-size:6.5px}}@media(prefers-reduced-motion:reduce){.rms-generation-processing-visual-v3 *,.rms-generation-processing-visual-v3::before{animation:none!important}}
+@media(max-width:760px){.rms-generation-processing-visual-v3{min-height:190px}.rms-generation-processing-visual-v3 .rms-processing-topline{right:78px;top:10px;left:10px;min-height:28px;padding:0 8px}.rms-processing-topline small{display:none}.rms-generation-processing-visual-v3 .rms-processing-progress-ring{top:10px;right:10px;width:54px;height:54px}.rms-processing-core-ring{width:78px;height:78px}.rms-processing-core-ring b{font-size:21px}.rms-processing-orbit.orbit-two{width:148px;height:148px}.rms-processing-orbit.orbit-three{width:195px;height:195px}.rms-processing-visual-badge{left:10px;bottom:10px;padding:6px 8px}.rms-processing-stage-label{right:10px;bottom:10px;max-width:48%;padding:6px 8px}}@media(max-width:420px){.rms-processing-visual-badge b{display:none}.rms-processing-stage-label{max-width:46%}.rms-processing-stage-label span{font-size:6.5px}}/* Force the processing indicator to remain visibly animated even when the OS/browser requests reduced motion.
+   The generator's live state is functional feedback, so this micro-animation stays active. */
+.rms-generation-processing-visual-v3,
+.rms-generation-processing-visual-v3 *,
+.rms-generation-processing-visual-v3::before,
+.rms-generation-processing-visual-v3::after{
+    animation-play-state:running!important;
+}
+.rms-generation-processing-visual-v3 .rms-processing-orbit{
+    will-change:transform;
+}
+.rms-generation-processing-visual-v3 .rms-processing-core-ring,
+.rms-generation-processing-visual-v3 .rms-processing-core-glow,
+.rms-generation-processing-visual-v3 .rms-processing-grid,
+.rms-generation-processing-visual-v3 .rms-processing-scan,
+.rms-generation-processing-visual-v3 .rms-processing-live-dot,
+.rms-generation-processing-visual-v3 .rms-processing-visual-badge i,
+.rms-generation-processing-visual-v3::before{
+    will-change:transform,opacity;
+}
+@media(prefers-reduced-motion:reduce){
+    .rms-generation-processing-visual-v3 *{
+        transition:none!important;
+    }
+}
 </style>
