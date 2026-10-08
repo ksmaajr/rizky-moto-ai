@@ -523,14 +523,19 @@
 
                     {{-- ACTIVITY LOG PAGE --}}
                     @if ($activeTab === 'activity')
-                        <div class="rms-settings-activity-head">
-                            <div class="rms-settings-activity-mark">◷</div>
-                            <div>
-                                <span>OBSERVABILITY</span>
-                                <strong>Global Activity Log</strong>
-                                <small>Audit terpusat untuk worker, provider, credential, generation, failover, storage, dan system events.</small>
+                        <div class="rms-settings-activity-hero">
+                            <div class="rms-settings-activity-hero-main">
+                                <div class="rms-settings-activity-mark">◷</div>
+                                <div class="rms-settings-activity-copy">
+                                    <div class="rms-settings-activity-eyebrow">
+                                        <span>OBSERVABILITY</span>
+                                        <b>GLOBAL AUDIT</b>
+                                    </div>
+                                    <h2>Global Activity Log</h2>
+                                    <p>Audit terpusat untuk worker, provider, credential, generation, failover, storage, dan system events.</p>
+                                </div>
                             </div>
-                            <div class="rms-settings-activity-live"><i></i> LIVE</div>
+                            <div class="rms-settings-activity-live"><i></i><span>LIVE</span><small>Auto refresh 3s</small></div>
                         </div>
                     @endif
 
@@ -775,17 +780,27 @@
                     @endif
 
                     @if ($activeTab === 'activity')
-                        <div class="rms-settings-activity-note">
-                            <span>●</span>
-                            <div><strong>Global audit enabled</strong><small>Semua provider dan credential event tetap masuk ke global activity, termasuk failover dan connection test.</small></div>
+                        <div class="rms-settings-activity-note rms-settings-activity-note-upgraded">
+                            <div class="rms-settings-activity-note-icon">✓</div>
+                            <div class="rms-settings-activity-note-copy">
+                                <span>GLOBAL AUDIT ENABLED</span>
+                                <strong>Every provider and credential event is recorded.</strong>
+                                <small>Termasuk generation, worker lifecycle, failover, connection test, storage, dan system events.</small>
+                            </div>
+                            <div class="rms-settings-activity-note-badge"><i></i> ALL PROVIDERS</div>
+                        </div>
+
+                        <div class="rms-settings-activity-footer">
+                            <span><i></i> Activity stream is live and server-managed</span>
+                            <strong>All users · All providers · Auto refresh</strong>
+                        </div>
+                    @else
+                        {{-- FOOTER --}}
+                        <div class="rms-settings-panel-footer rms-openai-footer-upgraded rms-vg-footer">
+                            <span><i></i> AI provider configuration is server-managed</span>
+                            <strong>Encrypted credentials · Automatic failover ready</strong>
                         </div>
                     @endif
-
-                    {{-- FOOTER --}}
-                    <div class="rms-settings-panel-footer rms-openai-footer-upgraded rms-vg-footer">
-                        <span><i></i> AI provider configuration is server-managed</span>
-                        <strong>Encrypted credentials · Automatic failover ready</strong>
-                    </div>
 
 
                 </div>
@@ -1526,5 +1541,85 @@
 }
 @media(prefers-reduced-motion:reduce){
     .rms-ai-provider-section,.rms-global-activity .rms-openai-log-item{transition:none;animation:none}
+}
+</style>
+
+<style>
+/* FINAL ACTIVITY PRESENTATION — clear hierarchy, highlights and separators */
+.rms-settings-activity-hero{
+    display:flex;align-items:center;justify-content:space-between;gap:22px;
+    margin:0 0 4px;padding:18px 20px;
+    border:1px solid #e4e4e7;border-radius:18px;
+    background:linear-gradient(135deg,#fff 0%,#fcfcfd 68%,#fff7f7 100%);
+    box-shadow:0 10px 30px rgba(15,23,42,.045);
+}
+.rms-settings-activity-hero-main{display:flex;align-items:center;gap:14px;min-width:0}
+.rms-settings-activity-mark{
+    display:grid;place-items:center;width:46px;height:46px;flex:0 0 46px;
+    border:1px solid #fecaca;border-radius:13px;background:#fff5f5;color:#ef3030;
+    font-size:18px;font-weight:800;box-shadow:0 6px 18px rgba(239,48,48,.08);
+}
+.rms-settings-activity-copy{min-width:0}
+.rms-settings-activity-eyebrow{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.rms-settings-activity-eyebrow span,
+.rms-settings-activity-eyebrow b{
+    display:inline-flex;align-items:center;height:19px;padding:0 7px;border-radius:6px;
+    font-size:6.5px;line-height:1;font-weight:900;letter-spacing:.11em;
+}
+.rms-settings-activity-eyebrow span{background:#18181b;color:#fff}
+.rms-settings-activity-eyebrow b{border:1px solid #e4e4e7;background:#fff;color:#71717a}
+.rms-settings-activity-copy h2{
+    margin:0;color:#18181b;font-size:17px;line-height:1.2;font-weight:850;letter-spacing:-.025em;
+}
+.rms-settings-activity-copy p{
+    margin:5px 0 0;max-width:720px;color:#8b8b94;font-size:8.5px;line-height:1.5;
+}
+.rms-settings-activity-live{
+    display:grid;grid-template-columns:auto auto;grid-template-rows:auto auto;
+    align-items:center;column-gap:7px;flex:0 0 auto;
+    padding:9px 11px;border:1px solid #bbf7d0;border-radius:11px;background:#f0fdf4;
+}
+.rms-settings-activity-live i{
+    grid-row:1/3;width:7px;height:7px;border-radius:50%;background:#22c55e;
+    box-shadow:0 0 0 4px rgba(34,197,94,.10);
+}
+.rms-settings-activity-live span{color:#15803d;font-size:7px;font-weight:900;letter-spacing:.1em}
+.rms-settings-activity-live small{margin-top:2px;color:#65a30d;font-size:6.5px}
+.rms-settings-activity-note-upgraded{
+    display:flex!important;align-items:center;gap:12px;
+    margin:14px 0 0!important;padding:13px 15px!important;
+    border:1px solid #dbeafe!important;border-radius:13px!important;
+    background:linear-gradient(90deg,#f8fbff,#fff)!important;
+}
+.rms-settings-activity-note-icon{
+    display:grid;place-items:center;width:30px;height:30px;flex:0 0 30px;
+    border-radius:9px;background:#eff6ff;color:#2563eb;font-size:11px;font-weight:900;
+}
+.rms-settings-activity-note-copy{display:flex;flex:1;min-width:0;flex-direction:column}
+.rms-settings-activity-note-copy>span{color:#2563eb;font-size:6.5px;font-weight:900;letter-spacing:.12em}
+.rms-settings-activity-note-copy strong{margin-top:3px;color:#27272a;font-size:9px;font-weight:800}
+.rms-settings-activity-note-copy small{margin-top:2px;color:#8b8b94;font-size:7.5px;line-height:1.4}
+.rms-settings-activity-note-badge{
+    display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 8px;
+    border:1px solid #e4e4e7;border-radius:7px;background:#fff;color:#71717a;
+    font-size:6.5px;font-weight:900;letter-spacing:.08em;white-space:nowrap;
+}
+.rms-settings-activity-note-badge i{width:5px;height:5px;border-radius:50%;background:#22c55e}
+.rms-settings-activity-footer{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    min-height:48px;margin-top:9px;padding:0 15px;border-top:1px solid #ececf0;
+    color:#9a9aa2;font-size:7.5px;
+}
+.rms-settings-activity-footer span{display:inline-flex;align-items:center;gap:7px}
+.rms-settings-activity-footer span i{width:5px;height:5px;border-radius:50%;background:#22c55e}
+.rms-settings-activity-footer strong{font-size:7px;font-weight:700;color:#a1a1aa}
+@media(max-width:700px){
+    .rms-settings-activity-hero{align-items:stretch;flex-direction:column;padding:15px}
+    .rms-settings-activity-live{align-self:flex-start}
+    .rms-settings-activity-copy h2{font-size:15px}
+    .rms-settings-activity-note-upgraded{align-items:flex-start!important;flex-wrap:wrap}
+    .rms-settings-activity-note-copy{min-width:calc(100% - 44px)}
+    .rms-settings-activity-note-badge{margin-left:42px}
+    .rms-settings-activity-footer{align-items:flex-start;flex-direction:column;justify-content:center;padding:10px 0;gap:5px}
 }
 </style>
