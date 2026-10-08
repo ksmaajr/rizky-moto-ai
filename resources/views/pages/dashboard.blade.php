@@ -1022,6 +1022,19 @@ class extends Component
         $keyword = '%' . $term . '%';
         $results = [];
 
+        $quickNavigation = match (strtolower($term)) {
+            'store', 'stores' => ['type' => 'Navigate', 'label' => 'Stores', 'meta' => 'Buka Store Management', 'action' => 'stores', 'id' => 0],
+            'template', 'templates' => ['type' => 'Navigate', 'label' => 'Templates', 'meta' => 'Buka Template Library', 'action' => 'templates', 'id' => 0],
+            'generation', 'generations', 'generator' => ['type' => 'Navigate', 'label' => 'Generations', 'meta' => 'Buka Generator & history', 'action' => 'generator', 'id' => 0],
+            'setting', 'settings' => ['type' => 'Navigate', 'label' => 'Settings', 'meta' => 'Buka System Settings', 'action' => 'settings', 'id' => 0],
+            'activity', 'activities', 'log', 'logs' => ['type' => 'Navigate', 'label' => 'Activity Logs', 'meta' => 'Buka System Activity', 'action' => 'activity', 'id' => 0],
+            default => null,
+        };
+
+        if ($quickNavigation) {
+            $results[] = $quickNavigation;
+        }
+
         $stores = Store::query()
             ->where(function ($q) use ($keyword) {
                 $q->where('name', 'like', $keyword)
@@ -1082,7 +1095,8 @@ class extends Component
 
         $generations = \App\Models\Generation::query()
             ->where(function ($q) use ($keyword) {
-                $q->where('prompt', 'like', $keyword)
+                $q->where('id', 'like', $keyword)
+                    ->orWhere('prompt', 'like', $keyword)
                     ->orWhere('model', 'like', $keyword)
                     ->orWhere('status', 'like', $keyword)
                     ->orWhere('metadata', 'like', $keyword);
@@ -1115,7 +1129,7 @@ class extends Component
             $results[] = [
                 'type' => 'Activity', 'label' => $item->title ?: 'System activity',
                 'meta' => strtoupper((string) $item->category) . ' · ' . ucfirst((string) $item->status) . ' · ' . $item->created_at?->diffForHumans(),
-                'action' => 'settings', 'id' => $item->id,
+                'action' => 'activity', 'id' => $item->id,
             ];
         }
 
@@ -1131,20 +1145,24 @@ class extends Component
         $this->pendingTemplateSearch = '';
         $this->pendingGenerationId = null;
 
-        if ($action === 'stores' && $id) {
-            $this->pendingStoreSearch = (string) (Store::query()->whereKey($id)->value('name') ?: $term);
+        if ($action === 'stores') {
+            $this->pendingStoreSearch = $id
+                ? (string) (Store::query()->whereKey($id)->value('name') ?: $term)
+                : $term;
             $this->openStore();
             return;
         }
 
-        if ($action === 'templates' && $id) {
-            $this->pendingTemplateSearch = (string) (\App\Models\Template::query()->whereKey($id)->value('name') ?: $term);
+        if ($action === 'templates') {
+            $this->pendingTemplateSearch = $id
+                ? (string) (\App\Models\Template::query()->whereKey($id)->value('name') ?: $term)
+                : $term;
             $this->openTemplates();
             return;
         }
 
-        if ($action === 'generator' && $id) {
-            $this->pendingGenerationId = $id;
+        if ($action === 'generator') {
+            $this->pendingGenerationId = $id ?: null;
             $this->openGenerator();
             return;
         }
