@@ -2286,3 +2286,23 @@
     }
 }
 </style>
+<style>
+/* ACTIVITY STREAM DIVIDER — align with the inset Global Activity card */
+.rms-activity-section-divider{
+    width:calc(100% - 28px)!important;
+    margin:16px 14px 10px!important;
+    box-sizing:border-box!important;
+}
+.rms-activity-section-divider span{
+    white-space:nowrap;
+}
+.rms-activity-section-divider i{
+    min-width:0;
+}
+@media(max-width:640px){
+    .rms-activity-section-divider{
+        width:calc(100% - 20px)!important;
+        margin:14px 10px 9px!important;
+    }
+}
+</style>
