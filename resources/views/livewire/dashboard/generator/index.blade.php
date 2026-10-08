@@ -313,7 +313,7 @@ new class extends Component
             return [
                 'seconds' => $etaSeconds,
                 'label' => $this->formatEtaLabel($etaSeconds),
-                'confidence' => $durationsCount ?? null,
+                'confidence' => $durations->count() > 0 ? $durations->count() : null,
                 'basis' => 'historical',
             ];
         }
@@ -368,11 +368,6 @@ new class extends Component
         return Generation::query()
             ->whereIn('status', ['queued', 'processing'])
             ->exists();
-    }
-
-    public function getHistoryTemplatesProperty()
-    {
-        return Template::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']);
     }
 
     public function getLatestGenerationProperty(): ?Generation
