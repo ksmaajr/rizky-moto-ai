@@ -3264,16 +3264,17 @@ new class extends Component
         .rms-generation-card{
     display:flex;
     flex-direction:column;
-    height:100%;
+    height:auto;
+    align-self:start;
 }
 .rms-generator-history-grid{
-    align-items:stretch;
+    align-items:start;
 }
 .rms-generation-card-info{
     flex:0 0 auto;
 }
 .rms-generation-actions-v2{
-    margin-top:auto;
+    margin-top:12px;
 }
 .rms-generation-processing-visual-v2{
     min-height:0!important;
