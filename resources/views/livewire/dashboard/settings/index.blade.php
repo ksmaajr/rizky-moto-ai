@@ -556,14 +556,8 @@
                                 <span>Configuration is stored server-side and applied to new generations.</span>
                             </div>
                             <button type="button" class="rms-ai-save-button" wire:click="saveAiProviderConfiguration" wire:loading.attr="disabled" wire:target="saveAiProviderConfiguration">
-                                <span class="rms-save-content" wire:loading.remove wire:target="saveAiProviderConfiguration">
-                                    <span>Save AI Configuration</span>
-                                    <b aria-hidden="true">→</b>
-                                </span>
-                                <span class="rms-save-loading" wire:loading.flex wire:target="saveAiProviderConfiguration">
-                                    <i aria-hidden="true"></i>
-                                    <span>Saving...</span>
-                                </span>
+                                <span wire:loading.remove wire:target="saveAiProviderConfiguration">Save AI Configuration <b aria-hidden="true">✓</b></span>
+                                <span wire:loading wire:target="saveAiProviderConfiguration">Saving...</span>
                             </button>
                         </div>
                     </section>
@@ -2831,257 +2825,65 @@
     }
 }
 </style><style>
-/* SAVE CONFIGURATION — premium action bar */
-.rms-provider-block-failover .rms-ai-provider-save-row{
-    align-items:center!important;
-    min-height:86px;
-    padding:16px 20px!important;
-    gap:20px!important;
-    background:linear-gradient(90deg,#f8fbf9 0%,#fbfcfb 58%,#f7faf8 100%)!important;
-    border-top:1px solid #e1ebe4!important;
-}
-.rms-provider-block-failover .rms-ai-provider-save-row>div{
-    flex:1;
-    gap:9px;
-}
-.rms-provider-block-failover .rms-ai-provider-save-row>div>span:last-child{
-    font-size:9px!important;
-    color:#73777a!important;
-}
+/* SAVE CONFIGURATION — clean primary action */
 .rms-provider-block-failover .rms-ai-save-button{
-    position:relative;
     display:inline-flex!important;
-    align-items:center;
-    justify-content:center;
-    gap:10px;
-    min-width:210px;
-    min-height:48px;
-    padding:0 20px!important;
-    border:1px solid #18181b!important;
-    border-radius:13px!important;
-    background:linear-gradient(135deg,#18181b 0%,#27272a 100%)!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:9px!important;
+    min-width:165px!important;
+    height:44px!important;
+    padding:0 16px!important;
+    border:0!important;
+    border-radius:11px!important;
+    background:#ef3030!important;
     color:#fff!important;
-    font-size:10px!important;
-    font-weight:900!important;
-    letter-spacing:.01em;
-    box-shadow:0 8px 18px rgba(24,24,27,.16),inset 0 1px 0 rgba(255,255,255,.08);
-    overflow:hidden;
+    font-size:9px!important;
+    font-weight:800!important;
+    line-height:1!important;
+    white-space:nowrap!important;
     cursor:pointer;
-    transform:translateZ(0);
-    transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s ease,background .25s ease;
-}
-.rms-provider-block-failover .rms-ai-save-button::before{
-    content:"";
-    position:absolute;
-    inset:0;
-    background:linear-gradient(105deg,transparent 15%,rgba(255,255,255,.13) 48%,transparent 80%);
-    transform:translateX(-120%);
-    transition:transform .65s cubic-bezier(.2,.8,.2,1);
+    box-shadow:0 7px 16px rgba(239,48,48,.18);
+    transition:transform .18s ease,box-shadow .18s ease,background .18s ease;
 }
 .rms-provider-block-failover .rms-ai-save-button:hover{
-    transform:translateY(-2px);
-    background:linear-gradient(135deg,#111113 0%,#303035 100%)!important;
-    box-shadow:0 13px 26px rgba(24,24,27,.2),inset 0 1px 0 rgba(255,255,255,.1);
-}
-.rms-provider-block-failover .rms-ai-save-button:hover::before{
-    transform:translateX(120%);
+    background:#df2424!important;
+    transform:translateY(-1px);
+    box-shadow:0 10px 22px rgba(239,48,48,.22);
 }
 .rms-provider-block-failover .rms-ai-save-button:active{
     transform:translateY(0) scale(.985);
-    box-shadow:0 6px 13px rgba(24,24,27,.16);
 }
 .rms-provider-block-failover .rms-ai-save-button b{
-    display:grid;
-    place-items:center;
-    width:25px;height:25px;
-    border:1px solid rgba(255,255,255,.16);
-    border-radius:8px;
-    background:rgba(255,255,255,.08);
-    font-size:14px;
-    line-height:1;
-    transition:transform .25s ease,background .25s ease;
+    display:grid!important;
+    place-items:center!important;
+    width:21px!important;
+    height:21px!important;
+    border-radius:7px!important;
+    background:rgba(255,255,255,.13)!important;
+    color:#fff!important;
+    font-size:13px!important;
+    line-height:1!important;
 }
-.rms-provider-block-failover .rms-ai-save-button:hover b{
-    transform:translateX(3px);
-    background:rgba(255,255,255,.13);
+.rms-provider-block-failover .rms-ai-save-button > span{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:9px;
+    white-space:nowrap;
 }
 .rms-provider-block-failover .rms-ai-save-button[disabled]{
-    opacity:.7;
     cursor:wait;
-    transform:none!important;
-}
-.rms-provider-block-failover .rms-ai-save-button i{
-    display:inline-block;
-    width:15px;height:15px;
-    border:2px solid rgba(255,255,255,.28);
-    border-top-color:#fff;
-    border-radius:50%;
-    animation:rmsSaveSpin .7s linear infinite;
-}
-@keyframes rmsSaveSpin{to{transform:rotate(360deg)}}
-@media(max-width:760px){
-    .rms-provider-block-failover .rms-ai-provider-save-row{
-        flex-direction:column!important;
-        align-items:stretch!important;
-        min-height:0;
-        padding:14px!important;
-        gap:12px!important;
-    }
-    .rms-provider-block-failover .rms-ai-provider-save-row>div{
-        width:100%;
-    }
-    .rms-provider-block-failover .rms-ai-save-button{
-        width:100%;
-        min-width:0;
-        min-height:50px;
-    }
-}
-@media(prefers-reduced-motion:reduce){
-    .rms-provider-block-failover .rms-ai-save-button,
-    .rms-provider-block-failover .rms-ai-save-button b{transition:none}
-    .rms-provider-block-failover .rms-ai-save-button::before{display:none}
-}
-</style><style>
-/* SAVE BUTTON — fix content alignment and keep text + arrow on one row */
-.rms-provider-block-failover .rms-ai-save-button{
-    flex-direction:row!important;
-    white-space:nowrap!important;
-}
-.rms-provider-block-failover .rms-ai-save-button .rms-save-content,
-.rms-provider-block-failover .rms-ai-save-button .rms-save-loading{
-    align-items:center!important;
-    justify-content:center!important;
-    gap:10px!important;
-    width:auto!important;
-    min-width:0!important;
-    margin:0!important;
-    padding:0!important;
-    flex:0 0 auto!important;
-    line-height:1!important;
-}
-.rms-provider-block-failover .rms-ai-save-button .rms-save-content>span{
-    display:inline!important;
-    width:auto!important;
-    margin:0!important;
-    padding:0!important;
-    font-size:10px!important;
-    line-height:1!important;
-}
-.rms-provider-block-failover .rms-ai-save-button .rms-save-loading{
-    gap:8px!important;
-}
-.rms-provider-block-failover .rms-ai-save-button .rms-save-loading>span{
-    display:inline!important;
-    width:auto!important;
-    margin:0!important;
-    padding:0!important;
-    line-height:1!important;
-}
-.rms-provider-block-failover .rms-ai-save-button .rms-save-content>b{
-    display:grid!important;
-    flex:0 0 25px!important;
-    place-items:center!important;
-    width:25px!important;
-    height:25px!important;
-    margin:0!important;
-}
-@media(max-width:760px){
-    .rms-provider-block-failover .rms-ai-save-button{
-        min-height:50px!important;
-    }
-}
-</style><style>
-/* FINAL SAVE BUTTON ALIGNMENT */
-.rms-provider-block-failover .rms-ai-save-button .rms-save-content{
-    flex-direction:row!important;
-    flex-wrap:nowrap!important;
-    align-items:center!important;
-    justify-content:center!important;
-    width:max-content!important;
-    max-width:none!important;
-    height:25px!important;
-    white-space:nowrap!important;
-}
-.rms-provider-block-failover .rms-ai-save-button .rms-save-content>span{
-    flex:0 0 auto!important;
-    white-space:nowrap!important;
-}
-.rms-provider-block-failover .rms-ai-save-button .rms-save-content>b{
-    flex:0 0 25px!important;
-    width:25px!important;
-    min-width:25px!important;
-    max-width:25px!important;
-    height:25px!important;
-    margin-left:0!important;
-}
-.rms-provider-block-failover .rms-ai-save-button .rms-save-loading{
-    flex-direction:row!important;
-    flex-wrap:nowrap!important;
-    white-space:nowrap!important;
-}
-</style><style>
-/* SAVE BUTTON — compact centered composition */
-.rms-provider-block-failover .rms-ai-save-button{
-    position:relative!important;
-    display:grid!important;
-    place-items:center!important;
-    min-width:190px!important;
-    min-height:46px!important;
-    padding:0 14px!important;
-}
-.rms-provider-block-failover .rms-ai-save-button .rms-save-content,
-.rms-provider-block-failover .rms-ai-save-button .rms-save-loading{
-    position:absolute!important;
-    inset:0!important;
-    flex-direction:row!important;
-    flex-wrap:nowrap!important;
-    align-items:center!important;
-    justify-content:center!important;
-    width:auto!important;
-    height:auto!important;
-    gap:7px!important;
-    margin:0!important;
-    padding:0!important;
-    white-space:nowrap!important;
-}
-.rms-provider-block-failover .rms-ai-save-button .rms-save-content>span,
-.rms-provider-block-failover .rms-ai-save-button .rms-save-loading>span{
-    display:inline!important;
-    width:auto!important;
-    height:auto!important;
-    margin:0!important;
-    padding:0!important;
-    flex:0 0 auto!important;
-    font-size:9px!important;
-    line-height:1!important;
-    white-space:nowrap!important;
-}
-.rms-provider-block-failover .rms-ai-save-button .rms-save-content>b{
-    display:grid!important;
-    place-items:center!important;
-    flex:0 0 21px!important;
-    width:21px!important;
-    min-width:21px!important;
-    max-width:21px!important;
-    height:21px!important;
-    min-height:21px!important;
-    max-height:21px!important;
-    margin:0!important;
-    padding:0!important;
-    border-radius:7px!important;
-    font-size:11px!important;
-    line-height:1!important;
-}
-.rms-provider-block-failover .rms-ai-save-button .rms-save-loading>i{
-    width:12px!important;
-    height:12px!important;
-    flex:0 0 12px!important;
+    opacity:.8;
 }
 @media(max-width:760px){
     .rms-provider-block-failover .rms-ai-save-button{
         width:100%!important;
         min-width:0!important;
-        min-height:48px!important;
+        height:46px!important;
     }
+}
+@media(prefers-reduced-motion:reduce){
+    .rms-provider-block-failover .rms-ai-save-button{transition:none}
 }
 </style>
