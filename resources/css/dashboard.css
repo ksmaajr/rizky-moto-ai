@@ -8953,3 +8953,7 @@
 .rms-history-loading-dots i:nth-child(3){animation-delay:.24s}
 @keyframes rmsHistoryDot{0%,80%,100%{opacity:.25;transform:scale(.7)}40%{opacity:1;transform:scale(1)}}
 @media(max-width:640px){.rms-history-loading-dots{margin-left:0}}
+
+.rms-recent-card-v3{position:relative;overflow:visible!important}
+.rms-recent-card-v3 .rms-history-menu{z-index:2147480000}
+.rms-recent-card-v3 .rms-history-scroll{position:relative;z-index:1}
