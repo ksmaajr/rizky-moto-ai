@@ -863,3 +863,83 @@
     }
 }
 </style>
+
+<style>
+/* V30 — template actions: compact label + premium status action */
+.rms-template-card-actions-v2 > button:first-child{
+    font-size:7.4px!important;
+    letter-spacing:-.018em!important;
+    padding:0 7px!important;
+}
+.rms-template-card-actions-v2 > button:first-child span{
+    overflow:visible!important;
+    text-overflow:clip!important;
+    white-space:nowrap!important;
+    flex:0 1 auto!important;
+}
+.rms-template-card-actions-v2 > button:first-child b{
+    font-size:10px!important;
+    margin-left:2px!important;
+}
+.rms-template-card-actions-v2 > .ghost{
+    position:relative!important;
+    overflow:hidden!important;
+    border:1px solid rgba(24,24,27,.10)!important;
+    background:linear-gradient(180deg,#fff 0%,#fafafa 100%)!important;
+    color:#3f3f46!important;
+    box-shadow:0 4px 12px rgba(24,24,27,.045),inset 0 1px 0 rgba(255,255,255,.95)!important;
+    transition:transform .22s cubic-bezier(.22,1,.36,1),box-shadow .25s ease,border-color .25s ease,background .25s ease,color .25s ease!important;
+}
+.rms-template-card-actions-v2 > .ghost:before{
+    content:"";
+    position:absolute;
+    left:0;
+    top:0;
+    bottom:0;
+    width:3px;
+    background:linear-gradient(180deg,#f59e0b,#fbbf24);
+    opacity:.75;
+    transition:opacity .25s ease,width .25s ease;
+}
+.rms-template-card-actions-v2 > .ghost:after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:linear-gradient(105deg,transparent 25%,rgba(255,255,255,.55) 48%,transparent 70%);
+    transform:translateX(-120%);
+    transition:transform .5s cubic-bezier(.22,1,.36,1);
+    pointer-events:none;
+}
+.rms-template-card-actions-v2 > .ghost:hover{
+    transform:translateY(-2px);
+    border-color:rgba(245,158,11,.28)!important;
+    color:#27272a!important;
+    box-shadow:0 10px 22px rgba(24,24,27,.09),0 0 0 3px rgba(245,158,11,.06)!important;
+}
+.rms-template-card-actions-v2 > .ghost:hover:before{
+    width:4px;
+    opacity:1;
+}
+.rms-template-card-actions-v2 > .ghost:hover:after{
+    transform:translateX(120%);
+}
+.rms-template-card-actions-v2 > .ghost:active{
+    transform:translateY(0) scale(.975)!important;
+}
+.rms-template-card-actions-v2 > .ghost:focus-visible{
+    outline:2px solid rgba(245,158,11,.35);
+    outline-offset:2px;
+}
+@media(max-width:720px){
+    .rms-template-card-actions-v2 > button:first-child{
+        font-size:7.8px!important;
+    }
+}
+@media(prefers-reduced-motion:reduce){
+    .rms-template-card-actions-v2 > .ghost,
+    .rms-template-card-actions-v2 > .ghost:before,
+    .rms-template-card-actions-v2 > .ghost:after{
+        transition:none!important;
+    }
+}
+</style>
