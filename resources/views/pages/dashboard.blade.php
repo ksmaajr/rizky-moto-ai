@@ -2123,17 +2123,20 @@ public function getUserInitialsProperty(): string
 
                 {{-- GLOBAL SEARCH KEYBOARD SHORTCUTS --}}
                 <script>
-                    document.addEventListener('keydown', (event) => {
-                        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
-                            event.preventDefault();
-                            document.querySelector('.top-search input')?.focus();
-                        }
+                    if (!window.__rmsGlobalSearchShortcutBound) {
+                        window.__rmsGlobalSearchShortcutBound = true;
+                        document.addEventListener('keydown', (event) => {
+                            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+                                event.preventDefault();
+                                document.querySelector('.top-search input')?.focus();
+                            }
 
-                        if (event.key === 'Escape') {
-                            const input = document.querySelector('.top-search input');
-                            if (document.activeElement === input) input.blur();
-                        }
-                    });
+                            if (event.key === 'Escape') {
+                                const input = document.querySelector('.top-search input');
+                                if (document.activeElement === input) input.blur();
+                            }
+                        });
+                    }
                 </script>
 
                 {{-- NOTIFICATION MENU --}}
