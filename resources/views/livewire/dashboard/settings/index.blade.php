@@ -701,7 +701,7 @@
                                             <strong x-text="current.label"></strong>
                                             <small x-text="current.desc"></small>
                                         </span>
-                                        <span class="rms-activity-select-chevron" :class="{ 'is-open': open }">⌄</span>
+                                        <span class="rms-activity-select-chevron" :class="{ 'is-open': open }" aria-hidden="true"></span>
                                     </button>
                                     <div class="rms-activity-select-menu" x-cloak x-show="open" x-transition:enter="rms-select-enter" x-transition:enter-start="rms-select-enter-start" x-transition:enter-end="rms-select-enter-end" x-transition:leave="rms-select-leave" x-transition:leave-start="rms-select-leave-start" x-transition:leave-end="rms-select-leave-end">
                                         <div class="rms-activity-select-menu-head">FILTER BY CATEGORY</div>
@@ -735,7 +735,7 @@
                                 }" @click.outside="open = false" @keydown.escape.window="open = false">
                                     <button type="button" class="rms-activity-select-trigger" @click="open = !open" :aria-expanded="open.toString()">
                                         <span class="rms-activity-select-copy"><strong x-text="current.label"></strong><small x-text="current.desc"></small></span>
-                                        <span class="rms-activity-select-chevron" :class="{ 'is-open': open }">⌄</span>
+                                        <span class="rms-activity-select-chevron" :class="{ 'is-open': open }" aria-hidden="true"></span>
                                     </button>
                                     <div class="rms-activity-select-menu" x-cloak x-show="open" x-transition:enter="rms-select-enter" x-transition:enter-start="rms-select-enter-start" x-transition:enter-end="rms-select-enter-end" x-transition:leave="rms-select-leave" x-transition:leave-start="rms-select-leave-start" x-transition:leave-end="rms-select-leave-end">
                                         <div class="rms-activity-select-menu-head">FILTER BY STATUS</div>
@@ -766,7 +766,7 @@
                                 }" @click.outside="open = false" @keydown.escape.window="open = false">
                                     <button type="button" class="rms-activity-select-trigger" @click="open = !open" :aria-expanded="open.toString()">
                                         <span class="rms-activity-select-copy"><strong x-text="current.label"></strong><small x-text="current.desc"></small></span>
-                                        <span class="rms-activity-select-chevron" :class="{ 'is-open': open }">⌄</span>
+                                        <span class="rms-activity-select-chevron" :class="{ 'is-open': open }" aria-hidden="true"></span>
                                     </button>
                                     <div class="rms-activity-select-menu" x-cloak x-show="open" x-transition:enter="rms-select-enter" x-transition:enter-start="rms-select-enter-start" x-transition:enter-end="rms-select-enter-end" x-transition:leave="rms-select-leave" x-transition:leave-start="rms-select-leave-start" x-transition:leave-end="rms-select-leave-end">
                                         <div class="rms-activity-select-menu-head">FILTER BY RANGE</div>
@@ -2088,5 +2088,68 @@
 @media(max-width:390px){
     .rms-mobile-filter-toggle{min-height:45px}
     .rms-mobile-filter-group{gap:8px}
+}
+</style>
+<style>
+/* FINAL FILTER MICRO-UX — centered chevrons + equal mobile fields */
+.rms-activity-select-trigger{min-height:46px}
+.rms-activity-select-chevron{
+    position:relative;
+    display:grid!important;
+    place-items:center!important;
+    width:28px!important;
+    height:28px!important;
+    flex:0 0 28px!important;
+    border:1px solid #ececf0;
+    border-radius:8px;
+    background:#fafafa;
+    color:transparent!important;
+    font-size:0!important;
+    line-height:0!important;
+    transition:transform .28s cubic-bezier(.2,.8,.2,1),background .2s ease,border-color .2s ease,box-shadow .2s ease;
+}
+.rms-activity-select-chevron::before{
+    content:"";
+    width:6px;
+    height:6px;
+    margin-top:-3px;
+    border-right:1.8px solid #71717a;
+    border-bottom:1.8px solid #71717a;
+    transform:rotate(45deg);
+    transition:transform .28s cubic-bezier(.2,.8,.2,1),border-color .2s ease;
+}
+.rms-activity-select-trigger:hover .rms-activity-select-chevron{
+    background:#f4f4f5;border-color:#e4e4e7;
+}
+.rms-activity-select-chevron.is-open{
+    transform:rotate(180deg);
+    background:#fff1f2!important;
+    border-color:#fecaca!important;
+    box-shadow:0 3px 10px rgba(239,48,48,.08);
+}
+.rms-activity-select-chevron.is-open::before{border-color:#ef3030}
+
+/* Keep every mobile filter the same width */
+@media(max-width:640px){
+    .rms-mobile-filter-group{
+        grid-template-columns:1fr!important;
+        gap:9px!important;
+    }
+    .rms-mobile-filter-group .rms-filter-field,
+    .rms-mobile-filter-group .rms-filter-field:first-child,
+    .rms-mobile-filter-group .rms-filter-field:last-child{
+        grid-column:1/-1!important;
+        width:100%!important;
+        min-width:0!important;
+    }
+    .rms-mobile-filter-group .rms-activity-select,
+    .rms-mobile-filter-group .rms-activity-select-trigger{
+        width:100%!important;
+    }
+    .rms-activity-select-trigger{height:46px!important}
+}
+@media(max-width:390px){
+    .rms-activity-select-trigger{height:44px!important}
+    .rms-activity-select-chevron{width:27px!important;height:27px!important;flex-basis:27px!important}
 }
 </style>
