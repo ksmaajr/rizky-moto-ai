@@ -39,6 +39,11 @@ class Index extends Component
     public ?int $deletingId = null;
     public string $deletingName = '';
 
+    public function mount(?string $initialSearch = null): void
+    {
+        $this->search = trim((string) $initialSearch);
+    }
+
     public function getUserProperty(): ?object
     {
         return auth()->user();
