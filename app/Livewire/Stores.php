@@ -48,6 +48,11 @@ class Stores extends Component
     /** Only the Store result area gets a refresh animation. */
     public int $renderVersion = 0;
 
+    public function mount(?string $initialSearch = null): void
+    {
+        $this->search = trim((string) $initialSearch);
+    }
+
     public function getStoresProperty()
     {
         return Store::query()
