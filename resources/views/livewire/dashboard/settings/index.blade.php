@@ -421,12 +421,7 @@
                                 </div>
                                 <div class="rms-provider-block-state is-pending"><i></i><span>Stage 5 next</span></div>
                             </div>
-                        <span>02</span>
-                        <div><strong>AGENT AI BACKEND</strong><small>Credential pool will be wired in Stage 5</small></div>
-                        <i></i>
-                    </div>
-
-                    {{-- AGENT AI CONFIGURATION SHELL --}}
+                        {{-- AGENT AI CONFIGURATION SHELL --}}
                     <section class="rms-ai-provider-section rms-agent-provider-card">
                         <div class="rms-ai-provider-section-head">
                             <div class="rms-ai-provider-section-title">
@@ -2483,5 +2478,42 @@
 }
 @media(prefers-reduced-motion:reduce){
     .rms-provider-block{transition:none}
+}
+</style><style>
+/* Provider block entrance + decorative micro-interactions */
+.rms-provider-block{
+    animation:rmsProviderBlockIn .48s cubic-bezier(.2,.8,.2,1) both;
+}
+.rms-provider-block:nth-of-type(2){animation-delay:.05s}
+.rms-provider-block:nth-of-type(3){animation-delay:.1s}
+.rms-provider-block-head::after{
+    content:"";
+    position:absolute;
+    top:16px;
+    right:22px;
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    border:1px solid rgba(239,48,48,.07);
+    box-shadow:0 0 0 8px rgba(239,48,48,.025);
+    pointer-events:none;
+}
+.rms-provider-block-agent .rms-provider-block-head::after{
+    border-color:rgba(245,158,11,.1);
+    box-shadow:0 0 0 8px rgba(245,158,11,.025);
+}
+.rms-provider-block-failover .rms-provider-block-head::after{
+    border-color:rgba(34,197,94,.1);
+    box-shadow:0 0 0 8px rgba(34,197,94,.025);
+}
+@keyframes rmsProviderBlockIn{
+    from{opacity:0;transform:translateY(8px)}
+    to{opacity:1;transform:translateY(0)}
+}
+@media(max-width:760px){
+    .rms-provider-block-head::after{right:12px;top:13px;width:36px;height:36px}
+}
+@media(prefers-reduced-motion:reduce){
+    .rms-provider-block{animation:none}
 }
 </style>
