@@ -431,6 +431,8 @@ class OpenAiImageService
             $generation->update([
                 'metadata' => array_merge($generation->metadata ?? [], [
                     'provider' => $providerResult->provider,
+                    'model' => $providerResult->model,
+                    'gateway' => $providerResult->provider === 'vercel' ? 'vercel-ai-gateway' : $providerResult->provider,
                     'gateway_key_id' => $providerMetadata['gateway_key_id'] ?? null,
                     'gateway_key_name' => $providerMetadata['gateway_key_name'] ?? null,
                     'gateway_key_source' => $providerMetadata['gateway_key_source'] ?? null,
