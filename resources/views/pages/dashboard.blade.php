@@ -1743,40 +1743,11 @@ public function getUserInitialsProperty(): string
 
 
 
-                    <div
-
-                        class="notification-dropdown"
-
-                        id="notificationDropdown"
-
-                        aria-hidden="true"
-
-                    >
-
+                    <div class="notification-dropdown" id="notificationDropdown" aria-hidden="true">
                         <div class="notification-dropdown-head">
-
-                            <div>
-
-                                <span class="notification-eyebrow">SYSTEM CENTER</span>
-
-                                <h3>Notifikasi</h3>
-
-                                <p>Update terbaru dari workspace kamu.</p>
-
-                            </div>
-
-
-
-                            <button type="button" class="notification-mark-read" id="notificationMarkRead">
-
-                                Tandai dibaca
-
-                            </button>
-
+                            <div><span class="notification-eyebrow">SYSTEM CENTER</span><h3>Notifikasi</h3><p>Update terbaru dari workspace kamu.</p></div>
+                            <button type="button" class="notification-mark-read" id="notificationMarkRead">Tandai dibaca</button>
                         </div>
-
-
-
                         <div class="notification-list">
                             @forelse($this->dashboardNotifications as $notification)
                                 <button type="button" class="notification-item">
@@ -1785,30 +1756,19 @@ public function getUserInitialsProperty(): string
                                     </span>
                                     <span class="notification-item-content">
                                         <strong>{{ $notification['title'] }}</strong>
-                                        <span>{{ IlluminateSupportStr::limit($notification['description'], 110) }}</span>
+                                        <span>{{ Str::limit($notification['description'], 110) }}</span>
                                         <small>{{ $notification['created_at'] }}</small>
                                     </span>
                                 </button>
                             @empty
                                 <div class="notification-empty">Belum ada notifikasi.</div>
                             @endforelse
-                        </div>                  </div>
-
-
-
-                        <div class="notification-dropdown-footer">
-
-                            <span><i></i> Internal workspace</span>
-
-                            <button type="button" id="notificationClose">Tutup</button>
-
                         </div>
-
+                        <div class="notification-dropdown-footer">
+                            <span><i></i> Internal workspace</span>
+                            <button type="button" id="notificationClose">Tutup</button>
+                        </div>
                     </div>
-
-                </div>
-
-
 
                 <div class="topbar-divider"></div>
 
