@@ -2759,7 +2759,7 @@ public function getUserInitialsProperty(): string
                     </article>
                     <article class="rms-engine-registry-card">
                         <div class="rms-engine-registry-icon violet">AI</div>
-                        <div class="rms-engine-registry-copy"><span>PROVIDER ROUTING</span><strong>{{ $engine['provider']['name'] }}</strong><small>{{ $engine['provider']['model'] }} · Last API {{ $engine['provider']['last_at'] ?? '—' }}</small></div>
+                        <div class="rms-engine-registry-copy"><span>PROVIDER ROUTING</span><strong>{{ $engine['provider']['name'] }}</strong><small>{{ $engine['provider']['model'] }} · Last API {{ $engine['provider']['last_at'] ?? '—' }}</small><em>{{ $engine['provider']['requests_24h'] }} req / 24h · {{ $engine['provider']['success_rate_24h'] !== null ? $engine['provider']['success_rate_24h'].'% success' : 'Belum ada metric' }} · Avg {{ $engine['provider']['avg_duration_ms_24h'] !== null ? round($engine['provider']['avg_duration_ms_24h'] / 1000, 1).'s' : '—' }}</em></div>
                         <div class="rms-engine-registry-status {{ $engine['provider']['last_status'] === 'success' ? 'is-online' : 'is-idle' }}"><i></i>{{ $engine['provider']['last_status'] ? strtoupper($engine['provider']['last_status']) : 'IDLE' }}</div>
                     </article>
                     <article class="rms-engine-registry-card">
