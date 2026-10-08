@@ -3904,6 +3904,44 @@ public function getUserInitialsProperty(): string
         }
 
 
+        /* V23 — center the mobile chevron precisely */
+        @media(max-width:760px){
+            .rms-engine-mobile-toggle>b{
+                position:relative!important;
+                overflow:hidden!important;
+            }
+            .rms-engine-mobile-toggle>b:before{
+                position:absolute!important;
+                left:50%!important;
+                top:50%!important;
+                width:7px!important;
+                height:7px!important;
+                margin:0!important;
+                display:block!important;
+                box-sizing:border-box!important;
+                border-right:2px solid currentColor!important;
+                border-bottom:2px solid currentColor!important;
+                transform:translate(-50%,-62%) rotate(45deg)!important;
+                transform-origin:center!important;
+            }
+            .rms-engine-mobile-toggle>b.is-open:before{
+                transform:translate(-50%,-38%) rotate(225deg)!important;
+            }
+            .rms-engine-mobile-toggle:active>b:before{
+                transform:translate(-50%,-62%) scale(.86) rotate(45deg)!important;
+            }
+            .rms-engine-mobile-toggle:active>b.is-open:before{
+                transform:translate(-50%,-38%) scale(.86) rotate(225deg)!important;
+            }
+        }
+        @media(max-width:420px){
+            .rms-engine-mobile-toggle>b:before{
+                width:6px!important;
+                height:6px!important;
+            }
+        }
+
+
     </style>
 
 </div>
