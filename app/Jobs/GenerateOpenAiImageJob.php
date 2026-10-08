@@ -99,7 +99,7 @@ class GenerateOpenAiImageJob implements ShouldQueue
                 'progress_stage' => 'Gagal',
                 'failed_at' => now()->toIso8601String(),
                 'worker_pid' => getmypid(),
-                'worker_label' => 'worker-pid-' . getmypid(),
+                'worker_label' => $this->workerLabel(),
             ]),
         ]);
 
@@ -113,7 +113,7 @@ class GenerateOpenAiImageJob implements ShouldQueue
                 'generation_id' => $this->generationId,
                 'exception' => get_class($exception),
                 'worker_pid' => getmypid(),
-                'worker_label' => 'worker-pid-' . getmypid(),
+                'worker_label' => $this->workerLabel(),
                 'queue_job_id' => $this->job?->getJobId(),
             ],
         );
