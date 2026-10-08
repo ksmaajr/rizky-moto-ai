@@ -995,6 +995,11 @@ class extends Component
                         ? (int) round((float) $apiMetrics->avg_duration_ms)
                         : null,
                 ],
+                'openai' => [
+                    'state' => $legacyConfigured ? 'configured' : 'standby',
+                    'label' => $legacyConfigured ? 'OpenAI configured' : 'OpenAI standby',
+                    'detail' => $legacyConfigured ? 'Legacy OpenAI credential tersedia.' : 'Belum ada credential OpenAI langsung.',
+                ],
                 'agent' => [
                     'state' => $agentConnected ? 'connected' : 'standby',
                     'label' => $agentConnected ? 'AgentKit connected' : 'Agent layer standby',
@@ -1002,6 +1007,13 @@ class extends Component
                         ? 'Provider adapter AgentKit tersedia.'
                         : 'Siap ditambahkan tanpa mengubah generation flow saat ini.',
                 ],
+                'workers' => [
+                    'state' => $this->workerStatus['healthy'] ? 'online' : 'offline',
+                    'label' => $this->workerStatus['healthy'] ? 'Workers healthy' : 'Workers offline',
+                    'running' => (int) ($this->workerStatus['running_count'] ?? 0),
+                    'target' => (int) ($this->workerStatus['target_workers'] ?? 0),
+                ],
+                'checked_at' => now()->format('H:i:s'),
             ];
         });
     }
@@ -2942,22 +2954,74 @@ public function getUserInitialsProperty(): string
                 </section>
 
                 @php $engine = $this->dashboardEngine; @endphp
-                <section class="rms-engine-registry reveal reveal-3">
-                    <article class="rms-engine-registry-card rms-engine-gateway">
-                        <div class="rms-engine-registry-icon">⌁</div>
-                        <div class="rms-engine-registry-copy"><span>API GATEWAY</span><strong>{{ $engine['gateway']['label'] }}</strong><small>{{ $engine['gateway']['keys_active'] }} active · {{ $engine['gateway']['keys_total'] }} registered · {{ $engine['gateway']['keys_cooldown'] }} cooldown · {{ $engine['gateway']['keys_unavailable'] }} unavailable</small></div>
-                        <div class="rms-engine-registry-status {{ $engine['gateway']['state'] === 'online' ? 'is-online' : 'is-offline' }}"><i></i>{{ strtoupper($engine['gateway']['state']) }}</div>
-                    </article>
-                    <article class="rms-engine-registry-card">
-                        <div class="rms-engine-registry-icon violet">AI</div>
-                        <div class="rms-engine-registry-copy"><span>PROVIDER ROUTING</span><strong>{{ $engine['provider']['name'] }}</strong><small>{{ $engine['provider']['model'] }} · Last API {{ $engine['provider']['last_at'] ?? '—' }}</small><em>{{ $engine['provider']['requests_24h'] }} req / 24h · {{ $engine['provider']['success_rate_24h'] !== null ? $engine['provider']['success_rate_24h'].'% success' : 'Belum ada metric' }} · Avg {{ $engine['provider']['avg_duration_ms_24h'] !== null ? round($engine['provider']['avg_duration_ms_24h'] / 1000, 1).'s' : '—' }}</em></div>
-                        <div class="rms-engine-registry-status {{ $engine['provider']['last_status'] === 'success' ? 'is-online' : 'is-idle' }}"><i></i>{{ $engine['provider']['last_status'] ? strtoupper($engine['provider']['last_status']) : 'IDLE' }}</div>
-                    </article>
-                    <article class="rms-engine-registry-card">
-                        <div class="rms-engine-registry-icon amber">✦</div>
-                        <div class="rms-engine-registry-copy"><span>AGENT LAYER</span><strong>{{ $engine['agent']['label'] }}</strong><small>{{ $engine['agent']['detail'] }}</small></div>
-                        <div class="rms-engine-registry-status {{ $engine['agent']['state'] === 'connected' ? 'is-online' : 'is-idle' }}"><i></i>{{ $engine['agent']['state'] === 'connected' ? 'READY' : 'STANDBY' }}</div>
-                    </article>
+                <section class="rms-engine-health-panel reveal reveal-3">
+                    <div class="rms-engine-health-head">
+                        <div>
+                            <span class="section-kicker">AI ENGINE HEALTH</span>
+                            <h3>Generation infrastructure</h3>
+                            <p>Gateway, provider, agent layer, dan worker dipantau dari satu control center.</p>
+                        </div>
+                        <div class="rms-engine-health-meta">
+                            <span class="rms-health-pill {{ $engine['gateway']['state'] === 'online' ? 'is-ok' : 'is-off' }}"><i></i>{{ $engine['gateway']['state'] === 'online' ? 'SYSTEM READY' : 'ATTENTION' }}</span>
+                            <small>Checked {{ $engine['checked_at'] }}</small>
+                        </div>
+                    </div>
+
+                    <div class="rms-engine-health-grid">
+                        <article class="rms-engine-health-card rms-engine-gateway">
+                            <div class="rms-engine-health-card-top">
+                                <span class="rms-engine-health-icon">⌁</span>
+                                <span class="rms-engine-health-state {{ $engine['gateway']['state'] === 'online' ? 'is-online' : 'is-offline' }}"><i></i>{{ strtoupper($engine['gateway']['state']) }}</span>
+                            </div>
+                            <span class="rms-engine-health-label">API GATEWAY</span>
+                            <strong>{{ $engine['gateway']['label'] }}</strong>
+                            <small>{{ $engine['gateway']['keys_active'] }} active keys · {{ $engine['gateway']['keys_total'] }} registered</small>
+                            <div class="rms-engine-health-metrics"><span><b>{{ $engine['gateway']['keys_cooldown'] }}</b> cooldown</span><span><b>{{ $engine['gateway']['keys_unavailable'] }}</b> unavailable</span></div>
+                        </article>
+
+                        <article class="rms-engine-health-card">
+                            <div class="rms-engine-health-card-top">
+                                <span class="rms-engine-health-icon violet">AI</span>
+                                <span class="rms-engine-health-state {{ $engine['provider']['last_status'] === 'success' ? 'is-online' : 'is-idle' }}"><i></i>{{ $engine['provider']['last_status'] ? strtoupper($engine['provider']['last_status']) : 'IDLE' }}</span>
+                            </div>
+                            <span class="rms-engine-health-label">VERCEL PROVIDER</span>
+                            <strong>{{ $engine['provider']['name'] }}</strong>
+                            <small>{{ $engine['provider']['model'] }} · Last API {{ $engine['provider']['last_at'] ?? '—' }}</small>
+                            <div class="rms-engine-health-metrics"><span><b>{{ $engine['provider']['requests_24h'] }}</b> req / 24h</span><span><b>{{ $engine['provider']['success_rate_24h'] !== null ? $engine['provider']['success_rate_24h'].'%' : '—' }}</b> success</span><span><b>{{ $engine['provider']['avg_duration_ms_24h'] !== null ? round($engine['provider']['avg_duration_ms_24h']) : '—' }}</b> ms avg</span></div>
+                        </article>
+
+                        <article class="rms-engine-health-card">
+                            <div class="rms-engine-health-card-top">
+                                <span class="rms-engine-health-icon green">◎</span>
+                                <span class="rms-engine-health-state {{ $engine['openai']['state'] === 'configured' ? 'is-online' : 'is-idle' }}"><i></i>{{ strtoupper($engine['openai']['state']) }}</span>
+                            </div>
+                            <span class="rms-engine-health-label">OPENAI PROVIDER</span>
+                            <strong>{{ $engine['openai']['label'] }}</strong>
+                            <small>{{ $engine['openai']['detail'] }}</small>
+                            <div class="rms-engine-health-metrics"><span><b>{{ $engine['gateway']['legacy'] ? 'YES' : 'NO' }}</b> credential</span></div>
+                        </article>
+
+                        <article class="rms-engine-health-card">
+                            <div class="rms-engine-health-card-top">
+                                <span class="rms-engine-health-icon amber">✦</span>
+                                <span class="rms-engine-health-state {{ $engine['agent']['state'] === 'connected' ? 'is-online' : 'is-idle' }}"><i></i>{{ $engine['agent']['state'] === 'connected' ? 'READY' : 'STANDBY' }}</span>
+                            </div>
+                            <span class="rms-engine-health-label">AGENT LAYER</span>
+                            <strong>{{ $engine['agent']['label'] }}</strong>
+                            <small>{{ $engine['agent']['detail'] }}</small>
+                        </article>
+
+                        <article class="rms-engine-health-card rms-engine-worker-card">
+                            <div class="rms-engine-health-card-top">
+                                <span class="rms-engine-health-icon worker">⚙</span>
+                                <span class="rms-engine-health-state {{ $engine['workers']['state'] === 'online' ? 'is-online' : 'is-offline' }}"><i></i>{{ strtoupper($engine['workers']['state']) }}</span>
+                            </div>
+                            <span class="rms-engine-health-label">QUEUE WORKERS</span>
+                            <strong>{{ $engine['workers']['running'] }}/{{ $engine['workers']['target'] }} active</strong>
+                            <small>{{ $workerStatus['queue'] }} queue · {{ $d['processing'] ?? 0 }} processing · {{ $d['queued'] ?? 0 }} queued</small>
+                            <div class="rms-engine-health-metrics"><span><b>{{ $d['failed'] ?? 0 }}</b> failed</span></div>
+                        </article>
+                    </div>
                 </section>
 
                 <section class="rms-dashboard-grid-main reveal reveal-4">
