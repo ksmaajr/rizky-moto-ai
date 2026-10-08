@@ -34,6 +34,11 @@ class extends Component
     public $logo = null;
     public ?string $currentLogo = null;
 
+    public function mount(?string $initialSearch = null): void
+    {
+        $this->search = trim((string) $initialSearch);
+    }
+
     public function getStoresProperty()
     {
         return Store::query()
