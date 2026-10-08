@@ -663,14 +663,26 @@
                             </div>
                         </div>
 
-                        <div class="rms-global-activity-toolbar">
+                        <div class="rms-global-activity-toolbar" x-data="{ filtersOpen: true }">
                             <label>
                                 <span>SEARCH</span>
                                 <input type="search" wire:model.live.debounce.350ms="activitySearch" placeholder="Search activity..." autocomplete="off">
                             </label>
 
-                            <div class="rms-filter-field">
-                                <span class="rms-filter-label">CATEGORY</span>
+                            <button type="button" class="rms-mobile-filter-toggle" @click="filtersOpen = !filtersOpen" :aria-expanded="filtersOpen.toString()">
+                                <span class="rms-mobile-filter-toggle-main">
+                                    <span class="rms-mobile-filter-icon">⌄</span>
+                                    <span>
+                                        <strong>Filters</strong>
+                                        <small>Category, status &amp; range</small>
+                                    </span>
+                                </span>
+                                <span class="rms-mobile-filter-toggle-state" x-text="filtersOpen ? 'Hide' : 'Show'"></span>
+                            </button>
+
+                            <div class="rms-mobile-filter-group" :class="{ 'is-collapsed': !filtersOpen }">
+                                <div class="rms-filter-field">
+                                    <span class="rms-filter-label">CATEGORY</span>
                                 <div class="rms-activity-select" x-data="{
                                     open: false,
                                     value: @js($activityCategory),
@@ -1984,5 +1996,96 @@
     .rms-activity-select-trigger{padding:0 9px!important}
     .rms-activity-select-copy strong{font-size:9px!important}
     .rms-activity-select-copy small{font-size:7px!important}
+}
+</style>
+<style>
+/* MOBILE FILTER DRAWER + DROPDOWN CONTAINMENT */
+.rms-mobile-filter-toggle{display:none}
+.rms-mobile-filter-group{display:contents}
+.rms-activity-select-menu{
+    width:100%!important;
+    min-width:0!important;
+    max-width:min(300px,calc(100vw - 32px))!important;
+}
+.rms-filter-field:last-child .rms-activity-select-menu{
+    left:auto!important;
+    right:0!important;
+}
+@media(max-width:640px){
+    .rms-mobile-filter-toggle{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        width:100%;
+        min-height:48px;
+        padding:0 12px;
+        border:1px solid #e4e4e7;
+        border-radius:11px;
+        background:#fff;
+        color:#27272a;
+        cursor:pointer;
+        text-align:left;
+        box-shadow:0 2px 8px rgba(15,23,42,.025);
+        transition:border-color .2s ease,background .2s ease,box-shadow .25s ease,transform .2s ease;
+    }
+    .rms-mobile-filter-toggle:hover{border-color:#c7c7ce;background:#fcfcfd;transform:translateY(-1px)}
+    .rms-mobile-filter-toggle[aria-expanded="true"]{border-color:#d4d4d8;background:#fafafa;box-shadow:0 4px 14px rgba(15,23,42,.04)}
+    .rms-mobile-filter-toggle-main{display:flex;align-items:center;gap:10px}
+    .rms-mobile-filter-icon{
+        display:grid;place-items:center;width:27px;height:27px;
+        border-radius:8px;background:#f4f4f5;color:#52525b;font-size:14px;
+        transition:transform .3s cubic-bezier(.2,.8,.2,1),background .2s ease;
+    }
+    .rms-mobile-filter-toggle[aria-expanded="true"] .rms-mobile-filter-icon{
+        transform:rotate(180deg);background:#fff1f2;color:#ef3030;
+    }
+    .rms-mobile-filter-toggle-main strong{display:block;font-size:10px;font-weight:850;color:#27272a}
+    .rms-mobile-filter-toggle-main small{display:block;margin-top:2px;font-size:7.5px;color:#a1a1aa}
+    .rms-mobile-filter-toggle-state{
+        padding:5px 8px;border:1px solid #e4e4e7;border-radius:7px;background:#fff;
+        color:#71717a;font-size:7px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;
+    }
+    .rms-mobile-filter-group{
+        display:grid!important;
+        grid-template-columns:1fr 1fr;
+        gap:9px;
+        min-width:0;
+        max-height:600px;
+        overflow:visible;
+        opacity:1;
+        transform:translateY(0);
+        transition:max-height .32s cubic-bezier(.2,.8,.2,1),opacity .2s ease,transform .32s cubic-bezier(.2,.8,.2,1);
+    }
+    .rms-mobile-filter-group.is-collapsed{
+        max-height:0!important;
+        opacity:0;
+        transform:translateY(-8px);
+        overflow:hidden!important;
+        pointer-events:none;
+        margin-top:-2px;
+    }
+    .rms-mobile-filter-group .rms-filter-field:first-child{grid-column:1/-1}
+    .rms-mobile-filter-group .rms-filter-field:last-child{grid-column:1/-1}
+    .rms-global-activity-toolbar{grid-template-columns:1fr!important}
+    .rms-global-activity-toolbar>label:first-child{grid-column:auto!important}
+    .rms-global-activity-toolbar .rms-mobile-filter-toggle{grid-column:1/-1}
+    .rms-global-activity-toolbar .rms-global-select-actions{grid-column:1/-1}
+    .rms-activity-select-menu{
+        width:100%!important;
+        max-width:calc(100vw - 28px)!important;
+        right:auto!important;
+        left:0!important;
+    }
+    .rms-mobile-filter-group .rms-filter-field:last-child .rms-activity-select-menu{
+        right:0!important;
+        left:auto!important;
+    }
+}
+@media(min-width:641px){
+    .rms-mobile-filter-group{display:contents!important}
+}
+@media(max-width:390px){
+    .rms-mobile-filter-toggle{min-height:45px}
+    .rms-mobile-filter-group{gap:8px}
 }
 </style>
