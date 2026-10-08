@@ -2706,21 +2706,37 @@
 .rms-custom-select-value strong{font-size:10px;font-weight:800;color:#3f3f46;line-height:1.2}
 .rms-custom-select-value small{font-size:7.5px;color:#a1a1aa;line-height:1.2}
 .rms-custom-select-arrow{
-    display:grid;place-items:center;
+    position:relative;
+    display:grid;
+    place-items:center;
     width:31px;height:31px;flex:0 0 31px;
-    border:1px solid #e7e7eb;border-radius:9px;
+    margin:0;
+    border:1px solid #e7e7eb;
+    border-radius:9px;
     background:#fafafa;
     color:#71717a;
-    font-size:16px;font-weight:700;
-    line-height:1;
-    transform:rotate(0deg) translateY(-1px);
-    transition:transform .28s cubic-bezier(.2,.8,.2,1),background .22s ease,color .22s ease,border-color .22s ease;
+    font-size:0;
+    line-height:0;
+    transform:none;
+    transition:background .22s ease,color .22s ease,border-color .22s ease,box-shadow .22s ease;
+}
+.rms-custom-select-arrow::before{
+    content:"";
+    width:7px;
+    height:7px;
+    border-right:1.7px solid currentColor;
+    border-bottom:1.7px solid currentColor;
+    transform:translateY(-2px) rotate(45deg);
+    transition:transform .28s cubic-bezier(.2,.8,.2,1);
 }
 .rms-custom-select.is-open .rms-custom-select-arrow{
-    transform:rotate(180deg) translateY(1px);
     background:#fff5f5;
     color:#ef3030;
     border-color:#ffd1d1;
+    box-shadow:0 3px 10px rgba(239,48,48,.08);
+}
+.rms-custom-select.is-open .rms-custom-select-arrow::before{
+    transform:translateY(2px) rotate(225deg);
 }
 .rms-custom-select-menu{
     position:absolute;
