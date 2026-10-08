@@ -2739,7 +2739,7 @@ public function getUserInitialsProperty(): string
                         </div>
                         <div class="rms-history-head-actions">
                             <span class="rms-history-count">{{ $generationHistoryLoaded ? count($generationHistory) . ' results' : 'History ready' }}</span>
-                            <button type="button" class="rms-collapse-button rms-collapse-button-lg" @click="recentOpen=!recentOpen; if(recentOpen) $wire.loadGenerationHistory()" :aria-expanded="recentOpen.toString()">
+                            <button type="button" class="rms-collapse-button rms-collapse-button-lg" @click="recentOpen=!recentOpen; if(recentOpen && !$wire.generationHistoryLoaded) $wire.loadGenerationHistory()" :aria-expanded="recentOpen.toString()">
                                 <span x-text="recentOpen ? 'Collapse history' : 'Expand history'"></span><b :class="{ 'is-closed': !recentOpen }">⌄</b>
                             </button>
                         </div>
