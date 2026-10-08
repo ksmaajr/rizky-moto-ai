@@ -1962,13 +1962,18 @@ new class extends Component
                                         <div class="rms-processing-orbit orbit-three"></div>
                                         <div class="rms-processing-core-ring">
                                             <svg class="rms-processing-spin-svg" wire:ignore viewBox="0 0 120 120" aria-hidden="true">
-    <circle cx="60" cy="60" r="53" fill="none" stroke="rgba(239,35,60,.10)" stroke-width="3"/>
-    <circle cx="60" cy="60" r="53" fill="none" stroke="#ef233c" stroke-width="4" stroke-linecap="round" stroke-dasharray="72 260">
-        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="0.95s" repeatCount="indefinite"/>
-    </circle>
-    <circle cx="60" cy="60" r="47" fill="none" stroke="rgba(239,35,60,.16)" stroke-width="1" stroke-dasharray="2 8">
-        <animateTransform attributeName="transform" type="rotate" from="360 60 60" to="0 60 60" dur="3.8s" repeatCount="indefinite"/>
-    </circle>
+    <!-- Fixed guide ring: the animated element is the dot only. -->
+    <circle cx="60" cy="60" r="53" fill="none" stroke="rgba(239,35,60,.10)" stroke-width="2"/>
+    <circle cx="60" cy="60" r="47" fill="none" stroke="rgba(239,35,60,.13)" stroke-width="1" stroke-dasharray="2 8"/>
+    <!-- Single active dot orbiting the progress percentage. -->
+    <g>
+        <circle cx="60" cy="7" r="4.5" fill="#ef233c">
+            <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="1.15s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="60" cy="7" r="8" fill="rgba(239,35,60,.16)">
+            <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="1.15s" repeatCount="indefinite"/>
+        </circle>
+    </g>
 </svg>
                                             <span class="rms-processing-core-glow"></span>
                                             <b>{{ $progress }}%</b>
@@ -4835,8 +4840,9 @@ new class extends Component
     }
 }
 
-/* V8 — SVG spinner: independent from CSS animation/reduced-motion rules */
+/* V9 — only the red dot orbits the percentage; no rotating arc */
 .rms-processing-spin-svg{position:absolute;inset:-11px;width:126px;height:126px;z-index:8;display:block;pointer-events:none;overflow:visible}
 .rms-processing-spin-svg circle{transform-origin:center}
+.rms-processing-spin-svg g{transform-origin:60px 60px}
 @media(max-width:760px){.rms-processing-spin-svg{inset:-9px;width:106px;height:106px}}
 </style>
