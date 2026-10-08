@@ -659,9 +659,14 @@
 </style>
 
 <style>
-.rms-template-card-actions-v2{display:grid!important;grid-template-columns:minmax(0,1fr) auto 44px!important;gap:10px!important}
+.rms-template-card-actions-v2{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) 112px 56px!important;
+    gap:10px!important;
+    align-items:stretch!important;
+}
 .rms-template-delete-inline{
-    width:44px!important;height:100%!important;min-height:54px!important;
+    width:56px!important;height:54px!important;min-height:54px!important;
     display:grid!important;place-items:center!important;
     border:1px solid rgba(239,68,68,.18)!important;
     border-radius:14px!important;background:#fff!important;color:#ef233c!important;
@@ -674,7 +679,7 @@
 }
 .rms-template-delete-inline:active{transform:scale(.96)!important}
 @media(max-width:720px){
-    .rms-template-card-actions-v2{grid-template-columns:minmax(0,1fr) 44px!important}
+    .rms-template-card-actions-v2{grid-template-columns:minmax(0,1fr) 48px!important}
     .rms-template-card-actions-v2 .ghost{display:none!important}
 }
 </style>
