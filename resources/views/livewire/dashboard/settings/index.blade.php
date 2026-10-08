@@ -2,7 +2,7 @@
     <div class="rms-settings-page-head">
         <div>
             <span class="section-kicker">SYSTEM / SETTINGS</span>
-            <h1 x-text="$wire.activeTab === 'openai' ? 'Vercel AI Gateway' : 'General Settings'"></h1>
+            <h1 x-text="$wire.activeTab === 'provider' ? 'AI Provider Configuration' : 'General Settings'"></h1>
             <p x-text="$wire.activeTab === 'openai'
                 ? 'Kelola koneksi creative engine yang digunakan oleh Product Generator.'
                 : 'Kelola preferensi dasar workspace internal Rizky Moto Shop.'"></p>
@@ -44,12 +44,12 @@
                 type="button"
                 class="rms-settings-tab"
                 :class="{ 'is-active': $wire.activeTab === 'openai' }"
-                wire:click="selectTab('openai')"
+                wire:click="selectTab('provider')"
             >
                 <span class="rms-settings-tab-icon rms-settings-ai">AI</span>
                 <span>
                     <strong>Vercel AI Gateway</strong>
-                    <small>Creative engine connection</small>
+                    <small>AI engine & credentials</small>
                 </span>
                 <i class="rms-settings-tab-status"></i>
             </button>
@@ -61,7 +61,7 @@
         </aside>
 
         <section class="rms-settings-content">
-            @if ($activeTab === 'openai')
+            @if (in_array($activeTab, ['provider', 'activity'], true))
                 <div
                     class="rms-settings-panel rms-settings-panel-enter"
                     wire:key="settings-openai-panel"
@@ -69,15 +69,17 @@
                     }"
                 >
 
-                    {{-- OPENAI HEADER --}}
+                    @if ($activeTab === 'provider')
+
+                    {{-- AI PROVIDER HEADER --}}
                     <div class="rms-settings-panel-head rms-openai-head-upgraded">
                         <div class="rms-settings-panel-brand">
                             <span class="rms-settings-panel-mark rms-openai-mark">AI</span>
 
                             <div>
-                                <span>CREATIVE ENGINE</span>
+                                <span>AI PROVIDER</span>
                                 <strong>Vercel AI Gateway</strong>
-                                <small>Connection &amp; generation configuration</small>
+                                <small>Provider, credentials &amp; failover configuration</small>
                             </div>
                         </div>
 
@@ -386,6 +388,120 @@
 
                         </div>
 
+
+                    {{-- AGENT AI CONFIGURATION SHELL --}}
+                    <section class="rms-ai-provider-section rms-agent-provider-card">
+                        <div class="rms-ai-provider-section-head">
+                            <div class="rms-ai-provider-section-title">
+                                <span class="rms-ai-provider-icon rms-agent-icon">AG</span>
+                                <div>
+                                    <strong>Agent AI</strong>
+                                    <small>GPT Image 2.5 melalui Agent backend. Credential Pool akan ditambahkan pada Stage 5.</small>
+                                </div>
+                            </div>
+                            <span class="rms-ai-provider-status is-pending"><i></i> Pool setup next</span>
+                        </div>
+
+                        <div class="rms-ai-agent-grid">
+                            <div class="rms-ai-agent-readiness">
+                                <div class="rms-ai-readiness-orb"><span></span></div>
+                                <div>
+                                    <strong>Agent Credential Pool</strong>
+                                    <p>Siapkan beberapa credential Agent AI agar sistem dapat melakukan rotation, cooldown, dan automatic failover tanpa konfigurasi ulang saat runtime.</p>
+                                </div>
+                            </div>
+
+                            <div class="rms-ai-agent-actions">
+                                <div class="rms-ai-agent-meta">
+                                    <span><b>Credential Pool</b><em>Stage 5</em></span>
+                                    <span><b>Connection Test</b><em>Stage 7</em></span>
+                                    <span><b>Auto Rotation</b><em>Stage 8</em></span>
+                                </div>
+                                <button type="button" class="rms-ai-secondary-button" disabled>
+                                    <span>Configure Agent Credentials</span>
+                                    <small>Coming in next stage</small>
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    {{-- PROVIDER FAILOVER CONFIGURATION --}}
+                    <section class="rms-ai-provider-section rms-failover-card">
+                        <div class="rms-ai-provider-section-head">
+                            <div class="rms-ai-provider-section-title">
+                                <span class="rms-ai-provider-icon">↗</span>
+                                <div>
+                                    <strong>Provider Failover</strong>
+                                    <small>Fondasi konfigurasi fallback untuk menjaga generation tetap siap 24/7.</small>
+                                </div>
+                            </div>
+                            <span class="rms-ai-provider-status"><i></i> Ready to configure</span>
+                        </div>
+
+                        <div class="rms-ai-failover-grid">
+                            <label class="rms-ai-config-field">
+                                <span>PRIMARY PROVIDER</span>
+                                <select wire:model.live="activeProvider">
+                                    <option value="vercel">Vercel AI Gateway</option>
+                                    <option value="agentkit">Agent AI</option>
+                                </select>
+                            </label>
+
+                            <label class="rms-ai-config-field">
+                                <span>FALLBACK PROVIDER</span>
+                                <select wire:model.live="fallbackProvider">
+                                    <option value="">No automatic fallback</option>
+                                    <option value="vercel">Vercel AI Gateway</option>
+                                    <option value="agentkit">Agent AI</option>
+                                </select>
+                            </label>
+
+                            <label class="rms-ai-toggle-field">
+                                <input type="checkbox" wire:model.live="allowProviderFallback">
+                                <span class="rms-ai-toggle-ui"></span>
+                                <div>
+                                    <strong>Allow provider fallback</strong>
+                                    <small>Gunakan provider cadangan jika seluruh credential provider utama tidak tersedia.</small>
+                                </div>
+                            </label>
+
+                            <label class="rms-ai-toggle-field">
+                                <input type="checkbox" wire:model.live="emergencyFallback">
+                                <span class="rms-ai-toggle-ui"></span>
+                                <div>
+                                    <strong>Emergency fallback</strong>
+                                    <small>Prioritaskan availability untuk kebutuhan mendadak ketika provider utama unavailable.</small>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="rms-ai-provider-save-row">
+                            <div>
+                                <span class="rms-ai-live-dot"></span>
+                                <span>Configuration is stored server-side and applied to new generations.</span>
+                            </div>
+                            <button type="button" class="rms-ai-save-button" wire:click="saveAiProviderConfiguration" wire:loading.attr="disabled" wire:target="saveAiProviderConfiguration">
+                                <span wire:loading.remove wire:target="saveAiProviderConfiguration">Save AI Configuration <b>→</b></span>
+                                <span wire:loading wire:target="saveAiProviderConfiguration"><i></i> Saving...</span>
+                            </button>
+                        </div>
+                    </section>
+
+                    @endif
+
+                    {{-- ACTIVITY LOG PAGE --}}
+                    @if ($activeTab === 'activity')
+                        <div class="rms-settings-activity-head">
+                            <div class="rms-settings-activity-mark">◷</div>
+                            <div>
+                                <span>OBSERVABILITY</span>
+                                <strong>Global Activity Log</strong>
+                                <small>Audit terpusat untuk worker, provider, credential, generation, failover, storage, dan system events.</small>
+                            </div>
+                            <div class="rms-settings-activity-live"><i></i> LIVE</div>
+                        </div>
+                    @endif
+
                     {{-- GLOBAL ACTIVITY LOGS --}}
                     <section
                         class="rms-openai-logs rms-vg-activity rms-global-activity"
@@ -616,6 +732,13 @@
                         <div class="rms-vg-legacy-note">
                             <span>i</span>
                             <small>Riwayat koneksi lama tetap dipertahankan untuk kompatibilitas data sebelumnya.</small>
+                        </div>
+                    @endif
+
+                    @if ($activeTab === 'activity')
+                        <div class="rms-settings-activity-note">
+                            <span>●</span>
+                            <div><strong>Global audit enabled</strong><small>Semua provider dan credential event tetap masuk ke global activity, termasuk failover dan connection test.</small></div>
                         </div>
                     @endif
 
@@ -1129,4 +1252,60 @@
 .rms-vg-key-manager-root > .rms-vg-delete-overlay {
     width: 100vw !important;
 }
+</style>
+
+<style>
+/* STAGE 4 — AI PROVIDER CONFIGURATION / SMOOTH UX */
+.rms-ai-provider-section{margin-top:18px;border:1px solid #e8e8ec;border-radius:16px;background:linear-gradient(180deg,#fff 0%,#fcfcfd 100%);box-shadow:0 10px 30px rgba(17,24,39,.035);overflow:hidden;transition:transform .28s cubic-bezier(.2,.8,.2,1),box-shadow .28s ease,border-color .28s ease}
+.rms-ai-provider-section:hover{transform:translateY(-1px);box-shadow:0 16px 38px rgba(17,24,39,.06);border-color:#dedee4}
+.rms-ai-provider-section-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:17px 18px;border-bottom:1px solid #f0f0f2}
+.rms-ai-provider-section-title{display:flex;align-items:center;gap:11px;min-width:0}
+.rms-ai-provider-section-title>div{min-width:0}
+.rms-ai-provider-section-title strong{display:block;color:#18181b;font-size:11px;font-weight:850;letter-spacing:-.01em}
+.rms-ai-provider-section-title small{display:block;margin-top:3px;color:#a1a1aa;font-size:7.8px;line-height:1.45}
+.rms-ai-provider-icon{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;border:1px solid #e4e4e7;border-radius:10px;background:#fafafa;color:#18181b;font-size:10px;font-weight:900}
+.rms-agent-icon{background:#18181b;color:#fff;border-color:#18181b;letter-spacing:-.06em}
+.rms-ai-provider-status{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;height:24px;padding:0 8px;border:1px solid #e4e4e7;border-radius:999px;background:#fff;color:#71717a;font-size:6.5px;font-weight:850;letter-spacing:.06em;text-transform:uppercase}
+.rms-ai-provider-status i{width:6px;height:6px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.08)}
+.rms-ai-provider-status.is-pending i{background:#f59e0b;box-shadow:0 0 0 4px rgba(245,158,11,.08)}
+.rms-ai-agent-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr);gap:14px;padding:17px 18px}
+.rms-ai-agent-readiness{display:flex;align-items:center;gap:13px;padding:15px;border:1px solid #ededf0;border-radius:13px;background:#fff}
+.rms-ai-readiness-orb{display:grid;place-items:center;width:44px;height:44px;flex:0 0 44px;border-radius:13px;background:radial-gradient(circle at 50% 50%,#fff 0 22%,#f4f4f5 23% 100%);border:1px solid #e4e4e7;position:relative;animation:rmsAiFloat 3.2s ease-in-out infinite}
+.rms-ai-readiness-orb:before,.rms-ai-readiness-orb:after{content:"";position:absolute;inset:5px;border:1px solid #e4e4e7;border-radius:50%;animation:rmsAiPulse 2.4s ease-out infinite}
+.rms-ai-readiness-orb:after{inset:-2px;animation-delay:.7s}
+.rms-ai-readiness-orb span{width:7px;height:7px;border-radius:50%;background:#f59e0b;box-shadow:0 0 0 5px rgba(245,158,11,.08),0 0 16px rgba(245,158,11,.18);z-index:2}
+.rms-ai-agent-readiness strong{display:block;color:#27272a;font-size:9px;font-weight:850}
+.rms-ai-agent-readiness p{margin:4px 0 0;color:#a1a1aa;font-size:7.5px;line-height:1.55}
+.rms-ai-agent-actions{display:grid;gap:10px}
+.rms-ai-agent-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.rms-ai-agent-meta span{display:grid;gap:3px;padding:9px;border:1px solid #ededf0;border-radius:10px;background:#fff}
+.rms-ai-agent-meta b{font-size:6.5px;color:#71717a;font-weight:800}
+.rms-ai-agent-meta em{font-style:normal;font-size:6.5px;color:#b0b0b7}
+.rms-ai-secondary-button{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:42px;padding:0 12px;border:1px solid #e4e4e7;border-radius:10px;background:#f7f7f8;color:#a1a1aa;cursor:not-allowed}
+.rms-ai-secondary-button span{font-size:8px;font-weight:800}.rms-ai-secondary-button small{font-size:6.5px}
+.rms-ai-failover-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:17px 18px}
+.rms-ai-config-field{display:grid;gap:6px}
+.rms-ai-config-field>span{font-size:6.5px;color:#a1a1aa;letter-spacing:.12em;font-weight:900}
+.rms-ai-config-field select{height:38px;padding:0 10px;border:1px solid #e4e4e7;border-radius:10px;background:#fff;color:#3f3f46;font:inherit;font-size:8px;outline:none;transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease}
+.rms-ai-config-field select:focus{border-color:#18181b;box-shadow:0 0 0 3px rgba(24,24,27,.045)}
+.rms-ai-toggle-field{display:flex;align-items:center;gap:9px;padding:11px;border:1px solid #ededf0;border-radius:10px;background:#fff;cursor:pointer;transition:background .2s ease,border-color .2s ease,transform .2s ease}
+.rms-ai-toggle-field:hover{background:#fcfcfd;border-color:#dedee4;transform:translateY(-1px)}
+.rms-ai-toggle-field input{position:absolute;opacity:0;pointer-events:none}
+.rms-ai-toggle-ui{position:relative;width:28px;height:17px;flex:0 0 28px;border-radius:999px;background:#e4e4e7;transition:background .25s cubic-bezier(.2,.8,.2,1)}
+.rms-ai-toggle-ui:after{content:"";position:absolute;top:3px;left:3px;width:11px;height:11px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12);transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+.rms-ai-toggle-field input:checked+.rms-ai-toggle-ui{background:#18181b}.rms-ai-toggle-field input:checked+.rms-ai-toggle-ui:after{transform:translateX(11px)}
+.rms-ai-toggle-field strong{display:block;color:#52525b;font-size:7.5px;font-weight:850}.rms-ai-toggle-field small{display:block;margin-top:2px;color:#a1a1aa;font-size:6.7px;line-height:1.35}
+.rms-ai-provider-save-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;border-top:1px solid #f0f0f2;background:#fafafa}
+.rms-ai-provider-save-row>div{display:flex;align-items:center;gap:7px;color:#a1a1aa;font-size:6.8px}.rms-ai-live-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.08)}
+.rms-ai-save-button{height:34px;padding:0 12px;border:1px solid #18181b;border-radius:9px;background:#18181b;color:#fff;font-size:7.5px;font-weight:850;cursor:pointer;transition:transform .2s ease,box-shadow .2s ease,background .2s ease}
+.rms-ai-save-button:hover{transform:translateY(-1px);box-shadow:0 9px 20px rgba(24,24,27,.14);background:#27272a}.rms-ai-save-button:active{transform:translateY(0) scale(.98)}
+.rms-ai-save-button i{display:inline-block;width:10px;height:10px;margin-right:5px;border:1.5px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;vertical-align:-2px;animation:rmsAiSpin .65s linear infinite}
+.rms-settings-activity-head{display:flex;align-items:center;gap:12px;padding:4px 0 20px;animation:rmsSettingsIn .35s cubic-bezier(.2,.8,.2,1) both}
+.rms-settings-activity-mark{display:grid;place-items:center;width:42px;height:42px;border:1px solid #e4e4e7;border-radius:12px;background:#18181b;color:#fff;font-size:18px;box-shadow:0 10px 24px rgba(0,0,0,.08)}
+.rms-settings-activity-head>div:nth-child(2){min-width:0;flex:1}.rms-settings-activity-head span{display:block;color:#a1a1aa;font-size:6.5px;font-weight:900;letter-spacing:.14em}.rms-settings-activity-head strong{display:block;margin-top:3px;color:#18181b;font-size:16px;font-weight:850;letter-spacing:-.02em}.rms-settings-activity-head small{display:block;margin-top:4px;color:#a1a1aa;font-size:7.5px;line-height:1.45}
+.rms-settings-activity-live{display:inline-flex!important;align-items:center;gap:6px;flex:0 0 auto;padding:6px 8px;border:1px solid #dcfce7;border-radius:999px;background:#f0fdf4;color:#15803d!important;font-size:6px!important;font-weight:900!important;letter-spacing:.08em!important}.rms-settings-activity-live i{width:5px;height:5px;border-radius:50%;background:#22c55e;animation:rmsAiBlink 1.8s ease-in-out infinite}
+.rms-settings-activity-note{display:flex;gap:8px;align-items:center;margin-top:14px;padding:10px 12px;border:1px solid #e4e4e7;border-radius:10px;background:#fafafa}.rms-settings-activity-note>span{color:#22c55e;font-size:8px}.rms-settings-activity-note strong{display:block;color:#52525b;font-size:7.5px}.rms-settings-activity-note small{display:block;margin-top:2px;color:#a1a1aa;font-size:6.8px}
+@keyframes rmsAiSpin{to{transform:rotate(360deg)}}@keyframes rmsAiPulse{0%{transform:scale(.72);opacity:.65}100%{transform:scale(1.4);opacity:0}}@keyframes rmsAiFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}@keyframes rmsAiBlink{0%,100%{opacity:.45}50%{opacity:1;transform:scale(1.2)}}@keyframes rmsSettingsIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+@media(max-width:760px){.rms-ai-agent-grid,.rms-ai-failover-grid{grid-template-columns:1fr}.rms-ai-agent-meta{grid-template-columns:1fr}.rms-ai-provider-save-row{align-items:stretch;flex-direction:column}.rms-ai-save-button{width:100%}.rms-settings-activity-head{align-items:flex-start}.rms-settings-activity-live{margin-left:auto}}
+@media(prefers-reduced-motion:reduce){.rms-ai-provider-section,.rms-ai-save-button,.rms-ai-toggle-field,.rms-ai-readiness-orb,.rms-settings-activity-head,.rms-settings-activity-live{animation:none!important;transition:none!important}}
 </style>
