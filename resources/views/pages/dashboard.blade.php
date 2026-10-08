@@ -582,6 +582,7 @@ class extends Component
         }
 
         $this->loadDashboardData();
+        $this->refreshWorkerStatus();
     }
 
     public function updatedDashboardTimeframe(): void
@@ -752,6 +753,7 @@ class extends Component
                 'created_at' => $generation->created_at?->diffForHumans(),
                 'created_at_raw' => $generation->created_at?->format('d M Y H:i'),
                 'images' => $generation->generatedImages->map(fn ($image) => [
+                    'id' => $image->id,
                     'url' => $image->image_url ?: ($image->image_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($image->image_path) : null),
                     'favorite' => (bool) $image->is_favorite,
                 ])->filter(fn ($image) => filled($image['url']))->values()->all(),
@@ -2597,7 +2599,7 @@ public function getUserInitialsProperty(): string
                 <section class="rms-engine-registry reveal reveal-3">
                     <article class="rms-engine-registry-card rms-engine-gateway">
                         <div class="rms-engine-registry-icon">⌁</div>
-                        <div class="rms-engine-registry-copy"><span>API GATEWAY</span><strong>{{ $engine['gateway']['label'] }}</strong><small>{{ $engine['gateway']['keys_active'] }} active · {{ $engine['gateway']['keys_total'] }} registered · {{ $engine['gateway']['keys_cooldown'] }} cooldown</small></div>
+                        <div class="rms-engine-registry-copy"><span>API GATEWAY</span><strong>{{ $engine['gateway']['label'] }}</strong><small>{{ $engine['gateway']['keys_active'] }} active · {{ $engine['gateway']['keys_total'] }} registered · {{ $engine['gateway']['keys_cooldown'] }} cooldown · {{ $engine['gateway']['keys_unavailable'] }} unavailable</small></div>
                         <div class="rms-engine-registry-status {{ $engine['gateway']['state'] === 'online' ? 'is-online' : 'is-offline' }}"><i></i>{{ strtoupper($engine['gateway']['state']) }}</div>
                     </article>
                     <article class="rms-engine-registry-card">
@@ -2655,7 +2657,7 @@ public function getUserInitialsProperty(): string
                                             <div class="rms-generation-card-actions">
                                                 @if($primaryImage)
                                                     <button type="button" @click="previewUrl=@js($primaryImage); previewTitle=@js($item['title']); previewOpen=true"><span>⌕</span> Preview</button>
-                                                    <a href="{{ $primaryImage }}" download target="_blank" rel="noopener"><span>↓</span> Download</a>
+                                                    <a href="{{ !empty($item['images'][0]['id']) ? route('generated-images.download', ['generatedImage' => $item['images'][0]['id'], 'max_mb' => 2, 'quality' => 'optimized', 'format' => 'png']) : $primaryImage }}" download target="_blank" rel="noopener"><span>↓</span> Download</a>
                                                 @else
                                                     <span class="rms-generation-no-output">Tidak ada output</span>
                                                 @endif
