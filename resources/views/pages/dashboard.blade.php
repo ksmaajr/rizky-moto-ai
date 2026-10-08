@@ -1146,17 +1146,21 @@ class extends Component
         $this->pendingGenerationId = null;
 
         if ($action === 'stores') {
+            // Pure navigation ("Stores") must open the full library.
+            // Only an actual Store result should carry a search term.
             $this->pendingStoreSearch = $id
-                ? (string) (Store::query()->whereKey($id)->value('name') ?: $term)
-                : $term;
+                ? (string) (Store::query()->whereKey($id)->value('name') ?: '')
+                : '';
             $this->openStore(true);
             return;
         }
 
         if ($action === 'templates') {
+            // Pure navigation ("Templates") must open the full library.
+            // Only an actual Template result should carry a search term.
             $this->pendingTemplateSearch = $id
-                ? (string) (\App\Models\Template::query()->whereKey($id)->value('name') ?: $term)
-                : $term;
+                ? (string) (\App\Models\Template::query()->whereKey($id)->value('name') ?: '')
+                : '';
             $this->openTemplates(true);
             return;
         }
