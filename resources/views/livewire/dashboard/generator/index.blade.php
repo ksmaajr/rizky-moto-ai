@@ -1962,24 +1962,27 @@ new class extends Component
                                         <div class="rms-processing-orbit orbit-three"></div>
                                         <div class="rms-processing-core-ring">
                                             <svg class="rms-processing-spin-svg" wire:ignore viewBox="0 0 120 120" aria-hidden="true">
-    <!-- Compact radial dot train: all markers stay outside the 4% core. -->
-    <g>
-        <circle cx="60" cy="3" r="3.6" fill="#ef233c"/>
-        <circle cx="60" cy="10" r="3.1" fill="#ef233c"/>
-        <circle cx="60" cy="17" r="2.8" fill="#ef233c"/>
-        <circle cx="60" cy="24" r="2.5" fill="#ef233c"/>
-        <circle cx="60" cy="31" r="2.2" fill="#ef233c"/>
-        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="4.2s" repeatCount="indefinite"/>
-    </g>
+    <!-- Vertical dot train: each dot has its own orbit speed, so the train naturally separates. -->
+    <circle cx="60" cy="3" r="3.6" fill="#ef233c">
+        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="3.20s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="60" cy="10" r="3.1" fill="#ef233c">
+        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="4.05s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="60" cy="17" r="2.8" fill="#ef233c">
+        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="2.72s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="60" cy="24" r="2.5" fill="#ef233c">
+        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="4.70s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="60" cy="31" r="2.2" fill="#ef233c">
+        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="3.65s" repeatCount="indefinite"/>
+    </circle>
 </svg>
                                             <span class="rms-processing-core-glow"></span>
                                             <b>{{ $progress }}%</b>
                                             <small>{{ $status === 'queued' ? 'QUEUE' : 'GENERATING' }}</small>
                                         </div>
-                                        <i class="rms-processing-particle particle-one"></i>
-                                        <i class="rms-processing-particle particle-two"></i>
-                                        <i class="rms-processing-particle particle-three"></i>
-                                        <i class="rms-processing-particle particle-four"></i>
                                     </div>
                                 @endif
 
@@ -4839,4 +4842,8 @@ new class extends Component
 
 /* V14 — compact reference-style radial dot train; never enters the progress core */
 .rms-processing-spin-svg{position:absolute;inset:-2px;width:108px;height:108px;z-index:9;display:block;pointer-events:none;overflow:visible}
-@media(max-width:760px){.rms-processing-spin-svg{inset:-2px;width:92px;height:92px}}</style>
+@media(max-width:760px){.rms-processing-spin-svg{inset:-2px;width:92px;height:92px}}
+/* V15 — keep the orbit rings clean; no loose dots outside the main train */
+.rms-generation-processing-visual-v3 .rms-processing-orbit::before{display:none!important}
+.rms-generation-processing-visual-v3 .rms-processing-particle{display:none!important}
+</style>
