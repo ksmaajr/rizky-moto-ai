@@ -3,7 +3,7 @@
         <div>
             <span class="section-kicker">SYSTEM / SETTINGS</span>
             <h1 x-text="$wire.activeTab === 'provider' ? 'AI Provider Configuration' : 'General Settings'"></h1>
-            <p x-text="$wire.activeTab === 'openai'
+            <p x-text="$wire.activeTab === 'provider'
                 ? 'Kelola koneksi creative engine yang digunakan oleh Product Generator.'
                 : 'Kelola preferensi dasar workspace internal Rizky Moto Shop.'"></p>
         </div>
@@ -43,13 +43,27 @@
             <button
                 type="button"
                 class="rms-settings-tab"
-                :class="{ 'is-active': $wire.activeTab === 'openai' }"
+                :class="{ 'is-active': $wire.activeTab === 'provider' }"
                 wire:click="selectTab('provider')"
             >
                 <span class="rms-settings-tab-icon rms-settings-ai">AI</span>
                 <span>
-                    <strong>Vercel AI Gateway</strong>
-                    <small>AI engine & credentials</small>
+                    <strong>AI Provider</strong>
+                    <small>Engine &amp; credentials</small>
+                </span>
+                <i class="rms-settings-tab-status"></i>
+            </button>
+
+            <button
+                type="button"
+                class="rms-settings-tab"
+                :class="{ 'is-active': $wire.activeTab === 'activity' }"
+                wire:click="selectTab('activity')"
+            >
+                <span class="rms-settings-tab-icon rms-settings-activity-tab-icon">◷</span>
+                <span>
+                    <strong>Activity Log</strong>
+                    <small>Global system audit</small>
                 </span>
                 <i class="rms-settings-tab-status"></i>
             </button>
@@ -78,7 +92,7 @@
 
                             <div>
                                 <span>AI PROVIDER</span>
-                                <strong>Vercel AI Gateway</strong>
+                                <strong>AI Provider Configuration</strong>
                                 <small>Provider, credentials &amp; failover configuration</small>
                             </div>
                         </div>
@@ -502,6 +516,7 @@
                         </div>
                     @endif
 
+                    @if ($activeTab === 'activity')
                     {{-- GLOBAL ACTIVITY LOGS --}}
                     <section
                         class="rms-openai-logs rms-vg-activity rms-global-activity"
@@ -727,6 +742,8 @@
                         </div>
                     </section>
 
+                    @endif
+
                     {{-- LEGACY LOG SAFETY --}}
                     @if (count($vercelGatewayLogs) === 0 && count($openAiLogs) > 0)
                         <div class="rms-vg-legacy-note">
@@ -744,7 +761,7 @@
 
                     {{-- FOOTER --}}
                     <div class="rms-settings-panel-footer rms-openai-footer-upgraded rms-vg-footer">
-                        <span><i></i> Vercel AI Gateway key pool is server-managed</span>
+                        <span><i></i> AI provider configuration is server-managed</span>
                         <strong>Encrypted credentials · Automatic failover ready</strong>
                     </div>
 
@@ -756,7 +773,7 @@
                         <div>
                             <span>WORKSPACE PREFERENCES</span>
                             <h2>Keep your creative workspace consistent.</h2>
-                            <p>Pengaturan dasar dashboard internal Rizky Moto Shop. Konfigurasi engine AI tersedia pada Vercel AI Gateway.</p>
+                            <p>Pengaturan dasar dashboard internal Rizky Moto Shop. Konfigurasi engine AI tersedia pada AI Provider Configuration.</p>
                         </div>
                         <div class="rms-general-orbit">
                             <span>RMS</span>
