@@ -479,6 +479,7 @@ new class extends Component
     public function retryGeneration(int $generationId): void
     {
         $generation = $this->ownedGeneration($generationId);
+
         if (in_array($generation->status, ['queued', 'processing'], true)) {
             $generation->update([
                 'status' => 'cancelled', 'completed_at' => now(),
@@ -486,24 +487,78 @@ new class extends Component
                     'progress_stage' => 'Dibatalkan untuk retry', 'cancelled_at' => now()->toIso8601String(),
                 ]),
             ]);
-        } elseif (! in_array($generation->status, ['failed', 'cancelled', 'completed'], true)) return;
+        } elseif (! in_array($generation->status, ['failed', 'cancelled', 'completed'], true)) {
+            return;
+        }
+
+        // Old generations can lose their original source file after a storage
+        // migration/cleanup. Do not dispatch a retry that is guaranteed to fail.
+        // Prefer the original product; otherwise use the primary generated image
+        // as a controlled fallback source.
+        $disk = \Illuminate\Support\Facades\Storage::disk('public');
+        $retryProductPath = $generation->product_image_1_path;
+        $retrySource = 'original_product';
+
+        if (! $retryProductPath || ! $disk->exists($retryProductPath) || ! is_readable($disk->path($retryProductPath))) {
+            $fallback = $generation->generatedImages()
+                ->whereNotNull('image_path')
+                ->where('is_primary', true)
+                ->first();
+
+            if (! $fallback || ! $fallback->image_path || ! $disk->exists($fallback->image_path)) {
+                $this->dispatch(
+                    'toast',
+                    type: 'error',
+                    title: 'Tidak bisa membuat ulang',
+                    message: 'File gambar sumber generation lama sudah tidak tersedia di storage.'
+                );
+                return;
+            }
+
+            $extension = pathinfo($fallback->image_path, PATHINFO_EXTENSION) ?: 'png';
+            $retryProductPath = 'generations/source/retry-' . $generation->id . '-' . now()->format('YmdHis') . '.' . strtolower($extension);
+
+            if (! $disk->copy($fallback->image_path, $retryProductPath)) {
+                $this->dispatch(
+                    'toast',
+                    type: 'error',
+                    title: 'Tidak bisa membuat ulang',
+                    message: 'Gambar hasil lama tersedia, tetapi gagal disiapkan sebagai sumber retry.'
+                );
+                return;
+            }
+
+            $retrySource = 'generated_output_fallback';
+        }
 
         $metadata = array_merge($generation->metadata ?? [], [
-            'progress' => 4, 'progress_stage' => 'Menunggu worker queue',
-            'queued_at' => now()->toIso8601String(), 'retry_of' => $generation->id,
+            'progress' => 4,
+            'progress_stage' => 'Menunggu worker queue',
+            'queued_at' => now()->toIso8601String(),
+            'retry_of' => $generation->id,
+            'retry_source' => $retrySource,
         ]);
         unset($metadata['started_at'], $metadata['completed_at'], $metadata['failed_at'], $metadata['cancelled_at']);
 
         $retry = $generation->replicate();
+        $retry->product_image_1_path = $retryProductPath;
         $retry->status = 'queued';
         $retry->error_message = null;
         $retry->started_at = null;
         $retry->completed_at = null;
         $retry->metadata = $metadata;
         $retry->save();
+
         \App\Jobs\GenerateOpenAiImageJob::dispatch($retry->id);
         $this->latestGenerationId = $retry->id;
-        $this->dispatch('toast', type: 'success', title: 'Retry dimulai', message: 'Generation baru masuk antrean.');
+        $this->dispatch(
+            'toast',
+            type: 'success',
+            title: 'Retry dimulai',
+            message: $retrySource === 'original_product'
+                ? 'Generation baru masuk antrean menggunakan gambar produk asli.'
+                : 'Generation baru masuk antrean menggunakan hasil generate terakhir sebagai fallback source.'
+        );
     }
 
     public function deleteGeneration(int $generationId): void
