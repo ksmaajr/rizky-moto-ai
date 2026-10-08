@@ -3757,6 +3757,95 @@ public function getUserInitialsProperty(): string
         }
 
 
+        /* V21 — refined mobile engine details control */
+        @media(max-width:760px){
+            .rms-engine-mobile-toggle{
+                min-height:50px!important;
+                margin-top:12px!important;
+                padding:0 9px 0 14px!important;
+                border:1px solid rgba(39,174,96,.16)!important;
+                border-radius:15px!important;
+                background:
+                    linear-gradient(90deg,rgba(39,174,96,.075),rgba(255,255,255,.94) 42%,rgba(250,250,250,.98))!important;
+                box-shadow:
+                    0 8px 24px rgba(24,24,27,.055),
+                    inset 0 1px 0 rgba(255,255,255,.95)!important;
+                overflow:hidden;
+            }
+            .rms-engine-mobile-toggle:before{
+                content:"";
+                position:absolute;
+                left:0;
+                top:8px;
+                bottom:8px;
+                width:3px;
+                border-radius:0 5px 5px 0;
+                background:#22c55e;
+                box-shadow:0 0 12px rgba(34,197,94,.2);
+            }
+            .rms-engine-mobile-toggle>span{
+                gap:10px!important;
+            }
+            .rms-engine-mobile-toggle>span>i{
+                width:9px!important;
+                height:9px!important;
+                flex-basis:9px!important;
+                box-shadow:0 0 0 4px rgba(34,197,94,.09),0 0 13px rgba(34,197,94,.24)!important;
+            }
+            .rms-engine-mobile-toggle strong{
+                font-size:9px!important;
+                letter-spacing:.055em!important;
+                color:#18181b!important;
+            }
+            .rms-engine-mobile-toggle strong:after{
+                content:""!important;
+            }
+            .rms-engine-mobile-toggle:after{
+                content:"ENGINE DETAILS";
+                position:absolute;
+                left:33px;
+                bottom:8px;
+                font-size:5.5px;
+                line-height:1;
+                letter-spacing:.14em;
+                font-weight:900;
+                color:#a1a1aa;
+                pointer-events:none;
+            }
+            .rms-engine-mobile-toggle>b{
+                width:32px!important;
+                height:32px!important;
+                flex-basis:32px!important;
+                border:1px solid rgba(24,24,27,.075)!important;
+                border-radius:10px!important;
+                background:#fff!important;
+                color:#52525b!important;
+                font-size:14px!important;
+                box-shadow:0 5px 15px rgba(24,24,27,.08)!important;
+            }
+            .rms-engine-mobile-toggle>b.is-open{
+                background:#18181b!important;
+                color:#fff!important;
+                border-color:#18181b!important;
+                box-shadow:0 6px 16px rgba(24,24,27,.16)!important;
+            }
+            .rms-engine-health-panel.is-collapsed .rms-engine-mobile-toggle{
+                border-color:rgba(39,174,96,.20)!important;
+                background:linear-gradient(90deg,rgba(39,174,96,.085),rgba(255,255,255,.98) 58%)!important;
+            }
+        }
+        @media(max-width:420px){
+            .rms-engine-mobile-toggle{
+                min-height:48px!important;
+                border-radius:14px!important;
+                padding-left:13px!important;
+            }
+            .rms-engine-mobile-toggle strong{font-size:8.5px!important}
+            .rms-engine-mobile-toggle:after{left:32px;font-size:5.2px}
+            .rms-engine-mobile-toggle>b{width:30px!important;height:30px!important;flex-basis:30px!important}
+        }
+
+
     </style>
 
 </div>
