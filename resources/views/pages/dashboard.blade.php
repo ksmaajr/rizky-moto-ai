@@ -1585,22 +1585,22 @@ public function getUserInitialsProperty(): string
                 <div class="worker-actions">
                     @if ($this->workerStatus['running'])
                         <button type="button" class="worker-action worker-action-restart"
-                            wire:click="restartQueueWorker" wire:loading.attr="disabled" wire:target="restartQueueWorker">
-                            <span wire:loading.remove wire:target="restartQueueWorker">↻</span>
-                            <span wire:loading wire:target="restartQueueWorker" class="worker-spinner">◌</span>
+                            @click="workerAction='restart'; fetch('/dashboard/queue-workers/restart',{method:'POST',headers:{'X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]').content,'Accept':'application/json'},credentials:'same-origin'}).then(() => Livewire.dispatch('worker-status-refresh')).catch(console.error).finally(() => workerAction='')" :disabled="!!workerAction">
+                            <span x-show="workerAction !== 'restart'">↻</span>
+                            <span x-show="workerAction === 'restart'" class="worker-spinner" x-cloak>◌</span>
                             Restart
                         </button>
                         <button type="button" class="worker-action worker-action-stop"
-                            wire:click="stopQueueWorker" wire:loading.attr="disabled" wire:target="stopQueueWorker">
-                            <span wire:loading.remove wire:target="stopQueueWorker">■</span>
-                            <span wire:loading wire:target="stopQueueWorker" class="worker-spinner">◌</span>
+                            @click="workerAction='stop'; fetch('/dashboard/queue-workers/stop',{method:'POST',headers:{'X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]').content,'Accept':'application/json'},credentials:'same-origin'}).then(() => Livewire.dispatch('worker-status-refresh')).catch(console.error).finally(() => workerAction='')" :disabled="!!workerAction">
+                            <span x-show="workerAction !== 'stop'">■</span>
+                            <span x-show="workerAction === 'stop'" class="worker-spinner" x-cloak>◌</span>
                             Stop
                         </button>
                     @else
                         <button type="button" class="worker-action worker-action-start"
-                            wire:click="startQueueWorker" wire:loading.attr="disabled" wire:target="startQueueWorker">
-                            <span wire:loading.remove wire:target="startQueueWorker">▶</span>
-                            <span wire:loading wire:target="startQueueWorker" class="worker-spinner">◌</span>
+                            @click="workerAction='start'; fetch('/dashboard/queue-workers/start',{method:'POST',headers:{'X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]').content,'Accept':'application/json'},credentials:'same-origin'}).then(() => Livewire.dispatch('worker-status-refresh')).catch(console.error).finally(() => workerAction='')" :disabled="!!workerAction">
+                            <span x-show="workerAction !== 'start'">▶</span>
+                            <span x-show="workerAction === 'start'" class="worker-spinner" x-cloak>◌</span>
                             Start Worker
                         </button>
                     @endif
