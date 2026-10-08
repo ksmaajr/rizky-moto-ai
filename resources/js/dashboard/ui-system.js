@@ -33,6 +33,7 @@
 
     function openNotification() {
         closeProfile();
+        if (window.innerWidth <= 900) closeMobileSidebar();
         const menu = $('#notificationMenu');
         const dropdown = $('#notificationDropdown');
         menu?.classList.add('is-open');
@@ -72,6 +73,7 @@
     }
 
     function openMobileSidebar() {
+        closeMenus();
         $('#dashboardSidebar')?.classList.add('mobile-open');
         $('#mobileOverlay')?.classList.add('mobile-visible');
         syncMobileScrollLock();
