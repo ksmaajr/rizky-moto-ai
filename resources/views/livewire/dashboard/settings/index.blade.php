@@ -663,7 +663,7 @@
                             </div>
                         </div>
 
-                        <div class="rms-global-activity-toolbar" x-data="{ filtersOpen: true }">
+                        <div class="rms-global-activity-toolbar" x-data="{ filtersOpen: false }">
                             <label>
                                 <span>SEARCH</span>
                                 <input type="search" wire:model.live.debounce.350ms="activitySearch" placeholder="Search activity..." autocomplete="off">
@@ -2151,5 +2151,64 @@
 @media(max-width:390px){
     .rms-activity-select-trigger{height:44px!important}
     .rms-activity-select-chevron{width:27px!important;height:27px!important;flex-basis:27px!important}
+}
+</style>
+<style>
+/* MOBILE FILTER TOGGLE — refined chevron + hidden by default */
+@media(max-width:640px){
+    .rms-mobile-filter-toggle{
+        min-height:52px!important;
+        padding:0 13px!important;
+        border-radius:12px!important;
+        background:linear-gradient(180deg,#fff,#fafafa)!important;
+        box-shadow:0 3px 12px rgba(15,23,42,.035)!important;
+    }
+    .rms-mobile-filter-toggle-main{gap:11px!important}
+    .rms-mobile-filter-icon{
+        position:relative;
+        width:30px!important;height:30px!important;
+        flex:0 0 30px!important;
+        border:1px solid #e4e4e7;
+        background:#f7f7f8!important;
+        color:transparent!important;
+        font-size:0!important;
+        transform:none!important;
+        transition:background .22s ease,border-color .22s ease,box-shadow .22s ease;
+    }
+    .rms-mobile-filter-icon::before{
+        content:"";
+        width:7px;height:7px;
+        border-right:1.8px solid #71717a;
+        border-bottom:1.8px solid #71717a;
+        transform:rotate(45deg);
+        margin-top:-4px;
+        transition:transform .3s cubic-bezier(.2,.8,.2,1),border-color .22s ease;
+    }
+    .rms-mobile-filter-toggle[aria-expanded="true"] .rms-mobile-filter-icon{
+        background:#fff1f2!important;
+        border-color:#fecaca!important;
+        box-shadow:0 3px 10px rgba(239,48,48,.08);
+    }
+    .rms-mobile-filter-toggle[aria-expanded="true"] .rms-mobile-filter-icon::before{
+        transform:rotate(225deg);
+        margin-top:4px;
+        border-color:#ef3030;
+    }
+    .rms-mobile-filter-toggle-main strong{
+        font-size:11px!important;
+        letter-spacing:-.01em;
+    }
+    .rms-mobile-filter-toggle-main small{font-size:8px!important}
+    .rms-mobile-filter-toggle-state{
+        min-width:44px;
+        height:25px;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        padding:0 8px!important;
+        border-radius:8px!important;
+        font-size:7px!important;
+        background:#fff!important;
+    }
 }
 </style>
