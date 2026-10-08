@@ -256,10 +256,19 @@
     });
 
     document.addEventListener('keydown', event => {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+            event.preventDefault();
+            const search = document.querySelector('.top-search input');
+            if (search) {
+                search.focus();
+                search.select();
+            }
+            return;
+        }
+
         if (event.key === 'Escape') {
             closeMenus();
             closeMobileSidebar();
-            closeConfirm(false);
         }
     });
 
