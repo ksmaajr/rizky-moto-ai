@@ -2917,4 +2917,388 @@
 .rms-provider-block-failover .rms-ai-save-button .rms-ai-save-visible{
     display:inline!important;
 }
+</style><style>
+/* =========================================================
+   AI PROVIDER — MOBILE-FIRST FINAL PASS
+   Optimized for 320–767px screens without changing desktop.
+   ========================================================= */
+@media (max-width: 760px){
+    .rms-provider-block{
+        width:100%!important;
+        max-width:100%!important;
+        box-sizing:border-box!important;
+        margin:0 0 18px!important;
+        border-radius:18px!important;
+        overflow:hidden!important;
+    }
+
+    .rms-provider-block-head{
+        display:grid!important;
+        grid-template-columns:42px minmax(0,1fr)!important;
+        align-items:start!important;
+        gap:11px!important;
+        padding:17px 14px 15px!important;
+    }
+    .rms-provider-block-icon{
+        width:42px!important;
+        height:42px!important;
+        flex:0 0 42px!important;
+        border-radius:13px!important;
+    }
+    .rms-provider-block-copy{
+        min-width:0!important;
+        padding-top:1px!important;
+    }
+    .rms-provider-block-copy span{
+        margin-bottom:4px!important;
+        font-size:7px!important;
+        line-height:1.2!important;
+    }
+    .rms-provider-block-copy strong{
+        font-size:16px!important;
+        line-height:1.15!important;
+        letter-spacing:-.02em!important;
+    }
+    .rms-provider-block-copy small{
+        margin-top:6px!important;
+        max-width:100%!important;
+        font-size:9px!important;
+        line-height:1.45!important;
+    }
+    .rms-provider-block-state{
+        grid-column:2!important;
+        justify-self:start!important;
+        min-height:27px!important;
+        margin-top:2px!important;
+        padding:0 9px!important;
+        font-size:7px!important;
+    }
+
+    /* Vercel key pool */
+    .rms-provider-block .rms-vg-key-manager-root,
+    .rms-provider-block .rms-ai-provider-section{
+        width:auto!important;
+        margin:12px 10px!important;
+    }
+    .rms-vg-key-manager{
+        border-radius:15px!important;
+    }
+    .rms-vg-section-head{
+        padding:13px 12px!important;
+        gap:9px!important;
+    }
+    .rms-vg-section-title{
+        min-width:0!important;
+    }
+    .rms-vg-section-title strong{
+        font-size:12px!important;
+    }
+    .rms-vg-section-title small{
+        font-size:8px!important;
+        line-height:1.4!important;
+    }
+    .rms-vg-section-icon{
+        width:32px!important;
+        height:32px!important;
+        flex:0 0 32px!important;
+    }
+    .rms-vg-pool-badge{
+        min-height:25px!important;
+        padding:0 8px!important;
+        font-size:7px!important;
+    }
+    .rms-vg-key-notice{
+        margin:9px 10px!important;
+        padding:10px!important;
+        gap:8px!important;
+    }
+    .rms-vg-key-notice strong{
+        font-size:8px!important;
+    }
+    .rms-vg-key-notice small{
+        font-size:7.5px!important;
+        line-height:1.4!important;
+    }
+    .rms-vg-add-toggle{
+        margin:0 10px 9px!important;
+        min-height:48px!important;
+        padding:8px 10px!important;
+    }
+    .rms-vg-add-toggle strong{font-size:9px!important}
+    .rms-vg-add-toggle small{font-size:7.5px!important}
+
+    .rms-vg-key-list{
+        gap:8px!important;
+        padding:0 10px 11px!important;
+    }
+    .rms-vg-key-card{
+        border-radius:12px!important;
+    }
+    .rms-vg-key-card-main{
+        display:grid!important;
+        grid-template-columns:36px minmax(0,1fr)!important;
+        align-items:start!important;
+        gap:9px!important;
+        padding:11px!important;
+    }
+    .rms-vg-key-avatar{
+        width:36px!important;
+        height:36px!important;
+        flex-basis:36px!important;
+        border-radius:9px!important;
+    }
+    .rms-vg-key-copy{
+        min-width:0!important;
+    }
+    .rms-vg-key-name-row{
+        align-items:center!important;
+        flex-wrap:wrap!important;
+        gap:5px!important;
+    }
+    .rms-vg-key-name-row>strong{
+        max-width:100%!important;
+        font-size:10px!important;
+    }
+    .rms-vg-status{
+        height:18px!important;
+        font-size:6.5px!important;
+    }
+    .rms-vg-key-copy code{
+        margin-top:5px!important;
+        font-size:7.5px!important;
+    }
+    .rms-vg-key-meta{
+        gap:5px!important;
+        margin-top:6px!important;
+        font-size:7px!important;
+        line-height:1.4!important;
+    }
+    .rms-vg-key-meta span+span:before{
+        margin-right:5px!important;
+    }
+    .rms-vg-key-actions{
+        grid-column:1/-1!important;
+        width:100%!important;
+        display:grid!important;
+        grid-template-columns:38px 1fr 38px!important;
+        gap:6px!important;
+        margin-top:1px!important;
+        padding-top:8px!important;
+        border-top:1px solid #f0f0f2!important;
+    }
+    .rms-vg-delete-key,
+    .rms-vg-key-more{
+        width:38px!important;
+        height:34px!important;
+        border-radius:9px!important;
+    }
+    .rms-vg-test-key{
+        width:100%!important;
+        min-width:0!important;
+        height:34px!important;
+        font-size:8px!important;
+    }
+    .rms-vg-key-menu{
+        right:0!important;
+        top:calc(100% + 7px)!important;
+        min-width:170px!important;
+    }
+    .rms-provider-block .rms-vg-test-all-card{
+        width:auto!important;
+        margin:0 10px 12px!important;
+        padding:12px!important;
+        display:flex!important;
+        flex-direction:column!important;
+        align-items:stretch!important;
+        gap:11px!important;
+    }
+    .rms-vg-test-all-copy{
+        align-items:flex-start!important;
+    }
+    .rms-vg-test-all-copy strong{font-size:10px!important}
+    .rms-vg-test-all-copy small{
+        font-size:7.5px!important;
+        line-height:1.45!important;
+    }
+    .rms-vg-test-all-button{
+        width:100%!important;
+        min-height:40px!important;
+        font-size:8px!important;
+    }
+
+    /* Agent AI */
+    .rms-provider-block-agent .rms-ai-provider-section,
+    .rms-provider-block-failover .rms-ai-provider-section{
+        border-radius:14px!important;
+    }
+    .rms-ai-provider-section-head{
+        display:flex!important;
+        flex-direction:column!important;
+        align-items:flex-start!important;
+        gap:9px!important;
+        padding:13px!important;
+    }
+    .rms-ai-provider-section-title{
+        width:100%!important;
+        min-width:0!important;
+    }
+    .rms-ai-provider-section-title strong{
+        font-size:11px!important;
+    }
+    .rms-ai-provider-section-title small{
+        font-size:7.5px!important;
+        line-height:1.45!important;
+    }
+    .rms-ai-provider-status{
+        align-self:flex-start!important;
+        font-size:6.5px!important;
+    }
+    .rms-ai-agent-grid{
+        display:grid!important;
+        grid-template-columns:1fr!important;
+        gap:9px!important;
+        padding:10px!important;
+    }
+    .rms-ai-agent-readiness{
+        min-height:0!important;
+        padding:12px!important;
+        border-radius:12px!important;
+    }
+    .rms-ai-agent-readiness strong{
+        font-size:9px!important;
+    }
+    .rms-ai-agent-readiness p{
+        font-size:7.5px!important;
+        line-height:1.5!important;
+    }
+    .rms-ai-readiness-orb{
+        width:38px!important;
+        height:38px!important;
+        flex:0 0 38px!important;
+    }
+    .rms-ai-agent-actions{
+        min-width:0!important;
+    }
+    .rms-ai-agent-meta{
+        display:grid!important;
+        grid-template-columns:1fr 1fr 1fr!important;
+        gap:6px!important;
+    }
+    .rms-ai-agent-meta span{
+        min-width:0!important;
+        padding:9px 7px!important;
+        border-radius:9px!important;
+    }
+    .rms-ai-agent-meta b{
+        display:block!important;
+        font-size:6.5px!important;
+        line-height:1.25!important;
+    }
+    .rms-ai-agent-meta em{
+        display:block!important;
+        margin-top:3px!important;
+        font-size:6px!important;
+    }
+    .rms-ai-secondary-button{
+        width:100%!important;
+        min-height:40px!important;
+        margin-top:7px!important;
+        font-size:8px!important;
+    }
+
+    /* Provider failover */
+    .rms-ai-failover-grid{
+        display:grid!important;
+        grid-template-columns:1fr!important;
+        gap:10px!important;
+        padding:12px!important;
+    }
+    .rms-ai-config-field{
+        gap:5px!important;
+    }
+    .rms-ai-config-field>span{
+        font-size:7px!important;
+    }
+    .rms-custom-select-trigger{
+        min-height:50px!important;
+        padding:7px 9px!important;
+        border-radius:11px!important;
+    }
+    .rms-custom-select-leading{
+        width:32px!important;
+        height:32px!important;
+        flex-basis:32px!important;
+    }
+    .rms-custom-select-value strong{
+        font-size:9.5px!important;
+    }
+    .rms-custom-select-value small{
+        font-size:7px!important;
+    }
+    .rms-custom-select-arrow{
+        width:30px!important;
+        height:30px!important;
+        flex-basis:30px!important;
+    }
+    .rms-ai-toggle-field{
+        align-items:flex-start!important;
+        gap:9px!important;
+        padding:12px!important;
+        border-radius:11px!important;
+    }
+    .rms-ai-toggle-field strong{
+        font-size:10px!important;
+        line-height:1.25!important;
+    }
+    .rms-ai-toggle-field span:not(.rms-ai-toggle){
+        font-size:8px!important;
+        line-height:1.45!important;
+    }
+    .rms-ai-provider-save-row{
+        align-items:stretch!important;
+        flex-direction:column!important;
+        gap:10px!important;
+        padding:12px!important;
+    }
+    .rms-ai-provider-save-row>div>span:last-child{
+        font-size:7.5px!important;
+        line-height:1.45!important;
+    }
+    .rms-provider-block-failover .rms-ai-save-button{
+        width:100%!important;
+        min-width:0!important;
+        height:46px!important;
+    }
+}
+
+@media(max-width:390px){
+    .rms-provider-block-head{
+        padding:15px 12px 14px!important;
+    }
+    .rms-provider-block-copy strong{font-size:15px!important}
+    .rms-provider-block-copy small{font-size:8.5px!important}
+    .rms-provider-block .rms-vg-key-manager-root,
+    .rms-provider-block .rms-ai-provider-section{
+        margin-left:8px!important;
+        margin-right:8px!important;
+    }
+    .rms-provider-block .rms-vg-test-all-card{
+        margin-left:8px!important;
+        margin-right:8px!important;
+    }
+    .rms-ai-agent-meta{
+        grid-template-columns:1fr!important;
+    }
+    .rms-ai-agent-meta span{
+        display:flex!important;
+        align-items:center!important;
+        justify-content:space-between!important;
+        gap:8px!important;
+    }
+    .rms-ai-agent-meta em{
+        margin-top:0!important;
+    }
+    .rms-ai-toggle-field strong{font-size:9.5px!important}
+    .rms-ai-toggle-field span:not(.rms-ai-toggle){font-size:7.5px!important}
+}
 </style>
