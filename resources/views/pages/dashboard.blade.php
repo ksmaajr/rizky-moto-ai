@@ -99,6 +99,7 @@ class extends Component
     public string $dashboardStore = 'all';
     public string $globalSearch = '';
     public array $dashboardData = [];
+    public ?string $notificationReadAt = null;
 
 
 
@@ -127,6 +128,7 @@ class extends Component
 
 
 
+        $this->notificationReadAt = session('dashboard_notifications_read_at');
         $this->loadDashboardData();
 
         // Worker state is server-side. Resolve it on every dashboard mount so a
@@ -814,6 +816,21 @@ class extends Component
                 'detail' => $agentConnected ? 'Provider adapter AgentKit tersedia.' : 'Siap ditambahkan tanpa mengubah generation flow saat ini.',
             ],
         ];
+    }
+
+    public function getDashboardNotificationUnreadCountProperty(): int
+    {
+        $readAt = session('dashboard_notifications_read_at');
+        return (int) \App\Models\ActivityLog::query()
+            ->when($readAt, fn ($q) => $q->where('created_at', '>', $readAt))
+            ->count();
+    }
+
+    public function markNotificationsRead(): void
+    {
+        $this->notificationReadAt = now()->toISOString();
+        session(['dashboard_notifications_read_at' => $this->notificationReadAt]);
+        $this->dispatch('toast', type: 'success', title: 'Notifikasi dibaca', message: 'Semua notifikasi terbaru sudah ditandai dibaca.');
     }
 
     public function getDashboardNotificationsProperty(): array
@@ -1927,9 +1944,9 @@ public function getUserInitialsProperty(): string
 
                         </svg>
 
-                        <span class="notification-dot"></span>
+                        <span class="notification-dot {{ $this->dashboardNotificationUnreadCount === 0 ? 'is-hidden' : '' }}"></span>
 
-                        <span class="notification-count">{{ count($this->dashboardNotifications) }}</span>
+                        <span class="notification-count {{ $this->dashboardNotificationUnreadCount === 0 ? 'is-hidden' : '' }}">{{ min(99, $this->dashboardNotificationUnreadCount) }}</span>
 
                     </button>
 
@@ -1938,7 +1955,7 @@ public function getUserInitialsProperty(): string
                     <div class="notification-dropdown" id="notificationDropdown" aria-hidden="true">
                         <div class="notification-dropdown-head">
                             <div><span class="notification-eyebrow">SYSTEM CENTER</span><h3>Notifikasi</h3><p>Update terbaru dari workspace kamu.</p></div>
-                            <button type="button" class="notification-mark-read" id="notificationMarkRead">Tandai dibaca</button>
+                            <button type="button" class="notification-mark-read" id="notificationMarkRead" wire:click="markNotificationsRead">Tandai dibaca</button>
                         </div>
                         <div class="notification-list">
                             @forelse($this->dashboardNotifications as $notification)
