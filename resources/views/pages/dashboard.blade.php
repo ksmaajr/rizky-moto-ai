@@ -610,6 +610,12 @@ class extends Component
             default => $now->copy()->subDays(6)->startOfDay(),
         };
 
+        $workspaceStats = Store::query()
+            ->selectRaw('COUNT(*) as total, SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active')
+            ->first();
+
+        $workspaceTemplates = (int) \App\Models\Template::query()->count();
+
         $base = \App\Models\Generation::query()
             ->where('created_at', '>=', $from)
             ->when($this->dashboardStatus !== 'all', fn ($q) => $q->where('status', $this->dashboardStatus))
@@ -731,6 +737,9 @@ class extends Component
             'images' => $imageCount,
             'avg_duration' => $avgDuration,
             'success_rate' => $total > 0 ? round(($completed / $total) * 100) : 0,
+            'stores_total' => (int) ($workspaceStats?->total ?? 0),
+            'stores_active' => (int) ($workspaceStats?->active ?? 0),
+            'templates_total' => $workspaceTemplates,
             'trend' => $trend,
             'max_trend' => max(1, max(array_column($trend, 'value') ?: [1])),
             'recent' => $recent->map(fn ($generation) => [
