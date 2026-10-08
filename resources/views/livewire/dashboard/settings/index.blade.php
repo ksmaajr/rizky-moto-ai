@@ -2791,4 +2791,37 @@
 @media(prefers-reduced-motion:reduce){
     .rms-custom-select-trigger,.rms-custom-select-arrow,.rms-custom-select-option{transition:none}
 }
+</style><style>
+/* CUSTOM PROVIDER SELECT — allow menu to escape inner cards without escaping its provider container */
+.rms-provider-block-failover,
+.rms-provider-block-failover .rms-ai-provider-section,
+.rms-provider-block-failover .rms-ai-failover-grid{
+    overflow:visible!important;
+}
+.rms-provider-block-failover .rms-ai-provider-section{
+    position:relative;
+}
+.rms-provider-block-failover .rms-ai-config-field{
+    position:relative;
+    z-index:2;
+}
+.rms-provider-block-failover .rms-custom-select{
+    z-index:10;
+}
+.rms-provider-block-failover .rms-custom-select.is-open{
+    z-index:1000;
+}
+.rms-provider-block-failover .rms-custom-select-menu{
+    z-index:1100!important;
+}
+.rms-provider-block-failover .rms-ai-toggle-field,
+.rms-provider-block-failover .rms-ai-provider-save-row{
+    position:relative;
+    z-index:1;
+}
+@media(max-width:760px){
+    .rms-provider-block-failover .rms-custom-select-menu{
+        max-width:100%;
+    }
+}
 </style>
