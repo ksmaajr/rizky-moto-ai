@@ -3301,4 +3301,184 @@
     .rms-ai-toggle-field strong{font-size:9.5px!important}
     .rms-ai-toggle-field span:not(.rms-ai-toggle){font-size:7.5px!important}
 }
+</style><style>
+/* MOBILE HOTFIX — Vercel key cards + provider select stacking */
+@media (max-width:760px){
+    /* Never clip the custom dropdown inside the failover card. */
+    .rms-provider-block-failover,
+    .rms-provider-block-failover .rms-ai-provider-section,
+    .rms-provider-block-failover .rms-ai-failover-grid,
+    .rms-provider-block-failover .rms-ai-config-field,
+    .rms-provider-block-failover .rms-custom-select{
+        overflow:visible!important;
+    }
+
+    .rms-provider-block-failover{
+        position:relative!important;
+        z-index:20!important;
+    }
+
+    .rms-provider-block-failover .rms-ai-provider-section{
+        position:relative!important;
+        z-index:20!important;
+    }
+
+    .rms-provider-block-failover .rms-ai-failover-grid{
+        position:relative!important;
+        z-index:30!important;
+    }
+
+    .rms-provider-block-failover .rms-ai-config-field{
+        position:relative!important;
+        z-index:31!important;
+        isolation:isolate;
+    }
+
+    .rms-provider-block-failover .rms-ai-config-field:has(.rms-custom-select.is-open){
+        z-index:5000!important;
+    }
+
+    .rms-provider-block-failover .rms-custom-select{
+        position:relative!important;
+        z-index:100!important;
+    }
+
+    .rms-provider-block-failover .rms-custom-select.is-open{
+        z-index:6000!important;
+    }
+
+    .rms-provider-block-failover .rms-custom-select-menu{
+        position:absolute!important;
+        left:0!important;
+        right:0!important;
+        top:calc(100% + 7px)!important;
+        z-index:99999!important;
+        width:100%!important;
+        max-width:none!important;
+        max-height:260px!important;
+        overflow-y:auto!important;
+        overscroll-behavior:contain;
+        -webkit-overflow-scrolling:touch;
+    }
+
+    /* Keep the second select from ever painting over an opened first select. */
+    .rms-provider-block-failover .rms-ai-config-field + .rms-ai-config-field{
+        z-index:30!important;
+    }
+    .rms-provider-block-failover .rms-ai-config-field:has(.rms-custom-select.is-open) + .rms-ai-config-field{
+        z-index:1!important;
+    }
+
+    /* Cleaner touch target + centered chevron. */
+    .rms-provider-block-failover .rms-custom-select-trigger{
+        min-height:50px!important;
+        display:flex!important;
+        align-items:center!important;
+    }
+    .rms-provider-block-failover .rms-custom-select-arrow{
+        display:grid!important;
+        place-items:center!important;
+        align-self:center!important;
+        margin-left:auto!important;
+        transform:none!important;
+    }
+    .rms-provider-block-failover .rms-custom-select-arrow::before{
+        display:block!important;
+        margin:0!important;
+        transform:translateY(-1px) rotate(45deg)!important;
+    }
+    .rms-provider-block-failover .rms-custom-select.is-open .rms-custom-select-arrow::before{
+        transform:translateY(1px) rotate(225deg)!important;
+    }
+
+    /* Vercel API key: information first, actions always form one clean row. */
+    .rms-provider-block-vercel .rms-vg-key-card-main{
+        display:grid!important;
+        grid-template-columns:34px minmax(0,1fr)!important;
+        align-items:start!important;
+        gap:9px!important;
+        padding:11px!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-avatar{
+        width:34px!important;
+        height:34px!important;
+        flex-basis:34px!important;
+        border-radius:9px!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-copy{
+        width:100%!important;
+        min-width:0!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-name-row{
+        width:100%!important;
+        display:flex!important;
+        align-items:center!important;
+        flex-wrap:nowrap!important;
+        gap:5px!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-name-row>strong{
+        min-width:0!important;
+        max-width:calc(100% - 55px)!important;
+        overflow:hidden!important;
+        text-overflow:ellipsis!important;
+        white-space:nowrap!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-meta{
+        display:flex!important;
+        flex-wrap:wrap!important;
+        align-items:center!important;
+        column-gap:5px!important;
+        row-gap:3px!important;
+        max-width:100%!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-meta span{
+        white-space:nowrap!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-actions{
+        grid-column:1/-1!important;
+        width:100%!important;
+        margin:2px 0 0!important;
+        padding-top:8px!important;
+        display:grid!important;
+        grid-template-columns:36px minmax(0,1fr) 36px!important;
+        align-items:center!important;
+        gap:6px!important;
+        border-top:1px solid #f0f0f2!important;
+    }
+    .rms-provider-block-vercel .rms-vg-delete-key,
+    .rms-provider-block-vercel .rms-vg-key-more{
+        width:36px!important;
+        height:33px!important;
+        min-width:36px!important;
+        border-radius:9px!important;
+    }
+    .rms-provider-block-vercel .rms-vg-test-key{
+        width:100%!important;
+        min-width:0!important;
+        height:33px!important;
+        padding:0 8px!important;
+        border-radius:9px!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-progress{
+        height:2px!important;
+    }
+}
+
+@media(max-width:390px){
+    .rms-provider-block-vercel .rms-vg-key-card-main{
+        padding:10px!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-meta{
+        font-size:6.5px!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-actions{
+        grid-template-columns:34px minmax(0,1fr) 34px!important;
+        gap:5px!important;
+    }
+    .rms-provider-block-vercel .rms-vg-delete-key,
+    .rms-provider-block-vercel .rms-vg-key-more{
+        width:34px!important;
+        min-width:34px!important;
+    }
+}
 </style>
