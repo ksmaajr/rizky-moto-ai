@@ -3607,4 +3607,42 @@
         font-size:6.4px!important;
     }
 }
+</style><style>
+/* MOBILE API KEY — status pinned to top-right */
+@media(max-width:760px){
+    .rms-provider-block-vercel .rms-vg-key-card-main{
+        position:relative!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-copy{
+        position:relative!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-name-row{
+        position:relative!important;
+        display:block!important;
+        width:100%!important;
+        min-height:18px!important;
+        padding-right:58px!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-name-row>strong{
+        display:block!important;
+        width:100%!important;
+        max-width:none!important;
+        padding-right:0!important;
+        white-space:nowrap!important;
+        overflow:hidden!important;
+        text-overflow:ellipsis!important;
+    }
+    .rms-provider-block-vercel .rms-vg-status{
+        position:absolute!important;
+        top:0!important;
+        right:0!important;
+        margin:0!important;
+        height:18px!important;
+    }
+}
+@media(max-width:390px){
+    .rms-provider-block-vercel .rms-vg-key-name-row{
+        padding-right:54px!important;
+    }
+}
 </style>
