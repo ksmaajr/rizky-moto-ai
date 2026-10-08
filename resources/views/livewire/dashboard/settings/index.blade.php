@@ -3019,4 +3019,70 @@
     flex-wrap:nowrap!important;
     white-space:nowrap!important;
 }
+</style><style>
+/* SAVE BUTTON — compact centered composition */
+.rms-provider-block-failover .rms-ai-save-button{
+    position:relative!important;
+    display:grid!important;
+    place-items:center!important;
+    min-width:190px!important;
+    min-height:46px!important;
+    padding:0 14px!important;
+}
+.rms-provider-block-failover .rms-ai-save-button .rms-save-content,
+.rms-provider-block-failover .rms-ai-save-button .rms-save-loading{
+    position:absolute!important;
+    inset:0!important;
+    display:flex!important;
+    flex-direction:row!important;
+    flex-wrap:nowrap!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:auto!important;
+    height:auto!important;
+    gap:7px!important;
+    margin:0!important;
+    padding:0!important;
+    white-space:nowrap!important;
+}
+.rms-provider-block-failover .rms-ai-save-button .rms-save-content>span,
+.rms-provider-block-failover .rms-ai-save-button .rms-save-loading>span{
+    display:inline!important;
+    width:auto!important;
+    height:auto!important;
+    margin:0!important;
+    padding:0!important;
+    flex:0 0 auto!important;
+    font-size:9px!important;
+    line-height:1!important;
+    white-space:nowrap!important;
+}
+.rms-provider-block-failover .rms-ai-save-button .rms-save-content>b{
+    display:grid!important;
+    place-items:center!important;
+    flex:0 0 21px!important;
+    width:21px!important;
+    min-width:21px!important;
+    max-width:21px!important;
+    height:21px!important;
+    min-height:21px!important;
+    max-height:21px!important;
+    margin:0!important;
+    padding:0!important;
+    border-radius:7px!important;
+    font-size:11px!important;
+    line-height:1!important;
+}
+.rms-provider-block-failover .rms-ai-save-button .rms-save-loading>i{
+    width:12px!important;
+    height:12px!important;
+    flex:0 0 12px!important;
+}
+@media(max-width:760px){
+    .rms-provider-block-failover .rms-ai-save-button{
+        width:100%!important;
+        min-width:0!important;
+        min-height:48px!important;
+    }
+}
 </style>
