@@ -590,6 +590,13 @@ class extends Component
         }
 
         $this->loadDashboardData();
+        if ($this->generationHistoryLoaded) {
+            $latestHistoryId = (int) collect($this->generationHistory)->max('id');
+            $latestGenerationId = (int) \App\Models\Generation::query()->max('id');
+            if ($latestGenerationId > $latestHistoryId) {
+                $this->refreshGenerationHistory();
+            }
+        }
         $this->refreshWorkerStatus();
     }
 
@@ -2738,11 +2745,11 @@ public function getUserInitialsProperty(): string
                         </div>
                     </div>
 
-                    <div class="rms-history-shell" x-show="recentOpen" x-transition:enter="rms-history-enter" x-transition:leave="rms-history-leave" x-cloak>
+                    <div class="rms-history-shell" wire:init="loadGenerationHistory" x-show="recentOpen" x-transition:enter="rms-history-enter" x-transition:leave="rms-history-leave" x-cloak>
                         @if(! $generationHistoryLoaded)
-                            <div class="rms-history-load-state">
-                                <div><span class="rms-history-load-icon">✦</span><strong>Muat seluruh generation history</strong><small>History dipisahkan dari realtime KPI supaya dashboard tetap cepat dibuka.</small></div>
-                                <button type="button" class="rms-history-load-button" wire:click="loadGenerationHistory">Load history <span>→</span></button>
+                            <div class="rms-history-load-state rms-history-loading-state">
+                                <div><span class="rms-history-load-icon">✦</span><strong>Memuat seluruh generation history…</strong><small>History dimuat setelah dashboard tampil agar initial render tetap ringan.</small></div>
+                                <span class="rms-history-loading-dots"><i></i><i></i><i></i></span>
                             </div>
                         @else
                             <div class="rms-history-toolbar">
