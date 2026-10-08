@@ -610,7 +610,7 @@ class extends Component
             default => $now->copy()->subDays(6)->startOfDay(),
         };
 
-        $base = \\App\\Models\\Generation::query()
+        $base = \App\Models\Generation::query()
             ->where('created_at', '>=', $from)
             ->when($this->dashboardStatus !== 'all', fn ($q) => $q->where('status', $this->dashboardStatus))
             ->when($this->dashboardStore !== 'all', fn ($q) => $q->where('store_id', (int) $this->dashboardStore));
@@ -627,7 +627,7 @@ class extends Component
         $queued = (int) ($statusCounts['queued'] ?? 0);
         $failed = (int) ($statusCounts['failed'] ?? 0);
 
-        $imageCount = (int) \\App\\Models\\GeneratedImage::query()
+        $imageCount = (int) \App\Models\GeneratedImage::query()
             ->whereHas('generation', function ($q) use ($from) {
                 $q->where('created_at', '>=', $from)
                     ->when($this->dashboardStatus !== 'all', fn ($nested) => $nested->where('status', $this->dashboardStatus))
@@ -697,7 +697,7 @@ class extends Component
 
                 $value = 0;
                 foreach ($dailyRows as $date => $count) {
-                    $dateValue = CarbonCarbon::parse($date);
+                    $dateValue = \Carbon\Carbon::parse($date);
                     if ($dateValue->greaterThanOrEqualTo($start->copy()->startOfDay()) && $dateValue->lessThan($end->copy()->startOfDay())) {
                         $value += $count;
                     }
@@ -710,7 +710,7 @@ class extends Component
             }
         }
 
-        $recent = \\App\\Models\\Generation::query()
+        $recent = \App\Models\Generation::query()
             ->with([
                 'store:id,name,logo_path',
                 'template:id,name',
@@ -737,13 +737,13 @@ class extends Component
                 'id' => $generation->id,
                 'title' => data_get($generation->metadata, 'title') ?: ('Generation #' . $generation->id),
                 'status' => $generation->status,
-                'model' => \\Illuminate\\Support\\Str::afterLast((string) $generation->model, '/'),
+                'model' => \Illuminate\Support\Str::afterLast((string) $generation->model, '/'),
                 'store' => $generation->store?->name ?? 'Store',
                 'template' => $generation->template?->name ?? 'Template',
                 'created_at' => $generation->created_at?->diffForHumans(),
                 'created_at_raw' => $generation->created_at?->format('d M Y H:i'),
                 'images' => $generation->generatedImages->map(fn ($image) => [
-                    'url' => $image->image_url ?: ($image->image_path ? \\Illuminate\\Support\\Facades\\Storage::disk('public')->url($image->image_path) : null),
+                    'url' => $image->image_url ?: ($image->image_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($image->image_path) : null),
                     'favorite' => (bool) $image->is_favorite,
                 ])->filter(fn ($image) => filled($image['url']))->values()->all(),
             ])->all(),
@@ -752,7 +752,7 @@ class extends Component
 
     public function getDashboardNotificationsProperty(): array
     {
-        return AppModelsActivityLog::query()
+        return \App\Models\ActivityLog::query()
             ->latest('created_at')
             ->limit(6)
             ->get(['id', 'category', 'status', 'title', 'description', 'created_at'])
@@ -788,14 +788,14 @@ class extends Component
             ->map(fn ($item) => ['type' => 'Store', 'label' => $item->name, 'meta' => 'Marketplace store', 'action' => 'stores'])
             ->all();
 
-        $templates = \\App\\Models\\Template::query()
+        $templates = \App\Models\Template::query()
             ->where('name', 'like', $keyword)
             ->limit(4)
             ->get(['id', 'name'])
             ->map(fn ($item) => ['type' => 'Template', 'label' => $item->name, 'meta' => 'Visual template', 'action' => 'templates'])
             ->all();
 
-        $generations = \\App\\Models\\Generation::query()
+        $generations = \App\Models\Generation::query()
             ->where(function ($q) use ($keyword) {
                 $q->where('prompt', 'like', $keyword)
                     ->orWhere('model', 'like', $keyword)
@@ -804,7 +804,7 @@ class extends Component
             ->latest('created_at')
             ->limit(4)
             ->get(['id', 'model', 'status'])
-            ->map(fn ($item) => ['type' => 'Generation', 'label' => 'Generation #' . $item->id, 'meta' => $item->status . ' · ' . \\Illuminate\\Support\\Str::afterLast($item->model, '/'), 'action' => 'generator'])
+            ->map(fn ($item) => ['type' => 'Generation', 'label' => 'Generation #' . $item->id, 'meta' => $item->status . ' · ' . \Illuminate\Support\Str::afterLast($item->model, '/'), 'action' => 'generator'])
             ->all();
 
         return array_slice(array_merge($stores, $templates, $generations), 0, 8);
