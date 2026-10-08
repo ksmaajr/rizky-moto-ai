@@ -51,6 +51,16 @@ final class VercelProvider implements ImageProviderInterface
             $payload['prompt'] .= "\n\nAvoid: " . $negativePrompt;
         }
 
+        $promptLength = mb_strlen((string) $payload['prompt']);
+        if ($promptLength > 32000) {
+            throw new RuntimeException(
+                'Prompt terlalu panjang untuk Vercel AI Gateway: '
+                . number_format($promptLength, 0, ',', '.')
+                . ' karakter. Maksimum 32.000 karakter. '
+                . 'Periksa prompt Template atau input generation sebelum mencoba lagi.'
+            );
+        }
+
         $lastError = null;
         $attemptedIds = [];
         $maxAttempts = max(1, $this->apiPool->totalCount($userId) + 1);
