@@ -736,6 +736,10 @@ class extends Component
             'template' => $generation->template?->name ?? 'Template',
             'created_at' => $generation->created_at?->diffForHumans(),
             'created_at_raw' => $generation->created_at?->format('d M Y H:i'),
+            'error' => data_get($generation->metadata, 'error')
+                ?: data_get($generation->metadata, 'error_message')
+                ?: data_get($generation->metadata, 'message')
+                ?: null,
             'images' => $generation->generatedImages->map(fn ($image) => [
                 'id' => $image->id,
                 'url' => $image->image_url ?: ($image->image_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($image->image_path) : null),
@@ -3027,10 +3031,13 @@ public function getUserInitialsProperty(): string
                                             <div class="rms-generation-card-title-row"><strong>{{ $item['title'] }}</strong><span>{{ $item['created_at'] }}</span></div>
                                             <div class="rms-generation-card-meta"><span>{{ $item['store'] }}</span><i>·</i><span>{{ $item['template'] }}</span></div>
                                             <div class="rms-generation-card-engine"><span>{{ $item['model'] }}</span><span>{{ count($item['images']) }} output</span></div>
+                                            @if(in_array($item['status'], ['failed','cancelled','canceled']) && filled($item['error']))
+                                                <div class="rms-generation-card-error"><b>Generation failed</b><span>{{ Str::limit($item['error'], 150) }}</span></div>
+                                            @endif
                                             <div class="rms-generation-card-actions">
                                                 @if($primaryImage)
                                                     <button type="button" @click="previewUrl=@js($primaryImage); previewDownloadUrl=@js(route('generated-images.download',['generatedImage'=>$item['images'][0]['id'],'max_mb'=>2,'quality'=>'optimized','format'=>'png'])); previewTitle=@js($item['title']); previewOpen=true"><span>⌕</span> Preview</button>
-                                                    <a href="{{ route('generated-images.download',['generatedImage'=>$item['images'][0]['id'],'max_mb'=>2,'quality'=>'optimized','format'=>'png']) }}"><span>↓</span> Download</a>
+                                                    <a href="{{ route('generated-images.download',['generatedImage'=>$item['images'][0]['id'],'max_mb'=>2,'quality'=>'optimized','format'=>'png']) }}"><span>↓</span> Optimized</a>
                                                 @else
                                                     <span class="rms-generation-no-output">Tidak ada output</span>
                                                 @endif
@@ -3058,7 +3065,14 @@ public function getUserInitialsProperty(): string
                             <div class="rms-generation-preview-panel rms-generation-preview-panel-v2" x-transition:enter="rms-preview-enter" x-transition:leave="rms-preview-leave">
                                 <button type="button" class="rms-generation-preview-close" @click="previewOpen=false" aria-label="Close preview">×</button>
                                 <div class="rms-generation-preview-media rms-generation-preview-media-v2"><img :src="previewUrl" :alt="previewTitle"></div>
-                                <div class="rms-generation-preview-footer"><div><span>GENERATION PREVIEW</span><strong x-text="previewTitle"></strong></div><a :href="previewDownloadUrl || previewUrl" download>Download image ↓</a></div>
+                                <div class="rms-generation-preview-footer">
+                                    <div><span>GENERATION PREVIEW</span><strong x-text="previewTitle"></strong></div>
+                                    <div class="rms-generation-preview-downloads">
+                                        <a :href="previewDownloadUrl || previewUrl" download>Optimized</a>
+                                        <a x-show="previewDownloadUrl" :href="previewDownloadUrl ? previewDownloadUrl.replace('quality=optimized','quality=standard') : '#'" download>Standard</a>
+                                        <a x-show="previewDownloadUrl" :href="previewDownloadUrl ? previewDownloadUrl.replace('quality=optimized','quality=high') : '#'" download>High quality</a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </template>
