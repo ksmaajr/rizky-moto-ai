@@ -2736,7 +2736,7 @@ public function getUserInitialsProperty(): string
                         <div class="rms-health-note"><i></i>{{ $workerStatus['healthy']?'Generation engine siap menerima pekerjaan.':'Worker belum aktif atau belum sehat.' }}</div>
                     </article>
                 </section>
-                <section class="rms-dashboard-card rms-recent-card rms-recent-card-v3 reveal reveal-5" x-data="{ recentOpen: true, previewOpen: false, previewUrl: '', previewTitle: '' }">
+                <section class="rms-dashboard-card rms-recent-card rms-recent-card-v3 reveal reveal-5" x-data="{ recentOpen: true, previewOpen: false, previewUrl: '', previewDownloadUrl: '', previewTitle: '' }">
                     <div class="rms-dashboard-card-head rms-recent-head rms-history-head">
                         <div class="rms-history-heading">
                             <span class="section-kicker">GENERATION HISTORY</span>
@@ -2782,7 +2782,7 @@ public function getUserInitialsProperty(): string
                                 @forelse($generationHistory as $item)
                                     @php $primaryImage=$item['images'][0]['url']??null; @endphp
                                     <article class="rms-generation-card rms-generation-card-v2">
-                                        <button type="button" class="rms-generation-card-media rms-generation-card-media-lg" @if($primaryImage) @click="previewUrl=@js($primaryImage); previewTitle=@js($item['title']); previewOpen=true" @endif>
+                                        <button type="button" class="rms-generation-card-media rms-generation-card-media-lg" @if($primaryImage) @click="previewUrl=@js($primaryImage); previewDownloadUrl=@js(route('generated-images.download',['generatedImage'=>$item['images'][0]['id'],'max_mb'=>2,'quality'=>'optimized','format'=>'png'])); previewTitle=@js($item['title']); previewOpen=true" @endif>
                                             @if($primaryImage)<img src="{{ $primaryImage }}" alt="{{ $item['title'] }}" loading="lazy">@else<span>✦</span>@endif
                                             <span class="rms-generation-card-status status-{{ $item['status'] }}">{{ ucfirst($item['status']) }}</span>
                                             @if(count($item['images'])>1)<span class="rms-generation-card-count">{{ count($item['images']) }} IMG</span>@endif
@@ -2793,8 +2793,8 @@ public function getUserInitialsProperty(): string
                                             <div class="rms-generation-card-engine"><span>{{ $item['model'] }}</span><span>{{ count($item['images']) }} output</span></div>
                                             <div class="rms-generation-card-actions">
                                                 @if($primaryImage)
-                                                    <button type="button" @click="previewUrl=@js($primaryImage); previewTitle=@js($item['title']); previewOpen=true"><span>⌕</span> Preview</button>
-                                                    <a href="{{ route('generated-images.download',['generatedImage'=>$item['images'][0]['id'],'max_mb'=>2,'quality'=>'optimized','format'=>'png']) }}" target="_blank" rel="noopener"><span>↓</span> Download</a>
+                                                    <button type="button" @click="previewUrl=@js($primaryImage); previewDownloadUrl=@js(route('generated-images.download',['generatedImage'=>$item['images'][0]['id'],'max_mb'=>2,'quality'=>'optimized','format'=>'png'])); previewTitle=@js($item['title']); previewOpen=true"><span>⌕</span> Preview</button>
+                                                    <a href="{{ route('generated-images.download',['generatedImage'=>$item['images'][0]['id'],'max_mb'=>2,'quality'=>'optimized','format'=>'png']) }}"><span>↓</span> Download</a>
                                                 @else
                                                     <span class="rms-generation-no-output">Tidak ada output</span>
                                                 @endif
@@ -2813,7 +2813,7 @@ public function getUserInitialsProperty(): string
                             <div class="rms-generation-preview-panel rms-generation-preview-panel-v2" x-transition:enter="rms-preview-enter" x-transition:leave="rms-preview-leave">
                                 <button type="button" class="rms-generation-preview-close" @click="previewOpen=false" aria-label="Close preview">×</button>
                                 <div class="rms-generation-preview-media rms-generation-preview-media-v2"><img :src="previewUrl" :alt="previewTitle"></div>
-                                <div class="rms-generation-preview-footer"><div><span>GENERATION PREVIEW</span><strong x-text="previewTitle"></strong></div><a :href="previewUrl" download target="_blank" rel="noopener">Download image ↓</a></div>
+                                <div class="rms-generation-preview-footer"><div><span>GENERATION PREVIEW</span><strong x-text="previewTitle"></strong></div><a :href="previewDownloadUrl || previewUrl" download>Download image ↓</a></div>
                             </div>
                         </div>
                     </template>
