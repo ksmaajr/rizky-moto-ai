@@ -707,6 +707,17 @@ class extends Component
     }
 
 
+    public function navigateGlobalSearch(string $action): void
+    {
+        $this->globalSearch = '';
+
+        match ($action) {
+            'stores' => $this->openStore(),
+            'templates' => $this->openTemplates(),
+            default => $this->openGenerator(),
+        };
+    }
+
     public function getDashboardNotificationsProperty(): array
     {
         return AppModelsActivityLog::query()
@@ -1686,7 +1697,7 @@ public function getUserInitialsProperty(): string
                     @if(mb_strlen(trim($globalSearch)) >= 2)
                         <div class="rms-global-search-results">
                             @forelse($this->globalSearchResults as $result)
-                                <button type="button" wire:click="open{{ ucfirst($result['action'] === 'stores' ? 'Store' : ($result['action'] === 'templates' ? 'Templates' : 'Generator')) }}; globalSearch = ''" class="rms-global-search-item">
+                                <button type="button" wire:click="navigateGlobalSearch('{{ $result['action'] }}')" class="rms-global-search-item">
                                     <span>{{ $result['type'] }}</span><div><strong>{{ $result['label'] }}</strong><small>{{ $result['meta'] }}</small></div><b>→</b>
                                 </button>
                             @empty
