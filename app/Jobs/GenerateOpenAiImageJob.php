@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Throwable;
 
 class GenerateOpenAiImageJob implements ShouldQueue
@@ -18,18 +19,52 @@ class GenerateOpenAiImageJob implements ShouldQueue
 
     public int $tries = 1;
     public int $timeout = 300;
+    public bool $failOnTimeout = true;
 
     public function __construct(public int $generationId)
     {
+    }
+
+    public function middleware(): array
+    {
+        return [
+            (new WithoutOverlapping('generation:' . $this->generationId))
+                ->dontRelease()
+                ->expireAfter(330),
+        ];
     }
 
     public function handle(OpenAiImageService $service): void
     {
         $generation = Generation::query()->find($this->generationId);
 
-        if (! $generation || $generation->status === 'completed') {
+        if (! $generation || in_array($generation->status, ['completed', 'cancelled'], true)) {
             return;
         }
+
+        $metadata = array_merge($generation->metadata ?? [], [
+            'worker_pid' => getmypid(),
+            'worker_label' => 'worker-pid-' . getmypid(),
+            'queue_attempt' => $this->attempts(),
+            'queue_job_id' => $this->job?->getJobId(),
+            'worker_started_at' => now()->toIso8601String(),
+        ]);
+
+        $generation->update(['metadata' => $metadata]);
+
+        app(ActivityLogService::class)->processing(
+            action: 'generation_worker_started',
+            category: 'worker',
+            title: 'Generation diambil oleh queue worker.',
+            description: 'Worker mulai memproses Generation #' . $generation->id . '.',
+            metadata: [
+                'generation_id' => $generation->id,
+                'worker_pid' => getmypid(),
+                'worker_label' => 'worker-pid-' . getmypid(),
+                'queue_attempt' => $this->attempts(),
+                'queue_job_id' => $this->job?->getJobId(),
+            ],
+        );
 
         $service->processQueuedGeneration($generation);
     }
