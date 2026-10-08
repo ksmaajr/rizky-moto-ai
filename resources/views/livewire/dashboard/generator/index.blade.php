@@ -686,7 +686,45 @@ new class extends Component
         $retry->metadata = $metadata;
         $retry->save();
 
-        \App\Jobs\GenerateOpenAiImageJob::dispatch($retry->id);
+        try {
+            \App\Jobs\GenerateOpenAiImageJob::dispatch($retry->id);
+        } catch (\Throwable $dispatchException) {
+            $retry->update([
+                'status' => 'failed',
+                'error_message' => 'Retry berhasil dibuat tetapi gagal dimasukkan ke queue: ' . $dispatchException->getMessage(),
+                'completed_at' => now(),
+                'metadata' => array_merge($retry->metadata ?? [], [
+                    'progress' => 100,
+                    'progress_stage' => 'Gagal enqueue retry',
+                    'failed_at' => now()->toIso8601String(),
+                    'queue_dispatch_failed' => true,
+                    'queue_dispatch_exception' => get_class($dispatchException),
+                ]),
+            ]);
+
+            app(\App\Services\ActivityLogService::class)->error(
+                action: 'generation_retry',
+                category: 'generator',
+                title: 'Retry gagal dimasukkan ke antrean.',
+                description: $dispatchException->getMessage(),
+                metadata: [
+                    'source' => 'generator_retry',
+                    'generation_id' => $retry->id,
+                    'retry_of' => $generation->id,
+                    'exception' => get_class($dispatchException),
+                ],
+            );
+
+            throw $dispatchException;
+        }
+
+        $retry->update([
+            'metadata' => array_merge($retry->metadata ?? [], [
+                'dispatched_at' => now()->toIso8601String(),
+                'queue' => (string) config('queue.default', 'database'),
+            ]),
+        ]);
+
         $this->latestGenerationId = $retry->id;
         $this->dispatch(
             'toast',
