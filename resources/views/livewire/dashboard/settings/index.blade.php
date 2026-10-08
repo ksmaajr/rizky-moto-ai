@@ -2266,3 +2266,23 @@
     }
 }
 </style>
+<style>
+/* GLOBAL ACTIVITY — inset card inside the settings container */
+.rms-global-activity{
+    width:calc(100% - 28px)!important;
+    max-width:calc(100% - 28px)!important;
+    margin:14px 14px 18px!important;
+    border:1px solid #dedee5!important;
+    border-radius:18px!important;
+    overflow:hidden!important;
+    box-shadow:0 10px 28px rgba(15,23,42,.055)!important;
+}
+@media(max-width:640px){
+    .rms-global-activity{
+        width:calc(100% - 20px)!important;
+        max-width:calc(100% - 20px)!important;
+        margin:10px 10px 14px!important;
+        border-radius:15px!important;
+    }
+}
+</style>
