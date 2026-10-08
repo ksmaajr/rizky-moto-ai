@@ -79,7 +79,7 @@ class QueueWorkerManager
                 continue;
             }
 
-            if (preg_match('/^(' . $prefix . '(?:_[0-9]+|:[0-9]+)?)\s+(RUNNING|STOPPED|STARTING|FATAL|EXITED|BACKOFF)\s*(?:pid\s+(\d+))?/i', trim($line), $m) !== 1) {
+            if (preg_match('/^(?:' . $prefix . ':)?(' . $prefix . '(?:_[0-9]+|:[0-9]+)?)\s+(RUNNING|STOPPED|STARTING|FATAL|EXITED|BACKOFF)\s*(?:pid\s+(\d+))?/i', trim($line), $m) !== 1) {
                 continue;
             }
 
@@ -297,7 +297,6 @@ PS1;
 
         if (($status['running_count'] ?? 0) === 0) {
             $this->clearState();
-
             return [
                 'success' => false,
                 'message' => 'Tidak ada queue worker yang sedang berjalan.',
@@ -597,8 +596,7 @@ PS1;
             $result = Process::run([
                 'powershell',
                 '-NoProfile',
-                '-NonInteractive',
-                '-Command',
+                '-NonInteractive',                '-Command',
                 "Get-CimInstance Win32_Process | Where-Object { \$_.Name -ieq 'php.exe' -and \$_.CommandLine -match '(?i)artisan(?:\\.php)?\\s+queue:work(?:\\s|$)' } | Select-Object ProcessId,CommandLine | ConvertTo-Json -Compress",
             ]);
 
