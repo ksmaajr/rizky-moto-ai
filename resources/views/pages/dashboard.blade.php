@@ -1491,6 +1491,7 @@ public function getUserInitialsProperty(): string
             :class="workerOpen ? 'is-open' : 'is-collapsed'"
             x-data="{
                 workerOpen: true,
+                workerAction: '',
                 init() {
                     try {
                         const saved = window.localStorage.getItem('rms-worker-widget-open');
