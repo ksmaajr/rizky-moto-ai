@@ -2516,4 +2516,76 @@
 @media(prefers-reduced-motion:reduce){
     .rms-provider-block{animation:none}
 }
+</style><style>
+/* FINAL PROVIDER CONTAINERS — distinct but intentionally muted */
+.rms-provider-block{
+    box-sizing:border-box!important;
+    width:100%!important;
+    max-width:100%!important;
+    margin:0 0 24px!important;
+    padding:0 0 2px!important;
+    border-width:1px!important;
+}
+.rms-provider-block-vercel{
+    background:linear-gradient(180deg,#fffafa 0%,#fff 38%,#fcfcfd 100%)!important;
+    border-color:#eadfe0!important;
+}
+.rms-provider-block-agent{
+    background:linear-gradient(180deg,#fffdf8 0%,#fff 38%,#fcfcfd 100%)!important;
+    border-color:#ebe5d8!important;
+}
+.rms-provider-block-failover{
+    background:linear-gradient(180deg,#f9fcfa 0%,#fff 38%,#fcfcfd 100%)!important;
+    border-color:#dfe9e2!important;
+}
+.rms-provider-block-vercel::before{background:linear-gradient(90deg,#27272a,#e6b5b8,#70c98b)!important}
+.rms-provider-block-agent::before{background:linear-gradient(90deg,#27272a,#e6c67a,#e9b84f)!important}
+.rms-provider-block-failover::before{background:linear-gradient(90deg,#27272a,#a8cdb2,#62b97a)!important}
+
+/* Keep the Vercel contents fully inside its own boundary. */
+.rms-provider-block-vercel .rms-vg-key-manager-root{
+    width:auto!important;
+    max-width:none!important;
+    margin:18px 20px 0!important;
+}
+.rms-provider-block-vercel .rms-vg-test-all-card{
+    width:auto!important;
+    max-width:none!important;
+    margin:12px 20px 20px!important;
+    box-sizing:border-box!important;
+}
+.rms-provider-block-vercel .rms-vg-key-manager{
+    width:100%!important;
+    box-sizing:border-box!important;
+}
+.rms-provider-block-vercel .rms-vg-key-list{
+    padding-bottom:16px!important;
+}
+.rms-provider-block-vercel .rms-vg-key-manager-root + .rms-vg-test-all-card{
+    margin-top:12px!important;
+}
+.rms-provider-block-agent .rms-ai-provider-section,
+.rms-provider-block-failover .rms-ai-provider-section{
+    background:rgba(255,255,255,.76)!important;
+}
+.rms-provider-block-agent .rms-ai-agent-readiness,
+.rms-provider-block-agent .rms-ai-agent-meta span,
+.rms-provider-block-failover .rms-ai-toggle-field{
+    background:rgba(255,255,255,.84)!important;
+}
+.rms-provider-block-failover .rms-ai-provider-save-row{
+    background:rgba(247,251,248,.9)!important;
+}
+@media(max-width:760px){
+    .rms-provider-block{
+        margin-bottom:16px!important;
+        border-radius:18px!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-manager-root{
+        margin:12px 11px 0!important;
+    }
+    .rms-provider-block-vercel .rms-vg-test-all-card{
+        margin:10px 11px 12px!important;
+    }
+}
 </style>
