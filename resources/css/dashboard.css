@@ -11147,3 +11147,115 @@
     .rms-generation-card-v2 .rms-generation-card-actions button:after,
     .rms-generation-card-v2 .rms-generation-card-actions a:after{display:none!important}
 }
+
+/* =========================================================
+   DASHBOARD V27 — AI ENGINE HEALTH CONTROL CENTER
+   ========================================================= */
+.rms-engine-health-panel{
+    position:relative!important;
+    padding:18px!important;
+    border:1px solid #e7e7eb!important;
+    border-radius:18px!important;
+    background:linear-gradient(145deg,#fff 0%,#fafafa 100%)!important;
+    box-shadow:0 12px 35px rgba(24,24,27,.045)!important;
+}
+.rms-engine-health-head{
+    display:flex!important;
+    align-items:flex-start!important;
+    justify-content:space-between!important;
+    gap:18px!important;
+    padding:2px 2px 16px!important;
+}
+.rms-engine-health-head h3{margin:4px 0 3px!important;color:#18181b!important;font-size:14px!important;font-weight:950!important;letter-spacing:-.02em!important}
+.rms-engine-health-head p{margin:0!important;color:#a1a1aa!important;font-size:7px!important;font-weight:650!important}
+.rms-engine-health-meta{display:flex!important;align-items:flex-end!important;gap:7px!important;flex-direction:column!important}
+.rms-engine-health-meta small{color:#a1a1aa!important;font-size:6px!important;font-weight:700!important}
+.rms-engine-health-grid{
+    display:grid!important;
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    gap:8px!important;
+}
+.rms-engine-health-card{
+    position:relative!important;
+    min-width:0!important;
+    padding:12px!important;
+    border:1px solid #ececf0!important;
+    border-radius:13px!important;
+    background:#fff!important;
+    overflow:hidden!important;
+}
+.rms-engine-health-card:before{
+    content:""!important;
+    position:absolute!important;
+    top:0!important;
+    left:0!important;
+    right:0!important;
+    height:2px!important;
+    background:#e4e4e7!important;
+}
+.rms-engine-health-card:has(.is-online):before{background:#22c55e!important}
+.rms-engine-health-card:has(.is-offline):before{background:#ef4444!important}
+.rms-engine-health-card:has(.is-idle):before{background:#f59e0b!important}
+.rms-engine-health-card-top{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important}
+.rms-engine-health-icon{
+    display:grid!important;
+    width:30px!important;
+    height:30px!important;
+    place-items:center!important;
+    border:1px solid #e4e4e7!important;
+    border-radius:9px!important;
+    color:#52525b!important;
+    background:#f8f8fa!important;
+    font-size:11px!important;
+    font-weight:950!important;
+}
+.rms-engine-health-icon.violet{color:#7c3aed!important;background:#faf5ff!important;border-color:#ede9fe!important}
+.rms-engine-health-icon.green{color:#16a34a!important;background:#f0fdf4!important;border-color:#dcfce7!important}
+.rms-engine-health-icon.amber{color:#d97706!important;background:#fffbeb!important;border-color:#fef3c7!important}
+.rms-engine-health-icon.worker{color:#2563eb!important;background:#eff6ff!important;border-color:#dbeafe!important}
+.rms-engine-health-state{
+    display:inline-flex!important;
+    align-items:center!important;
+    gap:4px!important;
+    padding:4px 6px!important;
+    border-radius:999px!important;
+    color:#71717a!important;
+    background:#f4f4f5!important;
+    font-size:5px!important;
+    font-weight:950!important;
+    letter-spacing:.04em!important;
+}
+.rms-engine-health-state i{width:5px!important;height:5px!important;border-radius:50%!important;background:#a1a1aa!important}
+.rms-engine-health-state.is-online{color:#15803d!important;background:#f0fdf4!important}
+.rms-engine-health-state.is-online i{background:#22c55e!important;box-shadow:0 0 0 3px rgba(34,197,94,.10)!important}
+.rms-engine-health-state.is-offline{color:#dc2626!important;background:#fff1f2!important}
+.rms-engine-health-state.is-offline i{background:#ef4444!important}
+.rms-engine-health-card>span.rms-engine-health-label{display:block!important;margin-top:10px!important;color:#a1a1aa!important;font-size:5.3px!important;font-weight:950!important;letter-spacing:.11em!important}
+.rms-engine-health-card>strong{display:block!important;margin-top:4px!important;overflow:hidden!important;color:#27272a!important;font-size:8px!important;font-weight:950!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+.rms-engine-health-card>small{display:block!important;min-height:27px!important;margin-top:4px!important;overflow:hidden!important;color:#a1a1aa!important;font-size:5.9px!important;font-weight:650!important;line-height:1.5!important}
+.rms-engine-health-metrics{
+    display:flex!important;
+    flex-wrap:wrap!important;
+    gap:5px!important;
+    margin-top:9px!important;
+    padding-top:8px!important;
+    border-top:1px solid #f0f0f2!important;
+}
+.rms-engine-health-metrics span{
+    color:#a1a1aa!important;
+    font-size:5.3px!important;
+    font-weight:700!important;
+}
+.rms-engine-health-metrics b{color:#3f3f46!important;font-weight:950!important}
+@media(max-width:1200px){
+    .rms-engine-health-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media(max-width:760px){
+    .rms-engine-health-panel{padding:13px!important;border-radius:15px!important}
+    .rms-engine-health-head{flex-direction:column!important;gap:10px!important}
+    .rms-engine-health-meta{align-items:flex-start!important}
+    .rms-engine-health-grid{grid-template-columns:1fr 1fr!important}
+}
+@media(max-width:480px){
+    .rms-engine-health-grid{grid-template-columns:1fr!important}
+}
