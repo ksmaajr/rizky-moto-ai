@@ -780,6 +780,7 @@
                                     </div>
                                 </div>
                             </div>
+                            </div>
 
                             <div class="rms-global-select-actions">
                                 <button type="button" @click="toggleAll()" :disabled="checkboxes.length === 0">
