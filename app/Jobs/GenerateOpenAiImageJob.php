@@ -44,7 +44,7 @@ class GenerateOpenAiImageJob implements ShouldQueue
 
         $metadata = array_merge($generation->metadata ?? [], [
             'worker_pid' => getmypid(),
-            'worker_label' => 'worker-pid-' . getmypid(),
+            'worker_label' => $this->workerLabel(),
             'queue_attempt' => $this->attempts(),
             'queue_job_id' => $this->job?->getJobId(),
             'worker_started_at' => now()->toIso8601String(),
@@ -60,13 +60,22 @@ class GenerateOpenAiImageJob implements ShouldQueue
             metadata: [
                 'generation_id' => $generation->id,
                 'worker_pid' => getmypid(),
-                'worker_label' => 'worker-pid-' . getmypid(),
+                'worker_label' => $this->workerLabel(),
                 'queue_attempt' => $this->attempts(),
                 'queue_job_id' => $this->job?->getJobId(),
             ],
         );
 
         $service->processQueuedGeneration($generation);
+    }
+
+    private function workerLabel(): string
+    {
+        $process = trim((string) env('RIZKY_QUEUE_WORKER_PROCESS', ''));
+
+        return $process !== ''
+            ? 'worker-' . $process
+            : 'worker-pid-' . getmypid();
     }
 
     public function failed(Throwable $exception): void
