@@ -828,7 +828,7 @@ class extends Component
 
     public function markNotificationsRead(): void
     {
-        $this->notificationReadAt = now()->toISOString();
+        $this->notificationReadAt = now()->format('Y-m-d H:i:s');
         session(['dashboard_notifications_read_at' => $this->notificationReadAt]);
         $this->dispatch('toast', type: 'success', title: 'Notifikasi dibaca', message: 'Semua notifikasi terbaru sudah ditandai dibaca.');
     }
