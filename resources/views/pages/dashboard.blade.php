@@ -759,6 +759,61 @@ class extends Component
         ];
     }
 
+    public function getDashboardEngineProperty(): array
+    {
+        $keys = \App\Models\VercelGatewayApiKey::query();
+        $totalKeys = (int) $keys->count();
+        $activeKeys = (int) (clone $keys)->where('is_active', true)->whereNotIn('status', ['disabled', 'invalid', 'exhausted'])->where(function ($q) {
+            $q->whereNull('cooldown_until')->orWhere('cooldown_until', '<=', now());
+        })->count();
+        $cooldownKeys = (int) (clone $keys)->where('status', 'cooldown')->count();
+        $exhaustedKeys = (int) (clone $keys)->whereIn('status', ['exhausted', 'invalid', 'disabled'])->count();
+        $lastKeyUse = (clone $keys)->whereNotNull('last_used_at')->latest('last_used_at')->first(['name', 'last_used_at', 'status']);
+
+        $legacyConfigured = filled(\App\Models\OpenAiSetting::query()->value('api_key'));
+        $envConfigured = trim((string) env('AI_GATEWAY_API_KEY', '')) !== '';
+        $gatewayReady = $activeKeys > 0 || $legacyConfigured || $envConfigured;
+        $agentConnected = class_exists(\App\Services\AI\Providers\AgentKitProvider::class);
+
+        $latestApi = \App\Models\ActivityLog::query()
+            ->where('category', 'api')
+            ->latest('created_at')
+            ->first(['status', 'title', 'created_at', 'http_status']);
+
+        $latestGeneration = \App\Models\Generation::query()
+            ->whereNotNull('model')
+            ->latest('created_at')
+            ->first(['model', 'created_at']);
+
+        return [
+            'gateway' => [
+                'state' => $gatewayReady ? 'online' : 'offline',
+                'label' => $gatewayReady ? 'Gateway ready' : 'Gateway offline',
+                'keys_total' => $totalKeys,
+                'keys_active' => $activeKeys,
+                'keys_cooldown' => $cooldownKeys,
+                'keys_unavailable' => $exhaustedKeys,
+                'legacy' => $legacyConfigured,
+                'env' => $envConfigured,
+                'last_key' => $lastKeyUse?->name,
+                'last_used_at' => $lastKeyUse?->last_used_at?->diffForHumans(),
+                'last_status' => $lastKeyUse?->status,
+            ],
+            'provider' => [
+                'name' => 'Vercel AI Gateway',
+                'model' => $latestGeneration?->model ? \Illuminate\Support\Str::afterLast($latestGeneration->model, '/') : 'Belum ada generation',
+                'last_status' => $latestApi?->status,
+                'last_http' => $latestApi?->http_status,
+                'last_at' => $latestApi?->created_at?->diffForHumans(),
+            ],
+            'agent' => [
+                'state' => $agentConnected ? 'connected' : 'standby',
+                'label' => $agentConnected ? 'AgentKit connected' : 'Agent layer standby',
+                'detail' => $agentConnected ? 'Provider adapter AgentKit tersedia.' : 'Siap ditambahkan tanpa mengubah generation flow saat ini.',
+            ],
+        ];
+    }
+
     public function getDashboardNotificationsProperty(): array
     {
         return \App\Models\ActivityLog::query()
@@ -772,7 +827,29 @@ class extends Component
                 'title' => $item->title,
                 'description' => $item->description,
                 'created_at' => $item->created_at?->diffForHumans(),
+                'tone' => $this->notificationTone((string) $item->category, (string) $item->status, (string) $item->title),
+                'icon' => $this->notificationIcon((string) $item->category, (string) $item->status, (string) $item->title),
             ])->all();
+    }
+
+    private function notificationTone(string $category, string $status, string $title): string
+    {
+        $haystack = strtolower($category . ' ' . $title);
+        if ($status === 'error' || str_contains($haystack, 'fail') || str_contains($haystack, 'error')) return 'red';
+        if (str_contains($haystack, 'worker') || str_contains($haystack, 'queue')) return 'amber';
+        if (str_contains($haystack, 'api') || str_contains($haystack, 'gateway') || str_contains($haystack, 'key')) return 'violet';
+        if ($status === 'success') return 'green';
+        return 'blue';
+    }
+
+    private function notificationIcon(string $category, string $status, string $title): string
+    {
+        $haystack = strtolower($category . ' ' . $title);
+        if ($status === 'error' || str_contains($haystack, 'fail') || str_contains($haystack, 'error')) return 'alert';
+        if (str_contains($haystack, 'worker') || str_contains($haystack, 'queue')) return 'worker';
+        if (str_contains($haystack, 'api') || str_contains($haystack, 'gateway') || str_contains($haystack, 'key')) return 'key';
+        if ($status === 'success') return 'check';
+        return 'info';
     }
 
     public function getDashboardStoresProperty()
@@ -789,34 +866,102 @@ class extends Component
         }
 
         $keyword = '%' . $term . '%';
+        $results = [];
 
         $stores = Store::query()
-            ->where('name', 'like', $keyword)
+            ->where(function ($q) use ($keyword) {
+                $q->where('name', 'like', $keyword)
+                    ->orWhere('brand_name', 'like', $keyword)
+                    ->orWhere('marketplace', 'like', $keyword);
+            })
+            ->orderBy('name')
             ->limit(4)
-            ->get(['id', 'name'])
-            ->map(fn ($item) => ['type' => 'Store', 'label' => $item->name, 'meta' => 'Marketplace store', 'action' => 'stores'])
-            ->all();
+            ->get(['id', 'name', 'marketplace', 'brand_name']);
+
+        foreach ($stores as $item) {
+            $results[] = [
+                'type' => 'Store', 'label' => $item->name,
+                'meta' => trim(($item->brand_name ?: $item->marketplace ?: 'Marketplace store')),
+                'action' => 'stores', 'id' => $item->id,
+            ];
+        }
 
         $templates = \App\Models\Template::query()
-            ->where('name', 'like', $keyword)
+            ->where(function ($q) use ($keyword) {
+                $q->where('name', 'like', $keyword)
+                    ->orWhere('slug', 'like', $keyword)
+                    ->orWhere('description', 'like', $keyword);
+            })
+            ->with('store:id,name')
+            ->orderBy('name')
             ->limit(4)
-            ->get(['id', 'name'])
-            ->map(fn ($item) => ['type' => 'Template', 'label' => $item->name, 'meta' => 'Visual template', 'action' => 'templates'])
-            ->all();
+            ->get(['id', 'store_id', 'name', 'slug']);
+
+        foreach ($templates as $item) {
+            $results[] = [
+                'type' => 'Template', 'label' => $item->name,
+                'meta' => 'Template · ' . ($item->store?->name ?? 'Store'),
+                'action' => 'templates', 'id' => $item->id,
+            ];
+        }
 
         $generations = \App\Models\Generation::query()
             ->where(function ($q) use ($keyword) {
                 $q->where('prompt', 'like', $keyword)
                     ->orWhere('model', 'like', $keyword)
-                    ->orWhere('status', 'like', $keyword);
+                    ->orWhere('status', 'like', $keyword)
+                    ->orWhere('metadata', 'like', $keyword);
+            })
+            ->with(['store:id,name', 'template:id,name'])
+            ->latest('created_at')
+            ->limit(5)
+            ->get(['id', 'store_id', 'template_id', 'model', 'status', 'created_at']);
+
+        foreach ($generations as $item) {
+            $results[] = [
+                'type' => 'Generation', 'label' => 'Generation #' . $item->id,
+                'meta' => ucfirst((string) $item->status) . ' · ' . \Illuminate\Support\Str::afterLast((string) $item->model, '/') . ' · ' . ($item->store?->name ?? 'Store'),
+                'action' => 'generator', 'id' => $item->id,
+            ];
+        }
+
+        $activities = \App\Models\ActivityLog::query()
+            ->where(function ($q) use ($keyword) {
+                $q->where('title', 'like', $keyword)
+                    ->orWhere('description', 'like', $keyword)
+                    ->orWhere('action', 'like', $keyword)
+                    ->orWhere('category', 'like', $keyword);
             })
             ->latest('created_at')
             ->limit(4)
-            ->get(['id', 'model', 'status'])
-            ->map(fn ($item) => ['type' => 'Generation', 'label' => 'Generation #' . $item->id, 'meta' => $item->status . ' · ' . \Illuminate\Support\Str::afterLast($item->model, '/'), 'action' => 'generator'])
-            ->all();
+            ->get(['id', 'title', 'status', 'category', 'created_at']);
 
-        return array_slice(array_merge($stores, $templates, $generations), 0, 8);
+        foreach ($activities as $item) {
+            $results[] = [
+                'type' => 'Activity', 'label' => $item->title ?: 'System activity',
+                'meta' => strtoupper((string) $item->category) . ' · ' . ucfirst((string) $item->status) . ' · ' . $item->created_at?->diffForHumans(),
+                'action' => 'settings', 'id' => $item->id,
+            ];
+        }
+
+        return array_slice($results, 0, 12);
+    }
+
+    public function navigateGlobalSearch(string $action, ?int $id = null): void
+    {
+        $this->globalSearch = '';
+
+        match ($action) {
+            'stores' => $this->openStore(),
+            'templates' => $this->openTemplates(),
+            'settings' => $this->openSettings(),
+            'generator' => $this->openGenerator(),
+            default => $this->openDashboard(),
+        };
+
+        if ($id && $action === 'generator') {
+            $this->dispatch('generation-focus', generationId: $id);
+        }
     }
 
     /**
@@ -1796,8 +1941,12 @@ public function getUserInitialsProperty(): string
                         <div class="notification-list">
                             @forelse($this->dashboardNotifications as $notification)
                                 <button type="button" class="notification-item">
-                                    <span class="notification-item-icon {{ $notification['status'] === 'success' ? 'notification-icon-green' : ($notification['status'] === 'error' ? 'notification-icon-red' : 'notification-icon-dark') }}">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8"/><path d="m8 12 3 3 5-6"/></svg>
+                                    <span class="notification-item-icon notification-tone-{{ $notification['tone'] }}">
+                                        @if($notification['icon'] === 'check')<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m5 12 4 4L19 6"/></svg>
+                                        @elseif($notification['icon'] === 'alert')<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4 3.5 19h17L12 4Z"/><path d="M12 9v4m0 3h.01"/></svg>
+                                        @elseif($notification['icon'] === 'key')<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="15" r="3"/><path d="m10.2 12.8 8.3-8.3 2 2-2 2-1.7-1.7-2.2 2.2 1.6 1.6-2 2"/></svg>
+                                        @elseif($notification['icon'] === 'worker')<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 9h6m-6 3h6m-6 3h3"/></svg>
+                                        @else<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>@endif
                                     </span>
                                     <span class="notification-item-content">
                                         <strong>{{ $notification['title'] }}</strong>
@@ -1814,6 +1963,8 @@ public function getUserInitialsProperty(): string
                             <button type="button" id="notificationClose">Tutup</button>
                         </div>
                     </div>
+
+                </div>
 
                 <div class="topbar-divider"></div>
 
@@ -2414,6 +2565,25 @@ public function getUserInitialsProperty(): string
                     <div><span class="rms-health-mini-icon amber">◷</span><div><small>AVG. GENERATION</small><strong>{{ $d['avg_duration'] ? $d['avg_duration'].'s' : '—' }}</strong></div></div>
                 </section>
 
+                @php $engine = $this->dashboardEngine; @endphp
+                <section class="rms-engine-registry reveal reveal-3">
+                    <article class="rms-engine-registry-card rms-engine-gateway">
+                        <div class="rms-engine-registry-icon">⌁</div>
+                        <div class="rms-engine-registry-copy"><span>API GATEWAY</span><strong>{{ $engine['gateway']['label'] }}</strong><small>{{ $engine['gateway']['keys_active'] }} active · {{ $engine['gateway']['keys_total'] }} registered · {{ $engine['gateway']['keys_cooldown'] }} cooldown</small></div>
+                        <div class="rms-engine-registry-status {{ $engine['gateway']['state'] === 'online' ? 'is-online' : 'is-offline' }}"><i></i>{{ strtoupper($engine['gateway']['state']) }}</div>
+                    </article>
+                    <article class="rms-engine-registry-card">
+                        <div class="rms-engine-registry-icon violet">AI</div>
+                        <div class="rms-engine-registry-copy"><span>PROVIDER ROUTING</span><strong>{{ $engine['provider']['name'] }}</strong><small>{{ $engine['provider']['model'] }} · Last API {{ $engine['provider']['last_at'] ?? '—' }}</small></div>
+                        <div class="rms-engine-registry-status {{ $engine['provider']['last_status'] === 'success' ? 'is-online' : 'is-idle' }}"><i></i>{{ $engine['provider']['last_status'] ? strtoupper($engine['provider']['last_status']) : 'IDLE' }}</div>
+                    </article>
+                    <article class="rms-engine-registry-card">
+                        <div class="rms-engine-registry-icon amber">✦</div>
+                        <div class="rms-engine-registry-copy"><span>AGENT LAYER</span><strong>{{ $engine['agent']['label'] }}</strong><small>{{ $engine['agent']['detail'] }}</small></div>
+                        <div class="rms-engine-registry-status {{ $engine['agent']['state'] === 'connected' ? 'is-online' : 'is-idle' }}"><i></i>{{ $engine['agent']['state'] === 'connected' ? 'READY' : 'STANDBY' }}</div>
+                    </article>
+                </section>
+
                 <section class="rms-dashboard-grid-main reveal reveal-4">
                     <article class="rms-dashboard-card rms-trend-card"><div class="rms-dashboard-card-head"><div><span class="section-kicker">GENERATION TREND</span><h3>Output activity</h3></div><span class="rms-dashboard-card-meta">{{ $this->dashboardTimeframe==='today'?'Per 2 jam':($this->dashboardTimeframe==='year'?'Per bulan':'Per periode') }}</span></div>
                         <div class="rms-trend-chart"><div class="rms-trend-bars">@foreach($trend as $point)<div class="rms-trend-point"><div class="rms-trend-bar-track"><span style="height:{{ max(5,round(($point['value']/$maxTrend)*100)) }}%"></span></div><small>{{ $point['label'] }}</small><b>{{ $point['value'] }}</b></div>@endforeach</div></div>
@@ -2423,9 +2593,59 @@ public function getUserInitialsProperty(): string
                         <div class="rms-health-note"><i></i>{{ $workerStatus['healthy']?'Generation engine siap menerima pekerjaan.':'Worker belum aktif atau belum sehat.' }}</div>
                     </article>
                 </section>
-                <section class="rms-dashboard-card rms-recent-card reveal reveal-5"><div class="rms-dashboard-card-head rms-recent-head"><div><span class="section-kicker">LATEST OUTPUT</span><h3>Recent generations</h3><p>Hasil generation terbaru muncul otomatis tanpa reload halaman.</p></div><div class="rms-recent-summary"><span><i class="is-success"></i>{{ $d['completed']??0 }} completed</span><span><i class="is-processing"></i>{{ ($d['processing']??0)+($d['queued']??0) }} active</span></div></div>
-                    @if(empty($d['recent']))<div class="rms-recent-empty"><div class="rms-empty-orb">✦</div><strong>Belum ada generation pada filter ini.</strong><span>Coba ubah filter atau mulai membuat visual dari Product Generator.</span></div>
-                    @else<div class="rms-recent-list">@foreach($d['recent'] as $item)<article class="rms-recent-row"><div class="rms-recent-thumb">@if(!empty($item['images'][0]['url']))<img src="{{ $item['images'][0]['url'] }}" alt="{{ $item['title'] }}" loading="lazy">@else<span>✦</span>@endif</div><div class="rms-recent-main"><div class="rms-recent-title-line"><strong>{{ $item['title'] }}</strong><span class="rms-status-pill status-{{ $item['status'] }}">{{ ucfirst($item['status']) }}</span></div><p>{{ $item['template'] }} <b>·</b> {{ $item['store'] }}</p><small>{{ $item['model'] }} · {{ count($item['images']) }} output · {{ $item['created_at'] }}</small></div><div class="rms-recent-output-count"><b>{{ count($item['images']) }}</b><span>IMG</span></div></article>@endforeach</div>@endif
+                <section class="rms-dashboard-card rms-recent-card rms-recent-card-v2 reveal reveal-5" x-data="{ recentOpen: true, previewOpen: false, previewUrl: '', previewTitle: '' }">
+                    <div class="rms-dashboard-card-head rms-recent-head">
+                        <div>
+                            <span class="section-kicker">LATEST OUTPUT</span>
+                            <h3>Recent generations</h3>
+                            <p>Generation terbaru, status, output, preview, dan download dalam satu workspace.</p>
+                        </div>
+                        <div class="rms-recent-head-actions">
+                            <div class="rms-recent-summary"><span><i class="is-success"></i>{{ $d['completed']??0 }} completed</span><span><i class="is-processing"></i>{{ ($d['processing']??0)+($d['queued']??0) }} active</span></div>
+                            <button type="button" class="rms-collapse-button" @click="recentOpen=!recentOpen" :aria-expanded="recentOpen.toString()" aria-label="Toggle recent generations">
+                                <span x-text="recentOpen ? 'Collapse' : 'Expand'"></span><b :class="{ 'is-closed': !recentOpen }">⌄</b>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="rms-recent-collapsible" :class="{ 'is-open': recentOpen, 'is-closed': !recentOpen }">
+                        @if(empty($d['recent']))
+                            <div class="rms-recent-empty"><div class="rms-empty-orb">✦</div><strong>Belum ada generation pada filter ini.</strong><span>Coba ubah filter atau mulai membuat visual dari Product Generator.</span></div>
+                        @else
+                            <div class="rms-recent-grid">
+                                @foreach($d['recent'] as $item)
+                                    @php $primaryImage = $item['images'][0]['url'] ?? null; @endphp
+                                    <article class="rms-generation-card">
+                                        <button type="button" class="rms-generation-card-media" @if($primaryImage) @click="previewUrl=@js($primaryImage); previewTitle=@js($item['title']); previewOpen=true" @endif aria-label="Preview {{ $item['title'] }}">
+                                            @if($primaryImage)<img src="{{ $primaryImage }}" alt="{{ $item['title'] }}" loading="lazy">@else<span>✦</span>@endif
+                                            <span class="rms-generation-card-status status-{{ $item['status'] }}">{{ ucfirst($item['status']) }}</span>
+                                            @if(count($item['images']) > 1)<span class="rms-generation-card-count">{{ count($item['images']) }} IMG</span>@endif
+                                        </button>
+                                        <div class="rms-generation-card-body">
+                                            <div class="rms-generation-card-title-row"><strong>{{ $item['title'] }}</strong><span>{{ $item['created_at'] }}</span></div>
+                                            <div class="rms-generation-card-meta"><span>{{ $item['store'] }}</span><i>·</i><span>{{ $item['template'] }}</span></div>
+                                            <div class="rms-generation-card-engine"><span>{{ $item['model'] }}</span><span>{{ count($item['images']) }} output</span></div>
+                                            <div class="rms-generation-card-actions">
+                                                @if($primaryImage)
+                                                    <button type="button" @click="previewUrl=@js($primaryImage); previewTitle=@js($item['title']); previewOpen=true"><span>⌕</span> Preview</button>
+                                                    <a href="{{ $primaryImage }}" download target="_blank" rel="noopener"><span>↓</span> Download</a>
+                                                @else
+                                                    <span class="rms-generation-no-output">Tidak ada output</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </article>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="rms-generation-preview" x-show="previewOpen" x-cloak x-transition.opacity @keydown.escape.window="previewOpen=false" @click.self="previewOpen=false">
+                        <div class="rms-generation-preview-panel" x-transition:enter="rms-preview-enter" x-transition:leave="rms-preview-leave">
+                            <button type="button" class="rms-generation-preview-close" @click="previewOpen=false" aria-label="Close preview">×</button>
+                            <div class="rms-generation-preview-media"><img :src="previewUrl" :alt="previewTitle"></div>
+                            <div class="rms-generation-preview-footer"><div><span>GENERATION PREVIEW</span><strong x-text="previewTitle"></strong></div><a :href="previewUrl" download target="_blank" rel="noopener">Download image ↓</a></div>
+                        </div>
+                    </div>
                 </section>
                 <section class="rms-dashboard-grid-secondary reveal reveal-5">
                      <article class="rms-dashboard-card rms-activity-card"><div class="rms-dashboard-card-head"><div><span class="section-kicker">SYSTEM ACTIVITY</span><h3>Latest notifications</h3></div><span class="rms-dashboard-card-meta">LIVE</span></div><div class="rms-dashboard-activity-list">@forelse($this->dashboardNotifications as $activity)<div class="rms-dashboard-activity-item"><span class="rms-activity-dot {{ $activity['status']==='success'?'is-success':($activity['status']==='error'?'is-error':'is-info') }}"></span><div><strong>{{ $activity['title'] }}</strong><span>{{ Str::limit($activity['description'],95) }}</span></div><time>{{ $activity['created_at'] }}</time></div>@empty<div class="rms-dashboard-activity-empty">Belum ada aktivitas.</div>@endforelse</div></article>
