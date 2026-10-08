@@ -2030,16 +2030,40 @@ new class extends Component
                 @empty
                     <div class="rms-history-empty"><span>✦</span><strong>Belum ada generation</strong><small>Hasil baru akan muncul di sini. Kamu bisa menjalankan beberapa generation tanpa menunggu satu per satu.</small></div>
                 @endforelse
-            @if($this->recentGenerations->count() >= $recentHistoryLimit)
+            @if($this->recentGenerations->count() >= 1)
                 <div class="rms-generator-history-more">
-                    <span>Menampilkan {{ $this->recentGenerations->count() }} generation terbaru.</span>
-                    <button type="button"
-                        wire:click="$set('recentHistoryLimit', {{ $recentHistoryLimit + 6 }})"
-                        wire:loading.attr="disabled"
-                        wire:target="recentHistoryLimit">
-                        <span wire:loading.remove wire:target="recentHistoryLimit">Tampilkan lebih banyak →</span>
-                        <span wire:loading wire:target="recentHistoryLimit">Memuat…</span>
-                    </button>
+                    <div class="rms-history-more-copy">
+                        <span class="rms-history-more-icon" aria-hidden="true">↕</span>
+                        <span>Menampilkan {{ $this->recentGenerations->count() }} generation terbaru.</span>
+                    </div>
+
+                    <div class="rms-history-more-actions">
+                        @if($recentHistoryLimit > 6)
+                            <button type="button"
+                                class="rms-history-action rms-history-action-less"
+                                wire:click="$set('recentHistoryLimit', 6)"
+                                wire:loading.attr="disabled"
+                                wire:target="recentHistoryLimit">
+                                <span class="rms-history-action-arrow">↑</span>
+                                <span wire:loading.remove wire:target="recentHistoryLimit">Tampilkan lebih sedikit</span>
+                                <span wire:loading wire:target="recentHistoryLimit">Memuat…</span>
+                            </button>
+                        @endif
+
+                        @if($this->recentGenerations->count() >= $recentHistoryLimit)
+                            <button type="button"
+                                class="rms-history-action rms-history-action-more"
+                                wire:click="$set('recentHistoryLimit', {{ $recentHistoryLimit + 6 }})"
+                                wire:loading.attr="disabled"
+                                wire:target="recentHistoryLimit">
+                                <span wire:loading.remove wire:target="recentHistoryLimit">
+                                    Tampilkan lebih banyak
+                                    <span class="rms-history-action-arrow">→</span>
+                                </span>
+                                <span wire:loading wire:target="recentHistoryLimit">Memuat…</span>
+                            </button>
+                        @endif
+                    </div>
                 </div>
             @endif
             </div>
@@ -4142,27 +4166,98 @@ new class extends Component
     display:flex;
     align-items:center;
     justify-content:space-between;
-    gap:12px;
-    margin-top:12px;
-    padding:11px 13px;
+    gap:16px;
+    margin-top:14px;
+    padding:10px;
     border:1px solid rgba(24,24,27,.07);
-    border-radius:12px;
-    background:#fafafa;
+    border-radius:14px;
+    background:linear-gradient(180deg,#ffffff 0%,#fafafa 100%);
     color:#71717a;
     font-size:8.5px;
+    box-shadow:0 5px 18px rgba(24,24,27,.035);
 }
-.rms-generator-history-more button{
-    border:0;
-    background:transparent;
+.rms-history-more-copy{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    min-width:0;
+}
+.rms-history-more-icon{
+    width:25px;
+    height:25px;
+    flex:0 0 25px;
+    display:grid;
+    place-items:center;
+    border:1px solid rgba(39,174,96,.13);
+    border-radius:8px;
+    background:#f0fdf4;
     color:#16a34a;
-    font:inherit;
+    font-size:12px;
     font-weight:900;
-    cursor:pointer;
-    transition:transform .2s ease,color .2s ease;
 }
-.rms-generator-history-more button:hover{
+.rms-history-more-actions{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:7px;
+}
+.rms-history-action{
+    min-height:34px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+    padding:0 11px;
+    border:1px solid rgba(24,24,27,.08);
+    border-radius:10px;
+    font:inherit;
+    font-size:8px;
+    font-weight:900;
+    letter-spacing:.01em;
+    cursor:pointer;
+    transition:transform .2s cubic-bezier(.22,1,.36,1),box-shadow .22s ease,border-color .22s ease,background .22s ease,color .22s ease;
+}
+.rms-history-action:hover{
+    transform:translateY(-1px);
+}
+.rms-history-action:active{
+    transform:scale(.97);
+}
+.rms-history-action:disabled{
+    opacity:.55;
+    cursor:wait;
+    transform:none;
+}
+.rms-history-action-more{
+    border-color:rgba(39,174,96,.18);
+    background:linear-gradient(135deg,#f0fdf4,#ecfdf5);
     color:#15803d;
-    transform:translateX(2px);
+    box-shadow:0 5px 14px rgba(22,163,74,.08);
+}
+.rms-history-action-more:hover{
+    border-color:rgba(39,174,96,.3);
+    background:linear-gradient(135deg,#dcfce7,#f0fdf4);
+    box-shadow:0 8px 18px rgba(22,163,74,.12);
+}
+.rms-history-action-less{
+    background:#fff;
+    color:#71717a;
+}
+.rms-history-action-less:hover{
+    border-color:rgba(24,24,27,.14);
+    background:#f8fafc;
+    color:#52525b;
+    box-shadow:0 6px 16px rgba(24,24,27,.06);
+}
+.rms-history-action-arrow{
+    display:inline-grid;
+    place-items:center;
+    width:17px;
+    height:17px;
+    border-radius:6px;
+    background:rgba(255,255,255,.72);
+    font-size:10px;
+    line-height:1;
 }
 .rms-recent-history-enter{
     transition:opacity .28s ease,transform .42s cubic-bezier(.22,1,.36,1),max-height .48s cubic-bezier(.22,1,.36,1);
@@ -4197,14 +4292,26 @@ new class extends Component
         font-size:8px;
     }
     .rms-generator-history-more{
-        flex-direction:column;
         align-items:stretch;
+        flex-direction:column;
+        gap:9px;
+    }
+    .rms-history-more-copy{
+        justify-content:center;
         text-align:center;
     }
-    .rms-generator-history-more button{
-        min-height:34px;
-        border-radius:9px;
-        background:#f0fdf4;
+    .rms-history-more-actions{
+        width:100%;
+        display:grid;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+    .rms-history-more-actions:has(.rms-history-action:only-child){
+        grid-template-columns:1fr;
+    }
+    .rms-history-action{
+        min-height:38px;
+        width:100%;
+        font-size:8.5px;
     }
 }
 @media(prefers-reduced-motion:reduce){
