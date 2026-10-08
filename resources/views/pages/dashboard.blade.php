@@ -1885,7 +1885,7 @@ public function getUserInitialsProperty(): string
                 <div class="top-search">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
                     <input type="text" wire:model.live.debounce.450ms="globalSearch" placeholder="Search workspace..." aria-label="Search workspace...">
-                    <span class="search-shortcut">⌘ K</span>
+                    <span class="search-shortcut">Ctrl K</span>
                     @if(mb_strlen(trim($globalSearch)) >= 2)
                         <div class="rms-global-search-results">
                             @forelse($this->globalSearchResults as $result)
