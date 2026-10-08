@@ -1887,7 +1887,7 @@ public function getUserInitialsProperty(): string
                     @if(mb_strlen(trim($globalSearch)) >= 2)
                         <div class="rms-global-search-results">
                             @forelse($this->globalSearchResults as $result)
-                                <button type="button" wire:click="navigateGlobalSearch('{{ $result['action'] }}')" class="rms-global-search-item">
+                                <button type="button" wire:click="navigateGlobalSearch('{{ $result['action'] }}', {{ (int) ($result['id'] ?? 0) }})" class="rms-global-search-item">
                                     <span>{{ $result['type'] }}</span><div><strong>{{ $result['label'] }}</strong><small>{{ $result['meta'] }}</small></div><b>→</b>
                                 </button>
                             @empty
@@ -2546,9 +2546,37 @@ public function getUserInitialsProperty(): string
                 <section class="rms-dashboard-toolbar reveal reveal-3">
                     <div><span class="section-kicker">REALTIME OPERATIONS</span><h2>Creative activity</h2><p>Monitoring generation, queue, output, dan performa creative engine secara realtime.</p></div>
                     <div class="rms-dashboard-filters">
-                        <label class="rms-dashboard-select"><span>PERIOD</span><select wire:model.live="dashboardTimeframe"><option value="today">Hari ini</option><option value="7d">7 hari</option><option value="30d">30 hari</option><option value="90d">90 hari</option><option value="year">Tahun ini</option></select></label>
-                        <label class="rms-dashboard-select"><span>STATUS</span><select wire:model.live="dashboardStatus"><option value="all">Semua status</option><option value="completed">Completed</option><option value="processing">Processing</option><option value="queued">Queued</option><option value="failed">Failed</option></select></label>
-                        <label class="rms-dashboard-select"><span>STORE</span><select wire:model.live="dashboardStore"><option value="all">Semua store</option>@foreach($this->dashboardStores as $store)<option value="{{ $store->id }}">{{ $store->name }}</option>@endforeach</select></label>
+                        <div class="rms-filter-dropdown" x-data="{ open:false }" :class="{ 'is-open': open }" @click.outside="open=false">
+                            <button type="button" class="rms-filter-trigger" @click="open=!open" :aria-expanded="open.toString()">
+                                <span class="rms-filter-copy"><small>PERIOD</small><strong>{{ match($dashboardTimeframe){ 'today'=>'Hari ini','30d'=>'30 hari','90d'=>'90 hari','year'=>'Tahun ini',default=>'7 hari' } }}</strong></span><span class="rms-filter-chevron">⌄</span>
+                            </button>
+                            <div class="rms-filter-menu" x-show="open" x-transition.opacity x-cloak>
+                                @foreach(['today'=>'Hari ini','7d'=>'7 hari','30d'=>'30 hari','90d'=>'90 hari','year'=>'Tahun ini'] as $value => $label)
+                                    <button type="button" class="rms-filter-option {{ $dashboardTimeframe === $value ? 'is-selected' : '' }}" wire:click="$set('dashboardTimeframe','{{ $value }}')" @click="open=false"><span>{{ $label }}</span><b>✓</b></button>
+                                @endforeach
+                            </div>
+                        </div>
+                        <div class="rms-filter-dropdown" x-data="{ open:false }" :class="{ 'is-open': open }" @click.outside="open=false">
+                            <button type="button" class="rms-filter-trigger" @click="open=!open" :aria-expanded="open.toString()">
+                                <span class="rms-filter-copy"><small>STATUS</small><strong>{{ match($dashboardStatus){ 'completed'=>'Completed','processing'=>'Processing','queued'=>'Queued','failed'=>'Failed',default=>'Semua status' } }}</strong></span><span class="rms-filter-chevron">⌄</span>
+                            </button>
+                            <div class="rms-filter-menu" x-show="open" x-transition.opacity x-cloak>
+                                @foreach(['all'=>'Semua status','completed'=>'Completed','processing'=>'Processing','queued'=>'Queued','failed'=>'Failed'] as $value => $label)
+                                    <button type="button" class="rms-filter-option {{ $dashboardStatus === $value ? 'is-selected' : '' }}" wire:click="$set('dashboardStatus','{{ $value }}')" @click="open=false"><span>{{ $label }}</span><b>✓</b></button>
+                                @endforeach
+                            </div>
+                        </div>
+                        <div class="rms-filter-dropdown" x-data="{ open:false }" :class="{ 'is-open': open }" @click.outside="open=false">
+                            <button type="button" class="rms-filter-trigger" @click="open=!open" :aria-expanded="open.toString()">
+                                <span class="rms-filter-copy"><small>STORE</small><strong>{{ $dashboardStore === 'all' ? 'Semua store' : ($this->dashboardStores->firstWhere('id', (int) $dashboardStore)?->name ?? 'Store') }}</strong></span><span class="rms-filter-chevron">⌄</span>
+                            </button>
+                            <div class="rms-filter-menu" x-show="open" x-transition.opacity x-cloak>
+                                <button type="button" class="rms-filter-option {{ $dashboardStore === 'all' ? 'is-selected' : '' }}" wire:click="$set('dashboardStore','all')" @click="open=false"><span>Semua store</span><b>✓</b></button>
+                                @foreach($this->dashboardStores as $store)
+                                    <button type="button" class="rms-filter-option {{ (string) $dashboardStore === (string) $store->id ? 'is-selected' : '' }}" wire:click="$set('dashboardStore','{{ $store->id }}')" @click="open=false"><span>{{ $store->name }}</span><b>✓</b></button>
+                                @endforeach
+                            </div>
+                        </div>
                     </div>
                 </section>
                 @php $d=$this->dashboardData; $trend=$d['trend']??[]; $maxTrend=max(1,(int)($d['max_trend']??1)); @endphp
