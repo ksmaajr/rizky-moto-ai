@@ -669,37 +669,105 @@
                                 <input type="search" wire:model.live.debounce.350ms="activitySearch" placeholder="Search activity..." autocomplete="off">
                             </label>
 
-                            <label>
-                                <span>CATEGORY</span>
-                                <select wire:model.live="activityCategory">
-                                    <option value="all">All</option>
-                                    <option value="worker">Worker</option>
-                                    <option value="api">API</option>
-                                    <option value="generation">Generation</option>
-                                    <option value="system">System</option>
-                                </select>
-                            </label>
+                            <div class="rms-filter-field">
+                                <span class="rms-filter-label">CATEGORY</span>
+                                <div class="rms-activity-select" x-data="{
+                                    open: false,
+                                    value: @js($activityCategory),
+                                    options: [
+                                        { value: 'all', label: 'All', desc: 'All activity categories' },
+                                        { value: 'worker', label: 'Worker', desc: 'Queue & worker lifecycle' },
+                                        { value: 'api', label: 'API', desc: 'Gateway & credential events' },
+                                        { value: 'generation', label: 'Generation', desc: 'Image generation events' },
+                                        { value: 'system', label: 'System', desc: 'System & application events' }
+                                    ],
+                                    get current() { return this.options.find(o => o.value === this.value) || this.options[0] },
+                                    choose(option) { this.value = option.value; this.open = false; $wire.set('activityCategory', option.value) }
+                                }" @click.outside="open = false" @keydown.escape.window="open = false">
+                                    <button type="button" class="rms-activity-select-trigger" @click="open = !open" :aria-expanded="open.toString()">
+                                        <span class="rms-activity-select-copy">
+                                            <strong x-text="current.label"></strong>
+                                            <small x-text="current.desc"></small>
+                                        </span>
+                                        <span class="rms-activity-select-chevron" :class="{ 'is-open': open }">⌄</span>
+                                    </button>
+                                    <div class="rms-activity-select-menu" x-cloak x-show="open" x-transition:enter="rms-select-enter" x-transition:enter-start="rms-select-enter-start" x-transition:enter-end="rms-select-enter-end" x-transition:leave="rms-select-leave" x-transition:leave-start="rms-select-leave-start" x-transition:leave-end="rms-select-leave-end">
+                                        <div class="rms-activity-select-menu-head">FILTER BY CATEGORY</div>
+                                        <div class="rms-activity-select-options">
+                                            <template x-for="option in options" :key="option.value">
+                                                <button type="button" class="rms-activity-select-option" :class="{ 'is-selected': value === option.value }" @click="choose(option)">
+                                                    <span class="rms-filter-option-dot"></span>
+                                                    <span class="rms-filter-option-copy"><strong x-text="option.label"></strong><small x-text="option.desc"></small></span>
+                                                    <span class="rms-filter-option-check" x-show="value === option.value">✓</span>
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
-                            <label>
-                                <span>STATUS</span>
-                                <select wire:model.live="activityStatus">
-                                    <option value="all">All</option>
-                                    <option value="success">Success</option>
-                                    <option value="info">Info</option>
-                                    <option value="warning">Warning</option>
-                                    <option value="error">Error</option>
-                                </select>
-                            </label>
+                            <div class="rms-filter-field">
+                                <span class="rms-filter-label">STATUS</span>
+                                <div class="rms-activity-select" x-data="{
+                                    open: false,
+                                    value: @js($activityStatus),
+                                    options: [
+                                        { value: 'all', label: 'All', desc: 'Every event status' },
+                                        { value: 'success', label: 'Success', desc: 'Completed successfully' },
+                                        { value: 'info', label: 'Info', desc: 'Informational events' },
+                                        { value: 'warning', label: 'Warning', desc: 'Attention may be required' },
+                                        { value: 'error', label: 'Error', desc: 'Failed or blocked events' }
+                                    ],
+                                    get current() { return this.options.find(o => o.value === this.value) || this.options[0] },
+                                    choose(option) { this.value = option.value; this.open = false; $wire.set('activityStatus', option.value) }
+                                }" @click.outside="open = false" @keydown.escape.window="open = false">
+                                    <button type="button" class="rms-activity-select-trigger" @click="open = !open" :aria-expanded="open.toString()">
+                                        <span class="rms-activity-select-copy"><strong x-text="current.label"></strong><small x-text="current.desc"></small></span>
+                                        <span class="rms-activity-select-chevron" :class="{ 'is-open': open }">⌄</span>
+                                    </button>
+                                    <div class="rms-activity-select-menu" x-cloak x-show="open" x-transition:enter="rms-select-enter" x-transition:enter-start="rms-select-enter-start" x-transition:enter-end="rms-select-enter-end" x-transition:leave="rms-select-leave" x-transition:leave-start="rms-select-leave-start" x-transition:leave-end="rms-select-leave-end">
+                                        <div class="rms-activity-select-menu-head">FILTER BY STATUS</div>
+                                        <div class="rms-activity-select-options">
+                                            <template x-for="option in options" :key="option.value">
+                                                <button type="button" class="rms-activity-select-option" :class="{ 'is-selected': value === option.value }" @click="choose(option)">
+                                                    <span class="rms-filter-option-dot"></span><span class="rms-filter-option-copy"><strong x-text="option.label"></strong><small x-text="option.desc"></small></span><span class="rms-filter-option-check" x-show="value === option.value">✓</span>
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
-                            <label>
-                                <span>RANGE</span>
-                                <select wire:model.live="activityTimeframe">
-                                    <option value="all">All time</option>
-                                    <option value="today">Today</option>
-                                    <option value="7d">7 days</option>
-                                    <option value="30d">30 days</option>
-                                </select>
-                            </label>
+                            <div class="rms-filter-field">
+                                <span class="rms-filter-label">RANGE</span>
+                                <div class="rms-activity-select" x-data="{
+                                    open: false,
+                                    value: @js($activityTimeframe),
+                                    options: [
+                                        { value: 'all', label: 'All time', desc: 'Entire activity history' },
+                                        { value: 'today', label: 'Today', desc: 'Events from today' },
+                                        { value: '7d', label: '7 days', desc: 'Last 7 days' },
+                                        { value: '30d', label: '30 days', desc: 'Last 30 days' }
+                                    ],
+                                    get current() { return this.options.find(o => o.value === this.value) || this.options[0] },
+                                    choose(option) { this.value = option.value; this.open = false; $wire.set('activityTimeframe', option.value) }
+                                }" @click.outside="open = false" @keydown.escape.window="open = false">
+                                    <button type="button" class="rms-activity-select-trigger" @click="open = !open" :aria-expanded="open.toString()">
+                                        <span class="rms-activity-select-copy"><strong x-text="current.label"></strong><small x-text="current.desc"></small></span>
+                                        <span class="rms-activity-select-chevron" :class="{ 'is-open': open }">⌄</span>
+                                    </button>
+                                    <div class="rms-activity-select-menu" x-cloak x-show="open" x-transition:enter="rms-select-enter" x-transition:enter-start="rms-select-enter-start" x-transition:enter-end="rms-select-enter-end" x-transition:leave="rms-select-leave" x-transition:leave-start="rms-select-leave-start" x-transition:leave-end="rms-select-leave-end">
+                                        <div class="rms-activity-select-menu-head">FILTER BY RANGE</div>
+                                        <div class="rms-activity-select-options">
+                                            <template x-for="option in options" :key="option.value">
+                                                <button type="button" class="rms-activity-select-option" :class="{ 'is-selected': value === option.value }" @click="choose(option)">
+                                                    <span class="rms-filter-option-dot"></span><span class="rms-filter-option-copy"><strong x-text="option.label"></strong><small x-text="option.desc"></small></span><span class="rms-filter-option-check" x-show="value === option.value">✓</span>
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
                             <div class="rms-global-select-actions">
                                 <button type="button" @click="toggleAll()" :disabled="checkboxes.length === 0">
@@ -1709,5 +1777,84 @@
 }
 @media(prefers-reduced-motion:reduce){
  .rms-settings-activity-hero,.rms-settings-activity-note-upgraded{animation:none!important}
+}
+</style>
+<style>
+/* CUSTOM ACTIVITY FILTERS — premium animated select */
+[x-cloak]{display:none!important}
+.rms-global-activity-toolbar{
+    grid-template-columns:minmax(250px,1.8fr) repeat(3,minmax(165px,.72fr))!important;
+    align-items:end!important;
+}
+.rms-filter-field{display:grid;gap:7px;min-width:0}
+.rms-filter-label{
+    display:block;color:#71717a;font-size:8px;font-weight:900;letter-spacing:.13em;
+}
+.rms-activity-select{position:relative;width:100%;z-index:20}
+.rms-activity-select:focus-within{z-index:100}
+.rms-activity-select-trigger{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;height:46px;
+    padding:0 12px;border:1px solid #dedee4;border-radius:11px;background:#fff;color:#27272a;
+    text-align:left;cursor:pointer;outline:none;
+    box-shadow:0 2px 6px rgba(15,23,42,.025);
+    transition:border-color .2s ease,box-shadow .25s ease,transform .2s ease,background .2s ease;
+}
+.rms-activity-select-trigger:hover{border-color:#c7c7ce;background:#fcfcfd;transform:translateY(-1px)}
+.rms-activity-select-trigger:focus-visible{border-color:#18181b;box-shadow:0 0 0 4px rgba(24,24,27,.06)}
+.rms-activity-select-copy{display:flex;min-width:0;flex-direction:column}
+.rms-activity-select-copy strong{overflow:hidden;color:#3f3f46;font-size:10px;font-weight:800;text-overflow:ellipsis;white-space:nowrap}
+.rms-activity-select-copy small{overflow:hidden;margin-top:3px;color:#a1a1aa;font-size:7.5px;line-height:1.1;text-overflow:ellipsis;white-space:nowrap}
+.rms-activity-select-chevron{
+    display:grid;place-items:center;width:25px;height:25px;flex:0 0 25px;border-radius:7px;
+    color:#71717a;font-size:15px;line-height:1;transition:transform .25s cubic-bezier(.2,.8,.2,1),background .2s ease,color .2s ease;
+}
+.rms-activity-select-chevron.is-open{transform:rotate(180deg);background:#f4f4f5;color:#18181b}
+.rms-activity-select-menu{
+    position:absolute;top:calc(100% + 8px);left:0;width:100%;min-width:220px;overflow:hidden;
+    border:1px solid #e2e2e7;border-radius:14px;background:rgba(255,255,255,.98);
+    box-shadow:0 20px 55px rgba(15,23,42,.14),0 4px 12px rgba(15,23,42,.05);
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    transform-origin:top center;z-index:99999;
+}
+.rms-activity-select-menu-head{
+    padding:10px 12px;border-bottom:1px solid #f0f0f2;background:linear-gradient(180deg,#fff,#fafafa);
+    color:#a1a1aa;font-size:7px;font-weight:900;letter-spacing:.13em;
+}
+.rms-activity-select-options{padding:5px}
+.rms-activity-select-option{
+    display:flex;align-items:center;gap:9px;width:100%;min-height:48px;padding:7px 9px;
+    border:0;border-radius:9px;background:transparent;color:#3f3f46;text-align:left;cursor:pointer;
+    transition:background .16s ease,transform .16s ease;
+}
+.rms-activity-select-option:hover{background:#f7f7f8;transform:translateX(2px)}
+.rms-activity-select-option.is-selected{background:#fff1f2}
+.rms-filter-option-dot{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#d4d4d8;transition:transform .2s ease,background .2s ease,box-shadow .2s ease}
+.rms-activity-select-option.is-selected .rms-filter-option-dot{background:#ef3030;box-shadow:0 0 0 4px rgba(239,48,48,.09);transform:scale(1.05)}
+.rms-filter-option-copy{display:flex;flex:1;min-width:0;flex-direction:column}
+.rms-filter-option-copy strong{font-size:9px;font-weight:800;color:#3f3f46}
+.rms-filter-option-copy small{margin-top:2px;color:#a1a1aa;font-size:7px;line-height:1.3}
+.rms-filter-option-check{display:grid;place-items:center;width:21px;height:21px;border-radius:6px;background:#ef3030;color:#fff;font-size:10px;font-weight:900;box-shadow:0 4px 10px rgba(239,48,48,.16)}
+.rms-select-enter{transition:opacity .2s ease,transform .24s cubic-bezier(.2,.8,.2,1)}
+.rms-select-enter-start{opacity:0;transform:translateY(-7px) scale(.975)}
+.rms-select-enter-end{opacity:1;transform:translateY(0) scale(1)}
+.rms-select-leave{transition:opacity .14s ease,transform .14s ease}
+.rms-select-leave-start{opacity:1;transform:translateY(0) scale(1)}
+.rms-select-leave-end{opacity:0;transform:translateY(-4px) scale(.985)}
+.rms-global-activity-toolbar>label:first-child input{
+    height:46px!important;border-radius:11px!important;font-size:10px!important;padding:0 12px!important;
+}
+@media(max-width:1100px){
+ .rms-global-activity-toolbar{grid-template-columns:minmax(200px,1.5fr) repeat(3,minmax(135px,1fr))!important}
+}
+@media(max-width:900px){
+ .rms-global-activity-toolbar{grid-template-columns:1fr 1fr!important}
+ .rms-global-activity-toolbar>label:first-child{grid-column:1/-1}
+ .rms-filter-field{min-width:0}
+}
+@media(max-width:640px){
+ .rms-global-activity-toolbar{grid-template-columns:1fr!important;padding:13px!important}
+ .rms-global-activity-toolbar>label:first-child{grid-column:auto}
+ .rms-activity-select-trigger{height:44px}
+ .rms-activity-select-menu{min-width:0;width:100%}
 }
 </style>
