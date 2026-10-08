@@ -9714,3 +9714,89 @@
         overflow-y:auto!important;
     }
 }
+
+
+/* =========================================================
+   DASHBOARD V17 — MOBILE SEARCH VISIBILITY
+   ========================================================= */
+@media (max-width:900px){
+    /* Older dashboard layers intentionally hid .top-search on tablets.
+       V17 explicitly re-enables it so the global search remains available
+       on every viewport. */
+    .top-search{
+        display:flex!important;
+        visibility:visible!important;
+        opacity:1!important;
+        order:10!important;
+        flex:0 0 100%!important;
+        width:100%!important;
+        min-width:0!important;
+        height:42px!important;
+        margin-top:2px!important;
+    }
+
+    .topbar{
+        min-height:112px!important;
+        height:auto!important;
+        flex-wrap:wrap!important;
+        align-items:center!important;
+        row-gap:8px!important;
+        padding:10px 12px!important;
+    }
+
+    .topbar-right{
+        flex:1 1 auto!important;
+        width:100%!important;
+        min-width:0!important;
+        flex-wrap:wrap!important;
+        align-items:center!important;
+        justify-content:flex-end!important;
+        gap:8px!important;
+    }
+
+    .top-search input{
+        display:block!important;
+        width:100%!important;
+        height:42px!important;
+        padding:0 14px 0 40px!important;
+        font-size:12px!important;
+        border-radius:13px!important;
+    }
+
+    .top-search > svg{
+        left:13px!important;
+        width:16px!important;
+        height:16px!important;
+    }
+
+    .search-shortcut{
+        display:none!important;
+    }
+
+    .rms-global-search-results{
+        position:absolute!important;
+        top:48px!important;
+        left:0!important;
+        right:0!important;
+        width:100%!important;
+        max-height:min(55dvh,390px)!important;
+        overflow-y:auto!important;
+        z-index:2147483001!important;
+    }
+}
+
+@media (max-width:640px){
+    .topbar{
+        min-height:110px!important;
+        padding:9px 10px!important;
+    }
+
+    .topbar-right{
+        gap:7px!important;
+    }
+
+    .top-search{
+        height:42px!important;
+        flex-basis:100%!important;
+    }
+}
