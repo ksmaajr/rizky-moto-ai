@@ -100,6 +100,12 @@ class extends Component
     public string $globalSearch = '';
     public array $dashboardData = [];
     public ?string $notificationReadAt = null;
+    public array $generationHistory = [];
+    public bool $generationHistoryLoaded = false;
+    public string $historyStatus = 'all';
+    public string $historyStore = 'all';
+    public string $historySort = 'newest';
+    public string $historySearch = '';
 
 
 
@@ -600,6 +606,83 @@ class extends Component
     public function updatedDashboardStore(): void
     {
         $this->loadDashboardData();
+    }
+
+    public function loadGenerationHistory(): void
+    {
+        $this->generationHistoryLoaded = true;
+        $this->refreshGenerationHistory();
+    }
+
+    public function updatedHistoryStatus(): void
+    {
+        if ($this->generationHistoryLoaded) $this->refreshGenerationHistory();
+    }
+
+    public function updatedHistoryStore(): void
+    {
+        if ($this->generationHistoryLoaded) $this->refreshGenerationHistory();
+    }
+
+    public function updatedHistorySort(): void
+    {
+        if ($this->generationHistoryLoaded) $this->refreshGenerationHistory();
+    }
+
+    public function updatedHistorySearch(): void
+    {
+        if ($this->generationHistoryLoaded) $this->refreshGenerationHistory();
+    }
+
+    private function refreshGenerationHistory(): void
+    {
+        $search = trim($this->historySearch);
+        $query = \App\Models\Generation::query()
+            ->with([
+                'store:id,name,logo_path',
+                'template:id,name',
+                'generatedImages:id,generation_id,image_path,image_url,is_primary,is_favorite',
+            ])
+            ->when($this->historyStatus !== 'all', fn ($q) => $q->where('status', $this->historyStatus))
+            ->when($this->historyStore !== 'all', fn ($q) => $q->where('store_id', (int) $this->historyStore))
+            ->when($search !== '', function ($q) use ($search) {
+                $keyword = '%' . $search . '%';
+                $q->where(function ($nested) use ($keyword) {
+                    $nested->where('prompt', 'like', $keyword)
+                        ->orWhere('model', 'like', $keyword)
+                        ->orWhere('status', 'like', $keyword)
+                        ->orWhere('metadata', 'like', $keyword)
+                        ->orWhereHas('store', fn ($store) => $store->where('name', 'like', $keyword))
+                        ->orWhereHas('template', fn ($template) => $template->where('name', 'like', $keyword));
+                });
+            });
+
+        $query->orderBy(match ($this->historySort) {
+            'oldest' => 'created_at',
+            default => 'created_at',
+        }, $this->historySort === 'oldest' ? 'asc' : 'desc');
+
+        if ($this->historySort === 'failed') {
+            $query->orderByRaw("CASE WHEN status = 'failed' THEN 0 ELSE 1 END")->orderByDesc('created_at');
+        } elseif ($this->historySort === 'completed') {
+            $query->orderByRaw("CASE WHEN status IN ('completed','success','succeeded') THEN 0 ELSE 1 END")->orderByDesc('created_at');
+        }
+
+        $this->generationHistory = $query->get()->map(fn ($generation) => [
+            'id' => $generation->id,
+            'title' => data_get($generation->metadata, 'title') ?: ('Generation #' . $generation->id),
+            'status' => $generation->status,
+            'model' => \Illuminate\Support\Str::afterLast((string) $generation->model, '/'),
+            'store' => $generation->store?->name ?? 'Store',
+            'template' => $generation->template?->name ?? 'Template',
+            'created_at' => $generation->created_at?->diffForHumans(),
+            'created_at_raw' => $generation->created_at?->format('d M Y H:i'),
+            'images' => $generation->generatedImages->map(fn ($image) => [
+                'id' => $image->id,
+                'url' => $image->image_url ?: ($image->image_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($image->image_path) : null),
+                'favorite' => (bool) $image->is_favorite,
+            ])->filter(fn ($image) => filled($image['url']))->values()->all(),
+        ])->all();
     }
 
     private function loadDashboardData(): void
@@ -2640,32 +2723,56 @@ public function getUserInitialsProperty(): string
                         <div class="rms-health-note"><i></i>{{ $workerStatus['healthy']?'Generation engine siap menerima pekerjaan.':'Worker belum aktif atau belum sehat.' }}</div>
                     </article>
                 </section>
-                <section class="rms-dashboard-card rms-recent-card rms-recent-card-v2 reveal reveal-5" x-data="{ recentOpen: true, previewOpen: false, previewUrl: '', previewTitle: '' }">
-                    <div class="rms-dashboard-card-head rms-recent-head">
-                        <div>
-                            <span class="section-kicker">LATEST OUTPUT</span>
-                            <h3>Recent generations</h3>
-                            <p>Generation terbaru, status, output, preview, dan download dalam satu workspace.</p>
+                <section class="rms-dashboard-card rms-recent-card rms-recent-card-v3 reveal reveal-5" x-data="{ recentOpen: true, previewOpen: false, previewUrl: '', previewTitle: '' }">
+                    <div class="rms-dashboard-card-head rms-recent-head rms-history-head">
+                        <div class="rms-history-heading">
+                            <span class="section-kicker">GENERATION HISTORY</span>
+                            <h3>All generations</h3>
+                            <p>Seluruh riwayat generation dalam container scrollable. Sort, filter, preview, dan download tanpa meninggalkan dashboard.</p>
                         </div>
-                        <div class="rms-recent-head-actions">
-                            <div class="rms-recent-summary"><span><i class="is-success"></i>{{ $d['completed']??0 }} completed</span><span><i class="is-processing"></i>{{ ($d['processing']??0)+($d['queued']??0) }} active</span></div>
-                            <button type="button" class="rms-collapse-button" @click="recentOpen=!recentOpen" :aria-expanded="recentOpen.toString()" aria-label="Toggle recent generations">
-                                <span x-text="recentOpen ? 'Collapse' : 'Expand'"></span><b :class="{ 'is-closed': !recentOpen }">⌄</b>
+                        <div class="rms-history-head-actions">
+                            <span class="rms-history-count">{{ $generationHistoryLoaded ? count($generationHistory) . ' results' : 'History ready' }}</span>
+                            <button type="button" class="rms-collapse-button rms-collapse-button-lg" @click="recentOpen=!recentOpen; if(recentOpen) $wire.loadGenerationHistory()" :aria-expanded="recentOpen.toString()">
+                                <span x-text="recentOpen ? 'Collapse history' : 'Expand history'"></span><b :class="{ 'is-closed': !recentOpen }">⌄</b>
                             </button>
                         </div>
                     </div>
-                    <div class="rms-recent-collapsible" :class="{ 'is-open': recentOpen, 'is-closed': !recentOpen }">
-                        @if(empty($d['recent']))
-                            <div class="rms-recent-empty"><div class="rms-empty-orb">✦</div><strong>Belum ada generation pada filter ini.</strong><span>Coba ubah filter atau mulai membuat visual dari Product Generator.</span></div>
+
+                    <div class="rms-history-shell" x-show="recentOpen" x-transition:enter="rms-history-enter" x-transition:leave="rms-history-leave" x-cloak>
+                        @if(! $generationHistoryLoaded)
+                            <div class="rms-history-load-state">
+                                <div><span class="rms-history-load-icon">✦</span><strong>Muat seluruh generation history</strong><small>History dipisahkan dari realtime KPI supaya dashboard tetap cepat dibuka.</small></div>
+                                <button type="button" class="rms-history-load-button" wire:click="loadGenerationHistory">Load history <span>→</span></button>
+                            </div>
                         @else
-                            <div class="rms-recent-grid">
-                                @foreach($d['recent'] as $item)
-                                    @php $primaryImage = $item['images'][0]['url'] ?? null; @endphp
-                                    <article class="rms-generation-card">
-                                        <button type="button" class="rms-generation-card-media" @if($primaryImage) @click="previewUrl=@js($primaryImage); previewTitle=@js($item['title']); previewOpen=true" @endif aria-label="Preview {{ $item['title'] }}">
+                            <div class="rms-history-toolbar">
+                                <div class="rms-history-search">
+                                    <span>⌕</span><input type="text" wire:model.live.debounce.400ms="historySearch" placeholder="Cari generation, model, store, template...">
+                                </div>
+                                <div class="rms-history-controls">
+                                    <div class="rms-history-control" x-data="{open:false}" :class="{ 'is-open':open }" @click.outside="open=false">
+                                        <button type="button" @click="open=!open"><small>STATUS</small><strong>{{ match($historyStatus){'completed'=>'Completed','processing'=>'Processing','queued'=>'Queued','failed'=>'Failed',default=>'Semua status'}}</strong><b>⌄</b></button>
+                                        <div class="rms-history-menu" x-show="open" x-transition.opacity x-cloak>@foreach(['all'=>'Semua status','completed'=>'Completed','processing'=>'Processing','queued'=>'Queued','failed'=>'Failed'] as $v=>$l)<button type="button" class="{{ $historyStatus===$v?'is-selected':'' }}" wire:click="$set('historyStatus','{{ $v }}')" @click="open=false">{{ $l }} <span>✓</span></button>@endforeach</div>
+                                    </div>
+                                    <div class="rms-history-control" x-data="{open:false}" :class="{ 'is-open':open }" @click.outside="open=false">
+                                        <button type="button" @click="open=!open"><small>STORE</small><strong>{{ $historyStore==='all'?'Semua store':($this->dashboardStores->firstWhere('id',(int)$historyStore)?->name ?? 'Store') }}</strong><b>⌄</b></button>
+                                        <div class="rms-history-menu" x-show="open" x-transition.opacity x-cloak><button type="button" class="{{ $historyStore==='all'?'is-selected':'' }}" wire:click="$set('historyStore','all')" @click="open=false">Semua store <span>✓</span></button>@foreach($this->dashboardStores as $store)<button type="button" class="{{ (string)$historyStore===(string)$store->id?'is-selected':'' }}" wire:click="$set('historyStore','{{ $store->id }}')" @click="open=false">{{ $store->name }} <span>✓</span></button>@endforeach</div>
+                                    </div>
+                                    <div class="rms-history-control" x-data="{open:false}" :class="{ 'is-open':open }" @click.outside="open=false">
+                                        <button type="button" @click="open=!open"><small>SORT</small><strong>{{ match($historySort){'oldest'=>'Terlama','failed'=>'Failed dulu','completed'=>'Completed dulu',default=>'Terbaru'}}</strong><b>⌄</b></button>
+                                        <div class="rms-history-menu" x-show="open" x-transition.opacity x-cloak>@foreach(['newest'=>'Terbaru','oldest'=>'Terlama','completed'=>'Completed dulu','failed'=>'Failed dulu'] as $v=>$l)<button type="button" class="{{ $historySort===$v?'is-selected':'' }}" wire:click="$set('historySort','{{ $v }}')" @click="open=false">{{ $l }} <span>✓</span></button>@endforeach</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="rms-history-scroll">
+                                @forelse($generationHistory as $item)
+                                    @php $primaryImage=$item['images'][0]['url']??null; @endphp
+                                    <article class="rms-generation-card rms-generation-card-v2">
+                                        <button type="button" class="rms-generation-card-media rms-generation-card-media-lg" @if($primaryImage) @click="previewUrl=@js($primaryImage); previewTitle=@js($item['title']); previewOpen=true" @endif>
                                             @if($primaryImage)<img src="{{ $primaryImage }}" alt="{{ $item['title'] }}" loading="lazy">@else<span>✦</span>@endif
                                             <span class="rms-generation-card-status status-{{ $item['status'] }}">{{ ucfirst($item['status']) }}</span>
-                                            @if(count($item['images']) > 1)<span class="rms-generation-card-count">{{ count($item['images']) }} IMG</span>@endif
+                                            @if(count($item['images'])>1)<span class="rms-generation-card-count">{{ count($item['images']) }} IMG</span>@endif
                                         </button>
                                         <div class="rms-generation-card-body">
                                             <div class="rms-generation-card-title-row"><strong>{{ $item['title'] }}</strong><span>{{ $item['created_at'] }}</span></div>
@@ -2674,25 +2781,29 @@ public function getUserInitialsProperty(): string
                                             <div class="rms-generation-card-actions">
                                                 @if($primaryImage)
                                                     <button type="button" @click="previewUrl=@js($primaryImage); previewTitle=@js($item['title']); previewOpen=true"><span>⌕</span> Preview</button>
-                                                    <a href="{{ !empty($item['images'][0]['id']) ? route('generated-images.download', ['generatedImage' => $item['images'][0]['id'], 'max_mb' => 2, 'quality' => 'optimized', 'format' => 'png']) : $primaryImage }}" download target="_blank" rel="noopener"><span>↓</span> Download</a>
+                                                    <a href="{{ route('generated-images.download',['generatedImage'=>$item['images'][0]['id'],'max_mb'=>2,'quality'=>'optimized','format'=>'png']) }}" target="_blank" rel="noopener"><span>↓</span> Download</a>
                                                 @else
                                                     <span class="rms-generation-no-output">Tidak ada output</span>
                                                 @endif
                                             </div>
                                         </div>
                                     </article>
-                                @endforeach
+                                @empty
+                                    <div class="rms-history-empty"><span>✦</span><strong>Tidak ada generation yang cocok.</strong><small>Ubah filter atau kata pencarian.</small></div>
+                                @endforelse
                             </div>
                         @endif
                     </div>
 
-                    <div class="rms-generation-preview" x-show="previewOpen" x-cloak x-transition.opacity @keydown.escape.window="previewOpen=false" @click.self="previewOpen=false">
-                        <div class="rms-generation-preview-panel" x-transition:enter="rms-preview-enter" x-transition:leave="rms-preview-leave">
-                            <button type="button" class="rms-generation-preview-close" @click="previewOpen=false" aria-label="Close preview">×</button>
-                            <div class="rms-generation-preview-media"><img :src="previewUrl" :alt="previewTitle"></div>
-                            <div class="rms-generation-preview-footer"><div><span>GENERATION PREVIEW</span><strong x-text="previewTitle"></strong></div><a :href="previewUrl" download target="_blank" rel="noopener">Download image ↓</a></div>
+                    <template x-teleport="body">
+                        <div class="rms-generation-preview rms-generation-preview-v2" x-show="previewOpen" x-cloak x-transition.opacity @keydown.escape.window="previewOpen=false" @click.self="previewOpen=false">
+                            <div class="rms-generation-preview-panel rms-generation-preview-panel-v2" x-transition:enter="rms-preview-enter" x-transition:leave="rms-preview-leave">
+                                <button type="button" class="rms-generation-preview-close" @click="previewOpen=false" aria-label="Close preview">×</button>
+                                <div class="rms-generation-preview-media rms-generation-preview-media-v2"><img :src="previewUrl" :alt="previewTitle"></div>
+                                <div class="rms-generation-preview-footer"><div><span>GENERATION PREVIEW</span><strong x-text="previewTitle"></strong></div><a :href="previewUrl" download target="_blank" rel="noopener">Download image ↓</a></div>
+                            </div>
                         </div>
-                    </div>
+                    </template>
                 </section>
                 <section class="rms-dashboard-grid-secondary reveal reveal-5">
                      <article class="rms-dashboard-card rms-activity-card"><div class="rms-dashboard-card-head"><div><span class="section-kicker">SYSTEM ACTIVITY</span><h3>Latest notifications</h3></div><span class="rms-dashboard-card-meta">LIVE</span></div><div class="rms-dashboard-activity-list">@forelse($this->dashboardNotifications as $activity)<div class="rms-dashboard-activity-item"><span class="rms-activity-dot {{ $activity['status']==='success'?'is-success':($activity['status']==='error'?'is-error':'is-info') }}"></span><div><strong>{{ $activity['title'] }}</strong><span>{{ Str::limit($activity['description'],95) }}</span></div><time>{{ $activity['created_at'] }}</time></div>@empty<div class="rms-dashboard-activity-empty">Belum ada aktivitas.</div>@endforelse</div></article>
