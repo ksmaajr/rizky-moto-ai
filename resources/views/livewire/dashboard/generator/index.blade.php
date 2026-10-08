@@ -5337,3 +5337,67 @@ new class extends Component
     .rms-generator-history-mobile-safe .rms-history-filter{flex-basis:148px!important;max-width:148px}
 }
 </style>
+
+<style>
+/* V4 — Mobile filter rail: swipe horizontally without page overflow */
+@media(max-width:760px){
+    .rms-generator-history-mobile-safe .rms-history-toolbar{
+        width:100%!important;
+        max-width:100%!important;
+        min-width:0!important;
+        overflow:hidden!important;
+    }
+
+    .rms-generator-history-mobile-safe .rms-history-filter-group{
+        display:flex!important;
+        flex-wrap:nowrap!important;
+        width:100%!important;
+        max-width:100%!important;
+        min-width:0!important;
+        overflow-x:auto!important;
+        overflow-y:hidden!important;
+        -webkit-overflow-scrolling:touch;
+        overscroll-behavior-x:contain;
+        touch-action:pan-x;
+        scrollbar-width:none;
+        padding:2px 2px 8px!important;
+        gap:8px!important;
+    }
+
+    .rms-generator-history-mobile-safe .rms-history-filter-group::-webkit-scrollbar{
+        display:none;
+        width:0;
+        height:0;
+    }
+
+    .rms-generator-history-mobile-safe .rms-history-filter{
+        flex:0 0 154px!important;
+        width:154px!important;
+        min-width:154px!important;
+        max-width:154px!important;
+    }
+
+    .rms-generator-history-mobile-safe .rms-history-filter > button{
+        width:154px!important;
+        max-width:154px!important;
+    }
+
+    .rms-generator-history-mobile-safe .rms-history-clear-all{
+        flex:0 0 auto!important;
+    }
+}
+
+@media(max-width:420px){
+    .rms-generator-history-mobile-safe .rms-history-filter{
+        flex-basis:148px!important;
+        width:148px!important;
+        min-width:148px!important;
+        max-width:148px!important;
+    }
+
+    .rms-generator-history-mobile-safe .rms-history-filter > button{
+        width:148px!important;
+        max-width:148px!important;
+    }
+}
+</style>
