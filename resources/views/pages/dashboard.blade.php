@@ -620,6 +620,26 @@ class extends Component
         $this->loadDashboardData();
     }
 
+    public function getGenerationHistorySummaryProperty(): array
+    {
+        $query = \App\Models\Generation::query()
+            ->when($this->historyStatus !== 'all', fn ($q) => $q->where('status', $this->historyStatus))
+            ->when($this->historyStore !== 'all', fn ($q) => $q->where('store_id', (int) $this->historyStore));
+
+        $counts = (clone $query)
+            ->selectRaw('status, COUNT(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status')
+            ->map(fn ($value) => (int) $value);
+
+        return [
+            'total' => (int) $counts->sum(),
+            'completed' => (int) $counts->only(['completed', 'success', 'succeeded'])->sum(),
+            'active' => (int) $counts->only(['processing', 'queued'])->sum(),
+            'failed' => (int) $counts->only(['failed', 'cancelled', 'canceled'])->sum(),
+        ];
+    }
+
     public function loadGenerationHistory(): void
     {
         $this->generationHistoryLoaded = true;
@@ -2961,10 +2981,10 @@ public function getUserInitialsProperty(): string
                     </div>
 
                     <div class="rms-history-summary">
-                        <div><span>TOTAL</span><strong>{{ $generationHistoryStats['total'] ?? 0 }}</strong><small>matching generations</small></div>
-                        <div class="is-success"><span>COMPLETED</span><strong>{{ $generationHistoryStats['completed'] ?? 0 }}</strong><small>successful output</small></div>
-                        <div class="is-active"><span>ACTIVE</span><strong>{{ $generationHistoryStats['active'] ?? 0 }}</strong><small>processing / queued</small></div>
-                        <div class="is-failed"><span>FAILED</span><strong>{{ $generationHistoryStats['failed'] ?? 0 }}</strong><small>failed / cancelled</small></div>
+                        <div><span>TOTAL</span><strong>{{ $this->generationHistorySummary['total'] }}</strong><small>matching generations</small></div>
+                        <div class="is-success"><span>COMPLETED</span><strong>{{ $this->generationHistorySummary['completed'] }}</strong><small>successful output</small></div>
+                        <div class="is-active"><span>ACTIVE</span><strong>{{ $this->generationHistorySummary['active'] }}</strong><small>processing / queued</small></div>
+                        <div class="is-failed"><span>FAILED</span><strong>{{ $this->generationHistorySummary['failed'] }}</strong><small>failed / cancelled</small></div>
                     </div>
 
                     <div class="rms-history-shell" x-show="recentOpen" x-transition:enter="rms-history-enter" x-transition:leave="rms-history-leave" x-cloak>
@@ -3023,7 +3043,7 @@ public function getUserInitialsProperty(): string
                             </div>
                             @if(count($generationHistory) < ($generationHistoryStats['total'] ?? 0))
                                 <div class="rms-history-load-more">
-                                    <span>Showing {{ count($generationHistory) }} of {{ $generationHistoryStats['total'] }}</span>
+                                    <span>Showing {{ count($generationHistory) }} of {{ $this->generationHistorySummary['total'] }}</span>
                                     <button type="button" wire:click="loadMoreGenerationHistory" wire:loading.attr="disabled" wire:target="loadMoreGenerationHistory">
                                         <span wire:loading.remove wire:target="loadMoreGenerationHistory">Load more generations</span>
                                         <span wire:loading wire:target="loadMoreGenerationHistory">Loading…</span>
