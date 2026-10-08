@@ -3615,6 +3615,148 @@ public function getUserInitialsProperty(): string
         @keyframes workerSpin{to{transform:rotate(360deg)}}
 
 
+        /* V20 — premium mobile engine health collapse */
+        .rms-engine-mobile-toggle{display:none}
+        @media(max-width:760px){
+            .rms-engine-health-panel{
+                position:relative;
+                border-radius:20px;
+                overflow:hidden;
+                transition:box-shadow .35s ease,border-color .35s ease,background .35s ease;
+            }
+            .rms-engine-health-panel.is-collapsed{
+                box-shadow:0 10px 34px rgba(24,24,27,.08);
+            }
+            .rms-engine-health-head{
+                position:relative;
+            }
+            .rms-engine-health-meta{
+                padding-right:0;
+            }
+            .rms-engine-mobile-toggle{
+                position:relative;
+                display:flex!important;
+                width:100%;
+                min-height:46px;
+                margin-top:13px;
+                align-items:center;
+                justify-content:space-between;
+                gap:12px;
+                padding:0 12px 0 13px;
+                border:1px solid rgba(39,174,96,.18);
+                border-radius:13px;
+                background:linear-gradient(135deg,rgba(39,174,96,.075),rgba(255,255,255,.82));
+                color:#18181b;
+                box-shadow:0 7px 22px rgba(39,174,96,.08),inset 0 1px 0 rgba(255,255,255,.9);
+                cursor:pointer;
+                -webkit-tap-highlight-color:transparent;
+                transition:transform .24s cubic-bezier(.22,1,.36,1),box-shadow .28s ease,border-color .28s ease,background .28s ease;
+            }
+            .rms-engine-mobile-toggle:hover{
+                border-color:rgba(39,174,96,.3);
+                box-shadow:0 10px 28px rgba(39,174,96,.12),inset 0 1px 0 rgba(255,255,255,.95);
+            }
+            .rms-engine-mobile-toggle:active{
+                transform:scale(.985);
+            }
+            .rms-engine-mobile-toggle>span{
+                display:flex;
+                align-items:center;
+                gap:9px;
+                min-width:0;
+            }
+            .rms-engine-mobile-toggle>span>i{
+                position:relative;
+                width:8px;
+                height:8px;
+                flex:0 0 8px;
+                border-radius:50%;
+                background:#22c55e;
+                box-shadow:0 0 0 4px rgba(34,197,94,.10),0 0 12px rgba(34,197,94,.22);
+            }
+            .rms-engine-mobile-toggle>span>i:after{
+                content:"";
+                position:absolute;
+                inset:-4px;
+                border:1px solid rgba(34,197,94,.28);
+                border-radius:50%;
+                animation:rmsEnginePulse 2s ease-out infinite;
+            }
+            .rms-engine-mobile-toggle strong{
+                display:block;
+                font-size:9px;
+                line-height:1;
+                letter-spacing:.08em;
+                font-weight:900;
+                color:#27272a;
+                white-space:nowrap;
+            }
+            .rms-engine-mobile-toggle strong:after{
+                content:" · TAP TO TOGGLE";
+                color:#a1a1aa;
+                font-size:6.5px;
+                letter-spacing:.09em;
+                font-weight:800;
+            }
+            .rms-engine-mobile-toggle>b{
+                display:grid;
+                width:27px;
+                height:27px;
+                flex:0 0 27px;
+                place-items:center;
+                border:1px solid rgba(24,24,27,.08);
+                border-radius:9px;
+                background:#fff;
+                color:#52525b;
+                font-size:13px;
+                line-height:1;
+                font-weight:900;
+                box-shadow:0 4px 12px rgba(24,24,27,.08);
+                transform:rotate(0);
+                transition:transform .42s cubic-bezier(.22,1,.36,1),background .25s ease,color .25s ease,box-shadow .25s ease;
+            }
+            .rms-engine-mobile-toggle>b.is-open{
+                transform:rotate(180deg);
+                background:#18181b;
+                color:#fff;
+                box-shadow:0 5px 14px rgba(24,24,27,.16);
+            }
+            .rms-engine-health-grid{
+                max-height:1600px;
+                opacity:1;
+                overflow:hidden;
+                transform:translateY(0);
+                transition:max-height .52s cubic-bezier(.22,1,.36,1),opacity .32s ease,transform .52s cubic-bezier(.22,1,.36,1),padding-top .42s ease;
+                will-change:max-height,opacity,transform;
+            }
+            .rms-engine-health-panel.is-collapsed .rms-engine-health-grid{
+                max-height:0;
+                opacity:0;
+                transform:translateY(-7px);
+                pointer-events:none;
+            }
+        }
+        @keyframes rmsEnginePulse{
+            0%{transform:scale(.7);opacity:.75}
+            70%,100%{transform:scale(1.45);opacity:0}
+        }
+        @media(max-width:420px){
+            .rms-engine-mobile-toggle{
+                min-height:44px;
+                padding-left:11px;
+                padding-right:10px;
+                border-radius:12px;
+            }
+            .rms-engine-mobile-toggle strong{font-size:8.5px}
+            .rms-engine-mobile-toggle strong:after{font-size:6px}
+            .rms-engine-mobile-toggle>b{width:26px;height:26px;flex-basis:26px}
+        }
+        @media(prefers-reduced-motion:reduce){
+            .rms-engine-mobile-toggle,.rms-engine-mobile-toggle>b,.rms-engine-health-grid{transition:none!important}
+            .rms-engine-mobile-toggle>span>i:after{animation:none!important}
+        }
+
+
     </style>
 
 </div>
