@@ -109,6 +109,12 @@
                     <div class="rms-settings-form rms-openai-form-upgraded">
 
 
+                        <div class="rms-provider-section-divider">
+                            <span>01</span>
+                            <div><strong>VERCEL AI GATEWAY</strong><small>Credential pool &amp; gateway health</small></div>
+                            <i></i>
+                        </div>
+
                         {{-- VERCEL GATEWAY KEY POOL --}}
                         @php
                             $vercelGatewayKeys = is_iterable($this->vercelGatewayKeys ?? null)
@@ -403,6 +409,12 @@
                         </div>
 
 
+                    <div class="rms-provider-section-divider rms-provider-divider-after-vercel">
+                        <span>02</span>
+                        <div><strong>AGENT AI BACKEND</strong><small>Credential pool will be wired in Stage 5</small></div>
+                        <i></i>
+                    </div>
+
                     {{-- AGENT AI CONFIGURATION SHELL --}}
                     <section class="rms-ai-provider-section rms-agent-provider-card">
                         <div class="rms-ai-provider-section-head">
@@ -438,6 +450,12 @@
                             </div>
                         </div>
                     </section>
+
+                    <div class="rms-provider-section-divider">
+                        <span>03</span>
+                        <div><strong>PROVIDER FAILOVER</strong><small>Runtime fallback policy</small></div>
+                        <i></i>
+                    </div>
 
                     {{-- PROVIDER FAILOVER CONFIGURATION --}}
                     <section class="rms-ai-provider-section rms-failover-card">
@@ -517,6 +535,10 @@
                     @endif
 
                     @if ($activeTab === 'activity')
+                    <div class="rms-activity-section-divider">
+                        <span>ACTIVITY STREAM</span>
+                        <i></i>
+                    </div>
                     {{-- GLOBAL ACTIVITY LOGS --}}
                     <section
                         class="rms-openai-logs rms-vg-activity rms-global-activity"
@@ -1310,3 +1332,199 @@
 .rms-ai-toggle-field input{position:absolute;opacity:0;pointer-events:none}
 .rms-ai-toggle-ui{position:relative;width:28px;height:17px;flex:0 0 28px;border-radius:999px;background:#e4e4e7;transition:background .25s cubic-bezier(.2,.8,.2,1)}
 .rms-ai-toggle-ui:after{content:"";position:absolute;top:3px;left:3px;width:11px;height:11px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12);transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+
+<style>
+/* =========================================================
+   FINAL SETTINGS UX PASS — VISUAL SEPARATION + ACTIVITY LOG
+   ========================================================= */
+.rms-settings-content{min-width:0}
+.rms-settings-panel.rms-settings-panel-enter{min-width:0}
+.rms-openai-form-upgraded{display:grid;grid-template-columns:minmax(0,1fr);gap:0!important}
+.rms-openai-form-upgraded>.rms-provider-section-divider,
+.rms-openai-form-upgraded>.rms-vg-key-manager-root,
+.rms-openai-form-upgraded>.rms-vg-test-all-card,
+.rms-openai-form-upgraded>.rms-ai-provider-section,
+.rms-openai-form-upgraded>.rms-activity-section-divider,
+.rms-openai-form-upgraded>.rms-openai-logs{grid-column:1/-1!important;width:100%;min-width:0}
+
+.rms-provider-section-divider{
+    display:grid;
+    grid-template-columns:34px auto minmax(30px,1fr);
+    align-items:center;
+    gap:10px;
+    margin:24px 0 11px;
+    padding:0 2px;
+}
+.rms-provider-section-divider>span{
+    display:grid;place-items:center;
+    width:27px;height:22px;
+    border:1px solid #e4e4e7;border-radius:7px;
+    background:#fafafa;color:#71717a;
+    font-size:7px;font-weight:900;letter-spacing:.08em;
+}
+.rms-provider-section-divider>div{min-width:0}
+.rms-provider-section-divider strong{
+    display:block;color:#71717a;font-size:7px;font-weight:900;letter-spacing:.14em;
+}
+.rms-provider-section-divider small{
+    display:block;margin-top:3px;color:#b0b0b7;font-size:7px;line-height:1.3;
+}
+.rms-provider-section-divider>i{
+    height:1px;background:linear-gradient(90deg,#e4e4e7,transparent);
+}
+.rms-provider-section-divider.rms-provider-divider-after-vercel{margin-top:28px}
+
+.rms-vg-key-manager-root{margin-top:0!important}
+.rms-vg-test-all-card{margin-top:12px!important}
+.rms-ai-provider-section{
+    margin-top:0!important;
+    border-color:#e5e7eb;
+    box-shadow:0 10px 28px rgba(15,23,42,.035);
+}
+.rms-ai-provider-section+.rms-provider-section-divider{margin-top:24px}
+.rms-ai-provider-section-head{padding:17px 18px}
+.rms-ai-agent-grid{grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr)}
+.rms-ai-failover-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.rms-ai-provider-save-row{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:16px;padding:14px 18px;
+    border-top:1px solid #f0f0f2;background:#fafafa;
+}
+.rms-ai-provider-save-row>div{display:flex;align-items:center;gap:7px;min-width:0}
+.rms-ai-provider-save-row>div>span:last-child{
+    color:#8a8a93;font-size:8px;line-height:1.45;
+}
+
+.rms-activity-section-divider{
+    display:flex;align-items:center;gap:10px;
+    margin:25px 0 11px;padding:0 2px;
+}
+.rms-activity-section-divider span{
+    color:#71717a;font-size:7px;font-weight:900;letter-spacing:.14em;white-space:nowrap;
+}
+.rms-activity-section-divider i{
+    height:1px;flex:1;background:linear-gradient(90deg,#e4e4e7,transparent);
+}
+
+.rms-global-activity{
+    margin-top:0!important;
+    border:1px solid #e1e1e6!important;
+    border-radius:18px!important;
+    box-shadow:0 12px 34px rgba(15,23,42,.055)!important;
+    background:#fff!important;
+}
+.rms-global-activity .rms-openai-logs-head{
+    min-height:78px;
+    padding:16px 18px;
+    border-bottom:1px solid #ececf0;
+    background:#fff;
+}
+.rms-global-activity .rms-openai-logs-title{gap:12px}
+.rms-global-activity .rms-openai-terminal{
+    width:38px;height:38px;flex-basis:38px;border-radius:11px;
+    background:#18181b;color:#fff;border-color:#18181b;
+}
+.rms-global-activity .rms-openai-logs-title strong{font-size:13px}
+.rms-global-activity .rms-openai-logs-title small{font-size:8.5px;max-width:600px}
+.rms-global-activity .rms-openai-log-actions{gap:7px;flex-wrap:wrap}
+.rms-global-scope-badge,.rms-openai-log-counter{height:25px!important}
+.rms-global-copy-button,.rms-global-copy-all,
+.rms-global-activity .rms-openai-log-actions>button{
+    height:31px!important;padding:0 10px!important;border-radius:8px!important;font-size:8px!important;
+}
+.rms-global-activity .rms-openai-log-actions>button:last-child{
+    border-color:#18181b;background:#18181b;color:#fff;
+}
+.rms-global-activity .rms-openai-log-actions>button:last-child:hover{background:#ef3030;border-color:#ef3030}
+
+.rms-global-activity-toolbar{
+    grid-template-columns:minmax(220px,1.8fr) repeat(3,minmax(110px,.65fr));
+    gap:10px;
+    padding:14px 18px;
+    background:#fafafa;
+    border-top:0;
+    border-bottom:1px solid #ececf0;
+}
+.rms-global-activity-toolbar label{gap:6px}
+.rms-global-activity-toolbar label>span{font-size:7px}
+.rms-global-activity-toolbar input,
+.rms-global-activity-toolbar select{
+    height:36px;padding:0 10px;border-radius:9px;font-size:9px;
+}
+.rms-global-select-actions{
+    grid-column:1/-1;
+    margin:2px 0 0;
+    padding-top:10px;
+    border-top:1px solid #ededf0;
+    justify-content:space-between;
+}
+.rms-global-select-actions button{height:27px;padding:0 9px;border-radius:7px;font-size:7px}
+.rms-global-select-actions>span{font-size:7px}
+
+.rms-global-activity-list{
+    max-height:430px!important;
+    padding:0!important;
+    background:#fff;
+}
+.rms-global-activity .rms-openai-log-item{
+    min-height:74px;
+    display:grid!important;
+    grid-template-columns:24px 7px minmax(0,1fr);
+    gap:10px;
+    align-items:start;
+    padding:14px 18px;
+    border-bottom:1px solid #f0f0f2;
+    transition:background .16s ease;
+}
+.rms-global-activity .rms-openai-log-item:hover{background:#fafafa}
+.rms-global-log-select-wrap{margin-top:2px}
+.rms-global-activity .rms-openai-log-dot{margin-top:7px}
+.rms-global-activity .rms-openai-log-content{min-width:0}
+.rms-global-activity .rms-openai-log-top{
+    display:flex;align-items:center;flex-wrap:wrap;gap:6px;
+    margin-bottom:5px;
+}
+.rms-global-log-category{height:18px!important;padding:0 6px!important;font-size:6.5px!important}
+.rms-global-log-user{font-size:7.5px}
+.rms-global-activity .rms-openai-log-top time{margin-left:auto;font-size:7.5px}
+.rms-global-activity .rms-openai-log-content>strong{
+    color:#27272a;font-size:10px;line-height:1.45;font-weight:750;white-space:normal;
+}
+.rms-global-activity .rms-openai-log-content>small{
+    max-width:900px;margin-top:4px;color:#8f8f98;font-size:8.5px;line-height:1.5;
+}
+.rms-global-activity .rms-vg-log-meta{
+    gap:8px;margin-top:7px;font-size:7.5px;
+}
+.rms-global-activity .rms-vg-log-meta span{
+    padding:3px 6px;border:1px solid #ededf0;border-radius:5px;background:#fafafa;
+}
+.rms-global-activity .rms-vg-log-meta span+span:before{display:none}
+.rms-global-activity .rms-openai-logs-footer{
+    min-height:42px;padding:0 18px;font-size:7.5px;background:#fafafa;
+}
+
+@media(max-width:900px){
+    .rms-ai-agent-grid{grid-template-columns:1fr}
+    .rms-global-activity-toolbar{grid-template-columns:1fr 1fr}
+    .rms-global-activity-toolbar label:first-child{grid-column:1/-1}
+}
+@media(max-width:760px){
+    .rms-provider-section-divider{grid-template-columns:30px auto 1fr;margin-top:20px}
+    .rms-ai-failover-grid{grid-template-columns:1fr}
+    .rms-ai-provider-save-row{align-items:stretch;flex-direction:column}
+    .rms-ai-provider-save-row>button{width:100%}
+    .rms-global-activity .rms-openai-logs-head{padding:14px}
+    .rms-global-activity .rms-openai-log-actions{width:100%;justify-content:flex-start}
+    .rms-global-activity-toolbar{grid-template-columns:1fr}
+    .rms-global-activity-toolbar label:first-child{grid-column:auto}
+    .rms-global-activity .rms-openai-log-item{
+        grid-template-columns:22px 7px minmax(0,1fr);
+        padding:13px 14px;
+    }
+    .rms-global-activity .rms-openai-log-top time{margin-left:0;width:100%}
+}
+@media(prefers-reduced-motion:reduce){
+    .rms-ai-provider-section,.rms-global-activity .rms-openai-log-item{transition:none;animation:none}
+}
+</style>
