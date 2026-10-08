@@ -1884,13 +1884,16 @@ new class extends Component
                                 <span class="rms-generation-image-overlay"><b>⌕</b> Lihat preview</span>
                             </button>
                         @elseif(in_array($status, ['queued','processing']))
-                            <div class="rms-generation-processing-visual">
+                            <div class="rms-generation-processing-visual rms-generation-processing-visual-v2" style="aspect-ratio: {{ $ratio }}">
                                 @if($hero)
                                     <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($hero->image_path) }}" alt="Processing preview" loading="lazy">
                                 @else
-                                    <div class="rms-processing-placeholder"><span class="rms-processing-orbit"></span><b>{{ $progress }}%</b><small>AI PROCESSING</small></div>
+                                    <div class="rms-processing-placeholder"><span class="rms-processing-orbit"></span><b>{{ $progress }}%</b><small>{{ $status === 'queued' ? 'WAITING IN QUEUE' : 'AI PROCESSING' }}</small></div>
                                 @endif
                                 <div class="rms-processing-progress-ring" style="--progress: {{ $progress }}%"><span>{{ $progress }}%</span></div>
+                                <div class="rms-processing-visual-badge">
+                                    <i></i>{{ $status === 'queued' ? 'Menunggu worker' : 'Sedang diproses' }}
+                                </div>
                             </div>
                             <div class="rms-generation-eta rms-generation-eta-v3">
     <span class="rms-generation-eta-clock">◷</span>
@@ -1906,9 +1909,25 @@ new class extends Component
                                 <div class="rms-generation-stage-item {{ $progress >= 96 ? 'active' : '' }}"><i></i><span>Menyimpan hasil</span></div>
                             </div>
                         @elseif($status === 'failed')
-                            <div class="rms-generation-state rms-generation-state-error" style="aspect-ratio: {{ $ratio }}"><span>!</span><div><strong>Generate gagal</strong><small>{{ \Illuminate\Support\Str::limit($generation->error_message ?: 'Terjadi error saat memproses generation.', 180) }}</small></div></div>
+                            <div class="rms-generation-state rms-generation-state-error rms-generation-state-v2" style="aspect-ratio: {{ $ratio }}">
+                                <span class="rms-state-icon">!</span>
+                                <div>
+                                    <b>GENERATION FAILED</b>
+                                    <strong>Generate gagal</strong>
+                                    <small>{{ \Illuminate\Support\Str::limit($generation->error_message ?: 'Terjadi error saat memproses generation.', 180) }}</small>
+                                </div>
+                                <em>Output tidak tersedia</em>
+                            </div>
                         @else
-                            <div class="rms-generation-state rms-generation-state-cancelled" style="aspect-ratio: {{ $ratio }}"><span>×</span><div><strong>Generation dibatalkan</strong><small>Proses dihentikan oleh pengguna.</small></div></div>
+                            <div class="rms-generation-state rms-generation-state-cancelled rms-generation-state-v2" style="aspect-ratio: {{ $ratio }}">
+                                <span class="rms-state-icon">×</span>
+                                <div>
+                                    <b>GENERATION CANCELLED</b>
+                                    <strong>Generation dibatalkan</strong>
+                                    <small>Proses dihentikan oleh pengguna.</small>
+                                </div>
+                                <em>Output tidak dibuat</em>
+                            </div>
                         @endif
 
                         @php
@@ -3255,6 +3274,123 @@ new class extends Component
 }
 .rms-generation-actions-v2{
     margin-top:auto;
+}
+.rms-generation-processing-visual-v2{
+    min-height:0!important;
+    height:auto!important;
+}
+.rms-generation-processing-visual-v2>img,
+.rms-generation-processing-visual-v2 .rms-processing-placeholder{
+    height:100%!important;
+    min-height:0!important;
+}
+.rms-processing-visual-badge{
+    position:absolute;
+    left:12px;
+    bottom:12px;
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    padding:7px 10px;
+    border:1px solid rgba(255,255,255,.55);
+    border-radius:999px;
+    background:rgba(17,18,20,.72);
+    color:#fff;
+    backdrop-filter:blur(10px);
+    box-shadow:0 8px 22px rgba(0,0,0,.12);
+    font-size:8px;
+    font-weight:850;
+    letter-spacing:.04em;
+}
+.rms-processing-visual-badge i{
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:#facc15;
+    box-shadow:0 0 0 4px rgba(250,204,21,.13);
+}
+.rms-generation-state-v2{
+    position:relative;
+    flex-direction:column!important;
+    justify-content:center!important;
+    align-items:center!important;
+    text-align:center;
+    gap:9px!important;
+    overflow:hidden;
+}
+.rms-generation-state-v2:before{
+    content:"";
+    position:absolute;
+    width:170px;
+    height:170px;
+    border-radius:50%;
+    background:radial-gradient(circle,rgba(255,255,255,.78),transparent 68%);
+    pointer-events:none;
+}
+.rms-generation-state-v2>div{
+    position:relative;
+    z-index:1;
+    align-items:center;
+    gap:4px!important;
+    max-width:78%;
+}
+.rms-generation-state-v2 .rms-state-icon{
+    position:relative;
+    z-index:1;
+    width:52px;
+    height:52px;
+    display:grid;
+    place-items:center;
+    border-radius:16px;
+    font-size:20px;
+    font-weight:950;
+    box-shadow:0 8px 20px rgba(20,20,25,.07);
+}
+.rms-generation-state-v2 b{
+    font-size:7px;
+    letter-spacing:.15em;
+    font-weight:900;
+}
+.rms-generation-state-v2 strong{
+    font-size:14px;
+}
+.rms-generation-state-v2 small{
+    line-height:1.5;
+    max-width:360px;
+}
+.rms-generation-state-v2 em{
+    position:relative;
+    z-index:1;
+    padding:5px 9px;
+    border-radius:999px;
+    font-style:normal;
+    font-size:7px;
+    font-weight:850;
+    letter-spacing:.08em;
+}
+.rms-generation-state-error .rms-state-icon{
+    background:#ffe6e7;
+    color:#e21d2e;
+}
+.rms-generation-state-error b,
+.rms-generation-state-error strong{
+    color:#d7192b;
+}
+.rms-generation-state-error em{
+    background:#fff0f1;
+    color:#c9142a;
+}
+.rms-generation-state-cancelled .rms-state-icon{
+    background:#e9ebef;
+    color:#555b65;
+}
+.rms-generation-state-cancelled b,
+.rms-generation-state-cancelled strong{
+    color:#3f434b;
+}
+.rms-generation-state-cancelled em{
+    background:#eceef1;
+    color:#666c76;
 }
 .rms-generation-state{display:flex;align-items:center;gap:12px;min-height:170px;padding:18px;border-radius:13px}.rms-generation-state>span{width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:12px;font-size:17px;font-weight:900}.rms-generation-state div{display:flex;flex-direction:column;gap:5px;max-width:100%}.rms-generation-state strong{font-size:13px}.rms-generation-state small{font-size:10px;line-height:1.45;color:#7c818a}.rms-generation-state-error{background:#fff7f7;border:1px solid #ffd9d9;color:#e21d2e}.rms-generation-state-error>span{background:#ffe6e7}.rms-generation-state-cancelled{background:#f7f8fa;border:1px solid #e4e6ea;color:#555b65}.rms-generation-state-cancelled>span{background:#e9ebef}
         .rms-generation-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;gap:7px}.rms-generation-action{min-height:36px;padding:0 9px;border:1px solid #e2e4e8;border-radius:10px;background:#fff;color:#26282d;font-size:10px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;transition:transform .18s ease,background .18s ease,border-color .18s ease,box-shadow .18s ease,color .18s ease}.rms-generation-action:hover{transform:translateY(-1px);border-color:#cfd2d8;background:#f8f9fa;box-shadow:0 5px 12px rgba(20,20,25,.06)}.rms-generation-action.primary{background:#ef233c;border-color:#ef233c;color:#fff;box-shadow:0 7px 18px rgba(239,35,60,.18)}.rms-generation-action.primary-light{background:#fafafa}.rms-generation-action.danger{color:#e21d2e;border-color:#ffd4d7;background:#fff8f8}.rms-generation-action.danger:hover{background:#fff0f1;border-color:#ffbcc2}.rms-generation-action.danger-icon{color:#e21d2e}.status-processing{border-color:#dceaff!important}.status-failed{border-color:#ffe0e2!important}.status-completed{border-color:#e2eee6!important}
