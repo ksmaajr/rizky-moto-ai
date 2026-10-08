@@ -773,29 +773,93 @@
 }
 </style>
 
-/* V28 — prevent template action text overflow */
-.rms-template-card-actions-v2 > button:first-child{
+
+<style>
+/* V29 — compact, bounded template action typography */
+.rms-template-card-actions-v2{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) 118px 54px!important;
+    gap:10px!important;
+    align-items:stretch!important;
     min-width:0!important;
+}
+.rms-template-card-actions-v2 > button{
+    min-width:0!important;
+    width:100%!important;
+    height:54px!important;
+    min-height:54px!important;
+    max-width:100%!important;
+    margin:0!important;
+    padding:0 10px!important;
+    box-sizing:border-box!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:5px!important;
+    border-radius:14px!important;
+    white-space:nowrap!important;
+    line-height:1!important;
     overflow:hidden!important;
-    font-size:10px!important;
-    letter-spacing:-.01em!important;
+}
+.rms-template-card-actions-v2 > button:first-child{
+    font-size:8.5px!important;
+    font-weight:850!important;
+    letter-spacing:-.015em!important;
+    padding:0 8px!important;
 }
 .rms-template-card-actions-v2 > button:first-child span{
     min-width:0!important;
+    max-width:100%!important;
     overflow:hidden!important;
     text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+    display:block!important;
+    flex:1 1 auto!important;
+    text-align:center!important;
 }
 .rms-template-card-actions-v2 > button:first-child b{
     flex:0 0 auto!important;
+    margin:0!important;
+    font-size:11px!important;
+    line-height:1!important;
 }
 .rms-template-card-actions-v2 > .ghost{
-    width:140px!important;
-    min-width:140px!important;
+    width:118px!important;
+    min-width:118px!important;
+    max-width:118px!important;
+    padding:0 8px!important;
+    font-size:9px!important;
+    font-weight:800!important;
+}
+.rms-template-delete-inline{
+    width:54px!important;
+    min-width:54px!important;
+    max-width:54px!important;
+    height:54px!important;
+    min-height:54px!important;
+    padding:0!important;
+    display:grid!important;
+    place-items:center!important;
+    box-sizing:border-box!important;
+}
+.rms-template-delete-inline svg{
+    width:17px!important;
+    height:17px!important;
 }
 @media(max-width:720px){
     .rms-template-card-actions-v2{
         grid-template-columns:minmax(0,1fr) 54px!important;
+        gap:9px!important;
     }
     .rms-template-card-actions-v2 > .ghost{display:none!important}
-    .rms-template-card-actions-v2 > button:first-child{font-size:10px!important}
+    .rms-template-card-actions-v2 > button:first-child{
+        font-size:9px!important;
+        padding:0 10px!important;
+    }
+    .rms-template-delete-inline{
+        width:54px!important;
+        min-width:54px!important;
+        max-width:54px!important;
+    }
 }
+</style>
