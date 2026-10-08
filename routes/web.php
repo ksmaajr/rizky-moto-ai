@@ -13,6 +13,10 @@ Route::redirect('/', '/login');
 Route::middleware('auth')->group(function () {
     Route::livewire('/dashboard', 'pages::dashboard')->name('dashboard');
 
+    Route::post('/dashboard/queue-workers/{action}', \App\Http\Controllers\QueueWorkerActionController::class)
+        ->whereIn('action', ['start', 'stop', 'restart'])
+        ->name('dashboard.queue-workers.action');
+
     Route::get('/dashboard/activity-logs/feed', [
         ActivityLogFeedController::class,
         'index',
