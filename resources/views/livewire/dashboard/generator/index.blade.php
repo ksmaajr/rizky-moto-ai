@@ -189,7 +189,7 @@ new class extends Component
             ->whereNotNull('model')
             ->where('model', '<>', '')
             ->pluck('model')
-            ->map(fn ($model) => str_contains((string) $model, '/') ? str((string) $model)->before('/') : (string) $model)
+            ->map(fn ($model) => str_contains((string) $model, '/') ? (string) str((string) $model)->before('/') : (string) $model)
             ->filter()
             ->unique()
             ->sort()
@@ -2210,6 +2210,18 @@ new class extends Component
                                 ?: data_get($generation->metadata, 'custom_title');
                             $titleSource = data_get($generation->metadata, 'title_source', 'ai');
                         @endphp
+                        @php
+                            $provider = data_get($generation->metadata, 'provider')
+                                ?: (str_contains((string) $generation->model, '/') ? str((string) $generation->model)->before('/') : 'Gateway');
+                            $keySource = data_get($generation->metadata, 'gateway_key_name')
+                                ?: data_get($generation->metadata, 'gateway_key_source');
+                            $durationMs = (int) data_get($generation->metadata, 'duration_ms', 0);
+                            $durationSeconds = $durationMs > 0
+                                ? $durationMs / 1000
+                                : (($generation->started_at && $generation->completed_at)
+                                    ? $generation->started_at->diffInSeconds($generation->completed_at)
+                                    : null);
+                        @endphp
                         <div class="rms-generation-card-info">
                             <div>
                                 <strong>{{ $generationTitle ?: ($generation->template?->name ?? 'Generated Image') }}</strong>
@@ -2221,6 +2233,15 @@ new class extends Component
                                 </small>
                             </div>
                             <span>{{ $generation->generatedImages->count() }} image{{ $generation->generatedImages->count() === 1 ? '' : 's' }}</span>
+                        </div>
+
+                        <div class="rms-generation-card-meta">
+                            <span><b>Provider</b><strong>{{ $provider }}</strong></span>
+                            <span><b>Duration</b><strong>{{ $durationSeconds !== null ? number_format($durationSeconds, 1) . 's' : '—' }}</strong></span>
+                            <span><b>Completed</b><strong>{{ $generation->completed_at ? $generation->completed_at->format('d M · H:i') : '—' }}</strong></span>
+                            @if($keySource)
+                                <span><b>Key</b><strong>{{ $keySource }}</strong></span>
+                            @endif
                         </div>
 
                         <div class="rms-generation-actions rms-generation-actions-v2">
@@ -5046,5 +5067,47 @@ new class extends Component
     .rms-history-filter-group::-webkit-scrollbar{display:none}
     .rms-history-filter{flex:0 0 auto}
     .rms-history-filter-menu-wide{min-width:min(320px, calc(100vw - 48px))}
+}
+</style>
+
+<style>
+/* V2 — Generation History metadata */
+.rms-generation-card-meta{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:8px;
+    margin:0 0 14px;
+}
+.rms-generation-card-meta span{
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+    padding:8px 10px;
+    border:1px solid #eceef1;
+    border-radius:10px;
+    background:#fafbfc;
+}
+.rms-generation-card-meta b{
+    color:#9a9ea6;
+    font-size:9px;
+    line-height:1;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+}
+.rms-generation-card-meta strong{
+    overflow:hidden;
+    color:#4f535b;
+    font-size:10px;
+    line-height:1.2;
+    font-weight:800;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+@media(max-width:760px){
+    .rms-generation-card-meta{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
 }
 </style>
