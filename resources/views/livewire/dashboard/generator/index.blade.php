@@ -22,6 +22,7 @@ new class extends Component
     public string $historySearch = '';
     public ?int $historyStoreId = null;
     public ?int $historyTemplateId = null;
+    public int $recentHistoryLimit = 6;
 
     public $imageOne = null;
     public $imageTwo = null;
@@ -115,10 +116,10 @@ new class extends Component
                         ->orWhere('metadata->custom_title', 'like', $keyword);
                 });
             })
-            // Tampilkan seluruh generation milik user yang belum dihapus.
-            // Jangan batasi history hanya ke 12 item karena generation lama
-            // harus tetap muncul di Recent Generations.
+            // Recent history sengaja dibatasi agar generator tetap ringan,
+            // terutama di mobile. Card tidak diubah; hanya jumlah record awal yang dibatasi.
             ->latest()
+            ->limit($this->recentHistoryLimit)
             ->get();
     }
 
@@ -1708,6 +1709,7 @@ new class extends Component
         class="rms-generator-history rms-generator-history-bottom rms-generator-history-mobile-safe"
         wire:key="generation-history"
         x-data="{
+            recentOpen: window.innerWidth > 760,
             confirmOpen: false,
             confirmTitle: '',
             confirmMessage: '',
@@ -1750,18 +1752,32 @@ new class extends Component
             }
         }"
     >
-            <div class="rms-generator-history-head">
+            <div class="rms-generator-history-head rms-generator-history-head-v2">
                 <div class="rms-history-title">
                     <span>◷</span>
                     <div>
                         <strong>Recent Generations</strong>
-                        <small>Generate berikutnya bisa langsung dibuat tanpa menunggu proses sebelumnya selesai.</small>
+                        <small>Menampilkan {{ $this->recentGenerations->count() }} generation terbaru agar workspace tetap ringan.</small>
                     </div>
                 </div>
-                <div class="rms-history-count"><i></i>{{ $this->recentGenerations->count() }} result</div>
+                <div class="rms-generator-history-head-actions">
+                    <div class="rms-history-count"><i></i>{{ $this->recentGenerations->count() }} recent</div>
+                    <button type="button"
+                        class="rms-generator-history-toggle"
+                        x-on:click="recentOpen = !recentOpen"
+                        :aria-expanded="recentOpen.toString()">
+                        <span x-text="recentOpen ? 'Collapse history' : 'Expand history'"></span>
+                        <b :class="{ 'is-open': recentOpen }" aria-hidden="true"></b>
+                    </button>
+                </div>
             </div>
 
-            <div class="rms-history-toolbar">
+            <div class="rms-generator-history-content"
+                x-show="recentOpen"
+                x-cloak
+                x-transition:enter="rms-recent-history-enter"
+                x-transition:leave="rms-recent-history-leave">
+                <div class="rms-history-toolbar">
                 <div class="rms-history-search">
                     <span>⌕</span>
                     <input type="text" wire:model.live.debounce.400ms="historySearch" placeholder="Cari generation, store, template...">
@@ -2014,7 +2030,20 @@ new class extends Component
                 @empty
                     <div class="rms-history-empty"><span>✦</span><strong>Belum ada generation</strong><small>Hasil baru akan muncul di sini. Kamu bisa menjalankan beberapa generation tanpa menunggu satu per satu.</small></div>
                 @endforelse
+            @if($this->recentGenerations->count() >= $recentHistoryLimit)
+                <div class="rms-generator-history-more">
+                    <span>Menampilkan {{ $this->recentGenerations->count() }} generation terbaru.</span>
+                    <button type="button"
+                        wire:click="$set('recentHistoryLimit', {{ $recentHistoryLimit + 6 }})"
+                        wire:loading.attr="disabled"
+                        wire:target="recentHistoryLimit">
+                        <span wire:loading.remove wire:target="recentHistoryLimit">Tampilkan lebih banyak →</span>
+                        <span wire:loading wire:target="recentHistoryLimit">Memuat…</span>
+                    </button>
+                </div>
+            @endif
             </div>
+        </div>
         {{-- ============================================================
             CUSTOM CONFIRM POPUP
             IMPORTANT:
@@ -4045,3 +4074,144 @@ new class extends Component
         </div>
     </template>
 </div>
+
+<style>
+/* V31 — lightweight recent history: collapse + bounded initial records */
+.rms-generator-history-head-v2{
+    align-items:center!important;
+    gap:14px!important;
+}
+.rms-generator-history-head-actions{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-end!important;
+    gap:8px!important;
+    flex:0 0 auto;
+}
+.rms-generator-history-toggle{
+    min-height:38px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:9px;
+    padding:0 11px 0 13px;
+    border:1px solid rgba(24,24,27,.09);
+    border-radius:11px;
+    background:linear-gradient(180deg,#fff,#fafafa);
+    color:#3f3f46;
+    font:inherit;
+    font-size:9px;
+    font-weight:850;
+    cursor:pointer;
+    box-shadow:0 5px 16px rgba(24,24,27,.05);
+    transition:transform .22s cubic-bezier(.22,1,.36,1),box-shadow .25s ease,border-color .25s ease;
+}
+.rms-generator-history-toggle:hover{
+    transform:translateY(-1px);
+    border-color:rgba(39,174,96,.22);
+    box-shadow:0 9px 22px rgba(24,24,27,.08);
+}
+.rms-generator-history-toggle:active{transform:scale(.975)}
+.rms-generator-history-toggle>b{
+    position:relative;
+    width:15px;
+    height:15px;
+    flex:0 0 15px;
+    display:grid;
+    place-items:center;
+    border-radius:5px;
+    background:#f4f4f5;
+}
+.rms-generator-history-toggle>b:before{
+    content:"";
+    width:5px;
+    height:5px;
+    border-right:1.6px solid #52525b;
+    border-bottom:1.6px solid #52525b;
+    transform:rotate(45deg) translate(-1px,-1px);
+    transition:transform .34s cubic-bezier(.22,1,.36,1);
+}
+.rms-generator-history-toggle>b.is-open:before{
+    transform:rotate(225deg) translate(-1px,-1px);
+}
+.rms-generator-history-content{
+    overflow:hidden;
+    transform-origin:top center;
+}
+.rms-generator-history-more{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-top:12px;
+    padding:11px 13px;
+    border:1px solid rgba(24,24,27,.07);
+    border-radius:12px;
+    background:#fafafa;
+    color:#71717a;
+    font-size:8.5px;
+}
+.rms-generator-history-more button{
+    border:0;
+    background:transparent;
+    color:#16a34a;
+    font:inherit;
+    font-weight:900;
+    cursor:pointer;
+    transition:transform .2s ease,color .2s ease;
+}
+.rms-generator-history-more button:hover{
+    color:#15803d;
+    transform:translateX(2px);
+}
+.rms-recent-history-enter{
+    transition:opacity .28s ease,transform .42s cubic-bezier(.22,1,.36,1),max-height .48s cubic-bezier(.22,1,.36,1);
+}
+.rms-recent-history-leave{
+    transition:opacity .2s ease,transform .32s cubic-bezier(.22,1,.36,1),max-height .36s ease;
+}
+.rms-recent-history-enter-start,
+.rms-recent-history-leave-end{
+    opacity:0;
+    transform:translateY(-7px) scale(.99);
+    max-height:0;
+}
+.rms-recent-history-enter-end,
+.rms-recent-history-leave-start{
+    opacity:1;
+    transform:none;
+    max-height:100000px;
+}
+@media(max-width:760px){
+    .rms-generator-history-head-v2{
+        align-items:flex-start!important;
+    }
+    .rms-generator-history-head-actions{
+        width:100%;
+        justify-content:space-between;
+    }
+    .rms-generator-history-toggle{
+        min-height:40px;
+        flex:1;
+        max-width:170px;
+        font-size:8px;
+    }
+    .rms-generator-history-more{
+        flex-direction:column;
+        align-items:stretch;
+        text-align:center;
+    }
+    .rms-generator-history-more button{
+        min-height:34px;
+        border-radius:9px;
+        background:#f0fdf4;
+    }
+}
+@media(prefers-reduced-motion:reduce){
+    .rms-generator-history-toggle,
+    .rms-generator-history-toggle>b:before,
+    .rms-generator-history-content,
+    .rms-recent-history-enter,
+    .rms-recent-history-leave{transition:none!important}
+}
+</style>
