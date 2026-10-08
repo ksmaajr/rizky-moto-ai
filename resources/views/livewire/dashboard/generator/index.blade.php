@@ -1894,15 +1894,48 @@ new class extends Component
                                 <span class="rms-generation-image-overlay"><b>⌕</b> Lihat preview</span>
                             </button>
                         @elseif(in_array($status, ['queued','processing']))
-                            <div class="rms-generation-processing-visual rms-generation-processing-visual-v2" style="aspect-ratio: {{ $ratio }}">
+                            <div class="rms-generation-processing-visual rms-generation-processing-visual-v3" style="aspect-ratio: {{ $ratio }}">
                                 @if($hero)
-                                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($hero->image_path) }}" alt="Processing preview" loading="lazy">
+                                    <img class="rms-processing-source-image" src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($hero->image_path) }}" alt="Processing preview" loading="lazy">
+                                    <div class="rms-processing-image-wash"></div>
                                 @else
-                                    <div class="rms-processing-placeholder"><span class="rms-processing-orbit"></span><b>{{ $progress }}%</b><small>{{ $status === 'queued' ? 'WAITING IN QUEUE' : 'AI PROCESSING' }}</small></div>
+                                    <div class="rms-processing-visual-core">
+                                        <div class="rms-processing-grid"></div>
+                                        <div class="rms-processing-scan"></div>
+                                        <div class="rms-processing-orbit orbit-one"></div>
+                                        <div class="rms-processing-orbit orbit-two"></div>
+                                        <div class="rms-processing-orbit orbit-three"></div>
+                                        <div class="rms-processing-core-ring">
+                                            <span class="rms-processing-core-glow"></span>
+                                            <b>{{ $progress }}%</b>
+                                            <small>{{ $status === 'queued' ? 'QUEUE' : 'GENERATING' }}</small>
+                                        </div>
+                                        <i class="rms-processing-particle particle-one"></i>
+                                        <i class="rms-processing-particle particle-two"></i>
+                                        <i class="rms-processing-particle particle-three"></i>
+                                        <i class="rms-processing-particle particle-four"></i>
+                                    </div>
                                 @endif
-                                <div class="rms-processing-progress-ring" style="--progress: {{ $progress }}%"><span>{{ $progress }}%</span></div>
+
+                                <div class="rms-processing-progress-ring" style="--progress: {{ $progress }}%">
+                                    <span>{{ $progress }}%</span>
+                                </div>
+
+                                <div class="rms-processing-topline">
+                                    <span class="rms-processing-live-dot"></span>
+                                    <strong>{{ $status === 'queued' ? 'QUEUED' : 'PROCESSING' }}</strong>
+                                    <small>{{ $status === 'queued' ? 'Menunggu worker' : 'AI sedang membuat visual' }}</small>
+                                </div>
+
                                 <div class="rms-processing-visual-badge">
-                                    <i></i>{{ $status === 'queued' ? 'Menunggu worker' : 'Sedang diproses' }}
+                                    <i></i>
+                                    <span>{{ $status === 'queued' ? 'Menunggu worker' : 'Sedang diproses' }}</span>
+                                    <b>{{ $status === 'queued' ? 'READY' : 'LIVE' }}</b>
+                                </div>
+
+                                <div class="rms-processing-stage-label">
+                                    <span>{{ $stage }}</span>
+                                    <b>{{ $progress }}%</b>
                                 </div>
                             </div>
                             <div class="rms-generation-eta rms-generation-eta-v3">
@@ -4593,4 +4626,38 @@ new class extends Component
     .rms-recent-history-enter,
     .rms-recent-history-leave{transition:none!important}
 }
+
+/* V5 — cinematic generation processing state */
+.rms-generation-processing-visual-v3{position:relative;overflow:hidden;isolation:isolate;border:1px solid #e3e6eb;border-radius:15px;background:radial-gradient(circle at 50% 46%,rgba(239,35,60,.085),transparent 24%),radial-gradient(circle at 50% 50%,rgba(120,130,150,.055),transparent 54%),linear-gradient(145deg,#fcfcfd 0%,#f3f5f7 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}
+.rms-generation-processing-visual-v3::before{content:"";position:absolute;z-index:8;inset:0;pointer-events:none;background:linear-gradient(108deg,transparent 18%,rgba(255,255,255,.58) 48%,transparent 76%);transform:translateX(-125%);animation:rmsProcessingSweepV5 3.2s cubic-bezier(.45,0,.25,1) infinite}
+.rms-generation-processing-visual-v3::after{content:"";position:absolute;z-index:7;inset:0;pointer-events:none;border:1px solid rgba(239,35,60,.08);border-radius:inherit;box-shadow:inset 0 0 55px rgba(255,255,255,.32)}
+@keyframes rmsProcessingSweepV5{0%,24%{transform:translateX(-125%)}62%,100%{transform:translateX(125%)}}
+.rms-processing-visual-core{position:absolute;inset:0;display:grid;place-items:center;overflow:hidden}
+.rms-processing-grid{position:absolute;inset:-15%;opacity:.36;background-image:linear-gradient(rgba(160,166,176,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(160,166,176,.12) 1px,transparent 1px);background-size:34px 34px;transform:perspective(380px) rotateX(62deg) translateY(18%);transform-origin:center bottom;mask-image:linear-gradient(to top,rgba(0,0,0,.8),transparent 76%);animation:rmsProcessingGridMoveV5 5s linear infinite}
+@keyframes rmsProcessingGridMoveV5{from{transform:perspective(380px) rotateX(62deg) translateY(18%)}to{transform:perspective(380px) rotateX(62deg) translateY(52%)}}
+.rms-processing-scan{position:absolute;left:8%;right:8%;top:50%;height:1px;background:linear-gradient(90deg,transparent,rgba(239,35,60,.5),transparent);box-shadow:0 0 12px rgba(239,35,60,.22);animation:rmsProcessingScanV5 2.1s ease-in-out infinite}
+@keyframes rmsProcessingScanV5{0%,100%{transform:translateY(-55px);opacity:0}18%,82%{opacity:1}50%{transform:translateY(55px);opacity:.8}}
+.rms-processing-orbit{position:absolute;width:150px;height:150px;border:1px solid rgba(239,35,60,.16);border-radius:50%;box-shadow:0 0 30px rgba(239,35,60,.035)}
+.rms-processing-orbit::before{content:"";position:absolute;top:-3px;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#ef233c;box-shadow:0 0 12px rgba(239,35,60,.7)}
+.rms-processing-orbit.orbit-one{width:112px;height:112px;border-color:rgba(239,35,60,.22);animation:rmsOrbitOneV5 4.8s linear infinite}
+.rms-processing-orbit.orbit-two{width:178px;height:178px;border-style:dashed;border-color:rgba(128,135,147,.20);animation:rmsOrbitTwoV5 7s linear infinite reverse}
+.rms-processing-orbit.orbit-three{width:235px;height:235px;border-color:rgba(239,35,60,.07);animation:rmsOrbitThreeV5 10s linear infinite}
+@keyframes rmsOrbitOneV5{to{transform:rotate(360deg)}}@keyframes rmsOrbitTwoV5{to{transform:rotate(360deg)}}@keyframes rmsOrbitThreeV5{to{transform:rotate(360deg)}}
+.rms-processing-core-ring{position:relative;z-index:4;width:94px;height:94px;display:grid;place-items:center;align-content:center;border:1px solid rgba(239,35,60,.20);border-radius:50%;background:rgba(255,255,255,.72);box-shadow:0 16px 38px rgba(25,27,33,.10),inset 0 0 0 7px rgba(239,35,60,.025);backdrop-filter:blur(6px);animation:rmsCoreFloatV5 2.6s ease-in-out infinite}
+@keyframes rmsCoreFloatV5{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-4px) scale(1.018)}}
+.rms-processing-core-glow{position:absolute;inset:-11px;border-radius:50%;border:1px solid rgba(239,35,60,.10);animation:rmsCoreGlowV5 1.9s ease-in-out infinite}
+@keyframes rmsCoreGlowV5{0%,100%{transform:scale(.9);opacity:.35}50%{transform:scale(1.08);opacity:.85}}
+.rms-processing-core-ring b{position:relative;color:#22252b;font-size:25px;line-height:1;font-weight:950;letter-spacing:-.055em}.rms-processing-core-ring small{position:relative;margin-top:7px;color:#999da5;font-size:6px;font-weight:950;letter-spacing:.19em}
+.rms-processing-particle{position:absolute;z-index:3;width:5px;height:5px;border-radius:50%;background:#ef233c;box-shadow:0 0 11px rgba(239,35,60,.55);animation:rmsParticleV5 2.7s ease-in-out infinite}.rms-processing-particle.particle-one{top:31%;left:36%;animation-delay:-.3s}.rms-processing-particle.particle-two{top:65%;left:63%;animation-delay:-1.1s}.rms-processing-particle.particle-three{top:35%;right:31%;width:3px;height:3px;animation-delay:-1.8s}.rms-processing-particle.particle-four{bottom:27%;left:30%;width:3px;height:3px;animation-delay:-2.3s}
+@keyframes rmsParticleV5{0%,100%{transform:translate3d(0,4px,0) scale(.6);opacity:.25}50%{transform:translate3d(0,-9px,0) scale(1.15);opacity:1}}
+.rms-processing-topline{position:absolute;z-index:10;top:12px;left:12px;right:88px;min-height:31px;display:flex;align-items:center;gap:7px;padding:0 10px;border:1px solid rgba(24,24,27,.07);border-radius:10px;background:rgba(255,255,255,.76);backdrop-filter:blur(8px);box-shadow:0 5px 15px rgba(20,22,28,.045)}
+.rms-processing-live-dot{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#ef233c;box-shadow:0 0 0 4px rgba(239,35,60,.09);animation:rmsLiveDotV5 1.35s ease-in-out infinite}@keyframes rmsLiveDotV5{0%,100%{transform:scale(.8);opacity:.55}50%{transform:scale(1.08);opacity:1}}
+.rms-processing-topline strong{color:#30333a;font-size:7px;font-weight:950;letter-spacing:.10em}.rms-processing-topline small{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#9a9ea6;font-size:7px;font-weight:650}
+.rms-generation-processing-visual-v3 .rms-processing-progress-ring{z-index:11;top:12px;right:12px;width:62px;height:62px;background:conic-gradient(#ef233c var(--progress),#e5e7eb 0);box-shadow:0 8px 22px rgba(20,22,28,.09)}
+.rms-generation-processing-visual-v3 .rms-processing-progress-ring::before{background:#fff}
+.rms-processing-visual-badge{z-index:10;bottom:12px;left:12px;display:flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid rgba(24,24,27,.08);border-radius:999px;background:rgba(32,34,39,.82);color:#fff;box-shadow:0 8px 18px rgba(20,22,28,.13);backdrop-filter:blur(8px)}
+.rms-processing-visual-badge i{width:7px;height:7px;border-radius:50%;background:#f4c62b;box-shadow:0 0 0 3px rgba(244,198,43,.13);animation:rmsLiveDotV5 1.25s ease-in-out infinite}.rms-processing-visual-badge span{color:#fff;font-size:8px;font-weight:850}.rms-processing-visual-badge b{padding-left:7px;border-left:1px solid rgba(255,255,255,.15);color:#d5d8de;font-size:6px;letter-spacing:.08em}
+.rms-processing-stage-label{position:absolute;z-index:10;right:12px;bottom:12px;display:flex;align-items:center;gap:7px;max-width:52%;padding:7px 9px;border:1px solid rgba(24,24,27,.07);border-radius:9px;background:rgba(255,255,255,.78);color:#777c85;backdrop-filter:blur(8px)}.rms-processing-stage-label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:7px;font-weight:750}.rms-processing-stage-label b{color:#ef233c;font-size:7px;font-weight:950}
+.rms-processing-source-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.42;filter:saturate(.72) blur(.35px)}.rms-processing-image-wash{position:absolute;inset:0;background:linear-gradient(180deg,rgba(247,248,250,.66),rgba(247,248,250,.30) 50%,rgba(247,248,250,.72)),radial-gradient(circle at 50% 48%,rgba(239,35,60,.11),transparent 34%);animation:rmsImageWashV5 2.8s ease-in-out infinite}@keyframes rmsImageWashV5{0%,100%{opacity:.65}50%{opacity:.9}}
+@media(max-width:760px){.rms-generation-processing-visual-v3{min-height:190px}.rms-generation-processing-visual-v3 .rms-processing-topline{right:78px;top:10px;left:10px;min-height:28px;padding:0 8px}.rms-processing-topline small{display:none}.rms-generation-processing-visual-v3 .rms-processing-progress-ring{top:10px;right:10px;width:54px;height:54px}.rms-processing-core-ring{width:78px;height:78px}.rms-processing-core-ring b{font-size:21px}.rms-processing-orbit.orbit-two{width:148px;height:148px}.rms-processing-orbit.orbit-three{width:195px;height:195px}.rms-processing-visual-badge{left:10px;bottom:10px;padding:6px 8px}.rms-processing-stage-label{right:10px;bottom:10px;max-width:48%;padding:6px 8px}}@media(max-width:420px){.rms-processing-visual-badge b{display:none}.rms-processing-stage-label{max-width:46%}.rms-processing-stage-label span{font-size:6.5px}}@media(prefers-reduced-motion:reduce){.rms-generation-processing-visual-v3 *,.rms-generation-processing-visual-v3::before{animation:none!important}}
 </style>
