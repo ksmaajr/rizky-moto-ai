@@ -109,13 +109,18 @@
                     <div class="rms-settings-form rms-openai-form-upgraded">
 
 
-                        <div class="rms-provider-section-divider">
-                            <span>01</span>
-                            <div><strong>VERCEL AI GATEWAY</strong><small>Credential pool &amp; gateway health</small></div>
-                            <i></i>
-                        </div>
+                        <section class="rms-provider-block rms-provider-block-vercel">
+                            <div class="rms-provider-block-head">
+                                <div class="rms-provider-block-index">01</div>
+                                <div class="rms-provider-block-copy">
+                                    <span>PROVIDER 01 · GATEWAY</span>
+                                    <strong>Vercel AI Gateway</strong>
+                                    <small>Credential pool, key health, automatic rotation, dan gateway connectivity.</small>
+                                </div>
+                                <div class="rms-provider-block-state is-ready"><i></i><span>Primary gateway</span></div>
+                            </div>
 
-                        {{-- VERCEL GATEWAY KEY POOL --}}
+                            {{-- VERCEL GATEWAY KEY POOL --}}
                         @php
                             $vercelGatewayKeys = is_iterable($this->vercelGatewayKeys ?? null)
                                 ? $this->vercelGatewayKeys
@@ -378,8 +383,8 @@
 
 
 
-                    {{-- TEST ALL VERCEL KEYS --}}
-                    <div class="rms-vg-test-all-card rms-vg-test-all-card-full">
+                            {{-- TEST ALL VERCEL KEYS --}}
+                            <div class="rms-vg-test-all-card rms-vg-test-all-card-full">
                         <div class="rms-vg-test-all-copy">
                             <div class="rms-vg-test-all-icon">
                                 <span></span>
@@ -402,14 +407,20 @@
                             <span wire:loading wire:target="testAllVercelGatewayKeys" class="rms-vg-test-loading"><i></i> Testing keys...</span>
                             <b wire:loading.remove wire:target="testAllVercelGatewayKeys">→</b>
                         </button>
-                    </div>
+                            </div>
+                        </section>
 
 
-
-                        </div>
-
-
-                    <div class="rms-provider-section-divider rms-provider-divider-after-vercel">
+                        <section class="rms-provider-block rms-provider-block-agent">
+                            <div class="rms-provider-block-head">
+                                <div class="rms-provider-block-index">02</div>
+                                <div class="rms-provider-block-copy">
+                                    <span>PROVIDER 02 · BACKEND</span>
+                                    <strong>Agent AI</strong>
+                                    <small>GPT Image 2.5 melalui Agent backend. Credential pool dan runtime controls disiapkan bertahap.</small>
+                                </div>
+                                <div class="rms-provider-block-state is-pending"><i></i><span>Stage 5 next</span></div>
+                            </div>
                         <span>02</span>
                         <div><strong>AGENT AI BACKEND</strong><small>Credential pool will be wired in Stage 5</small></div>
                         <i></i>
@@ -450,15 +461,21 @@
                             </div>
                         </div>
                     </section>
+                        </section>
 
-                    <div class="rms-provider-section-divider">
-                        <span>03</span>
-                        <div><strong>PROVIDER FAILOVER</strong><small>Runtime fallback policy</small></div>
-                        <i></i>
-                    </div>
+                        <section class="rms-provider-block rms-provider-block-failover">
+                            <div class="rms-provider-block-head">
+                                <div class="rms-provider-block-index">03</div>
+                                <div class="rms-provider-block-copy">
+                                    <span>RUNTIME POLICY · FAILOVER</span>
+                                    <strong>Provider Failover</strong>
+                                    <small>Aturan fallback server-side untuk menjaga generation tetap tersedia saat provider utama bermasalah.</small>
+                                </div>
+                                <div class="rms-provider-block-state is-ready"><i></i><span>Configurable</span></div>
+                            </div>
 
-                    {{-- PROVIDER FAILOVER CONFIGURATION --}}
-                    <section class="rms-ai-provider-section rms-failover-card">
+                            {{-- PROVIDER FAILOVER CONFIGURATION --}}
+                            <section class="rms-ai-provider-section rms-failover-card">
                         <div class="rms-ai-provider-section-head">
                             <div class="rms-ai-provider-section-title">
                                 <span class="rms-ai-provider-icon">↗</span>
@@ -518,6 +535,7 @@
                             </button>
                         </div>
                     </section>
+                        </section>
 
                     @endif
 
@@ -2304,5 +2322,166 @@
         width:calc(100% - 20px)!important;
         margin:14px 10px 9px!important;
     }
+}
+</style>
+<style>
+/* AI PROVIDER — independent section containers */
+.rms-openai-form-upgraded{
+    gap:0!important;
+}
+.rms-provider-block{
+    position:relative;
+    margin:0 0 22px;
+    padding:0;
+    border:1px solid #e4e4e8;
+    border-radius:22px;
+    background:linear-gradient(180deg,#fff 0%,#fcfcfd 100%);
+    box-shadow:0 12px 34px rgba(15,23,42,.045);
+    overflow:hidden;
+    isolation:isolate;
+    transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s ease,border-color .3s ease;
+}
+.rms-provider-block::before{
+    content:"";
+    position:absolute;
+    inset:0 0 auto;
+    height:3px;
+    background:linear-gradient(90deg,#18181b 0%,#ef3030 48%,#22c55e 100%);
+    opacity:.9;
+}
+.rms-provider-block:hover{
+    transform:translateY(-1px);
+    border-color:#d9d9df;
+    box-shadow:0 18px 44px rgba(15,23,42,.065);
+}
+.rms-provider-block-head{
+    display:grid;
+    grid-template-columns:42px minmax(0,1fr) auto;
+    align-items:center;
+    gap:14px;
+    padding:20px 22px 18px;
+    border-bottom:1px solid #ededf0;
+    background:linear-gradient(180deg,rgba(250,250,251,.9),rgba(255,255,255,.96));
+}
+.rms-provider-block-index{
+    display:grid;
+    place-items:center;
+    width:40px;height:40px;
+    border:1px solid #dedee4;
+    border-radius:12px;
+    background:#fff;
+    color:#27272a;
+    font-size:10px;
+    font-weight:900;
+    letter-spacing:.08em;
+    box-shadow:0 5px 14px rgba(15,23,42,.045);
+}
+.rms-provider-block-copy{min-width:0}
+.rms-provider-block-copy span{
+    display:inline-flex;
+    align-items:center;
+    margin-bottom:4px;
+    color:#ef3030;
+    font-size:7px;
+    font-weight:900;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+}
+.rms-provider-block-copy strong{
+    display:block;
+    color:#18181b;
+    font-size:17px;
+    line-height:1.15;
+    font-weight:850;
+    letter-spacing:-.025em;
+}
+.rms-provider-block-copy small{
+    display:block;
+    margin-top:5px;
+    color:#8f8f98;
+    font-size:9px;
+    line-height:1.5;
+}
+.rms-provider-block-state{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    min-height:30px;
+    padding:0 10px;
+    border:1px solid #e4e4e7;
+    border-radius:999px;
+    background:#fff;
+    color:#71717a;
+    font-size:7px;
+    font-weight:850;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    white-space:nowrap;
+}
+.rms-provider-block-state i{
+    width:7px;height:7px;border-radius:50%;
+    background:#22c55e;
+    box-shadow:0 0 0 4px rgba(34,197,94,.08);
+}
+.rms-provider-block-state.is-pending i{
+    background:#f59e0b;
+    box-shadow:0 0 0 4px rgba(245,158,11,.08);
+}
+.rms-provider-block .rms-vg-key-manager-root,
+.rms-provider-block .rms-ai-provider-section{
+    margin:18px 20px 20px!important;
+}
+.rms-provider-block .rms-vg-test-all-card{
+    margin:0 20px 20px!important;
+}
+.rms-provider-block-agent .rms-ai-provider-section,
+.rms-provider-block-failover .rms-ai-provider-section{
+    box-shadow:none!important;
+    border-color:#e8e8ec!important;
+}
+.rms-provider-block-agent .rms-ai-provider-section-head,
+.rms-provider-block-failover .rms-ai-provider-section-head{
+    padding:16px 18px!important;
+}
+.rms-provider-block-agent .rms-ai-provider-section-head .rms-ai-provider-icon,
+.rms-provider-block-failover .rms-ai-provider-section-head .rms-ai-provider-icon{
+    width:38px;height:38px;
+}
+@media(max-width:760px){
+    .rms-provider-block{
+        margin-bottom:16px;
+        border-radius:17px;
+    }
+    .rms-provider-block-head{
+        grid-template-columns:36px minmax(0,1fr);
+        padding:16px 15px;
+        gap:11px;
+    }
+    .rms-provider-block-index{
+        width:36px;height:36px;border-radius:10px;font-size:9px;
+    }
+    .rms-provider-block-copy strong{font-size:14px}
+    .rms-provider-block-copy small{font-size:8px;max-width:100%}
+    .rms-provider-block-state{
+        grid-column:2;
+        justify-self:start;
+        min-height:26px;
+        font-size:6.5px;
+    }
+    .rms-provider-block .rms-vg-key-manager-root,
+    .rms-provider-block .rms-ai-provider-section{
+        margin:12px 11px 12px!important;
+    }
+    .rms-provider-block .rms-vg-test-all-card{
+        margin:0 11px 12px!important;
+    }
+}
+@media(max-width:390px){
+    .rms-provider-block-head{padding:14px 12px}
+    .rms-provider-block-copy strong{font-size:13px}
+    .rms-provider-block-copy small{font-size:7.5px}
+}
+@media(prefers-reduced-motion:reduce){
+    .rms-provider-block{transition:none}
 }
 </style>
