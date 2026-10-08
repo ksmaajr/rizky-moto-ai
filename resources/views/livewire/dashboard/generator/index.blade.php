@@ -1963,19 +1963,19 @@ new class extends Component
                                         <div class="rms-processing-core-ring">
                                             <svg class="rms-processing-spin-svg" wire:ignore viewBox="0 0 120 120" aria-hidden="true">
     <!-- Vertical dot train: each dot has its own orbit speed, so the train naturally separates. -->
-    <circle cx="60" cy="3" r="3.6" fill="#ef233c">
+    <circle cx="60" cy="3" r="5.2" fill="#ef233c">
         <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="3.20s" repeatCount="indefinite"/>
     </circle>
-    <circle cx="60" cy="10" r="3.1" fill="#ef233c">
+    <circle cx="60" cy="10" r="4.7" fill="#ef233c">
         <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="4.05s" repeatCount="indefinite"/>
     </circle>
-    <circle cx="60" cy="17" r="2.8" fill="#ef233c">
+    <circle cx="60" cy="17" r="4.2" fill="#ef233c">
         <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="2.72s" repeatCount="indefinite"/>
     </circle>
-    <circle cx="60" cy="24" r="2.5" fill="#ef233c">
+    <circle cx="60" cy="24" r="3.8" fill="#ef233c">
         <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="4.70s" repeatCount="indefinite"/>
     </circle>
-    <circle cx="60" cy="31" r="2.2" fill="#ef233c">
+    <circle cx="60" cy="31" r="3.4" fill="#ef233c">
         <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="3.65s" repeatCount="indefinite"/>
     </circle>
 </svg>
@@ -4846,4 +4846,7 @@ new class extends Component
 /* V15 — keep the orbit rings clean; no loose dots outside the main train */
 .rms-generation-processing-visual-v3 .rms-processing-orbit::before{display:none!important}
 .rms-generation-processing-visual-v3 .rms-processing-particle{display:none!important}
+
+/* V16 — larger reference-style orbit dots */
+.rms-processing-spin-svg circle{filter:drop-shadow(0 0 4px rgba(239,35,60,.24))}
 </style>
