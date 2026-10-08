@@ -2846,44 +2846,33 @@
     box-shadow:0 7px 16px rgba(239,48,48,.18);
     transition:transform .18s ease,box-shadow .18s ease,background .18s ease;
 }
-.rms-provider-block-failover .rms-ai-save-button:hover{
-    background:#df2424!important;
-    transform:translateY(-1px);
-    box-shadow:0 10px 22px rgba(239,48,48,.22);
+.rms-provider-block-failover .rms-ai-save-button:hover{background:#df2424!important;transform:translateY(-1px);box-shadow:0 10px 22px rgba(239,48,48,.22)}
+.rms-provider-block-failover .rms-ai-save-button:active{transform:translateY(0) scale(.985)}
+.rms-provider-block-failover .rms-ai-save-button > span:first-child{
+    align-items:center;
+    justify-content:center;
+    gap:9px;
+    white-space:nowrap;
 }
-.rms-provider-block-failover .rms-ai-save-button:active{
-    transform:translateY(0) scale(.985);
-}
-.rms-provider-block-failover .rms-ai-save-button b{
+.rms-provider-block-failover .rms-ai-save-button > span:first-child b{
     display:grid!important;
     place-items:center!important;
     width:21px!important;
     height:21px!important;
+    flex:0 0 21px!important;
     border-radius:7px!important;
     background:rgba(255,255,255,.13)!important;
     color:#fff!important;
     font-size:13px!important;
     line-height:1!important;
 }
-.rms-provider-block-failover .rms-ai-save-button > span{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    gap:9px;
+.rms-provider-block-failover .rms-ai-save-button > span:last-child{
     white-space:nowrap;
 }
-.rms-provider-block-failover .rms-ai-save-button[disabled]{
-    cursor:wait;
-    opacity:.8;
-}
+.rms-provider-block-failover .rms-ai-save-button[disabled]{cursor:wait;opacity:.8}
 @media(max-width:760px){
-    .rms-provider-block-failover .rms-ai-save-button{
-        width:100%!important;
-        min-width:0!important;
-        height:46px!important;
-    }
+    .rms-provider-block-failover .rms-ai-save-button{width:100%!important;min-width:0!important;height:46px!important}
 }
 @media(prefers-reduced-motion:reduce){
     .rms-provider-block-failover .rms-ai-save-button{transition:none}
-}
-</style>
+}</style>
