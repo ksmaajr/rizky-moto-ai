@@ -2959,7 +2959,7 @@ public function getUserInitialsProperty(): string
                         <div>
                             <span class="section-kicker">AI ENGINE HEALTH</span>
                             <h3>Generation infrastructure</h3>
-                            <p>Gateway, provider, agent layer, dan worker dipantau dari satu control center.</p>
+                            <p>Gateway dan provider generation dipantau dari satu control center.</p>
                         </div>
                         <div class="rms-engine-health-meta">
                             <span class="rms-health-pill {{ $engine['gateway']['state'] === 'online' ? 'is-ok' : 'is-off' }}"><i></i>{{ $engine['gateway']['state'] === 'online' ? 'SYSTEM READY' : 'ATTENTION' }}</span>
@@ -3009,17 +3009,6 @@ public function getUserInitialsProperty(): string
                             <span class="rms-engine-health-label">AGENT LAYER</span>
                             <strong>{{ $engine['agent']['label'] }}</strong>
                             <small>{{ $engine['agent']['detail'] }}</small>
-                        </article>
-
-                        <article class="rms-engine-health-card rms-engine-worker-card">
-                            <div class="rms-engine-health-card-top">
-                                <span class="rms-engine-health-icon worker">⚙</span>
-                                <span class="rms-engine-health-state {{ $engine['workers']['state'] === 'online' ? 'is-online' : 'is-offline' }}"><i></i>{{ strtoupper($engine['workers']['state']) }}</span>
-                            </div>
-                            <span class="rms-engine-health-label">QUEUE WORKERS</span>
-                            <strong>{{ $engine['workers']['running'] }}/{{ $engine['workers']['target'] }} active</strong>
-                            <small>{{ $workerStatus['queue'] }} queue · {{ $d['processing'] ?? 0 }} processing · {{ $d['queued'] ?? 0 }} queued</small>
-                            <div class="rms-engine-health-metrics"><span><b>{{ $d['failed'] ?? 0 }}</b> failed</span></div>
                         </article>
                     </div>
                 </section>
