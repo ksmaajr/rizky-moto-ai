@@ -1003,6 +1003,10 @@ public function getUserInitialsProperty(): string
 
         $this->activeTab = 'general';
 
+        $this->loadActivityLogs();
+        $this->loadOpenAiLogs();
+        $this->loadVercelGatewayLogs();
+
     }
 
 
