@@ -10991,3 +10991,159 @@
         max-height:91dvh!important;
     }
 }
+
+/* =========================================================
+   DASHBOARD V26 — GENERATION CARDS VISUAL INFORMATION LAYER
+   ========================================================= */
+.rms-generation-card-v2{
+    overflow:hidden!important;
+    background:linear-gradient(135deg,#fff 0%,#fcfcfd 72%,#fafafa 100%)!important;
+}
+.rms-generation-card-v2:before{
+    content:""!important;
+    position:absolute!important;
+    left:0!important;
+    top:0!important;
+    bottom:0!important;
+    width:3px!important;
+    background:#e4e4e7!important;
+    opacity:.9!important;
+}
+.rms-generation-card-v2:has(.status-completed):before,
+.rms-generation-card-v2:has(.status-success):before,
+.rms-generation-card-v2:has(.status-succeeded):before{background:#22c55e!important}
+.rms-generation-card-v2:has(.status-processing):before,
+.rms-generation-card-v2:has(.status-queued):before{background:#f59e0b!important}
+.rms-generation-card-v2:has(.status-failed):before,
+.rms-generation-card-v2:has(.status-cancelled):before,
+.rms-generation-card-v2:has(.status-canceled):before{background:#ef4444!important}
+
+.rms-generation-card-id{
+    position:absolute!important;
+    left:8px!important;
+    bottom:8px!important;
+    z-index:3!important;
+    padding:4px 6px!important;
+    border:1px solid rgba(255,255,255,.75)!important;
+    border-radius:6px!important;
+    color:#52525b!important;
+    background:rgba(255,255,255,.88)!important;
+    backdrop-filter:blur(8px)!important;
+    font-size:5.5px!important;
+    font-weight:950!important;
+    box-shadow:0 2px 7px rgba(0,0,0,.07)!important;
+}
+.rms-generation-card-tags{
+    display:flex!important;
+    align-items:center!important;
+    gap:6px!important;
+    margin-top:8px!important;
+    min-width:0!important;
+}
+.rms-generation-card-tags span{
+    min-width:0!important;
+    overflow:hidden!important;
+    padding:4px 7px!important;
+    border:1px solid #ececf0!important;
+    border-radius:6px!important;
+    color:#71717a!important;
+    background:#fafafa!important;
+    font-size:5.3px!important;
+    font-weight:850!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+}
+.rms-generation-card-tags span:first-child{color:#52525b!important;background:#f8fafc!important}
+.rms-generation-card-tags span:last-child{color:#7c3aed!important;background:#faf5ff!important;border-color:#ede9fe!important}
+.rms-generation-card-engine{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:10px!important;
+}
+.rms-generation-card-engine .engine-model{
+    overflow:hidden!important;
+    color:#52525b!important;
+    font-weight:800!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+}
+.rms-generation-card-engine .engine-output{
+    flex:0 0 auto!important;
+    padding:3px 6px!important;
+    border-radius:6px!important;
+    color:#71717a!important;
+    background:#f4f4f5!important;
+    font-size:5.3px!important;
+    font-weight:900!important;
+}
+.rms-generation-card-live{
+    display:flex!important;
+    align-items:center!important;
+    gap:6px!important;
+    margin-top:7px!important;
+    padding:6px 8px!important;
+    border:1px solid #fef3c7!important;
+    border-radius:8px!important;
+    color:#b45309!important;
+    background:#fffbeb!important;
+    font-size:5.8px!important;
+    font-weight:850!important;
+}
+.rms-generation-card-live i{
+    width:6px!important;
+    height:6px!important;
+    flex:0 0 6px!important;
+    border-radius:50%!important;
+    background:#f59e0b!important;
+    box-shadow:0 0 0 4px rgba(245,158,11,.12)!important;
+    animation:rms-generation-pulse 1.6s ease-in-out infinite!important;
+}
+@keyframes rms-generation-pulse{
+    0%,100%{opacity:.55;transform:scale(.9)}
+    50%{opacity:1;transform:scale(1.12)}
+}
+.rms-generation-card-v2 .rms-generation-card-actions button,
+.rms-generation-card-v2 .rms-generation-card-actions a{
+    position:relative!important;
+    gap:6px!important;
+    min-width:96px!important;
+    font-size:6px!important;
+}
+.rms-generation-card-v2 .rms-generation-card-actions button:after{
+    content:"Open preview"!important;
+    font-size:4.8px!important;
+    font-weight:750!important;
+    opacity:.55!important;
+}
+.rms-generation-card-v2 .rms-generation-card-actions a:after{
+    content:"Optimized PNG"!important;
+    font-size:4.8px!important;
+    font-weight:750!important;
+    opacity:.55!important;
+}
+.rms-generation-card-v2 .rms-generation-card-media-lg{
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.035)!important;
+}
+.rms-generation-card-v2:has(.status-processing) .rms-generation-card-media-lg:after,
+.rms-generation-card-v2:has(.status-queued) .rms-generation-card-media-lg:after{
+    content:""!important;
+    position:absolute!important;
+    inset:0!important;
+    border:1px solid rgba(245,158,11,.45)!important;
+    border-radius:13px!important;
+    animation:rms-generation-border-pulse 1.8s ease-in-out infinite!important;
+    pointer-events:none!important;
+}
+@keyframes rms-generation-border-pulse{
+    0%,100%{opacity:.35}
+    50%{opacity:1}
+}
+@media(max-width:640px){
+    .rms-generation-card-tags{gap:4px!important}
+    .rms-generation-card-tags span{max-width:48%!important}
+    .rms-generation-card-v2 .rms-generation-card-actions button,
+    .rms-generation-card-v2 .rms-generation-card-actions a{min-width:0!important;flex:1!important}
+    .rms-generation-card-v2 .rms-generation-card-actions button:after,
+    .rms-generation-card-v2 .rms-generation-card-actions a:after{display:none!important}
+}
