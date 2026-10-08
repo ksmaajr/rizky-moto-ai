@@ -3481,4 +3481,50 @@
         min-width:34px!important;
     }
 }
+</style><style>
+/* API KEY ACTION MENU — mobile layering hotfix */
+.rms-provider-block-vercel .rms-vg-key-list,
+.rms-provider-block-vercel .rms-vg-key-card,
+.rms-provider-block-vercel .rms-vg-key-card-main,
+.rms-provider-block-vercel .rms-vg-more-wrap{
+    overflow:visible!important;
+}
+.rms-provider-block-vercel .rms-vg-key-card{
+    position:relative!important;
+    z-index:1;
+}
+.rms-provider-block-vercel .rms-vg-key-card:has(.rms-vg-key-more[aria-expanded="true"]){
+    z-index:5000!important;
+}
+.rms-provider-block-vercel .rms-vg-more-wrap{
+    position:relative!important;
+    z-index:5001!important;
+}
+.rms-provider-block-vercel .rms-vg-key-menu{
+    position:absolute!important;
+    right:0!important;
+    top:calc(100% + 7px)!important;
+    z-index:99999!important;
+    min-width:145px!important;
+    max-width:min(210px,calc(100vw - 40px))!important;
+    transform-origin:top right!important;
+}
+@media(max-width:760px){
+    .rms-provider-block-vercel .rms-vg-key-card{
+        overflow:visible!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-card:has(.rms-vg-key-more[aria-expanded="true"]){
+        margin-bottom:52px!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-menu{
+        min-width:155px!important;
+        max-width:calc(100vw - 56px)!important;
+        padding:5px!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-menu button{
+        min-height:38px!important;
+        padding:9px 10px!important;
+        font-size:8px!important;
+    }
+}
 </style>
