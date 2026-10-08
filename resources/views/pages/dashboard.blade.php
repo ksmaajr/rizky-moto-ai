@@ -2105,18 +2105,61 @@ public function getUserInitialsProperty(): string
 
 
                 <div class="top-search">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+                    <svg class="top-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
                     <input type="text" wire:model.live.debounce.450ms="globalSearch" placeholder="Search workspace..." aria-label="Search workspace...">
                     <span class="search-shortcut">Ctrl K</span>
+
                     @if(mb_strlen(trim($globalSearch)) >= 2)
                         <div class="rms-global-search-results">
-                            @forelse($this->globalSearchResults as $result)
-                                <button type="button" wire:click="navigateGlobalSearch('{{ $result['action'] }}', {{ (int) ($result['id'] ?? 0) }})" class="rms-global-search-item">
-                                    <span>{{ $result['type'] }}</span><div><strong>{{ $result['label'] }}</strong><small>{{ $result['meta'] }}</small></div><b>→</b>
-                                </button>
-                            @empty
-                                <div class="rms-global-search-empty">Tidak ada hasil untuk “{{ $globalSearch }}”.</div>
-                            @endforelse
+                            <div class="rms-global-search-head">
+                                <div>
+                                    <span class="rms-global-search-eyebrow">WORKSPACE SEARCH</span>
+                                    <strong>Search results</strong>
+                                </div>
+                                <span class="rms-global-search-count">{{ count($this->globalSearchResults) }} results</span>
+                            </div>
+
+                            @if(count($this->globalSearchResults))
+                                <div class="rms-global-search-list">
+                                    @foreach($this->globalSearchResults as $result)
+                                        @php
+                                            $searchType = strtolower((string) ($result['type'] ?? 'result'));
+                                            $searchIcon = match ($searchType) {
+                                                'navigate' => '↗',
+                                                'store' => '◆',
+                                                'template' => '◇',
+                                                'generation' => '▣',
+                                                'activity' => '◌',
+                                                'api key' => '⌁',
+                                                default => '•',
+                                            };
+                                        @endphp
+                                        <button type="button" wire:click="navigateGlobalSearch('{{ $result['action'] }}', {{ (int) ($result['id'] ?? 0) }})" class="rms-global-search-item">
+                                            <span class="rms-search-result-icon rms-search-type-{{ str_replace(' ', '-', $searchType) }}">{{ $searchIcon }}</span>
+                                            <span class="rms-search-result-copy">
+                                                <span class="rms-search-result-topline">
+                                                    <strong>{{ $result['label'] }}</strong>
+                                                    <small>{{ strtoupper($result['type']) }}</small>
+                                                </span>
+                                                <span class="rms-search-result-meta">{{ $result['meta'] }}</span>
+                                            </span>
+                                            <span class="rms-search-result-arrow">→</span>
+                                        </button>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="rms-global-search-empty">
+                                    <span class="rms-search-empty-icon">⌕</span>
+                                    <strong>No results found</strong>
+                                    <span>Try a store, template, generation, activity, or API key.</span>
+                                </div>
+                            @endif
+
+                            <div class="rms-global-search-foot">
+                                <span><kbd>↑</kbd><kbd>↓</kbd> Navigate</span>
+                                <span><kbd>Enter</kbd> Open</span>
+                                <span><kbd>Esc</kbd> Close</span>
+                            </div>
                         </div>
                     @endif
                 </div>
