@@ -1863,7 +1863,17 @@ new class extends Component
                     <article wire:key="generation-history-{{ $generation->id }}" class="rms-generator-history-item rms-generation-card status-{{ $status }}">
                         <div class="rms-generation-card-head">
                             <div class="rms-history-item-meta"><span>{{ optional($generation->created_at)->format('d M Y · H:i') }}</span><small>#{{ $generation->id }}</small></div>
-                            <span class="rms-history-status {{ $status }}"><i></i>{{ $statusLabel }}</span>
+                            <span class="rms-history-status {{ $status }}" title="Status generation: {{ $statusLabel }}">
+                                <i class="rms-status-dot" aria-hidden="true"></i>
+                                <span class="rms-status-label">{{ $statusLabel }}</span>
+                                @if(in_array($status, ['queued','processing']))
+                                    <i class="rms-status-live" aria-hidden="true"></i>
+                                @elseif($status === 'completed')
+                                    <b class="rms-status-check" aria-hidden="true">✓</b>
+                                @elseif(in_array($status, ['failed','cancelled']))
+                                    <b class="rms-status-symbol" aria-hidden="true">{{ $status === 'failed' ? '!' : '×' }}</b>
+                                @endif
+                            </span>
                         </div>
 
                         @if($status === 'completed' && $hero)
@@ -3395,7 +3405,118 @@ new class extends Component
 }
 .rms-generation-state{display:flex;align-items:center;gap:12px;min-height:170px;padding:18px;border-radius:13px}.rms-generation-state>span{width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:12px;font-size:17px;font-weight:900}.rms-generation-state div{display:flex;flex-direction:column;gap:5px;max-width:100%}.rms-generation-state strong{font-size:13px}.rms-generation-state small{font-size:10px;line-height:1.45;color:#7c818a}.rms-generation-state-error{background:#fff7f7;border:1px solid #ffd9d9;color:#e21d2e}.rms-generation-state-error>span{background:#ffe6e7}.rms-generation-state-cancelled{background:#f7f8fa;border:1px solid #e4e6ea;color:#555b65}.rms-generation-state-cancelled>span{background:#e9ebef}
         .rms-generation-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;gap:7px}.rms-generation-action{min-height:36px;padding:0 9px;border:1px solid #e2e4e8;border-radius:10px;background:#fff;color:#26282d;font-size:10px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;transition:transform .18s ease,background .18s ease,border-color .18s ease,box-shadow .18s ease,color .18s ease}.rms-generation-action:hover{transform:translateY(-1px);border-color:#cfd2d8;background:#f8f9fa;box-shadow:0 5px 12px rgba(20,20,25,.06)}.rms-generation-action.primary{background:#ef233c;border-color:#ef233c;color:#fff;box-shadow:0 7px 18px rgba(239,35,60,.18)}.rms-generation-action.primary-light{background:#fafafa}.rms-generation-action.danger{color:#e21d2e;border-color:#ffd4d7;background:#fff8f8}.rms-generation-action.danger:hover{background:#fff0f1;border-color:#ffbcc2}.rms-generation-action.danger-icon{color:#e21d2e}.status-processing{border-color:#dceaff!important}.status-failed{border-color:#ffe0e2!important}.status-completed{border-color:#e2eee6!important}
-        .rms-generation-card .rms-history-status{flex:none}.rms-generation-card .rms-history-item-meta{display:flex;align-items:center;gap:7px;min-width:0}.rms-generation-card .rms-history-item-meta span{font-size:9px;color:#90959e}.rms-generation-card .rms-history-item-meta small{font-size:9px;color:#b0b4bc}.rms-generation-card .rms-history-status{font-size:9px;padding:5px 8px;border-radius:999px}
+        .rms-generation-card .rms-history-status{flex:none}.rms-generation-card .rms-history-item-meta{display:flex;align-items:center;gap:7px;min-width:0}.rms-generation-card .rms-history-item-meta span{font-size:9px;color:#90959e}.rms-generation-card .rms-history-item-meta small{font-size:9px;color:#b0b4bc}.rms-generation-card .rms-history-status{
+            position:relative;
+            min-height:30px;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            gap:6px;
+            flex:none;
+            padding:0 10px 0 8px;
+            border:1px solid transparent;
+            border-radius:999px;
+            font-size:8px;
+            line-height:1;
+            font-weight:900;
+            letter-spacing:.035em;
+            white-space:nowrap;
+            box-shadow:0 4px 12px rgba(20,22,28,.045);
+            transition:transform .22s ease,box-shadow .25s ease,border-color .25s ease,background .25s ease;
+        }
+        .rms-generation-card .rms-history-status:hover{
+            transform:translateY(-1px);
+            box-shadow:0 7px 17px rgba(20,22,28,.08);
+        }
+        .rms-generation-card .rms-history-status .rms-status-dot{
+            width:7px;
+            height:7px;
+            flex:0 0 7px;
+            border-radius:50%;
+            background:currentColor;
+            box-shadow:0 0 0 3px rgba(0,0,0,.045);
+        }
+        .rms-generation-card .rms-history-status .rms-status-label{
+            display:inline-flex;
+            align-items:center;
+        }
+        .rms-generation-card .rms-history-status .rms-status-live{
+            width:4px;
+            height:4px;
+            margin-left:1px;
+            border-radius:50%;
+            background:currentColor;
+            animation:rmsStatusLive 1.35s ease-in-out infinite;
+        }
+        .rms-generation-card .rms-history-status .rms-status-check,
+        .rms-generation-card .rms-history-status .rms-status-symbol{
+            width:14px;
+            height:14px;
+            display:grid;
+            place-items:center;
+            flex:0 0 14px;
+            border-radius:50%;
+            background:rgba(255,255,255,.72);
+            font-size:8px;
+            font-weight:950;
+            line-height:1;
+        }
+        .rms-generation-card .rms-history-status.queued{
+            color:#a66b00;
+            background:linear-gradient(135deg,#fff9e8,#fff4cf);
+            border-color:#f4dfaa;
+        }
+        .rms-generation-card .rms-history-status.processing{
+            color:#2867b2;
+            background:linear-gradient(135deg,#eef7ff,#e7f2ff);
+            border-color:#cfe4fb;
+        }
+        .rms-generation-card .rms-history-status.completed{
+            color:#138a4f;
+            background:linear-gradient(135deg,#effbf4,#e5f8ed);
+            border-color:#cdebd9;
+        }
+        .rms-generation-card .rms-history-status.failed{
+            color:#c72535;
+            background:linear-gradient(135deg,#fff1f2,#ffe8ea);
+            border-color:#f7cdd1;
+        }
+        .rms-generation-card .rms-history-status.cancelled{
+            color:#626873;
+            background:linear-gradient(135deg,#f6f7f8,#eef0f2);
+            border-color:#dfe2e6;
+        }
+        .rms-generation-card .rms-history-status.queued .rms-status-dot,
+        .rms-generation-card .rms-history-status.processing .rms-status-dot{
+            animation:rmsStatusDotPulse 1.6s ease-in-out infinite;
+        }
+        @keyframes rmsStatusDotPulse{
+            0%,100%{transform:scale(1);opacity:1}
+            50%{transform:scale(.72);opacity:.55}
+        }
+        @keyframes rmsStatusLive{
+            0%,100%{transform:scale(.65);opacity:.45}
+            50%{transform:scale(1.15);opacity:1}
+        }
+        @media(max-width:480px){
+            .rms-generation-card .rms-history-status{
+                min-height:28px;
+                padding:0 8px 0 7px;
+                gap:5px;
+                font-size:7px;
+            }
+            .rms-generation-card .rms-history-status .rms-status-dot{
+                width:6px;
+                height:6px;
+                flex-basis:6px;
+            }
+            .rms-generation-card .rms-history-status .rms-status-check,
+            .rms-generation-card .rms-history-status .rms-status-symbol{
+                width:13px;
+                height:13px;
+                flex-basis:13px;
+            }
+        }
         @keyframes rmsSpin{to{transform:rotate(360deg)}}@keyframes rmsEtaPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.06);opacity:.78}}
         @media (max-width:1180px){.rms-generator-history-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
         @media (max-width:760px){.rms-generator-history-grid{grid-template-columns:1fr;gap:12px}.rms-generation-card{padding:12px!important;border-radius:16px!important}.rms-generation-processing-visual,.rms-generation-processing-visual>img{min-height:190px;height:190px}.rms-generation-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.rms-generator-eta-card{padding:10px}.rms-generator-eta-card small{font-size:9px}.rms-generation-card-info strong{font-size:12px}}
