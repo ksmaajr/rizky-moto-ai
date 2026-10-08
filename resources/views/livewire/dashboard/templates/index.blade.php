@@ -943,3 +943,112 @@
     }
 }
 </style>
+
+<style>
+/* V31 — mobile template actions: keep status control visible */
+@media(max-width:720px){
+    .rms-template-card-actions-v2{
+        display:grid!important;
+        grid-template-columns:minmax(0,1fr) 82px 48px!important;
+        gap:7px!important;
+        align-items:stretch!important;
+    }
+    .rms-template-card-actions-v2 > button{
+        height:48px!important;
+        min-height:48px!important;
+        padding:0 7px!important;
+        border-radius:13px!important;
+    }
+    .rms-template-card-actions-v2 > button:first-child{
+        font-size:7.8px!important;
+        padding:0 7px!important;
+        gap:4px!important;
+    }
+    .rms-template-card-actions-v2 > button:first-child b{
+        font-size:9px!important;
+    }
+    .rms-template-card-actions-v2 > .ghost{
+        display:flex!important;
+        width:82px!important;
+        min-width:82px!important;
+        max-width:82px!important;
+        font-size:7.6px!important;
+        font-weight:850!important;
+        padding:0 6px!important;
+        color:#3f3f46!important;
+    }
+    .rms-template-card-actions-v2 > .ghost:before{
+        width:3px!important;
+    }
+    .rms-template-delete-inline{
+        width:48px!important;
+        min-width:48px!important;
+        max-width:48px!important;
+        height:48px!important;
+        min-height:48px!important;
+        border-radius:13px!important;
+    }
+    .rms-template-delete-inline svg{
+        width:16px!important;
+        height:16px!important;
+    }
+
+    /* Clear status indicator */
+    .rms-template-status{
+        display:inline-flex!important;
+        align-items:center!important;
+        gap:6px!important;
+        min-height:29px!important;
+        padding:0 11px!important;
+        border-radius:999px!important;
+        font-size:8px!important;
+        line-height:1!important;
+        font-weight:900!important;
+        letter-spacing:.035em!important;
+        backdrop-filter:blur(10px);
+    }
+    .rms-template-status i{
+        width:6px!important;
+        height:6px!important;
+        flex:0 0 6px!important;
+        border-radius:50%!important;
+    }
+    .rms-template-status.active{
+        color:#15803d!important;
+        background:rgba(240,253,244,.94)!important;
+        border:1px solid rgba(34,197,94,.18)!important;
+        box-shadow:0 5px 14px rgba(34,197,94,.10)!important;
+    }
+    .rms-template-status.active i{
+        background:#22c55e!important;
+        box-shadow:0 0 0 3px rgba(34,197,94,.10)!important;
+    }
+    .rms-template-status.draft{
+        color:#71717a!important;
+        background:rgba(250,250,250,.94)!important;
+        border:1px solid rgba(113,113,122,.14)!important;
+        box-shadow:0 5px 14px rgba(24,24,27,.06)!important;
+    }
+    .rms-template-status.draft i{
+        background:#a1a1aa!important;
+        box-shadow:0 0 0 3px rgba(161,161,170,.10)!important;
+    }
+}
+@media(max-width:380px){
+    .rms-template-card-actions-v2{
+        grid-template-columns:minmax(0,1fr) 76px 46px!important;
+        gap:6px!important;
+    }
+    .rms-template-card-actions-v2 > .ghost{
+        width:76px!important;
+        min-width:76px!important;
+        max-width:76px!important;
+        font-size:7.2px!important;
+    }
+    .rms-template-delete-inline{
+        width:46px!important;
+        min-width:46px!important;
+        max-width:46px!important;
+    }
+}
+</style>
