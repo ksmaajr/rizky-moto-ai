@@ -1149,7 +1149,7 @@ class extends Component
             $this->pendingStoreSearch = $id
                 ? (string) (Store::query()->whereKey($id)->value('name') ?: $term)
                 : $term;
-            $this->openStore();
+            $this->openStore(true);
             return;
         }
 
@@ -1157,13 +1157,13 @@ class extends Component
             $this->pendingTemplateSearch = $id
                 ? (string) (\App\Models\Template::query()->whereKey($id)->value('name') ?: $term)
                 : $term;
-            $this->openTemplates();
+            $this->openTemplates(true);
             return;
         }
 
         if ($action === 'generator') {
             $this->pendingGenerationId = $id ?: null;
-            $this->openGenerator();
+            $this->openGenerator(true);
             return;
         }
 
