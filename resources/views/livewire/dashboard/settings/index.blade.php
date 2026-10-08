@@ -2824,4 +2824,115 @@
         max-width:100%;
     }
 }
+</style><style>
+/* SAVE CONFIGURATION — premium action bar */
+.rms-provider-block-failover .rms-ai-provider-save-row{
+    align-items:center!important;
+    min-height:86px;
+    padding:16px 20px!important;
+    gap:20px!important;
+    background:linear-gradient(90deg,#f8fbf9 0%,#fbfcfb 58%,#f7faf8 100%)!important;
+    border-top:1px solid #e1ebe4!important;
+}
+.rms-provider-block-failover .rms-ai-provider-save-row>div{
+    flex:1;
+    gap:9px;
+}
+.rms-provider-block-failover .rms-ai-provider-save-row>div>span:last-child{
+    font-size:9px!important;
+    color:#73777a!important;
+}
+.rms-provider-block-failover .rms-ai-save-button{
+    position:relative;
+    display:inline-flex!important;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    min-width:210px;
+    min-height:48px;
+    padding:0 20px!important;
+    border:1px solid #18181b!important;
+    border-radius:13px!important;
+    background:linear-gradient(135deg,#18181b 0%,#27272a 100%)!important;
+    color:#fff!important;
+    font-size:10px!important;
+    font-weight:900!important;
+    letter-spacing:.01em;
+    box-shadow:0 8px 18px rgba(24,24,27,.16),inset 0 1px 0 rgba(255,255,255,.08);
+    overflow:hidden;
+    cursor:pointer;
+    transform:translateZ(0);
+    transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s ease,background .25s ease;
+}
+.rms-provider-block-failover .rms-ai-save-button::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:linear-gradient(105deg,transparent 15%,rgba(255,255,255,.13) 48%,transparent 80%);
+    transform:translateX(-120%);
+    transition:transform .65s cubic-bezier(.2,.8,.2,1);
+}
+.rms-provider-block-failover .rms-ai-save-button:hover{
+    transform:translateY(-2px);
+    background:linear-gradient(135deg,#111113 0%,#303035 100%)!important;
+    box-shadow:0 13px 26px rgba(24,24,27,.2),inset 0 1px 0 rgba(255,255,255,.1);
+}
+.rms-provider-block-failover .rms-ai-save-button:hover::before{
+    transform:translateX(120%);
+}
+.rms-provider-block-failover .rms-ai-save-button:active{
+    transform:translateY(0) scale(.985);
+    box-shadow:0 6px 13px rgba(24,24,27,.16);
+}
+.rms-provider-block-failover .rms-ai-save-button b{
+    display:grid;
+    place-items:center;
+    width:25px;height:25px;
+    border:1px solid rgba(255,255,255,.16);
+    border-radius:8px;
+    background:rgba(255,255,255,.08);
+    font-size:14px;
+    line-height:1;
+    transition:transform .25s ease,background .25s ease;
+}
+.rms-provider-block-failover .rms-ai-save-button:hover b{
+    transform:translateX(3px);
+    background:rgba(255,255,255,.13);
+}
+.rms-provider-block-failover .rms-ai-save-button[disabled]{
+    opacity:.7;
+    cursor:wait;
+    transform:none!important;
+}
+.rms-provider-block-failover .rms-ai-save-button i{
+    display:inline-block;
+    width:15px;height:15px;
+    border:2px solid rgba(255,255,255,.28);
+    border-top-color:#fff;
+    border-radius:50%;
+    animation:rmsSaveSpin .7s linear infinite;
+}
+@keyframes rmsSaveSpin{to{transform:rotate(360deg)}}
+@media(max-width:760px){
+    .rms-provider-block-failover .rms-ai-provider-save-row{
+        flex-direction:column!important;
+        align-items:stretch!important;
+        min-height:0;
+        padding:14px!important;
+        gap:12px!important;
+    }
+    .rms-provider-block-failover .rms-ai-provider-save-row>div{
+        width:100%;
+    }
+    .rms-provider-block-failover .rms-ai-save-button{
+        width:100%;
+        min-width:0;
+        min-height:50px;
+    }
+}
+@media(prefers-reduced-motion:reduce){
+    .rms-provider-block-failover .rms-ai-save-button,
+    .rms-provider-block-failover .rms-ai-save-button b{transition:none}
+    .rms-provider-block-failover .rms-ai-save-button::before{display:none}
+}
 </style>
