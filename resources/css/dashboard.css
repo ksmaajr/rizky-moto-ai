@@ -9492,19 +9492,19 @@
    Only the interaction changes: it slides in/out. */
 @media(max-width:900px){
     .dashboard-sidebar{
-        top:158px!important;
+        top:0!important;
         left:0!important;
         right:auto!important;
         bottom:0!important;
         width:278px!important;
         max-width:278px!important;
-        max-height:calc(100dvh - 158px)!important;
-        height:auto!important;
+        max-height:100dvh!important;
+        height:100dvh!important;
         border-radius:0!important;
         border:0!important;
         box-shadow:18px 0 55px rgba(0,0,0,.24)!important;
         overflow:hidden!important;
-        z-index:490!important;
+        z-index:100200!important;
     }
 
     .dashboard-sidebar .sidebar-brand{
@@ -9519,7 +9519,7 @@
     /* Keep the desktop topbar above the drawer while the drawer keeps
        exactly the same width, logo, nav spacing and worker widget. */
     .topbar{
-        z-index:100100!important;
+        z-index:100000!important;
         backdrop-filter:none!important;
         -webkit-backdrop-filter:none!important;
         filter:none!important;
@@ -9529,7 +9529,7 @@
     }
 
     .dashboard-overlay{
-        z-index:99990!important;
+        z-index:100100!important;
     }
 
     /* IMPORTANT: fixed notification must have no transformed/filtering
