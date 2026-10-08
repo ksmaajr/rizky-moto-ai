@@ -2212,3 +2212,57 @@
     }
 }
 </style>
+<style>
+/* FINAL MOBILE DROPDOWN FIX — menus flow with content instead of covering logs */
+.rms-global-activity{
+    margin-top:14px!important;
+    margin-bottom:16px!important;
+}
+.rms-activity-section-divider{
+    margin-top:16px!important;
+    margin-bottom:10px!important;
+}
+@media(max-width:640px){
+    .rms-global-activity{
+        margin-top:12px!important;
+        margin-bottom:14px!important;
+    }
+    .rms-activity-section-divider{
+        margin-top:14px!important;
+        margin-bottom:9px!important;
+    }
+    /* The mobile menu must participate in document flow. */
+    .rms-mobile-filter-group .rms-activity-select-menu{
+        position:relative!important;
+        top:auto!important;
+        left:auto!important;
+        right:auto!important;
+        width:100%!important;
+        min-width:0!important;
+        max-width:none!important;
+        margin-top:7px!important;
+        z-index:30!important;
+        transform-origin:top center!important;
+    }
+    .rms-mobile-filter-group .rms-filter-field:last-child .rms-activity-select-menu{
+        left:auto!important;
+        right:auto!important;
+    }
+    .rms-mobile-filter-group .rms-activity-select{
+        z-index:20!important;
+    }
+    .rms-mobile-filter-group .rms-filter-field:has(.rms-activity-select-menu[style*="display: none"]){
+        z-index:auto!important;
+    }
+    /* Keep the filter toggle arrow perfectly centered. */
+    .rms-mobile-filter-icon{
+        display:grid!important;
+        place-items:center!important;
+        align-content:center!important;
+    }
+    .rms-mobile-filter-icon::before{
+        display:block;
+        flex:0 0 auto;
+    }
+}
+</style>
