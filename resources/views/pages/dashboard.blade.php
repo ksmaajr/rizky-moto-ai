@@ -2651,13 +2651,19 @@ public function getUserInitialsProperty(): string
 
 
 
-            <div wire:poll.visible.10s="refreshDashboard" class="rms-dashboard-live">
+            @php
+    $dashboardPeriodLabels = ['today' => 'Hari ini', '7d' => '7 hari', '30d' => '30 hari', '90d' => '90 hari', 'year' => 'Tahun ini'];
+    $dashboardStatusLabels = ['all' => 'Semua status', 'completed' => 'Completed', 'processing' => 'Processing', 'queued' => 'Queued', 'failed' => 'Failed'];
+    $historyStatusLabels = $dashboardStatusLabels;
+    $historySortLabels = ['newest' => 'Terbaru', 'oldest' => 'Terlama', 'completed' => 'Completed dulu', 'failed' => 'Failed dulu'];
+@endphp
+<div wire:poll.visible.10s="refreshDashboard" class="rms-dashboard-live">
                 <section class="rms-dashboard-toolbar reveal reveal-3">
                     <div><span class="section-kicker">REALTIME OPERATIONS</span><h2>Creative activity</h2><p>Monitoring generation, queue, output, dan performa creative engine secara realtime.</p></div>
                     <div class="rms-dashboard-filters">
                         <div class="rms-filter-dropdown" x-data="{ open:false }" :class="{ 'is-open': open }" @click.outside="open=false">
                             <button type="button" class="rms-filter-trigger" @click="open=!open" :aria-expanded="open.toString()">
-                                <span class="rms-filter-copy"><small>PERIOD</small><strong>{{ match($dashboardTimeframe){ 'today'=>'Hari ini','30d'=>'30 hari','90d'=>'90 hari','year'=>'Tahun ini',default=>'7 hari' } }}</strong></span><span class="rms-filter-chevron">⌄</span>
+                                <span class="rms-filter-copy"><small>PERIOD</small><strong>{{ $dashboardPeriodLabels[$dashboardTimeframe] ?? '7 hari' }}</strong></span><span class="rms-filter-chevron">⌄</span>
                             </button>
                             <div class="rms-filter-menu" x-show="open" x-transition.opacity x-cloak>
                                 @foreach(['today'=>'Hari ini','7d'=>'7 hari','30d'=>'30 hari','90d'=>'90 hari','year'=>'Tahun ini'] as $value => $label)
@@ -2667,7 +2673,7 @@ public function getUserInitialsProperty(): string
                         </div>
                         <div class="rms-filter-dropdown" x-data="{ open:false }" :class="{ 'is-open': open }" @click.outside="open=false">
                             <button type="button" class="rms-filter-trigger" @click="open=!open" :aria-expanded="open.toString()">
-                                <span class="rms-filter-copy"><small>STATUS</small><strong>{{ match($dashboardStatus){ 'completed'=>'Completed','processing'=>'Processing','queued'=>'Queued','failed'=>'Failed',default=>'Semua status' } }}</strong></span><span class="rms-filter-chevron">⌄</span>
+                                <span class="rms-filter-copy"><small>STATUS</small><strong>{{ $dashboardStatusLabels[$dashboardStatus] ?? 'Semua status' }}</strong></span><span class="rms-filter-chevron">⌄</span>
                             </button>
                             <div class="rms-filter-menu" x-show="open" x-transition.opacity x-cloak>
                                 @foreach(['all'=>'Semua status','completed'=>'Completed','processing'=>'Processing','queued'=>'Queued','failed'=>'Failed'] as $value => $label)
