@@ -22,7 +22,11 @@ new class extends Component
     public string $historySearch = '';
     public ?int $historyStoreId = null;
     public ?int $historyTemplateId = null;
-    public int $recentHistoryLimit = 6;
+    public string $historyProvider = 'all';
+    public string $historyModel = 'all';
+    public string $historyDateRange = 'all';
+    public string $historySort = 'newest';
+    public int $recentHistoryLimit = 12;
 
     public $imageOne = null;
     public $imageTwo = null;
@@ -86,42 +90,152 @@ new class extends Component
             : null;
     }
 
-    public function getRecentGenerationsProperty()
+    protected function historyQuery()
     {
         return Generation::query()
-            ->with(['store', 'template', 'generatedImages'])
             ->where('user_id', auth()->id())
-            ->when($this->historyStatus !== 'all', fn ($q) => $q->where('status', $this->historyStatus))
+            ->with(['store', 'template', 'generatedImages'])
+            ->when($this->historyStatus !== 'all', function ($q) {
+                if ($this->historyStatus === 'completed') {
+                    $q->whereIn('status', ['completed', 'success', 'succeeded']);
+                    return;
+                }
+
+                $q->where('status', $this->historyStatus);
+            })
             ->when($this->historyStoreId, fn ($q) => $q->where('store_id', $this->historyStoreId))
             ->when($this->historyTemplateId, fn ($q) => $q->where('template_id', $this->historyTemplateId))
+            ->when($this->historyProvider !== 'all', fn ($q) => $q->where('model', 'like', $this->historyProvider . '/%'))
+            ->when($this->historyModel !== 'all', fn ($q) => $q->where('model', $this->historyModel))
+            ->when($this->historyDateRange !== 'all', function ($q) {
+                match ($this->historyDateRange) {
+                    'today' => $q->where('created_at', '>=', now()->startOfDay()),
+                    '7d' => $q->where('created_at', '>=', now()->subDays(7)->startOfDay()),
+                    '30d' => $q->where('created_at', '>=', now()->subDays(30)->startOfDay()),
+                    default => null,
+                };
+            })
             ->where(function ($q) {
-                /*
-                 * IMPORTANT:
-                 * JSON metadata is normally non-null and does not contain
-                 * "hidden". Using metadata->hidden != true alone can make
-                 * MySQL exclude rows where the JSON key is missing.
-                 * Only records explicitly marked hidden=true should disappear.
-                 */
                 $q->whereNull('metadata')
                     ->orWhereRaw("JSON_EXTRACT(metadata, '$.hidden') IS NULL")
                     ->orWhereRaw("JSON_EXTRACT(metadata, '$.hidden') <> true");
             })
             ->when(trim($this->historySearch) !== '', function ($q) {
                 $keyword = '%' . trim($this->historySearch) . '%';
+
                 $q->where(function ($inner) use ($keyword) {
                     $inner->whereHas('store', fn ($store) => $store->where('name', 'like', $keyword))
                         ->orWhereHas('template', fn ($template) => $template->where('name', 'like', $keyword))
                         ->orWhere('id', 'like', $keyword)
+                        ->orWhere('model', 'like', $keyword)
+                        ->orWhere('error_message', 'like', $keyword)
+                        ->orWhere('metadata->provider', 'like', $keyword)
+                        ->orWhere('metadata->gateway_key_name', 'like', $keyword)
+                        ->orWhere('metadata->gateway_key_source', 'like', $keyword)
                         ->orWhere('metadata->final_title', 'like', $keyword)
                         ->orWhere('metadata->custom_title', 'like', $keyword);
                 });
-            })
-            // Recent history sengaja dibatasi agar generator tetap ringan,
-            // terutama di mobile. Card tidak diubah; hanya jumlah record awal yang dibatasi.
-            ->latest()
+            });
+    }
+
+    public function getRecentGenerationsProperty()
+    {
+        $query = $this->historyQuery();
+
+        if ($this->historySort === 'oldest') {
+            $query->orderBy('created_at', 'asc')->orderBy('id', 'asc');
+        } else {
+            $query->orderBy('created_at', 'desc')->orderBy('id', 'desc');
+        }
+
+        return $query
             ->limit($this->recentHistoryLimit)
             ->get();
     }
+
+    public function getHistoryTotalProperty(): int
+    {
+        return (clone $this->historyQuery())->count();
+    }
+
+    public function getHistoryStoresProperty()
+    {
+        return Store::query()
+            ->whereIn('id', Generation::query()
+                ->where('user_id', auth()->id())
+                ->whereNotNull('store_id')
+                ->distinct()
+                ->pluck('store_id'))
+            ->orderBy('name')
+            ->get(['id', 'name']);
+    }
+
+    public function getHistoryTemplatesProperty()
+    {
+        return Template::query()
+            ->whereIn('id', Generation::query()
+                ->where('user_id', auth()->id())
+                ->whereNotNull('template_id')
+                ->distinct()
+                ->pluck('template_id'))
+            ->orderBy('name')
+            ->get(['id', 'name']);
+    }
+
+    public function getHistoryProvidersProperty(): array
+    {
+        return Generation::query()
+            ->where('user_id', auth()->id())
+            ->whereNotNull('model')
+            ->where('model', '<>', '')
+            ->pluck('model')
+            ->map(fn ($model) => str_contains((string) $model, '/') ? str((string) $model)->before('/') : (string) $model)
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+    }
+
+    public function getHistoryModelsProperty(): array
+    {
+        return Generation::query()
+            ->where('user_id', auth()->id())
+            ->whereNotNull('model')
+            ->where('model', '<>', '')
+            ->distinct()
+            ->orderBy('model')
+            ->pluck('model')
+            ->values()
+            ->all();
+    }
+
+    public function loadMoreHistory(): void
+    {
+        $this->recentHistoryLimit += 12;
+    }
+
+    public function clearHistoryFilters(): void
+    {
+        $this->historyStatus = 'all';
+        $this->historySearch = '';
+        $this->historyStoreId = null;
+        $this->historyTemplateId = null;
+        $this->historyProvider = 'all';
+        $this->historyModel = 'all';
+        $this->historyDateRange = 'all';
+        $this->historySort = 'newest';
+        $this->recentHistoryLimit = 12;
+    }
+
+    public function updatedHistorySearch(): void { $this->recentHistoryLimit = 12; }
+    public function updatedHistoryStatus(): void { $this->recentHistoryLimit = 12; }
+    public function updatedHistoryStoreId(): void { $this->recentHistoryLimit = 12; }
+    public function updatedHistoryTemplateId(): void { $this->recentHistoryLimit = 12; }
+    public function updatedHistoryProvider(): void { $this->recentHistoryLimit = 12; }
+    public function updatedHistoryModel(): void { $this->recentHistoryLimit = 12; }
+    public function updatedHistoryDateRange(): void { $this->recentHistoryLimit = 12; }
+    public function updatedHistorySort(): void { $this->recentHistoryLimit = 12; }
 
     protected function generationEstimate(Generation $generation): array
     {
@@ -1835,57 +1949,105 @@ new class extends Component
                 <div class="rms-history-toolbar">
                 <div class="rms-history-search">
                     <span>⌕</span>
-                    <input type="text" wire:model.live.debounce.400ms="historySearch" placeholder="Cari generation, store, template...">
+                    <input type="text" wire:model.live.debounce.400ms="historySearch" placeholder="Cari ID, store, template, model, provider...">
+                    @if(trim($historySearch) !== '')
+                        <button type="button" class="rms-history-search-clear" wire:click="$set('historySearch','')" aria-label="Clear search">×</button>
+                    @endif
                 </div>
+
                 <div class="rms-history-filter-group">
                     <div class="rms-history-filter" x-data="{ open:false }" x-on:click.outside="open=false">
-                        <button type="button" x-on:click="open=!open" :class="{ 'is-open': open }">
-                            <span>Status</span><b>{{ $historyStatus === 'all' ? 'All Status' : ucfirst($historyStatus) }}</b><i>⌄</i>
-                        </button>
+                        <button type="button" x-on:click="open=!open" :class="{ 'is-open': open }"><span>Status</span><b>{{ $historyStatus === 'all' ? 'All Status' : ucfirst($historyStatus) }}</b><i>⌄</i></button>
                         <div class="rms-history-filter-menu" x-show="open" x-transition.opacity.scale.origin.top.right x-cloak>
-                            @foreach(['all'=>'All Status','queued'=>'Queued','processing'=>'Processing','completed'=>'Completed','failed'=>'Failed'] as $value => $label)
-                                <button type="button" class="{{ $historyStatus === $value ? 'selected' : '' }}" wire:click="$set('historyStatus','{{ $value }}')" x-on:click="open=false">
-                                    <span>{{ $label }}</span><i>{{ $historyStatus === $value ? '✓' : '' }}</i>
-                                </button>
+                            @foreach(['all'=>'All Status','queued'=>'Queued','processing'=>'Processing','completed'=>'Completed','failed'=>'Failed','cancelled'=>'Cancelled'] as $value => $label)
+                                <button type="button" class="{{ $historyStatus === $value ? 'selected' : '' }}" wire:click="$set('historyStatus','{{ $value }}')" x-on:click="open=false"><span>{{ $label }}</span><i>{{ $historyStatus === $value ? '✓' : '' }}</i></button>
                             @endforeach
                         </div>
                     </div>
 
                     <div class="rms-history-filter" x-data="{ open:false }" x-on:click.outside="open=false">
-                        <button type="button" x-on:click="open=!open" :class="{ 'is-open': open }">
-                            <span>Store</span><b>{{ $historyStoreId ? optional($this->stores->firstWhere('id',$historyStoreId))->name : 'All Stores' }}</b><i>⌄</i>
-                        </button>
+                        <button type="button" x-on:click="open=!open" :class="{ 'is-open': open }"><span>Store</span><b>{{ $historyStoreId ? optional($this->historyStores->firstWhere('id',$historyStoreId))->name : 'All Stores' }}</b><i>⌄</i></button>
                         <div class="rms-history-filter-menu" x-show="open" x-transition.opacity.scale.origin.top.right x-cloak>
-                            <button type="button" class="{{ ! $historyStoreId ? 'selected' : '' }}" wire:click="$set('historyStoreId',null)" x-on:click="open=false">
-                                <span>All Stores</span><i>{{ ! $historyStoreId ? '✓' : '' }}</i>
-                            </button>
-                            @foreach($this->stores as $store)
-                                <button type="button" class="{{ (int)$historyStoreId === (int)$store->id ? 'selected' : '' }}" wire:click="$set('historyStoreId',{{ $store->id }})" x-on:click="open=false">
-                                    <span>{{ $store->name }}</span><i>{{ (int)$historyStoreId === (int)$store->id ? '✓' : '' }}</i>
-                                </button>
+                            <button type="button" class="{{ ! $historyStoreId ? 'selected' : '' }}" wire:click="$set('historyStoreId',null)" x-on:click="open=false"><span>All Stores</span><i>{{ ! $historyStoreId ? '✓' : '' }}</i></button>
+                            @foreach($this->historyStores as $store)
+                                <button type="button" class="{{ (int)$historyStoreId === (int)$store->id ? 'selected' : '' }}" wire:click="$set('historyStoreId',{{ $store->id }})" x-on:click="open=false"><span>{{ $store->name }}</span><i>{{ (int)$historyStoreId === (int)$store->id ? '✓' : '' }}</i></button>
                             @endforeach
                         </div>
                     </div>
 
                     <div class="rms-history-filter" x-data="{ open:false }" x-on:click.outside="open=false">
-                        <button type="button" x-on:click="open=!open" :class="{ 'is-open': open }">
-                            <span>Template</span><b>{{ $historyTemplateId ? optional($this->historyTemplates->firstWhere('id',$historyTemplateId))->name : 'All Templates' }}</b><i>⌄</i>
-                        </button>
+                        <button type="button" x-on:click="open=!open" :class="{ 'is-open': open }"><span>Template</span><b>{{ $historyTemplateId ? optional($this->historyTemplates->firstWhere('id',$historyTemplateId))->name : 'All Templates' }}</b><i>⌄</i></button>
                         <div class="rms-history-filter-menu" x-show="open" x-transition.opacity.scale.origin.top.right x-cloak>
-                            <button type="button" class="{{ ! $historyTemplateId ? 'selected' : '' }}" wire:click="$set('historyTemplateId',null)" x-on:click="open=false">
-                                <span>All Templates</span><i>{{ ! $historyTemplateId ? '✓' : '' }}</i>
-                            </button>
+                            <button type="button" class="{{ ! $historyTemplateId ? 'selected' : '' }}" wire:click="$set('historyTemplateId',null)" x-on:click="open=false"><span>All Templates</span><i>{{ ! $historyTemplateId ? '✓' : '' }}</i></button>
                             @foreach($this->historyTemplates as $template)
-                                <button type="button" class="{{ (int)$historyTemplateId === (int)$template->id ? 'selected' : '' }}" wire:click="$set('historyTemplateId',{{ $template->id }})" x-on:click="open=false">
-                                    <span>{{ $template->name }}</span><i>{{ (int)$historyTemplateId === (int)$template->id ? '✓' : '' }}</i>
-                                </button>
+                                <button type="button" class="{{ (int)$historyTemplateId === (int)$template->id ? 'selected' : '' }}" wire:click="$set('historyTemplateId',{{ $template->id }})" x-on:click="open=false"><span>{{ $template->name }}</span><i>{{ (int)$historyTemplateId === (int)$template->id ? '✓' : '' }}</i></button>
                             @endforeach
                         </div>
                     </div>
+
+                    <div class="rms-history-filter" x-data="{ open:false }" x-on:click.outside="open=false">
+                        <button type="button" x-on:click="open=!open" :class="{ 'is-open': open }"><span>Provider</span><b>{{ $historyProvider === 'all' ? 'All Providers' : $historyProvider }}</b><i>⌄</i></button>
+                        <div class="rms-history-filter-menu" x-show="open" x-transition.opacity.scale.origin.top.right x-cloak>
+                            <button type="button" class="{{ $historyProvider === 'all' ? 'selected' : '' }}" wire:click="$set('historyProvider','all')" x-on:click="open=false"><span>All Providers</span><i>{{ $historyProvider === 'all' ? '✓' : '' }}</i></button>
+                            @foreach($this->historyProviders as $provider)
+                                <button type="button" class="{{ $historyProvider === $provider ? 'selected' : '' }}" wire:click="$set('historyProvider','{{ addslashes($provider) }}')" x-on:click="open=false"><span>{{ $provider }}</span><i>{{ $historyProvider === $provider ? '✓' : '' }}</i></button>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="rms-history-filter" x-data="{ open:false }" x-on:click.outside="open=false">
+                        <button type="button" x-on:click="open=!open" :class="{ 'is-open': open }"><span>Model</span><b>{{ $historyModel === 'all' ? 'All Models' : $historyModel }}</b><i>⌄</i></button>
+                        <div class="rms-history-filter-menu rms-history-filter-menu-wide" x-show="open" x-transition.opacity.scale.origin.top.right x-cloak>
+                            <button type="button" class="{{ $historyModel === 'all' ? 'selected' : '' }}" wire:click="$set('historyModel','all')" x-on:click="open=false"><span>All Models</span><i>{{ $historyModel === 'all' ? '✓' : '' }}</i></button>
+                            @foreach($this->historyModels as $historyModelOption)
+                                <button type="button" class="{{ $historyModel === $historyModelOption ? 'selected' : '' }}" wire:click="$set('historyModel','{{ addslashes($historyModelOption) }}')" x-on:click="open=false"><span>{{ $historyModelOption }}</span><i>{{ $historyModel === $historyModelOption ? '✓' : '' }}</i></button>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="rms-history-filter" x-data="{ open:false }" x-on:click.outside="open=false">
+                        <button type="button" x-on:click="open=!open" :class="{ 'is-open': open }"><span>Date</span><b>{{ match($historyDateRange) { 'today' => 'Today', '7d' => 'Last 7 Days', '30d' => 'Last 30 Days', default => 'All Time' } }}</b><i>⌄</i></button>
+                        <div class="rms-history-filter-menu" x-show="open" x-transition.opacity.scale.origin.top.right x-cloak>
+                            @foreach(['all'=>'All Time','today'=>'Today','7d'=>'Last 7 Days','30d'=>'Last 30 Days'] as $value => $label)
+                                <button type="button" class="{{ $historyDateRange === $value ? 'selected' : '' }}" wire:click="$set('historyDateRange','{{ $value }}')" x-on:click="open=false"><span>{{ $label }}</span><i>{{ $historyDateRange === $value ? '✓' : '' }}</i></button>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="rms-history-filter" x-data="{ open:false }" x-on:click.outside="open=false">
+                        <button type="button" x-on:click="open=!open" :class="{ 'is-open': open }"><span>Sort</span><b>{{ $historySort === 'oldest' ? 'Oldest' : 'Newest' }}</b><i>⌄</i></button>
+                        <div class="rms-history-filter-menu" x-show="open" x-transition.opacity.scale.origin.top.right x-cloak>
+                            @foreach(['newest'=>'Newest','oldest'=>'Oldest'] as $value => $label)
+                                <button type="button" class="{{ $historySort === $value ? 'selected' : '' }}" wire:click="$set('historySort','{{ $value }}')" x-on:click="open=false"><span>{{ $label }}</span><i>{{ $historySort === $value ? '✓' : '' }}</i></button>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    @php
+                        $historyFilterCount = ($historyStatus !== 'all' ? 1 : 0)
+                            + ($historyStoreId ? 1 : 0)
+                            + ($historyTemplateId ? 1 : 0)
+                            + ($historyProvider !== 'all' ? 1 : 0)
+                            + ($historyModel !== 'all' ? 1 : 0)
+                            + ($historyDateRange !== 'all' ? 1 : 0)
+                            + ($historySort !== 'newest' ? 1 : 0)
+                            + (trim($historySearch) !== '' ? 1 : 0);
+                    @endphp
+
+                    @if($historyFilterCount > 0)
+                        <button type="button" class="rms-history-clear-all" wire:click="clearHistoryFilters"><span>×</span> Clear {{ $historyFilterCount }} filter{{ $historyFilterCount === 1 ? '' : 's' }}</button>
+                    @endif
+                </div>
+
+                <div class="rms-history-toolbar-meta">
+                    <span>Showing {{ $this->recentGenerations->count() }} of {{ $this->historyTotal }} generation{{ $this->historyTotal === 1 ? '' : 's' }}</span>
+                    @if($this->historyTotal > 0)
+                        <span class="rms-history-toolbar-live"><i></i> Live</span>
+                    @endif
                 </div>
             </div>
 
-            <div
+                        <div
                 class="rms-generator-history-list rms-generator-history-grid"
                 @if($this->hasActiveGenerations)
                     wire:poll.4s.visible
@@ -2166,33 +2328,27 @@ new class extends Component
                 <div class="rms-generator-history-more">
                     <div class="rms-history-more-copy">
                         <span class="rms-history-more-icon" aria-hidden="true">↕</span>
-                        <span>Menampilkan {{ $this->recentGenerations->count() }} generation terbaru.</span>
+                        <span>
+                            Menampilkan {{ $this->recentGenerations->count() }} dari {{ $this->historyTotal }} generation.
+                            @if($this->historyTotal > $this->recentHistoryLimit)
+                                Muat lebih banyak untuk melihat hasil berikutnya.
+                            @endif
+                        </span>
                     </div>
 
                     <div class="rms-history-more-actions">
-                        @if($recentHistoryLimit > 6)
-                            <button type="button"
-                                class="rms-history-action rms-history-action-less"
-                                wire:click="$set('recentHistoryLimit', 6)"
-                                wire:loading.attr="disabled"
-                                wire:target="recentHistoryLimit">
+                        @if($recentHistoryLimit > 12)
+                            <button type="button" class="rms-history-action rms-history-action-less" wire:click="$set('recentHistoryLimit', 12)" wire:loading.attr="disabled" wire:target="recentHistoryLimit">
                                 <span class="rms-history-action-arrow">↑</span>
                                 <span wire:loading.remove wire:target="recentHistoryLimit">Tampilkan lebih sedikit</span>
                                 <span wire:loading wire:target="recentHistoryLimit">Memuat…</span>
                             </button>
                         @endif
 
-                        @if($this->recentGenerations->count() >= $recentHistoryLimit)
-                            <button type="button"
-                                class="rms-history-action rms-history-action-more"
-                                wire:click="$set('recentHistoryLimit', {{ $recentHistoryLimit + 6 }})"
-                                wire:loading.attr="disabled"
-                                wire:target="recentHistoryLimit">
-                                <span wire:loading.remove wire:target="recentHistoryLimit">
-                                    Tampilkan lebih banyak
-                                    <span class="rms-history-action-arrow">→</span>
-                                </span>
-                                <span wire:loading wire:target="recentHistoryLimit">Memuat…</span>
+                        @if($this->historyTotal > $recentHistoryLimit)
+                            <button type="button" class="rms-history-action rms-history-action-more" wire:click="loadMoreHistory" wire:loading.attr="disabled" wire:target="loadMoreHistory">
+                                <span wire:loading.remove wire:target="loadMoreHistory">Tampilkan lebih banyak <span class="rms-history-action-arrow">→</span></span>
+                                <span wire:loading wire:target="loadMoreHistory">Memuat…</span>
                             </button>
                         @endif
                     </div>
@@ -4861,3 +5017,34 @@ new class extends Component
 .rms-generation-processing-visual-v3 .rms-processing-particle::before,
 .rms-generation-processing-visual-v3 .rms-processing-particle::after{display:none!important;visibility:hidden!important;opacity:0!important}
 @media(max-width:760px){.rms-processing-spin-svg{inset:-2px;width:92px;height:92px}}</style>
+
+<style>
+/* V1 — Generation History search/filter upgrade */
+.rms-history-toolbar{position:relative}
+.rms-history-toolbar-meta{
+    width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;
+    margin-top:10px;color:#8b9099;font-size:11px;font-weight:700;letter-spacing:.02em
+}
+.rms-history-toolbar-live{display:inline-flex;align-items:center;gap:6px;color:#4f9d69}
+.rms-history-toolbar-live i{width:6px;height:6px;border-radius:50%;background:#27ae60;box-shadow:0 0 0 4px rgba(39,174,96,.10)}
+.rms-history-search{position:relative}
+.rms-history-search-clear{
+    position:absolute;right:10px;top:50%;transform:translateY(-50%);
+    width:24px;height:24px;border:0;border-radius:8px;background:#f1f2f4;color:#6f737b;
+    cursor:pointer;line-height:1
+}
+.rms-history-filter-menu-wide{min-width:320px}
+.rms-history-clear-all{
+    display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:0 12px;
+    border:1px solid #ececef;border-radius:12px;background:#fff;color:#777c85;
+    font-size:11px;font-weight:800;cursor:pointer
+}
+.rms-history-clear-all span{font-size:16px;line-height:1}
+@media(max-width:760px){
+    .rms-history-toolbar-meta{align-items:flex-start;flex-direction:column;gap:6px}
+    .rms-history-filter-group{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px;scrollbar-width:none}
+    .rms-history-filter-group::-webkit-scrollbar{display:none}
+    .rms-history-filter{flex:0 0 auto}
+    .rms-history-filter-menu-wide{min-width:min(320px, calc(100vw - 48px))}
+}
+</style>
