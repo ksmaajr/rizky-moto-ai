@@ -9187,3 +9187,154 @@
 /* Never open the raw generated image in a new tab from dashboard actions. */
 .rms-generation-preview-footer a,
 .rms-generation-card-actions a{target-name:current!important}
+
+
+/* =========================================================
+   DASHBOARD V12 — FINAL MOBILE LAYERING + HISTORY BREATHING
+   ========================================================= */
+
+/* Notification is anchored to its own button/menu, never to the
+   sticky/backdrop-filter topbar containing block. */
+.notification-menu{
+    position:relative!important;
+    z-index:100100!important;
+}
+.notification-dropdown{
+    position:absolute!important;
+    top:calc(100% + 12px)!important;
+    right:0!important;
+    left:auto!important;
+    width:min(430px,calc(100vw - 24px))!important;
+    max-width:calc(100vw - 24px)!important;
+    z-index:100200!important;
+}
+
+/* Give the history content a real inner frame. The cards should never
+   visually touch the history container edges. */
+.rms-history-scroll{
+    padding:20px 20px 22px!important;
+    gap:14px!important;
+    background:#fafafa;
+    border-top:1px solid #f4f4f5;
+}
+.rms-generation-card-v2{
+    margin:0!important;
+    box-shadow:0 4px 18px rgba(0,0,0,.025);
+}
+.rms-history-toolbar{
+    padding:14px 18px!important;
+}
+
+/* Mobile drawer: float it below the topbar with visible breathing room. */
+@media(max-width:900px){
+    .dashboard-sidebar{
+        top:80px!important;
+        bottom:14px!important;
+        left:12px!important;
+        width:min(320px,calc(100vw - 24px))!important;
+        max-height:calc(100dvh - 94px)!important;
+        margin:0!important;
+        border-radius:18px!important;
+        z-index:100400!important;
+    }
+
+    .dashboard-overlay{
+        z-index:100300!important;
+    }
+
+    /* Notification stays attached to the bell row and is constrained to
+       the viewport without being pushed to the left edge. */
+    .notification-dropdown{
+        position:absolute!important;
+        top:calc(100% + 10px)!important;
+        right:0!important;
+        left:auto!important;
+        width:min(360px,calc(100vw - 20px))!important;
+        max-width:calc(100vw - 20px)!important;
+        max-height:min(70dvh,600px)!important;
+        z-index:100500!important;
+    }
+
+    .notification-list{
+        max-height:min(48dvh,370px)!important;
+        overflow-y:auto!important;
+    }
+
+    /* Keep the search/menu row above dashboard content but below the
+       floating sidebar/notification layers. */
+    .topbar{
+        z-index:100200!important;
+    }
+
+    .rms-history-scroll{
+        padding:16px 14px 18px!important;
+        gap:12px!important;
+        border-radius:0 0 17px 17px;
+    }
+
+    .rms-history-toolbar{
+        padding:13px 14px!important;
+    }
+}
+
+@media(max-width:640px){
+    .dashboard-sidebar{
+        top:82px!important;
+        bottom:14px!important;
+        left:10px!important;
+        width:calc(100vw - 20px)!important;
+        max-width:320px!important;
+        max-height:calc(100dvh - 96px)!important;
+    }
+
+    .notification-dropdown{
+        top:calc(100% + 10px)!important;
+        right:0!important;
+        left:auto!important;
+        width:min(350px,calc(100vw - 18px))!important;
+        max-width:calc(100vw - 18px)!important;
+        border-radius:18px!important;
+    }
+
+    .notification-dropdown-head{
+        padding:16px 15px 13px!important;
+    }
+
+    .notification-list{
+        padding:7px!important;
+        max-height:min(47dvh,360px)!important;
+    }
+
+    .notification-item{
+        min-height:62px!important;
+        padding:10px 9px!important;
+    }
+
+    .rms-history-scroll{
+        padding:14px 12px 16px!important;
+        gap:10px!important;
+    }
+
+    .rms-generation-card-v2{
+        width:100%!important;
+        box-shadow:0 3px 14px rgba(0,0,0,.035);
+    }
+}
+
+@media(max-width:390px){
+    .dashboard-sidebar{
+        top:80px!important;
+        left:8px!important;
+        bottom:12px!important;
+        width:calc(100vw - 16px)!important;
+    }
+
+    .notification-dropdown{
+        width:calc(100vw - 16px)!important;
+        max-width:calc(100vw - 16px)!important;
+    }
+
+    .rms-history-scroll{
+        padding-inline:10px!important;
+    }
+}
