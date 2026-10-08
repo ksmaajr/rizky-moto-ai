@@ -8512,3 +8512,117 @@
         transition: none !important;
     }
 }
+
+
+/* =========================================================
+   SIDEBAR V7 — CLEAN INFORMATION ARCHITECTURE
+   ========================================================= */
+.dashboard-sidebar{
+    width:278px;
+    transition:width .42s cubic-bezier(.22,1,.36,1),box-shadow .35s ease;
+}
+.dashboard-main{
+    margin-left:278px;
+    transition:margin-left .42s cubic-bezier(.22,1,.36,1);
+}
+.sidebar-brand{
+    height:96px;
+    transition:padding .35s ease;
+}
+.brand-logo-wrap{
+    width:198px;
+    height:58px;
+    transition:width .42s cubic-bezier(.22,1,.36,1),opacity .28s ease,transform .42s cubic-bezier(.22,1,.36,1);
+}
+.brand-logo{width:178px;height:48px}
+.sidebar-collapse-toggle{
+    position:absolute;
+    right:10px;
+    bottom:-11px;
+    z-index:5;
+    display:grid;
+    width:23px;
+    height:23px;
+    place-items:center;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:8px;
+    background:#18181b;
+    color:#a1a1aa;
+    cursor:pointer;
+    box-shadow:0 8px 18px rgba(0,0,0,.22);
+    transition:transform .3s cubic-bezier(.22,1,.36,1),background .2s ease,color .2s ease;
+}
+.sidebar-collapse-toggle svg{
+    width:13px;height:13px;
+    transition:transform .4s cubic-bezier(.22,1,.36,1);
+}
+.sidebar-collapse-toggle:hover{background:#27272a;color:#fff;transform:translateY(-1px)}
+.sidebar-scroll{padding:22px 12px 18px}
+.sidebar-nav-section + .sidebar-nav-section{margin-top:18px}
+.nav-heading-toggle{
+    display:flex;width:100%;align-items:center;justify-content:space-between;gap:8px;
+    min-height:28px;padding:0 10px 8px;border:0;background:transparent;
+    color:#52525b;font-size:8px;font-weight:900;letter-spacing:.17em;text-transform:uppercase;cursor:pointer;
+}
+.nav-heading-toggle svg{
+    width:12px;height:12px;color:#52525b;
+    transition:transform .42s cubic-bezier(.22,1,.36,1),color .2s ease;
+}
+.nav-heading-toggle:hover{color:#a1a1aa}
+.nav-heading-toggle:hover svg{color:#a1a1aa}
+.nav-section-body{
+    display:grid;grid-template-rows:1fr;opacity:1;transform:translateY(0);overflow:hidden;
+    transition:grid-template-rows .42s cubic-bezier(.22,1,.36,1),opacity .28s ease,transform .42s cubic-bezier(.22,1,.36,1);
+}
+.nav-section-body>.nav-list{min-height:0}
+.sidebar-nav-section.is-collapsed .nav-section-body{grid-template-rows:0fr;opacity:0;transform:translateY(-5px)}
+.sidebar-nav-section.is-collapsed .nav-heading-toggle svg{transform:rotate(-90deg)}
+.nav-item{
+    min-height:48px;border-radius:13px;gap:11px;padding:6px 10px;
+}
+.nav-item:hover{transform:translateX(3px)}
+.nav-item.active{box-shadow:0 10px 26px rgba(220,38,38,.13),inset 0 1px 0 rgba(255,255,255,.10)}
+.nav-icon{width:34px;height:34px;border-radius:10px}
+.nav-label{font-size:12px}
+.nav-item-arrow{
+    color:#52525b;font-size:17px;line-height:1;opacity:0;transform:translateX(-4px);
+    transition:opacity .22s ease,transform .3s cubic-bezier(.22,1,.36,1),color .2s ease;
+}
+.nav-item:hover .nav-item-arrow,.nav-item.active .nav-item-arrow{opacity:1;transform:translateX(0);color:#a1a1aa}
+.nav-item-caption{
+    display:block;max-width:105px;color:#66666f;font-size:6.5px;font-weight:650;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.nav-item-generator .nav-icon{
+    background:linear-gradient(145deg,rgba(239,68,68,.13),rgba(255,255,255,.04));
+    border-color:rgba(239,68,68,.10);
+}
+.sidebar-is-collapsed .dashboard-sidebar{width:82px}
+.sidebar-is-collapsed .dashboard-main{margin-left:82px}
+.sidebar-is-collapsed .brand-logo-wrap{width:50px;opacity:.96;transform:scale(.82)}
+.sidebar-is-collapsed .sidebar-brand{padding:0 12px}
+.sidebar-is-collapsed .sidebar-collapse-toggle{right:50%;transform:translate(50%,0)}
+.sidebar-is-collapsed .sidebar-collapse-toggle svg{transform:rotate(180deg)}
+.sidebar-is-collapsed .nav-heading-toggle{justify-content:center;padding-inline:0}
+.sidebar-is-collapsed .nav-heading-toggle span,.sidebar-is-collapsed .nav-heading-toggle svg,
+.sidebar-is-collapsed .nav-label,.sidebar-is-collapsed .nav-pill,.sidebar-is-collapsed .nav-item-arrow,
+.sidebar-is-collapsed .nav-item-caption{display:none}
+.sidebar-is-collapsed .nav-heading-toggle::before{content:"";width:4px;height:4px;border-radius:50%;background:#52525b}
+.sidebar-is-collapsed .nav-item{justify-content:center;padding-inline:0}
+.sidebar-is-collapsed .nav-icon{width:38px;height:38px}
+.sidebar-is-collapsed .sidebar-api{padding:10px 8px}
+.sidebar-is-collapsed .worker-widget-expanded{display:none}
+.sidebar-is-collapsed .worker-widget-collapsed{max-height:54px;opacity:1;transform:none;pointer-events:auto}
+.sidebar-is-collapsed .worker-widget-mini-copy,.sidebar-is-collapsed .worker-widget-mini-state,
+.sidebar-is-collapsed .worker-widget-chevron{display:none}
+.sidebar-is-collapsed .worker-widget-mini{justify-content:center;padding:7px}
+.sidebar-is-collapsed .worker-widget-mini-icon{width:32px;height:32px}
+@media(max-width:900px){
+    .dashboard-sidebar{width:min(300px,84vw)!important}
+    .dashboard-main{margin-left:0!important}
+    .sidebar-collapse-toggle{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+    .dashboard-sidebar,.dashboard-main,.brand-logo-wrap,.sidebar-collapse-toggle,.sidebar-collapse-toggle svg,
+    .nav-heading-toggle svg,.nav-section-body,.nav-item,.nav-item-arrow{transition:none!important}
+}
