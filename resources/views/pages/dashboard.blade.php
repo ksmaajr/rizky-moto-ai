@@ -3024,22 +3024,36 @@ public function getUserInitialsProperty(): string
                                     <article class="rms-generation-card rms-generation-card-v2">
                                         <button type="button" class="rms-generation-card-media rms-generation-card-media-lg" @if($primaryImage) @click="previewUrl=@js($primaryImage); previewDownloadUrl=@js(route('generated-images.download',['generatedImage'=>$item['images'][0]['id'],'max_mb'=>2,'quality'=>'optimized','format'=>'png'])); previewTitle=@js($item['title']); previewOpen=true" @endif>
                                             @if($primaryImage)<img src="{{ $primaryImage }}" alt="{{ $item['title'] }}" loading="lazy">@else<span>✦</span>@endif
-                                            <span class="rms-generation-card-status status-{{ $item['status'] }}">{{ ucfirst($item['status']) }}</span>
+                                            <span class="rms-generation-card-status status-{{ $item['status'] }}">{{ match($item['status']) { 'completed','success','succeeded' => 'Completed', 'processing' => 'Processing', 'queued' => 'Queued', 'cancelled','canceled' => 'Cancelled', 'failed' => 'Failed', default => ucfirst($item['status']) } }}</span>
+                                            <span class="rms-generation-card-id">#{{ $item['id'] }}</span>
                                             @if(count($item['images'])>1)<span class="rms-generation-card-count">{{ count($item['images']) }} IMG</span>@endif
                                         </button>
                                         <div class="rms-generation-card-body">
-                                            <div class="rms-generation-card-title-row"><strong>{{ $item['title'] }}</strong><span>{{ $item['created_at'] }}</span></div>
-                                            <div class="rms-generation-card-meta"><span>{{ $item['store'] }}</span><i>·</i><span>{{ $item['template'] }}</span></div>
-                                            <div class="rms-generation-card-engine"><span>{{ $item['model'] }}</span><span>{{ count($item['images']) }} output</span></div>
-                                            @if(in_array($item['status'], ['failed','cancelled','canceled']) && filled($item['error']))
-                                                <div class="rms-generation-card-error"><b>Generation failed</b><span>{{ Str::limit($item['error'], 150) }}</span></div>
+                                            <div class="rms-generation-card-title-row">
+                                                <strong>{{ $item['title'] }}</strong>
+                                                <span>{{ $item['created_at'] }}</span>
+                                            </div>
+                                            <div class="rms-generation-card-tags">
+                                                <span>STORE · {{ $item['store'] }}</span>
+                                                <span>TEMPLATE · {{ $item['template'] }}</span>
+                                            </div>
+                                            <div class="rms-generation-card-engine">
+                                                <span class="engine-model">⚡ {{ $item['model'] }}</span>
+                                                <span class="engine-output">{{ count($item['images']) }} {{ count($item['images']) === 1 ? 'output' : 'outputs' }}</span>
+                                            </div>
+                                            @if(in_array($item['status'], ['processing','queued']))
+                                                <div class="rms-generation-card-live"><i></i><span>{{ $item['status'] === 'processing' ? 'AI engine is generating' : 'Waiting in queue' }}</span></div>
+                                            @elseif(in_array($item['status'], ['failed','cancelled','canceled']) && filled($item['error']))
+                                                <div class="rms-generation-card-error"><b>{{ $item['status'] === 'failed' ? 'Generation failed' : 'Generation cancelled' }}</b><span>{{ Str::limit($item['error'], 120) }}</span></div>
                                             @endif
                                             <div class="rms-generation-card-actions">
                                                 @if($primaryImage)
-                                                    <button type="button" @click="previewUrl=@js($primaryImage); previewDownloadUrl=@js(route('generated-images.download',['generatedImage'=>$item['images'][0]['id'],'max_mb'=>2,'quality'=>'optimized','format'=>'png'])); previewTitle=@js($item['title']); previewOpen=true"><span>⌕</span> Preview</button>
-                                                    <a href="{{ route('generated-images.download',['generatedImage'=>$item['images'][0]['id'],'max_mb'=>2,'quality'=>'optimized','format'=>'png']) }}"><span>↓</span> Optimized</a>
+                                                    <button type="button" @click="previewUrl=@js($primaryImage); previewDownloadUrl=@js(route('generated-images.download',['generatedImage'=>$item['images'][0]['id'],'max_mb'=>2,'quality'=>'optimized','format'=>'png'])); previewTitle=@js($item['title']); previewOpen=true"><span>⌕</span> View image</button>
+                                                    <a href="{{ route('generated-images.download',['generatedImage'=>$item['images'][0]['id'],'max_mb'=>2,'quality'=>'optimized','format'=>'png']) }}"><span>↓</span> Download</a>
+                                                @elseif(in_array($item['status'], ['failed','cancelled','canceled']))
+                                                    <span class="rms-generation-no-output">No output generated</span>
                                                 @else
-                                                    <span class="rms-generation-no-output">Tidak ada output</span>
+                                                    <span class="rms-generation-no-output">Waiting for output</span>
                                                 @endif
                                             </div>
                                         </div>
