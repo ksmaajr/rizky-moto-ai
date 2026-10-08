@@ -556,8 +556,9 @@
                                 <span>Configuration is stored server-side and applied to new generations.</span>
                             </div>
                             <button type="button" class="rms-ai-save-button" wire:click="saveAiProviderConfiguration" wire:loading.attr="disabled" wire:target="saveAiProviderConfiguration">
-                                <span wire:loading.remove wire:target="saveAiProviderConfiguration">Save AI Configuration <b aria-hidden="true">✓</b></span>
-                                <span wire:loading wire:target="saveAiProviderConfiguration">Saving...</span>
+                                <span class="rms-ai-save-label" wire:loading.remove wire:target="saveAiProviderConfiguration">Save AI Configuration</span>
+                                <b class="rms-ai-save-check" wire:loading.remove wire:target="saveAiProviderConfiguration" aria-hidden="true">✓</b>
+                                <span class="rms-ai-save-loading" wire:loading wire:target="saveAiProviderConfiguration">Saving...</span>
                             </button>
                         </div>
                     </section>
@@ -2828,9 +2829,11 @@
 /* SAVE CONFIGURATION — clean primary action */
 .rms-provider-block-failover .rms-ai-save-button{
     display:inline-flex!important;
+    flex-direction:row!important;
+    flex-wrap:nowrap!important;
     align-items:center!important;
     justify-content:center!important;
-    gap:9px!important;
+    gap:8px!important;
     min-width:165px!important;
     height:44px!important;
     padding:0 16px!important;
@@ -2848,26 +2851,36 @@
 }
 .rms-provider-block-failover .rms-ai-save-button:hover{background:#df2424!important;transform:translateY(-1px);box-shadow:0 10px 22px rgba(239,48,48,.22)}
 .rms-provider-block-failover .rms-ai-save-button:active{transform:translateY(0) scale(.985)}
-.rms-provider-block-failover .rms-ai-save-button > span:first-child{
-    align-items:center;
-    justify-content:center;
-    gap:9px;
-    white-space:nowrap;
+.rms-provider-block-failover .rms-ai-save-button .rms-ai-save-label{
+    display:inline!important;
+    flex:0 0 auto!important;
+    width:auto!important;
+    margin:0!important;
+    padding:0!important;
+    white-space:nowrap!important;
+    font-size:9px!important;
+    line-height:1!important;
 }
-.rms-provider-block-failover .rms-ai-save-button > span:first-child b{
+.rms-provider-block-failover .rms-ai-save-button .rms-ai-save-check{
     display:grid!important;
     place-items:center!important;
+    flex:0 0 21px!important;
     width:21px!important;
     height:21px!important;
-    flex:0 0 21px!important;
+    margin:0!important;
+    padding:0!important;
     border-radius:7px!important;
     background:rgba(255,255,255,.13)!important;
     color:#fff!important;
     font-size:13px!important;
     line-height:1!important;
 }
-.rms-provider-block-failover .rms-ai-save-button > span:last-child{
-    white-space:nowrap;
+.rms-provider-block-failover .rms-ai-save-button .rms-ai-save-loading{
+    white-space:nowrap!important;
+    margin:0!important;
+    padding:0!important;
+    font-size:9px!important;
+    line-height:1!important;
 }
 .rms-provider-block-failover .rms-ai-save-button[disabled]{cursor:wait;opacity:.8}
 @media(max-width:760px){
