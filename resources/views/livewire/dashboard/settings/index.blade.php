@@ -111,7 +111,7 @@
 
                         <section class="rms-provider-block rms-provider-block-vercel">
                             <div class="rms-provider-block-head">
-                                <div class="rms-provider-block-index">01</div>
+                                <div class="rms-provider-block-icon rms-provider-icon-vercel" aria-hidden="true"><span></span></div>
                                 <div class="rms-provider-block-copy">
                                     <span>PROVIDER 01 · GATEWAY</span>
                                     <strong>Vercel AI Gateway</strong>
@@ -413,7 +413,7 @@
 
                         <section class="rms-provider-block rms-provider-block-agent">
                             <div class="rms-provider-block-head">
-                                <div class="rms-provider-block-index">02</div>
+                                <div class="rms-provider-block-icon rms-provider-icon-agent" aria-hidden="true"><span>✦</span></div>
                                 <div class="rms-provider-block-copy">
                                     <span>PROVIDER 02 · BACKEND</span>
                                     <strong>Agent AI</strong>
@@ -460,7 +460,7 @@
 
                         <section class="rms-provider-block rms-provider-block-failover">
                             <div class="rms-provider-block-head">
-                                <div class="rms-provider-block-index">03</div>
+                                <div class="rms-provider-block-icon rms-provider-icon-failover" aria-hidden="true"><span>↗</span></div>
                                 <div class="rms-provider-block-copy">
                                     <span>RUNTIME POLICY · FAILOVER</span>
                                     <strong>Provider Failover</strong>
@@ -483,22 +483,53 @@
                         </div>
 
                         <div class="rms-ai-failover-grid">
-                            <label class="rms-ai-config-field">
+                            <div class="rms-ai-config-field" x-data="{ open: false, value: @entangle('activeProvider').live, options: [{value:'vercel',label:'Vercel AI Gateway',desc:'Primary generation gateway',icon:'V'}, {value:'agentkit',label:'Agent AI',desc:'GPT Image 2.5 backend',icon:'✦'}] }" @click.outside="open = false">
                                 <span>PRIMARY PROVIDER</span>
-                                <select wire:model.live="activeProvider">
-                                    <option value="vercel">Vercel AI Gateway</option>
-                                    <option value="agentkit">Agent AI</option>
-                                </select>
-                            </label>
+                                <div class="rms-custom-select" :class="{ 'is-open': open }">
+                                    <button type="button" class="rms-custom-select-trigger" @click="open = !open" :aria-expanded="open">
+                                        <span class="rms-custom-select-leading rms-leading-primary" x-text="value === 'agentkit' ? '✦' : 'V'"></span>
+                                        <span class="rms-custom-select-value">
+                                            <strong x-text="value === 'agentkit' ? 'Agent AI' : 'Vercel AI Gateway'"></strong>
+                                            <small x-text="value === 'agentkit' ? 'GPT Image 2.5 backend' : 'Primary generation gateway'"></small>
+                                        </span>
+                                        <span class="rms-custom-select-arrow">⌄</span>
+                                    </button>
+                                    <div x-show="open" x-cloak x-transition:enter="transition ease-out duration-180" x-transition:enter-start="opacity-0 -translate-y-1 scale-[.985]" x-transition:enter-end="opacity-100 translate-y-0 scale-100" x-transition:leave="transition ease-in duration-120" x-transition:leave-start="opacity-100 translate-y-0 scale-100" x-transition:leave-end="opacity-0 -translate-y-1 scale-[.985]" class="rms-custom-select-menu">
+                                        <div class="rms-custom-select-label">SELECT PRIMARY PROVIDER</div>
+                                        <template x-for="option in options" :key="option.value">
+                                            <button type="button" class="rms-custom-select-option" :class="{ 'is-selected': value === option.value }" @click="value = option.value; open = false">
+                                                <span class="rms-custom-option-icon" x-text="option.icon"></span>
+                                                <span><strong x-text="option.label"></strong><small x-text="option.desc"></small></span>
+                                                <span class="rms-custom-option-check" x-show="value === option.value">✓</span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
 
-                            <label class="rms-ai-config-field">
+                            <div class="rms-ai-config-field" x-data="{ open: false, value: @entangle('fallbackProvider').live, options: [{value:'',label:'No automatic fallback',desc:'Keep generation on the primary provider',icon:'—'}, {value:'vercel',label:'Vercel AI Gateway',desc:'Use Vercel as backup provider',icon:'V'}, {value:'agentkit',label:'Agent AI',desc:'Use Agent AI as backup provider',icon:'✦'}] }" @click.outside="open = false">
                                 <span>FALLBACK PROVIDER</span>
-                                <select wire:model.live="fallbackProvider">
-                                    <option value="">No automatic fallback</option>
-                                    <option value="vercel">Vercel AI Gateway</option>
-                                    <option value="agentkit">Agent AI</option>
-                                </select>
-                            </label>
+                                <div class="rms-custom-select" :class="{ 'is-open': open }">
+                                    <button type="button" class="rms-custom-select-trigger" @click="open = !open" :aria-expanded="open">
+                                        <span class="rms-custom-select-leading rms-leading-fallback" x-text="value === 'agentkit' ? '✦' : (value === 'vercel' ? 'V' : '—')"></span>
+                                        <span class="rms-custom-select-value">
+                                            <strong x-text="value === 'agentkit' ? 'Agent AI' : (value === 'vercel' ? 'Vercel AI Gateway' : 'No automatic fallback')"></strong>
+                                            <small x-text="value === 'agentkit' ? 'Use Agent AI as backup provider' : (value === 'vercel' ? 'Use Vercel as backup provider' : 'Keep generation on the primary provider')"></small>
+                                        </span>
+                                        <span class="rms-custom-select-arrow">⌄</span>
+                                    </button>
+                                    <div x-show="open" x-cloak x-transition:enter="transition ease-out duration-180" x-transition:enter-start="opacity-0 -translate-y-1 scale-[.985]" x-transition:enter-end="opacity-100 translate-y-0 scale-100" x-transition:leave="transition ease-in duration-120" x-transition:leave-start="opacity-100 translate-y-0 scale-100" x-transition:leave-end="opacity-0 -translate-y-1 scale-[.985]" class="rms-custom-select-menu">
+                                        <div class="rms-custom-select-label">SELECT FALLBACK PROVIDER</div>
+                                        <template x-for="option in options" :key="option.value">
+                                            <button type="button" class="rms-custom-select-option" :class="{ 'is-selected': value === option.value }" @click="value = option.value; open = false">
+                                                <span class="rms-custom-option-icon" x-text="option.icon"></span>
+                                                <span><strong x-text="option.label"></strong><small x-text="option.desc"></small></span>
+                                                <span class="rms-custom-option-check" x-show="value === option.value">✓</span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
 
                             <label class="rms-ai-toggle-field">
                                 <input type="checkbox" wire:model.live="allowProviderFallback">
@@ -2587,5 +2618,177 @@
     .rms-provider-block-vercel .rms-vg-test-all-card{
         margin:10px 11px 12px!important;
     }
+}
+</style><style>
+/* PROVIDER IDENTITY ICONS */
+.rms-provider-block-icon{
+    position:relative;
+    display:grid;
+    place-items:center;
+    width:48px;height:48px;
+    flex:0 0 48px;
+    border:1px solid #e3e3e7;
+    border-radius:15px;
+    background:rgba(255,255,255,.82);
+    box-shadow:0 8px 20px rgba(15,23,42,.06);
+    overflow:hidden;
+}
+.rms-provider-block-icon::after{
+    content:"";
+    position:absolute;
+    inset:5px;
+    border-radius:11px;
+    border:1px solid rgba(24,24,27,.06);
+}
+.rms-provider-icon-vercel{color:#18181b}
+.rms-provider-icon-vercel span{
+    width:0;height:0;
+    border-left:9px solid transparent;
+    border-right:9px solid transparent;
+    border-bottom:18px solid #18181b;
+    transform:translateY(-1px);
+}
+.rms-provider-icon-agent{
+    color:#d99000;
+    background:linear-gradient(145deg,#fffdf8,#fff8e8);
+    border-color:#eee3c9;
+}
+.rms-provider-icon-agent span{font-size:22px;line-height:1;font-weight:900}
+.rms-provider-icon-failover{
+    color:#21864a;
+    background:linear-gradient(145deg,#f9fdf9,#eef9f1);
+    border-color:#dcebdd;
+}
+.rms-provider-icon-failover span{font-size:22px;line-height:1;font-weight:800;transform:translateY(-1px)}
+
+.rms-provider-block-head{
+    grid-template-columns:48px minmax(0,1fr) auto!important;
+}
+.rms-provider-block-copy span{font-size:7.5px!important}
+.rms-provider-block-copy strong{font-size:19px!important}
+
+/* CUSTOM PROVIDER SELECT */
+.rms-custom-select{position:relative;width:100%;z-index:10}
+.rms-custom-select-trigger{
+    position:relative;
+    display:flex;
+    align-items:center;
+    width:100%;
+    min-height:52px;
+    gap:10px;
+    padding:7px 10px;
+    border:1px solid #e1e1e5;
+    border-radius:12px;
+    background:#fff;
+    color:#27272a;
+    text-align:left;
+    cursor:pointer;
+    box-shadow:0 3px 10px rgba(15,23,42,.025);
+    transition:border-color .22s ease,box-shadow .22s ease,transform .22s cubic-bezier(.2,.8,.2,1);
+}
+.rms-custom-select-trigger:hover{border-color:#cfcfd5;box-shadow:0 7px 18px rgba(15,23,42,.05)}
+.rms-custom-select.is-open .rms-custom-select-trigger{
+    border-color:#c9c9cf;
+    box-shadow:0 0 0 4px rgba(24,24,27,.035),0 8px 22px rgba(15,23,42,.06);
+}
+.rms-custom-select-leading{
+    display:grid;place-items:center;
+    width:32px;height:32px;flex:0 0 32px;
+    border:1px solid #e5e5e8;border-radius:9px;
+    background:#fafafa;
+    color:#27272a;
+    font-size:9px;font-weight:900;
+}
+.rms-leading-primary{background:#f7f7f8}
+.rms-leading-fallback{background:#f7fdf9;color:#21864a}
+.rms-custom-select-value{display:grid;min-width:0;flex:1;gap:2px}
+.rms-custom-select-value strong{font-size:10px;font-weight:800;color:#3f3f46;line-height:1.2}
+.rms-custom-select-value small{font-size:7.5px;color:#a1a1aa;line-height:1.2}
+.rms-custom-select-arrow{
+    display:grid;place-items:center;
+    width:31px;height:31px;flex:0 0 31px;
+    border:1px solid #e7e7eb;border-radius:9px;
+    background:#fafafa;
+    color:#71717a;
+    font-size:16px;font-weight:700;
+    line-height:1;
+    transform:rotate(0deg) translateY(-1px);
+    transition:transform .28s cubic-bezier(.2,.8,.2,1),background .22s ease,color .22s ease,border-color .22s ease;
+}
+.rms-custom-select.is-open .rms-custom-select-arrow{
+    transform:rotate(180deg) translateY(1px);
+    background:#fff5f5;
+    color:#ef3030;
+    border-color:#ffd1d1;
+}
+.rms-custom-select-menu{
+    position:absolute;
+    left:0;right:0;
+    top:calc(100% + 8px);
+    padding:7px;
+    border:1px solid #e2e2e6;
+    border-radius:14px;
+    background:rgba(255,255,255,.98);
+    box-shadow:0 22px 50px rgba(15,23,42,.14),0 4px 12px rgba(15,23,42,.05);
+    backdrop-filter:blur(12px);
+    z-index:100;
+    transform-origin:top center;
+}
+.rms-custom-select-label{
+    padding:7px 9px 6px;
+    color:#a1a1aa;
+    font-size:6.5px;
+    font-weight:900;
+    letter-spacing:.13em;
+}
+.rms-custom-select-option{
+    display:grid;
+    grid-template-columns:32px minmax(0,1fr) 24px;
+    align-items:center;
+    gap:9px;
+    width:100%;
+    min-height:53px;
+    padding:7px 8px;
+    border:0;
+    border-radius:10px;
+    background:transparent;
+    text-align:left;
+    cursor:pointer;
+    transition:background .2s ease,transform .2s ease;
+}
+.rms-custom-select-option:hover{background:#fafafa;transform:translateX(2px)}
+.rms-custom-select-option.is-selected{background:#fff2f2}
+.rms-custom-option-icon{
+    display:grid;place-items:center;
+    width:30px;height:30px;
+    border:1px solid #e5e5e8;border-radius:9px;
+    background:#fff;
+    color:#52525b;
+    font-size:9px;font-weight:900;
+}
+.rms-custom-select-option.is-selected .rms-custom-option-icon{
+    border-color:#ffd1d1;color:#ef3030;background:#fffafa;
+}
+.rms-custom-select-option>span:nth-child(2){display:grid;gap:2px;min-width:0}
+.rms-custom-select-option strong{font-size:9px;color:#3f3f46;font-weight:800}
+.rms-custom-select-option small{font-size:7px;color:#a1a1aa}
+.rms-custom-option-check{
+    display:grid;place-items:center;
+    width:22px;height:22px;
+    border-radius:7px;
+    background:#ef3030;color:#fff;
+    font-size:11px;font-weight:900;
+    animation:rmsSelectCheckIn .18s ease both;
+}
+@keyframes rmsSelectCheckIn{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
+@media(max-width:760px){
+    .rms-provider-block-head{grid-template-columns:42px minmax(0,1fr)!important}
+    .rms-provider-block-icon{width:42px;height:42px;flex-basis:42px;border-radius:13px}
+    .rms-provider-block-copy strong{font-size:16px!important}
+    .rms-provider-block-state{grid-column:2;justify-self:start}
+    .rms-custom-select-menu{max-height:280px;overflow:auto}
+}
+@media(prefers-reduced-motion:reduce){
+    .rms-custom-select-trigger,.rms-custom-select-arrow,.rms-custom-select-option{transition:none}
 }
 </style>
