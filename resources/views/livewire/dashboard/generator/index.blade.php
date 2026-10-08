@@ -1906,6 +1906,7 @@ new class extends Component
                                         <div class="rms-processing-orbit orbit-two"></div>
                                         <div class="rms-processing-orbit orbit-three"></div>
                                         <div class="rms-processing-core-ring">
+                                            <span class="rms-processing-spin"></span>
                                             <span class="rms-processing-core-glow"></span>
                                             <b>{{ $progress }}%</b>
                                             <small>{{ $status === 'queued' ? 'QUEUE' : 'GENERATING' }}</small>
@@ -1916,10 +1917,6 @@ new class extends Component
                                         <i class="rms-processing-particle particle-four"></i>
                                     </div>
                                 @endif
-
-                                <div class="rms-processing-progress-ring" style="--progress: {{ $progress }}%">
-                                    <span>{{ $progress }}%</span>
-                                </div>
 
                                 <div class="rms-processing-topline">
                                     <span class="rms-processing-live-dot"></span>
@@ -1935,7 +1932,6 @@ new class extends Component
 
                                 <div class="rms-processing-stage-label">
                                     <span>{{ $stage }}</span>
-                                    <b>{{ $progress }}%</b>
                                 </div>
                             </div>
                             <div class="rms-generation-eta rms-generation-eta-v3">
@@ -4682,6 +4678,66 @@ new class extends Component
 @media(prefers-reduced-motion:reduce){
     .rms-generation-processing-visual-v3 *{
         transition:none!important;
+    }
+}
+
+/* V6 — single focal progress + guaranteed spinner motion */
+.rms-generation-processing-visual-v3 .rms-processing-core-ring{
+    width:104px;
+    height:104px;
+}
+.rms-processing-spin{
+    position:absolute;
+    inset:-7px;
+    z-index:-1;
+    border-radius:50%;
+    background:conic-gradient(from 0deg,transparent 0deg,transparent 38deg,#ef233c 72deg,rgba(239,35,60,.22) 112deg,transparent 175deg,transparent 360deg);
+    -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2px));
+    mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2px));
+    animation:rmsSingleSpinnerV6 1.15s linear infinite!important;
+    animation-play-state:running!important;
+    will-change:transform;
+}
+@keyframes rmsSingleSpinnerV6{
+    to{transform:rotate(360deg)}
+}
+.rms-generation-processing-visual-v3 .rms-processing-core-glow{
+    animation:rmsCoreGlowV5 1.7s ease-in-out infinite!important;
+    animation-play-state:running!important;
+}
+.rms-generation-processing-visual-v3 .rms-processing-orbit.orbit-one{
+    animation:rmsOrbitOneV5 4.2s linear infinite!important;
+    animation-play-state:running!important;
+}
+.rms-generation-processing-visual-v3 .rms-processing-orbit.orbit-two{
+    animation:rmsOrbitTwoV5 6.2s linear infinite reverse!important;
+    animation-play-state:running!important;
+}
+.rms-generation-processing-visual-v3 .rms-processing-orbit.orbit-three{
+    animation:rmsOrbitThreeV5 8.5s linear infinite!important;
+    animation-play-state:running!important;
+}
+.rms-generation-processing-visual-v3 .rms-processing-particle{
+    animation:rmsParticleV5 2.2s ease-in-out infinite!important;
+    animation-play-state:running!important;
+}
+.rms-generation-processing-visual-v3::before{
+    animation:rmsProcessingSweepV5 2.8s cubic-bezier(.45,0,.25,1) infinite!important;
+    animation-play-state:running!important;
+}
+.rms-generation-processing-visual-v3 .rms-processing-scan{
+    animation:rmsProcessingScanV5 1.8s ease-in-out infinite!important;
+    animation-play-state:running!important;
+}
+.rms-generation-processing-visual-v3 .rms-processing-live-dot,
+.rms-generation-processing-visual-v3 .rms-processing-visual-badge i{
+    animation:rmsLiveDotV5 1.15s ease-in-out infinite!important;
+    animation-play-state:running!important;
+}
+@media(max-width:760px){
+    .rms-generation-processing-visual-v3 .rms-processing-core-ring{
+        width:88px;
+        height:88px;
     }
 }
 </style>
