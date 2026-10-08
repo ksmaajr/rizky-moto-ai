@@ -1962,21 +1962,18 @@ new class extends Component
                                         <div class="rms-processing-orbit orbit-three"></div>
                                         <div class="rms-processing-core-ring">
                                             <svg class="rms-processing-spin-svg" wire:ignore viewBox="0 0 120 120" aria-hidden="true">
-    <!-- The original vertical dot train: dots stay on radial tracks and orbit independently. -->
-    <circle cx="60" cy="8" r="3.8" fill="#ef233c">
-        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="1.42s" repeatCount="indefinite"/>
-    </circle>
-    <circle cx="60" cy="21" r="3.3" fill="#ef233c">
-        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="1.67s" repeatCount="indefinite"/>
-    </circle>
-    <circle cx="60" cy="34" r="3.0" fill="#ef233c">
-        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="1.29s" repeatCount="indefinite"/>
-    </circle>
-    <circle cx="60" cy="46" r="2.7" fill="#ef233c">
-        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="1.84s" repeatCount="indefinite"/>
-    </circle>
-    <circle cx="60" cy="54" r="2.5" fill="#ef233c">
-        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="1.53s" repeatCount="indefinite"/>
+    <!-- Vertical dot train rotates as one orbiting cluster, matching the reference visual. -->
+    <g>
+        <circle cx="60" cy="7" r="3.8" fill="#ef233c"/>
+        <circle cx="60" cy="17" r="3.2" fill="#ef233c"/>
+        <circle cx="60" cy="27" r="2.9" fill="#ef233c"/>
+        <circle cx="60" cy="37" r="2.6" fill="#ef233c"/>
+        <circle cx="60" cy="46" r="2.3" fill="#ef233c"/>
+        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="4.2s" repeatCount="indefinite"/>
+    </g>
+    <!-- Very subtle independent pulse keeps each marker alive without breaking the train formation. -->
+    <circle cx="60" cy="7" r="6.5" fill="rgba(239,35,60,.10)">
+        <animate attributeName="opacity" values=".35;.75;.35" dur="1.3s" repeatCount="indefinite"/>
     </circle>
 </svg>
                                             <span class="rms-processing-core-glow"></span>
@@ -4844,8 +4841,7 @@ new class extends Component
     }
 }
 
-/* V12 — vertical dot train orbiting around the percentage, with independent speeds */
+/* V13 — reference-style vertical dot train orbiting as one cluster */
 .rms-processing-spin-svg{position:absolute;inset:-2px;width:108px;height:108px;z-index:9;display:block;pointer-events:none;overflow:visible}
-.rms-processing-spin-svg circle{transform-origin:60px 60px}
-@media(max-width:760px){.rms-processing-spin-svg{inset:-2px;width:92px;height:92px}}
-</style>
+.rms-processing-spin-svg > circle{pointer-events:none}
+@media(max-width:760px){.rms-processing-spin-svg{inset:-2px;width:92px;height:92px}}</style>
