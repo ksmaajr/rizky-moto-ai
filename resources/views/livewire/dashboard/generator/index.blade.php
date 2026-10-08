@@ -1962,22 +1962,32 @@ new class extends Component
                                         <div class="rms-processing-orbit orbit-three"></div>
                                         <div class="rms-processing-core-ring">
                                             <svg class="rms-processing-spin-svg" wire:ignore viewBox="0 0 120 120" aria-hidden="true">
-    <!-- Vertical dot train: each dot has its own orbit speed, so the train naturally separates. -->
-    <circle cx="60" cy="3" r="5.2" fill="#ef233c">
+    <!-- Reference-style vertical dot train. Each dot has its own orbit speed. -->
+    <g>
+        <circle cx="60" cy="3" r="8" fill="rgba(239,35,60,.16)"/>
+        <circle cx="60" cy="3" r="5.2" fill="#ef233c"/>
         <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="3.20s" repeatCount="indefinite"/>
-    </circle>
-    <circle cx="60" cy="10" r="4.7" fill="#ef233c">
+    </g>
+    <g>
+        <circle cx="60" cy="10" r="7" fill="rgba(239,35,60,.14)"/>
+        <circle cx="60" cy="10" r="4.7" fill="#ef233c"/>
         <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="4.05s" repeatCount="indefinite"/>
-    </circle>
-    <circle cx="60" cy="17" r="4.2" fill="#ef233c">
+    </g>
+    <g>
+        <circle cx="60" cy="17" r="6.5" fill="rgba(239,35,60,.13)"/>
+        <circle cx="60" cy="17" r="4.2" fill="#ef233c"/>
         <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="2.72s" repeatCount="indefinite"/>
-    </circle>
-    <circle cx="60" cy="24" r="3.8" fill="#ef233c">
+    </g>
+    <g>
+        <circle cx="60" cy="24" r="6" fill="rgba(239,35,60,.12)"/>
+        <circle cx="60" cy="24" r="3.8" fill="#ef233c"/>
         <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="4.70s" repeatCount="indefinite"/>
-    </circle>
-    <circle cx="60" cy="31" r="3.4" fill="#ef233c">
+    </g>
+    <g>
+        <circle cx="60" cy="31" r="5.5" fill="rgba(239,35,60,.11)"/>
+        <circle cx="60" cy="31" r="3.4" fill="#ef233c"/>
         <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="3.65s" repeatCount="indefinite"/>
-    </circle>
+    </g>
 </svg>
                                             <span class="rms-processing-core-glow"></span>
                                             <b>{{ $progress }}%</b>
@@ -4849,4 +4859,12 @@ new class extends Component
 
 /* V16 — larger reference-style orbit dots */
 .rms-processing-spin-svg circle{filter:drop-shadow(0 0 4px rgba(239,35,60,.24))}
+
+/* V17 — individual dot halos + hard removal of every legacy loose marker */
+.rms-processing-spin-svg g{filter:none}
+.rms-processing-spin-svg g circle:first-child{filter:blur(1.8px)}
+.rms-generation-processing-visual-v3 .rms-processing-orbit::before,
+.rms-generation-processing-visual-v3 .rms-processing-particle,
+.rms-generation-processing-visual-v3 .rms-processing-particle::before,
+.rms-generation-processing-visual-v3 .rms-processing-particle::after{display:none!important;visibility:hidden!important;opacity:0!important}
 </style>
