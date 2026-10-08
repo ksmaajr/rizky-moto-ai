@@ -1962,20 +1962,21 @@ new class extends Component
                                         <div class="rms-processing-orbit orbit-three"></div>
                                         <div class="rms-processing-core-ring">
                                             <svg class="rms-processing-spin-svg" wire:ignore viewBox="0 0 120 120" aria-hidden="true">
-    <!-- Static ring around the percentage -->
-    <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(239,35,60,.10)" stroke-width="2"/>
-    <!-- Multiple independent markers: different phase + speed, so they orbit asynchronously -->
-    <circle cx="60" cy="10" r="2.8" fill="#ef233c">
-        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="1.35s" repeatCount="indefinite"/>
+    <!-- The original vertical dot train: dots stay on radial tracks and orbit independently. -->
+    <circle cx="60" cy="8" r="3.8" fill="#ef233c">
+        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="1.42s" repeatCount="indefinite"/>
     </circle>
-    <circle cx="60" cy="10" r="2.2" fill="#ef233c">
-        <animateTransform attributeName="transform" type="rotate" from="82 60 60" to="442 60 60" dur="1.63s" repeatCount="indefinite"/>
+    <circle cx="60" cy="21" r="3.3" fill="#ef233c">
+        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="1.67s" repeatCount="indefinite"/>
     </circle>
-    <circle cx="60" cy="10" r="3.1" fill="#ef233c">
-        <animateTransform attributeName="transform" type="rotate" from="171 60 60" to="531 60 60" dur="1.48s" repeatCount="indefinite"/>
+    <circle cx="60" cy="34" r="3.0" fill="#ef233c">
+        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="1.29s" repeatCount="indefinite"/>
     </circle>
-    <circle cx="60" cy="10" r="2.0" fill="#ef233c">
-        <animateTransform attributeName="transform" type="rotate" from="257 60 60" to="617 60 60" dur="1.82s" repeatCount="indefinite"/>
+    <circle cx="60" cy="46" r="2.7" fill="#ef233c">
+        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="1.84s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="60" cy="54" r="2.5" fill="#ef233c">
+        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="1.53s" repeatCount="indefinite"/>
     </circle>
 </svg>
                                             <span class="rms-processing-core-glow"></span>
@@ -4843,7 +4844,8 @@ new class extends Component
     }
 }
 
-/* V11 — asynchronous marker dots orbit the percentage ring */
+/* V12 — vertical dot train orbiting around the percentage, with independent speeds */
 .rms-processing-spin-svg{position:absolute;inset:-2px;width:108px;height:108px;z-index:9;display:block;pointer-events:none;overflow:visible}
+.rms-processing-spin-svg circle{transform-origin:60px 60px}
 @media(max-width:760px){.rms-processing-spin-svg{inset:-2px;width:92px;height:92px}}
 </style>
