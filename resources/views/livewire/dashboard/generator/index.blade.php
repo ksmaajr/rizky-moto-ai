@@ -297,6 +297,7 @@ new class extends Component
 
         if ($status === 'queued') {
             $processingAhead = Generation::query()
+                ->where('user_id', auth()->id())
                 ->whereIn('status', ['queued', 'processing'])
                 ->where(function ($query) use ($generation) {
                     $query->where('created_at', '<', $generation->created_at)
@@ -366,6 +367,7 @@ new class extends Component
     public function getHasActiveGenerationsProperty(): bool
     {
         return Generation::query()
+            ->where('user_id', auth()->id())
             ->whereIn('status', ['queued', 'processing'])
             ->exists();
     }
@@ -407,6 +409,7 @@ new class extends Component
         $this->quality = $settings?->default_quality ?: 'high';
 
         $latest = Generation::query()
+            ->where('user_id', auth()->id())
             ->whereIn('status', ['completed', 'success', 'succeeded'])
             ->latest()
             ->value('id');
@@ -514,7 +517,31 @@ new class extends Component
                 imageCount: $this->imageCount,
             );
 
-            \App\Jobs\GenerateOpenAiImageJob::dispatch($generation->id);
+            try {
+                \App\Jobs\GenerateOpenAiImageJob::dispatch($generation->id);
+            } catch (\Throwable $dispatchException) {
+                $generation->update([
+                    'status' => 'failed',
+                    'error_message' => 'Generation berhasil dibuat tetapi gagal dimasukkan ke queue: ' . $dispatchException->getMessage(),
+                    'completed_at' => now(),
+                    'metadata' => array_merge($generation->metadata ?? [], [
+                        'progress' => 100,
+                        'progress_stage' => 'Gagal enqueue',
+                        'failed_at' => now()->toIso8601String(),
+                        'queue_dispatch_failed' => true,
+                        'queue_dispatch_exception' => get_class($dispatchException),
+                    ]),
+                ]);
+
+                throw $dispatchException;
+            }
+
+            $generation->update([
+                'metadata' => array_merge($generation->metadata ?? [], [
+                    'dispatched_at' => now()->toIso8601String(),
+                    'queue' => (string) config('queue.default', 'database'),
+                ]),
+            ]);
 
             $this->latestGenerationId = $generation->id;
             $this->isGenerating = false;
