@@ -560,7 +560,7 @@
                                     <span>Save AI Configuration</span>
                                     <b aria-hidden="true">→</b>
                                 </span>
-                                <span class="rms-save-loading" wire:loading wire:target="saveAiProviderConfiguration">
+                                <span class="rms-save-loading" wire:loading.flex wire:target="saveAiProviderConfiguration">
                                     <i aria-hidden="true"></i>
                                     <span>Saving...</span>
                                 </span>
@@ -2949,7 +2949,6 @@
 }
 .rms-provider-block-failover .rms-ai-save-button .rms-save-content,
 .rms-provider-block-failover .rms-ai-save-button .rms-save-loading{
-    display:inline-flex!important;
     align-items:center!important;
     justify-content:center!important;
     gap:10px!important;
