@@ -471,20 +471,181 @@
         @teleport('body')
         <div class="rms-template-modal-layer rms-template-delete-layer" wire:key="template-delete-modal" x-data @keydown.escape.window="$wire.closeDelete()">
             <div class="rms-template-modal-backdrop" wire:click="closeDelete"></div>
-            <section class="rms-template-delete-modal" role="dialog" aria-modal="true">
-                <div class="rms-template-danger-icon">!</div>
-                <span class="rms-template-danger-label">DANGER ZONE</span>
-                <h2>Hapus Template?</h2>
-                <p>Template <strong>{{ $deletingName }}</strong> akan dihapus dari library. Jika template sudah digunakan oleh generation, penghapusan akan dibatalkan.</p>
-                <div class="rms-template-delete-actions">
-                    <button type="button" class="secondary" wire:click="closeDelete">Batal</button>
+            <section class="rms-template-delete-modal rms-template-delete-modal-v2" role="dialog" aria-modal="true" aria-labelledby="template-delete-title">
+                <div class="rms-template-delete-icon-wrap">
+                    <span class="rms-template-delete-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M4 7h16"/>
+                            <path d="M9 7V4h6v3"/>
+                            <path d="M7 7l1 13h8l1-13"/>
+                            <path d="M10 11v5M14 11v5"/>
+                        </svg>
+                    </span>
+                </div>
+                <span class="rms-template-danger-label rms-template-danger-label-v2"><i></i> DELETE ACTION</span>
+                <h2 id="template-delete-title">Hapus template?</h2>
+                <p>Template <strong>{{ $deletingName }}</strong> beserta konfigurasi visualnya akan dihapus dari Template Library. <b>Tindakan ini tidak dapat dibatalkan.</b></p>
+                <div class="rms-template-delete-actions rms-template-delete-actions-v2">
+                    <button type="button" class="secondary" wire:click="closeDelete">
+                        <span>Batal</span>
+                    </button>
                     <button type="button" class="danger" wire:click="delete" wire:loading.attr="disabled" wire:target="delete">
-                        <span wire:loading.remove wire:target="delete">Hapus Template</span>
+                        <span wire:loading.remove wire:target="delete">Ya, Hapus <b>→</b></span>
                         <span wire:loading wire:target="delete">Menghapus...</span>
                     </button>
                 </div>
+                <div class="rms-template-delete-esc"><kbd>ESC</kbd><span>untuk menutup</span></div>
             </section>
         </div>
         @endteleport
     @endif
 </div>
+
+
+<style>
+    /* V2 — custom template delete confirmation */
+    .rms-template-delete-modal-v2{
+        position:relative;
+        width:min(540px,calc(100vw - 32px));
+        padding:34px 34px 28px!important;
+        border:1px solid rgba(228,228,231,.9);
+        border-radius:26px!important;
+        background:
+            radial-gradient(circle at 88% 0%,rgba(244,63,94,.08),transparent 42%),
+            #fff;
+        box-shadow:0 35px 100px rgba(24,24,27,.24);
+        overflow:hidden;
+        animation:rmsTemplateDeleteIn .32s cubic-bezier(.22,1,.36,1);
+    }
+    .rms-template-delete-modal-v2:before{
+        content:"";
+        position:absolute;
+        left:0;right:0;top:0;height:3px;
+        background:linear-gradient(90deg,#fb7185,#ef233c,#f43f5e);
+    }
+    .rms-template-delete-icon-wrap{
+        display:flex;
+        margin-bottom:20px;
+    }
+    .rms-template-delete-icon{
+        display:grid;
+        width:64px;height:64px;
+        place-items:center;
+        border:1px solid rgba(244,63,94,.18);
+        border-radius:18px;
+        background:rgba(255,241,242,.86);
+        color:#ef233c;
+        box-shadow:0 10px 26px rgba(244,63,94,.10),inset 0 1px 0 rgba(255,255,255,.95);
+    }
+    .rms-template-delete-icon svg{width:27px;height:27px}
+    .rms-template-danger-label-v2{
+        display:flex!important;
+        align-items:center;
+        gap:7px;
+        margin:0 0 10px!important;
+        color:#ef233c!important;
+        font-size:9px!important;
+        letter-spacing:.14em!important;
+        font-weight:900!important;
+    }
+    .rms-template-danger-label-v2 i{
+        width:7px;height:7px;border-radius:50%;
+        background:#fb7185;
+        box-shadow:0 0 0 4px rgba(251,113,133,.11);
+    }
+    .rms-template-delete-modal-v2 h2{
+        margin:0!important;
+        color:#18181b;
+        font-size:27px!important;
+        line-height:1.08!important;
+        letter-spacing:-.035em!important;
+        font-weight:900!important;
+    }
+    .rms-template-delete-modal-v2>p{
+        margin:12px 0 0!important;
+        color:#71717a;
+        font-size:12px!important;
+        line-height:1.65!important;
+    }
+    .rms-template-delete-modal-v2>p strong{color:#27272a;font-weight:850}
+    .rms-template-delete-modal-v2>p b{color:#52525b;font-weight:750}
+    .rms-template-delete-actions-v2{
+        display:grid!important;
+        grid-template-columns:1fr 1fr;
+        gap:12px!important;
+        margin-top:28px!important;
+    }
+    .rms-template-delete-actions-v2 button{
+        min-height:54px!important;
+        border-radius:14px!important;
+        font-size:11px!important;
+        font-weight:850!important;
+        transition:transform .22s cubic-bezier(.22,1,.36,1),box-shadow .22s ease,background .22s ease,border-color .22s ease!important;
+    }
+    .rms-template-delete-actions-v2 .secondary{
+        border:1px solid rgba(228,228,231,.8)!important;
+        background:#fff!important;
+        color:#27272a!important;
+    }
+    .rms-template-delete-actions-v2 .secondary:hover{
+        background:#fafafa!important;
+        border-color:#d4d4d8!important;
+        transform:translateY(-1px);
+    }
+    .rms-template-delete-actions-v2 .danger{
+        border:0!important;
+        background:linear-gradient(135deg,#fb344d,#e91532)!important;
+        color:#fff!important;
+        box-shadow:0 12px 26px rgba(239,35,60,.22)!important;
+    }
+    .rms-template-delete-actions-v2 .danger:hover{
+        transform:translateY(-1px);
+        box-shadow:0 16px 32px rgba(239,35,60,.28)!important;
+    }
+    .rms-template-delete-actions-v2 button:active{
+        transform:scale(.985)!important;
+    }
+    .rms-template-delete-actions-v2 .danger b{
+        margin-left:7px;
+        font-size:14px;
+    }
+    .rms-template-delete-esc{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:8px;
+        margin-top:17px;
+        color:#a1a1aa;
+        font-size:9px;
+    }
+    .rms-template-delete-esc kbd{
+        display:inline-grid;
+        min-width:34px;height:25px;
+        padding:0 7px;
+        place-items:center;
+        border:1px solid #e4e4e7;
+        border-radius:7px;
+        background:#fafafa;
+        color:#71717a;
+        font-size:8px;
+        font-weight:850;
+        box-shadow:0 1px 0 #e4e4e7;
+    }
+    @keyframes rmsTemplateDeleteIn{
+        from{opacity:0;transform:translateY(10px) scale(.975)}
+        to{opacity:1;transform:none}
+    }
+    @media(max-width:600px){
+        .rms-template-delete-modal-v2{
+            width:calc(100vw - 24px);
+            padding:27px 22px 23px!important;
+            border-radius:22px!important;
+        }
+        .rms-template-delete-icon{width:56px;height:56px;border-radius:16px}
+        .rms-template-delete-icon svg{width:24px;height:24px}
+        .rms-template-delete-modal-v2 h2{font-size:23px!important}
+        .rms-template-delete-modal-v2>p{font-size:10.5px!important;line-height:1.6!important}
+        .rms-template-delete-actions-v2{gap:9px!important;margin-top:22px!important}
+        .rms-template-delete-actions-v2 button{min-height:50px!important}
+    }
+</style>
