@@ -2764,7 +2764,7 @@ public function getUserInitialsProperty(): string
                                 </div>
                                 <div class="rms-history-controls">
                                     <div class="rms-history-control" x-data="{open:false}" :class="{ 'is-open':open }" @click.outside="open=false">
-                                        <button type="button" @click="open=!open"><small>STATUS</small><strong>{{ match($historyStatus){'completed'=>'Completed','processing'=>'Processing','queued'=>'Queued','failed'=>'Failed',default=>'Semua status'}}</strong><b>⌄</b></button>
+                                        <button type="button" @click="open=!open"><small>STATUS</small><strong>{{ $historyStatusLabels[$historyStatus] ?? 'Semua status' }}</strong><b>⌄</b></button>
                                         <div class="rms-history-menu" x-show="open" x-transition.opacity x-cloak>@foreach(['all'=>'Semua status','completed'=>'Completed','processing'=>'Processing','queued'=>'Queued','failed'=>'Failed'] as $v=>$l)<button type="button" class="{{ $historyStatus===$v?'is-selected':'' }}" wire:click="$set('historyStatus','{{ $v }}')" @click="open=false">{{ $l }} <span>✓</span></button>@endforeach</div>
                                     </div>
                                     <div class="rms-history-control" x-data="{open:false}" :class="{ 'is-open':open }" @click.outside="open=false">
@@ -2772,7 +2772,7 @@ public function getUserInitialsProperty(): string
                                         <div class="rms-history-menu" x-show="open" x-transition.opacity x-cloak><button type="button" class="{{ $historyStore==='all'?'is-selected':'' }}" wire:click="$set('historyStore','all')" @click="open=false">Semua store <span>✓</span></button>@foreach($this->dashboardStores as $store)<button type="button" class="{{ (string)$historyStore===(string)$store->id?'is-selected':'' }}" wire:click="$set('historyStore','{{ $store->id }}')" @click="open=false">{{ $store->name }} <span>✓</span></button>@endforeach</div>
                                     </div>
                                     <div class="rms-history-control" x-data="{open:false}" :class="{ 'is-open':open }" @click.outside="open=false">
-                                        <button type="button" @click="open=!open"><small>SORT</small><strong>{{ match($historySort){'oldest'=>'Terlama','failed'=>'Failed dulu','completed'=>'Completed dulu',default=>'Terbaru'}}</strong><b>⌄</b></button>
+                                        <button type="button" @click="open=!open"><small>SORT</small><strong>{{ $historySortLabels[$historySort] ?? 'Terbaru' }}</strong><b>⌄</b></button>
                                         <div class="rms-history-menu" x-show="open" x-transition.opacity x-cloak>@foreach(['newest'=>'Terbaru','oldest'=>'Terlama','completed'=>'Completed dulu','failed'=>'Failed dulu'] as $v=>$l)<button type="button" class="{{ $historySort===$v?'is-selected':'' }}" wire:click="$set('historySort','{{ $v }}')" @click="open=false">{{ $l }} <span>✓</span></button>@endforeach</div>
                                     </div>
                                 </div>
