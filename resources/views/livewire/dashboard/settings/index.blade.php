@@ -3527,4 +3527,84 @@
         font-size:8px!important;
     }
 }
+</style><style>
+/* MOBILE API KEY — compact information hierarchy */
+@media(max-width:760px){
+    .rms-provider-block-vercel .rms-vg-key-card-main{
+        display:grid!important;
+        grid-template-columns:36px minmax(0,1fr)!important;
+        grid-template-rows:auto auto!important;
+        column-gap:9px!important;
+        row-gap:0!important;
+        align-items:start!important;
+        text-align:left!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-copy{
+        min-width:0!important;
+        width:100%!important;
+        text-align:left!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-name-row{
+        display:flex!important;
+        flex-direction:row!important;
+        align-items:center!important;
+        justify-content:flex-start!important;
+        flex-wrap:nowrap!important;
+        gap:6px!important;
+        width:100%!important;
+        min-width:0!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-name-row>strong{
+        display:block!important;
+        flex:0 1 auto!important;
+        min-width:0!important;
+        max-width:calc(100% - 60px)!important;
+        overflow:hidden!important;
+        text-overflow:ellipsis!important;
+        white-space:nowrap!important;
+        text-align:left!important;
+        font-size:10px!important;
+        line-height:1.2!important;
+    }
+    .rms-provider-block-vercel .rms-vg-status{
+        display:inline-flex!important;
+        flex:0 0 auto!important;
+        align-items:center!important;
+        justify-content:center!important;
+        white-space:nowrap!important;
+        height:18px!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-copy code{
+        display:block!important;
+        width:100%!important;
+        margin-top:6px!important;
+        text-align:left!important;
+        font-size:7.5px!important;
+        line-height:1.25!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-meta{
+        display:flex!important;
+        align-items:center!important;
+        justify-content:flex-start!important;
+        flex-wrap:wrap!important;
+        width:100%!important;
+        margin-top:6px!important;
+        gap:3px 5px!important;
+        text-align:left!important;
+        font-size:6.8px!important;
+        line-height:1.35!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-meta span{
+        white-space:nowrap!important;
+    }
+}
+@media(max-width:390px){
+    .rms-provider-block-vercel .rms-vg-key-name-row>strong{
+        max-width:calc(100% - 54px)!important;
+        font-size:9.5px!important;
+    }
+    .rms-provider-block-vercel .rms-vg-key-meta{
+        font-size:6.4px!important;
+    }
+}
 </style>
