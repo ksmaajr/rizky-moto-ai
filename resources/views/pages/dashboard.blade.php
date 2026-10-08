@@ -1056,6 +1056,27 @@ class extends Component
             ];
         }
 
+        $apiKeys = \App\Models\VercelGatewayApiKey::query()
+            ->where(function ($q) use ($keyword) {
+                $q->where('name', 'like', $keyword)
+                    ->orWhere('status', 'like', $keyword);
+            })
+            ->orderBy('priority')
+            ->orderBy('name')
+            ->limit(3)
+            ->get(['id', 'name', 'status', 'is_active', 'last_used_at']);
+
+        foreach ($apiKeys as $item) {
+            $state = $item->is_active ? ucfirst((string) $item->status) : 'Disabled';
+            $results[] = [
+                'type' => 'API Key',
+                'label' => $item->name,
+                'meta' => 'Vercel Gateway · ' . $state . ' · ' . ($item->last_used_at?->diffForHumans() ?? 'belum digunakan'),
+                'action' => 'settings',
+                'id' => $item->id,
+            ];
+        }
+
         $generations = \App\Models\Generation::query()
             ->where(function ($q) use ($keyword) {
                 $q->where('prompt', 'like', $keyword)
