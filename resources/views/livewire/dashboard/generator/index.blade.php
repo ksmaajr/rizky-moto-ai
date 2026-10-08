@@ -4743,15 +4743,46 @@ new class extends Component
 }
 .rms-processing-spin{
     position:absolute;
-    inset:-7px;
-    z-index:-1;
+    inset:-8px;
+    z-index:8;
+    display:block;
+    pointer-events:none;
     border-radius:50%;
-    background:conic-gradient(from 0deg,transparent 0deg,transparent 38deg,#ef233c 72deg,rgba(239,35,60,.22) 112deg,transparent 175deg,transparent 360deg);
-    -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2px));
-    mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2px));
-    animation:rmsSingleSpinnerV6 1.15s linear infinite!important;
+    background:conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        transparent 28deg,
+        #ef233c 68deg,
+        rgba(239,35,60,.42) 105deg,
+        rgba(239,35,60,.10) 145deg,
+        transparent 190deg,
+        transparent 360deg
+    );
+    -webkit-mask:radial-gradient(
+        farthest-side,
+        transparent calc(100% - 4px),
+        #000 calc(100% - 3px)
+    );
+    mask:radial-gradient(
+        farthest-side,
+        transparent calc(100% - 4px),
+        #000 calc(100% - 3px)
+    );
+    transform:rotate(0deg);
+    transform-origin:50% 50%;
+    animation-name:rmsSingleSpinnerV7!important;
+    animation-duration:1.05s!important;
+    animation-timing-function:linear!important;
+    animation-iteration-count:infinite!important;
+    animation-delay:0s!important;
+    animation-fill-mode:none!important;
     animation-play-state:running!important;
     will-change:transform;
+    backface-visibility:hidden;
+}
+@keyframes rmsSingleSpinnerV7{
+    from{transform:rotate(0deg)}
+    to{transform:rotate(360deg)}
 }
 @keyframes rmsSingleSpinnerV6{
     to{transform:rotate(360deg)}
