@@ -1962,32 +1962,28 @@ new class extends Component
                                         <div class="rms-processing-orbit orbit-three"></div>
                                         <div class="rms-processing-core-ring">
                                             <svg class="rms-processing-spin-svg" wire:ignore viewBox="0 0 120 120" aria-hidden="true">
-    <!-- Reference-style vertical dot train. Each dot has its own orbit speed. -->
-    <g>
-        <circle cx="60" cy="3" r="8" fill="rgba(239,35,60,.16)"/>
-        <circle cx="60" cy="3" r="5.2" fill="#ef233c"/>
+    <defs>
+        <filter id="rmsDotGlow" x="-150%" y="-150%" width="400%" height="400%">
+            <feGaussianBlur stdDeviation="2.8" result="blur"/>
+            <feMerge>
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+    </defs>
+    <!-- Four compact markers; each has its own speed and glow. -->
+    <circle class="rms-orbit-dot dot-one" cx="60" cy="10" r="5.2" fill="#ef233c" filter="url(#rmsDotGlow)">
         <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="3.20s" repeatCount="indefinite"/>
-    </g>
-    <g>
-        <circle cx="60" cy="10" r="7" fill="rgba(239,35,60,.14)"/>
-        <circle cx="60" cy="10" r="4.7" fill="#ef233c"/>
+    </circle>
+    <circle class="rms-orbit-dot dot-two" cx="60" cy="18" r="4.7" fill="#ef233c" filter="url(#rmsDotGlow)">
         <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="4.05s" repeatCount="indefinite"/>
-    </g>
-    <g>
-        <circle cx="60" cy="17" r="6.5" fill="rgba(239,35,60,.13)"/>
-        <circle cx="60" cy="17" r="4.2" fill="#ef233c"/>
+    </circle>
+    <circle class="rms-orbit-dot dot-three" cx="60" cy="26" r="4.2" fill="#ef233c" filter="url(#rmsDotGlow)">
         <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="2.72s" repeatCount="indefinite"/>
-    </g>
-    <g>
-        <circle cx="60" cy="24" r="6" fill="rgba(239,35,60,.12)"/>
-        <circle cx="60" cy="24" r="3.8" fill="#ef233c"/>
+    </circle>
+    <circle class="rms-orbit-dot dot-four" cx="60" cy="34" r="3.8" fill="#ef233c" filter="url(#rmsDotGlow)">
         <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="4.70s" repeatCount="indefinite"/>
-    </g>
-    <g>
-        <circle cx="60" cy="31" r="5.5" fill="rgba(239,35,60,.11)"/>
-        <circle cx="60" cy="31" r="3.4" fill="#ef233c"/>
-        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="3.65s" repeatCount="indefinite"/>
-    </g>
+    </circle>
 </svg>
                                             <span class="rms-processing-core-glow"></span>
                                             <b>{{ $progress }}%</b>
@@ -4857,14 +4853,11 @@ new class extends Component
 .rms-generation-processing-visual-v3 .rms-processing-orbit::before{display:none!important}
 .rms-generation-processing-visual-v3 .rms-processing-particle{display:none!important}
 
-/* V16 — larger reference-style orbit dots */
-.rms-processing-spin-svg circle{filter:drop-shadow(0 0 4px rgba(239,35,60,.24))}
-
-/* V17 — individual dot halos + hard removal of every legacy loose marker */
-.rms-processing-spin-svg g{filter:none}
-.rms-processing-spin-svg g circle:first-child{filter:blur(1.8px)}
+/* V18 — clean reference dots: larger glow, no loose outer markers */
+.rms-processing-spin-svg{position:absolute;inset:-2px;width:108px;height:108px;z-index:9;display:block;pointer-events:none;overflow:visible}
+.rms-processing-spin-svg .rms-orbit-dot{filter:url(#rmsDotGlow)!important}
 .rms-generation-processing-visual-v3 .rms-processing-orbit::before,
 .rms-generation-processing-visual-v3 .rms-processing-particle,
 .rms-generation-processing-visual-v3 .rms-processing-particle::before,
 .rms-generation-processing-visual-v3 .rms-processing-particle::after{display:none!important;visibility:hidden!important;opacity:0!important}
-</style>
+@media(max-width:760px){.rms-processing-spin-svg{inset:-2px;width:92px;height:92px}}</style>
