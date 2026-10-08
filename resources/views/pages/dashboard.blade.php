@@ -109,6 +109,8 @@ class extends Component
     public string $historyStore = 'all';
     public string $historySort = 'newest';
     public string $historySearch = '';
+    public int $historyLimit = 40;
+    public array $generationHistoryStats = [];
 
 
 
@@ -621,6 +623,18 @@ class extends Component
     public function loadGenerationHistory(): void
     {
         $this->generationHistoryLoaded = true;
+        $this->historyLimit = 40;
+        $this->refreshGenerationHistory();
+    }
+
+    public function loadMoreGenerationHistory(): void
+    {
+        if (! $this->generationHistoryLoaded) {
+            $this->loadGenerationHistory();
+            return;
+        }
+
+        $this->historyLimit += 40;
         $this->refreshGenerationHistory();
     }
 
@@ -678,7 +692,14 @@ class extends Component
             $query->orderByRaw("CASE WHEN status IN ('completed','success','succeeded') THEN 0 ELSE 1 END")->orderByDesc('created_at');
         }
 
-        $this->generationHistory = $query->get()->map(fn ($generation) => [
+        $this->generationHistoryStats = [
+            'total' => (clone $query)->reorder()->count(),
+            'completed' => (clone $query)->reorder()->whereIn('status', ['completed', 'success', 'succeeded'])->count(),
+            'active' => (clone $query)->reorder()->whereIn('status', ['processing', 'queued'])->count(),
+            'failed' => (clone $query)->reorder()->whereIn('status', ['failed', 'cancelled', 'canceled'])->count(),
+        ];
+
+        $this->generationHistory = $query->limit($this->historyLimit)->get()->map(fn ($generation) => [
             'id' => $generation->id,
             'title' => data_get($generation->metadata, 'title') ?: ('Generation #' . $generation->id),
             'status' => $generation->status,
@@ -2931,6 +2952,13 @@ public function getUserInitialsProperty(): string
                         </div>
                     </div>
 
+                    <div class="rms-history-summary">
+                        <div><span>TOTAL</span><strong>{{ $generationHistoryStats['total'] ?? 0 }}</strong><small>matching generations</small></div>
+                        <div class="is-success"><span>COMPLETED</span><strong>{{ $generationHistoryStats['completed'] ?? 0 }}</strong><small>successful output</small></div>
+                        <div class="is-active"><span>ACTIVE</span><strong>{{ $generationHistoryStats['active'] ?? 0 }}</strong><small>processing / queued</small></div>
+                        <div class="is-failed"><span>FAILED</span><strong>{{ $generationHistoryStats['failed'] ?? 0 }}</strong><small>failed / cancelled</small></div>
+                    </div>
+
                     <div class="rms-history-shell" wire:init="loadGenerationHistory" x-show="recentOpen" x-transition:enter="rms-history-enter" x-transition:leave="rms-history-leave" x-cloak>
                         @if(! $generationHistoryLoaded)
                             <div class="rms-history-load-state rms-history-loading-state">
@@ -2945,7 +2973,7 @@ public function getUserInitialsProperty(): string
                                 <div class="rms-history-controls">
                                     <div class="rms-history-control" x-data="{open:false}" :class="{ 'is-open':open }" @click.outside="open=false">
                                         <button type="button" @click="open=!open"><small>STATUS</small><strong>{{ $historyStatusLabels[$historyStatus] ?? 'Semua status' }}</strong><b>⌄</b></button>
-                                        <div class="rms-history-menu" x-show="open" x-transition.opacity x-cloak>@foreach(['all'=>'Semua status','completed'=>'Completed','processing'=>'Processing','queued'=>'Queued','failed'=>'Failed'] as $v=>$l)<button type="button" class="{{ $historyStatus===$v?'is-selected':'' }}" wire:click="$set('historyStatus','{{ $v }}')" @click="open=false">{{ $l }} <span>✓</span></button>@endforeach</div>
+                                        <div class="rms-history-menu" x-show="open" x-transition.opacity x-cloak>@foreach(['all'=>'Semua status','completed'=>'Completed','processing'=>'Processing','queued'=>'Queued','failed'=>'Failed / Cancelled'] as $v=>$l)<button type="button" class="{{ $historyStatus===$v?'is-selected':'' }}" wire:click="$set('historyStatus','{{ $v }}')" @click="open=false">{{ $l }} <span>✓</span></button>@endforeach</div>
                                     </div>
                                     <div class="rms-history-control" x-data="{open:false}" :class="{ 'is-open':open }" @click.outside="open=false">
                                         <button type="button" @click="open=!open"><small>STORE</small><strong>{{ $historyStore==='all'?'Semua store':($this->dashboardStores->firstWhere('id',(int)$historyStore)?->name ?? 'Store') }}</strong><b>⌄</b></button>
@@ -2985,6 +3013,15 @@ public function getUserInitialsProperty(): string
                                     <div class="rms-history-empty"><span>✦</span><strong>Tidak ada generation yang cocok.</strong><small>Ubah filter atau kata pencarian.</small></div>
                                 @endforelse
                             </div>
+                            @if(count($generationHistory) < ($generationHistoryStats['total'] ?? 0))
+                                <div class="rms-history-load-more">
+                                    <span>Showing {{ count($generationHistory) }} of {{ $generationHistoryStats['total'] }}</span>
+                                    <button type="button" wire:click="loadMoreGenerationHistory" wire:loading.attr="disabled" wire:target="loadMoreGenerationHistory">
+                                        <span wire:loading.remove wire:target="loadMoreGenerationHistory">Load more generations</span>
+                                        <span wire:loading wire:target="loadMoreGenerationHistory">Loading…</span>
+                                    </button>
+                                </div>
+                            @endif
                         @endif
                     </div>
 
