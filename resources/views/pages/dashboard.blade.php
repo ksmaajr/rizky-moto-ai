@@ -93,6 +93,14 @@ class extends Component
 
     public string $activityTimeframe = 'all';
 
+    // Dashboard realtime workspace state.
+    public string $dashboardTimeframe = '7d';
+    public string $dashboardStatus = 'all';
+    public string $dashboardStore = 'all';
+    public string $globalSearch = '';
+    public array $dashboardData = [];
+
+
 
 
 
@@ -119,11 +127,7 @@ class extends Component
 
 
 
-        $this->loadActivityLogs();
-
-        $this->loadOpenAiLogs();
-
-        $this->loadVercelGatewayLogs();
+        $this->loadDashboardData();
 
         // Worker state is server-side. Resolve it on every dashboard mount so a
         // new tab/device reflects the real process state instead of Livewire's
@@ -570,6 +574,182 @@ class extends Component
 
 
     
+
+    public function refreshDashboard(): void
+    {
+        if ($this->activeSection !== 'dashboard') {
+            return;
+        }
+
+        $this->loadDashboardData();
+    }
+
+    public function updatedDashboardTimeframe(): void
+    {
+        $this->loadDashboardData();
+    }
+
+    public function updatedDashboardStatus(): void
+    {
+        $this->loadDashboardData();
+    }
+
+    public function updatedDashboardStore(): void
+    {
+        $this->loadDashboardData();
+    }
+
+    private function loadDashboardData(): void
+    {
+        $now = now();
+        $from = match ($this->dashboardTimeframe) {
+            'today' => $now->copy()->startOfDay(),
+            '30d' => $now->copy()->subDays(29)->startOfDay(),
+            '90d' => $now->copy()->subDays(89)->startOfDay(),
+            'year' => $now->copy()->startOfYear(),
+            default => $now->copy()->subDays(6)->startOfDay(),
+        };
+
+        $generationBase = AppModelsGeneration::query()
+            ->where('created_at', '>=', $from)
+            ->when($this->dashboardStatus !== 'all', fn ($q) => $q->where('status', $this->dashboardStatus))
+            ->when($this->dashboardStore !== 'all', fn ($q) => $q->where('store_id', (int) $this->dashboardStore));
+
+        $total = (clone $generationBase)->count();
+        $completed = (clone $generationBase)->whereIn('status', ['completed', 'success', 'succeeded'])->count();
+        $processing = (clone $generationBase)->where('status', 'processing')->count();
+        $queued = (clone $generationBase)->where('status', 'queued')->count();
+        $failed = (clone $generationBase)->where('status', 'failed')->count();
+
+        $imageCount = (int) AppModelsGeneratedImage::query()
+            ->whereHas('generation', function ($q) use ($from) {
+                $q->where('created_at', '>=', $from)
+                    ->when($this->dashboardStatus !== 'all', fn ($nested) => $nested->where('status', $this->dashboardStatus))
+                    ->when($this->dashboardStore !== 'all', fn ($nested) => $nested->where('store_id', (int) $this->dashboardStore));
+            })
+            ->count();
+
+        $durations = (clone $generationBase)
+            ->whereIn('status', ['completed', 'success', 'succeeded'])
+            ->whereNotNull('started_at')
+            ->whereNotNull('completed_at')
+            ->get(['started_at', 'completed_at']);
+
+        $avgDuration = $durations->isEmpty()
+            ? 0
+            : (int) round($durations->avg(fn ($item) => $item->started_at->diffInSeconds($item->completed_at)));
+
+        $trendStart = $this->dashboardTimeframe === 'today'
+            ? $from
+            : ($this->dashboardTimeframe === 'year' ? $now->copy()->startOfMonth() : $from);
+
+        $trendDays = $this->dashboardTimeframe === 'year' ? 12 : ($this->dashboardTimeframe === '90d' ? 12 : ($this->dashboardTimeframe === '30d' ? 10 : ($this->dashboardTimeframe === 'today' ? 12 : 7)));
+        $bucketSeconds = $this->dashboardTimeframe === 'today' ? 2 * 3600 : ($this->dashboardTimeframe === 'year' ? 30 * 86400 : max(86400, (int) ceil($now->diffInSeconds($from) / max(1, $trendDays - 1))));
+        $trend = [];
+
+        for ($i = 0; $i < $trendDays; $i++) {
+            if ($this->dashboardTimeframe === 'today') {
+                $start = $from->copy()->addHours($i * 2);
+                $end = $start->copy()->addHours(2);
+                $label = $start->format('H:i');
+            } elseif ($this->dashboardTimeframe === 'year') {
+                $start = $now->copy()->startOfYear()->addMonths($i);
+                $end = $start->copy()->addMonth();
+                $label = $start->format('M');
+            } else {
+                $start = $from->copy()->addDays($i * max(1, (int) floor($now->diffInDays($from) / max(1, $trendDays - 1))));
+                $end = $start->copy()->addDays(max(1, (int) ceil($now->diffInDays($from) / max(1, $trendDays - 1))));
+                $label = $start->format('d M');
+            }
+
+            $count = (clone $generationBase)->where('created_at', '>=', $start)->where('created_at', '<', $end)->count();
+            $trend[] = ['label' => $label, 'value' => $count];
+        }
+
+        $recent = AppModelsGeneration::query()
+            ->with([
+                'store:id,name,logo_path',
+                'template:id,name',
+                'generatedImages:id,generation_id,image_path,image_url,is_primary,is_favorite',
+            ])
+            ->when($this->dashboardStatus !== 'all', fn ($q) => $q->where('status', $this->dashboardStatus))
+            ->when($this->dashboardStore !== 'all', fn ($q) => $q->where('store_id', (int) $this->dashboardStore))
+            ->latest('created_at')
+            ->limit(8)
+            ->get();
+
+        $this->dashboardData = [
+            'total' => $total,
+            'completed' => $completed,
+            'processing' => $processing,
+            'queued' => $queued,
+            'failed' => $failed,
+            'images' => $imageCount,
+            'avg_duration' => $avgDuration,
+            'success_rate' => $total > 0 ? round(($completed / $total) * 100) : 0,
+            'trend' => $trend,
+            'max_trend' => max(1, max(array_column($trend, 'value'))),
+            'recent' => $recent->map(fn ($generation) => [
+                'id' => $generation->id,
+                'title' => data_get($generation->metadata, 'title') ?: ('Generation #' . $generation->id),
+                'status' => $generation->status,
+                'model' => IlluminateSupportStr::afterLast((string) $generation->model, '/'),
+                'store' => $generation->store?->name ?? 'Store',
+                'template' => $generation->template?->name ?? 'Template',
+                'created_at' => $generation->created_at?->diffForHumans(),
+                'created_at_raw' => $generation->created_at?->format('d M Y H:i'),
+                'images' => $generation->generatedImages->map(fn ($image) => [
+                    'url' => $image->image_url ?: ($image->image_path ? IlluminateSupportFacadesStorage::disk('public')->url($image->image_path) : null),
+                    'favorite' => (bool) $image->is_favorite,
+                ])->filter(fn ($image) => filled($image['url']))->values()->all(),
+            ])->all(),
+        ];
+    }
+
+    public function getDashboardStoresProperty()
+    {
+        return Store::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']);
+    }
+
+    public function getGlobalSearchResultsProperty(): array
+    {
+        $term = trim($this->globalSearch);
+
+        if (mb_strlen($term) < 2) {
+            return [];
+        }
+
+        $keyword = '%' . $term . '%';
+
+        $stores = Store::query()
+            ->where('name', 'like', $keyword)
+            ->limit(4)
+            ->get(['id', 'name'])
+            ->map(fn ($item) => ['type' => 'Store', 'label' => $item->name, 'meta' => 'Marketplace store', 'action' => 'stores'])
+            ->all();
+
+        $templates = AppModelsTemplate::query()
+            ->where('name', 'like', $keyword)
+            ->limit(4)
+            ->get(['id', 'name'])
+            ->map(fn ($item) => ['type' => 'Template', 'label' => $item->name, 'meta' => 'Visual template', 'action' => 'templates'])
+            ->all();
+
+        $generations = AppModelsGeneration::query()
+            ->where(function ($q) use ($keyword) {
+                $q->where('prompt', 'like', $keyword)
+                    ->orWhere('model', 'like', $keyword)
+                    ->orWhere('status', 'like', $keyword);
+            })
+            ->latest('created_at')
+            ->limit(4)
+            ->get(['id', 'model', 'status'])
+            ->map(fn ($item) => ['type' => 'Generation', 'label' => 'Generation #' . $item->id, 'meta' => $item->status . ' · ' . IlluminateSupportStr::afterLast($item->model, '/'), 'action' => 'generator'])
+            ->all();
+
+        return array_slice(array_merge($stores, $templates, $generations), 0, 8);
+    }
+
     /**
      * Queue worker controls used directly from the dashboard sidebar.
      */
