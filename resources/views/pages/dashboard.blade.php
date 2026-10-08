@@ -610,16 +610,22 @@ class extends Component
             default => $now->copy()->subDays(6)->startOfDay(),
         };
 
-        $generationBase = AppModelsGeneration::query()
+        $base = AppModelsGeneration::query()
             ->where('created_at', '>=', $from)
             ->when($this->dashboardStatus !== 'all', fn ($q) => $q->where('status', $this->dashboardStatus))
             ->when($this->dashboardStore !== 'all', fn ($q) => $q->where('store_id', (int) $this->dashboardStore));
 
-        $total = (clone $generationBase)->count();
-        $completed = (clone $generationBase)->whereIn('status', ['completed', 'success', 'succeeded'])->count();
-        $processing = (clone $generationBase)->where('status', 'processing')->count();
-        $queued = (clone $generationBase)->where('status', 'queued')->count();
-        $failed = (clone $generationBase)->where('status', 'failed')->count();
+        $statusCounts = (clone $base)
+            ->selectRaw('status, COUNT(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status')
+            ->map(fn ($value) => (int) $value);
+
+        $total = (int) $statusCounts->sum();
+        $completed = (int) $statusCounts->only(['completed', 'success', 'succeeded'])->sum();
+        $processing = (int) ($statusCounts['processing'] ?? 0);
+        $queued = (int) ($statusCounts['queued'] ?? 0);
+        $failed = (int) ($statusCounts['failed'] ?? 0);
 
         $imageCount = (int) AppModelsGeneratedImage::query()
             ->whereHas('generation', function ($q) use ($from) {
@@ -629,41 +635,79 @@ class extends Component
             })
             ->count();
 
-        $durations = (clone $generationBase)
+        $avgDuration = (clone $base)
             ->whereIn('status', ['completed', 'success', 'succeeded'])
             ->whereNotNull('started_at')
             ->whereNotNull('completed_at')
-            ->get(['started_at', 'completed_at']);
+            ->selectRaw('AVG(TIMESTAMPDIFF(SECOND, started_at, completed_at)) as average_seconds')
+            ->value('average_seconds');
 
-        $avgDuration = $durations->isEmpty()
-            ? 0
-            : (int) round($durations->avg(fn ($item) => $item->started_at->diffInSeconds($item->completed_at)));
+        $avgDuration = $avgDuration !== null ? (int) round((float) $avgDuration) : 0;
 
-        $trendStart = $this->dashboardTimeframe === 'today'
-            ? $from
-            : ($this->dashboardTimeframe === 'year' ? $now->copy()->startOfMonth() : $from);
+        $dailyRows = (clone $base)
+            ->selectRaw('DATE(created_at) as bucket, COUNT(*) as aggregate')
+            ->groupByRaw('DATE(created_at)')
+            ->orderBy('bucket')
+            ->pluck('aggregate', 'bucket')
+            ->map(fn ($value) => (int) $value)
+            ->all();
 
-        $trendDays = $this->dashboardTimeframe === 'year' ? 12 : ($this->dashboardTimeframe === '90d' ? 12 : ($this->dashboardTimeframe === '30d' ? 10 : ($this->dashboardTimeframe === 'today' ? 12 : 7)));
-        $bucketSeconds = $this->dashboardTimeframe === 'today' ? 2 * 3600 : ($this->dashboardTimeframe === 'year' ? 30 * 86400 : max(86400, (int) ceil($now->diffInSeconds($from) / max(1, $trendDays - 1))));
+        $trendDays = match ($this->dashboardTimeframe) {
+            'today' => 12,
+            '30d' => 10,
+            '90d' => 12,
+            'year' => 12,
+            default => 7,
+        };
+
         $trend = [];
 
-        for ($i = 0; $i < $trendDays; $i++) {
-            if ($this->dashboardTimeframe === 'today') {
-                $start = $from->copy()->addHours($i * 2);
-                $end = $start->copy()->addHours(2);
-                $label = $start->format('H:i');
-            } elseif ($this->dashboardTimeframe === 'year') {
-                $start = $now->copy()->startOfYear()->addMonths($i);
-                $end = $start->copy()->addMonth();
-                $label = $start->format('M');
-            } else {
-                $start = $from->copy()->addDays($i * max(1, (int) floor($now->diffInDays($from) / max(1, $trendDays - 1))));
-                $end = $start->copy()->addDays(max(1, (int) ceil($now->diffInDays($from) / max(1, $trendDays - 1))));
-                $label = $start->format('d M');
-            }
+        if ($this->dashboardTimeframe === 'today') {
+            $hourly = (clone $base)
+                ->selectRaw('FLOOR(HOUR(created_at) / 2) as bucket, COUNT(*) as aggregate')
+                ->groupByRaw('FLOOR(HOUR(created_at) / 2)')
+                ->pluck('aggregate', 'bucket')
+                ->map(fn ($value) => (int) $value);
 
-            $count = (clone $generationBase)->where('created_at', '>=', $start)->where('created_at', '<', $end)->count();
-            $trend[] = ['label' => $label, 'value' => $count];
+            for ($i = 0; $i < 12; $i++) {
+                $startHour = $i * 2;
+                $trend[] = [
+                    'label' => str_pad((string) $startHour, 2, '0', STR_PAD_LEFT) . ':00',
+                    'value' => (int) ($hourly[$i] ?? 0),
+                ];
+            }
+        } else {
+            $rangeDays = max(1, $from->diffInDays($now) + 1);
+            $bucketSize = $this->dashboardTimeframe === 'year'
+                ? 1
+                : max(1, (int) ceil($rangeDays / $trendDays));
+
+            for ($i = 0; $i < $trendDays; $i++) {
+                $start = $this->dashboardTimeframe === 'year'
+                    ? $now->copy()->startOfYear()->addMonths($i)
+                    : $from->copy()->addDays($i * $bucketSize);
+
+                if ($start->greaterThan($now)) {
+                    break;
+                }
+
+                $end = $this->dashboardTimeframe === 'year'
+                    ? $start->copy()->addMonth()
+                    : $start->copy()->addDays($bucketSize);
+
+                $value = 0;
+                foreach ($dailyRows as $date => $count) {
+                    $dateValue = CarbonCarbon::parse($date);
+                    if ($dateValue->greaterThanOrEqualTo($start->copy()->startOfDay()) && $dateValue->lessThan($end->copy()->startOfDay())) {
+                        $value += $count;
+                    }
+                }
+
+                $trend[] = [
+                    'label' => $this->dashboardTimeframe === 'year' ? $start->format('M') : ($bucketSize === 1 ? $start->format('d M') : $start->format('d M')),
+                    'value' => $value,
+                ];
+            }
         }
 
         $recent = AppModelsGeneration::query()
@@ -688,7 +732,7 @@ class extends Component
             'avg_duration' => $avgDuration,
             'success_rate' => $total > 0 ? round(($completed / $total) * 100) : 0,
             'trend' => $trend,
-            'max_trend' => max(1, max(array_column($trend, 'value'))),
+            'max_trend' => max(1, max(array_column($trend, 'value') ?: [1])),
             'recent' => $recent->map(fn ($generation) => [
                 'id' => $generation->id,
                 'title' => data_get($generation->metadata, 'title') ?: ('Generation #' . $generation->id),
@@ -704,34 +748,6 @@ class extends Component
                 ])->filter(fn ($image) => filled($image['url']))->values()->all(),
             ])->all(),
         ];
-    }
-
-
-    public function navigateGlobalSearch(string $action): void
-    {
-        $this->globalSearch = '';
-
-        match ($action) {
-            'stores' => $this->openStore(),
-            'templates' => $this->openTemplates(),
-            default => $this->openGenerator(),
-        };
-    }
-
-    public function getDashboardNotificationsProperty(): array
-    {
-        return AppModelsActivityLog::query()
-            ->latest('created_at')
-            ->limit(6)
-            ->get(['id', 'category', 'status', 'title', 'description', 'created_at'])
-            ->map(fn ($item) => [
-                'id' => $item->id,
-                'category' => $item->category,
-                'status' => $item->status,
-                'title' => $item->title,
-                'description' => $item->description,
-                'created_at' => $item->created_at?->diffForHumans(),
-            ])->all();
     }
 
     public function getDashboardStoresProperty()
@@ -2346,7 +2362,7 @@ public function getUserInitialsProperty(): string
 
 
 
-            <div wire:poll.10s="refreshDashboard" class="rms-dashboard-live">
+            <div wire:poll.visible.10s="refreshDashboard" class="rms-dashboard-live">
                 <section class="rms-dashboard-toolbar reveal reveal-3">
                     <div><span class="section-kicker">REALTIME OPERATIONS</span><h2>Creative activity</h2><p>Monitoring generation, queue, output, dan performa creative engine secara realtime.</p></div>
                     <div class="rms-dashboard-filters">
