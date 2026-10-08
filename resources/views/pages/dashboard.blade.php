@@ -706,6 +706,23 @@ class extends Component
         ];
     }
 
+
+    public function getDashboardNotificationsProperty(): array
+    {
+        return AppModelsActivityLog::query()
+            ->latest('created_at')
+            ->limit(6)
+            ->get(['id', 'category', 'status', 'title', 'description', 'created_at'])
+            ->map(fn ($item) => [
+                'id' => $item->id,
+                'category' => $item->category,
+                'status' => $item->status,
+                'title' => $item->title,
+                'description' => $item->description,
+                'created_at' => $item->created_at?->diffForHumans(),
+            ])->all();
+    }
+
     public function getDashboardStoresProperty()
     {
         return Store::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']);
@@ -1663,22 +1680,21 @@ public function getUserInitialsProperty(): string
 
 
                 <div class="top-search">
-
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-
-                        <circle cx="11" cy="11" r="7"/>
-
-                        <path d="m20 20-4-4"/>
-
-                    </svg>
-
-                    <input type="text" placeholder="Search workspace...">
-
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+                    <input type="text" wire:model.live.debounce.450ms="globalSearch" placeholder="Search workspace..." aria-label="Search workspace...">
                     <span class="search-shortcut">⌘ K</span>
-
+                    @if(mb_strlen(trim($globalSearch)) >= 2)
+                        <div class="rms-global-search-results">
+                            @forelse($this->globalSearchResults as $result)
+                                <button type="button" wire:click="open{{ ucfirst($result['action'] === 'stores' ? 'Store' : ($result['action'] === 'templates' ? 'Templates' : 'Generator')) }}; globalSearch = ''" class="rms-global-search-item">
+                                    <span>{{ $result['type'] }}</span><div><strong>{{ $result['label'] }}</strong><small>{{ $result['meta'] }}</small></div><b>→</b>
+                                </button>
+                            @empty
+                                <div class="rms-global-search-empty">Tidak ada hasil untuk “{{ $globalSearch }}”.</div>
+                            @endforelse
+                        </div>
+                    @endif
                 </div>
-
-
 
                 {{-- NOTIFICATION MENU --}}
 
@@ -1710,7 +1726,7 @@ public function getUserInitialsProperty(): string
 
                         <span class="notification-dot"></span>
 
-                        <span class="notification-count">4</span>
+                        <span class="notification-count">{{ count($this->dashboardNotifications) }}</span>
 
                     </button>
 
@@ -1751,120 +1767,21 @@ public function getUserInitialsProperty(): string
 
 
                         <div class="notification-list">
-
-                            <button type="button" class="notification-item is-unread">
-
-                                <span class="notification-item-icon notification-icon-red">
-
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-
-                                        <path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/>
-
-                                        <path d="m19 16 .8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z"/>
-
-                                    </svg>
-
-                                </span>
-
-                                <span class="notification-item-content">
-
-                                    <strong>AI Creative Engine siap digunakan</strong>
-
-                                    <span>Workspace visual berhasil dimuat dan siap untuk proses berikutnya.</span>
-
-                                    <small>Baru saja</small>
-
-                                </span>
-
-                                <span class="notification-unread-dot"></span>
-
-                            </button>
-
-
-
-                            <button type="button" class="notification-item is-unread">
-
-                                <span class="notification-item-icon notification-icon-green">
-
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-
-                                        <path d="M20 6 9 17l-5-5"/>
-
-                                    </svg>
-
-                                </span>
-
-                                <span class="notification-item-content">
-
-                                    <strong>OpenAI API status: Ready</strong>
-
-                                    <span>Koneksi engine kreatif tersedia untuk tahap konfigurasi.</span>
-
-                                    <small>2 menit lalu</small>
-
-                                </span>
-
-                                <span class="notification-unread-dot"></span>
-
-                            </button>
-
-
-
-                            <button type="button" class="notification-item">
-
-                                <span class="notification-item-icon notification-icon-dark">
-
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-
-                                        <rect x="3" y="3" width="18" height="18" rx="3"/>
-
-                                        <path d="M7 8h10M7 12h7M7 16h5"/>
-
-                                    </svg>
-
-                                </span>
-
-                                <span class="notification-item-content">
-
-                                    <strong>Template workspace diperbarui</strong>
-
-                                    <span>Template visual baru akan muncul di Template Library.</span>
-
-                                    <small>18 menit lalu</small>
-
-                                </span>
-
-                            </button>
-
-
-
-                            <button type="button" class="notification-item">
-
-                                <span class="notification-item-icon notification-icon-violet">
-
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-
-                                        <path d="M12 3v18M3 12h18"/>
-
-                                        <circle cx="12" cy="12" r="8"/>
-
-                                    </svg>
-
-                                </span>
-
-                                <span class="notification-item-content">
-
-                                    <strong>Dashboard berhasil diperbarui</strong>
-
-                                    <span>UI workspace Rizky Moto Shop menggunakan tampilan terbaru.</span>
-
-                                    <small>1 jam lalu</small>
-
-                                </span>
-
-                            </button>
-
-                        </div>
+                            @forelse($this->dashboardNotifications as $notification)
+                                <button type="button" class="notification-item">
+                                    <span class="notification-item-icon {{ $notification['status'] === 'success' ? 'notification-icon-green' : ($notification['status'] === 'error' ? 'notification-icon-red' : 'notification-icon-dark') }}">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8"/><path d="m8 12 3 3 5-6"/></svg>
+                                    </span>
+                                    <span class="notification-item-content">
+                                        <strong>{{ $notification['title'] }}</strong>
+                                        <span>{{ IlluminateSupportStr::limit($notification['description'], 110) }}</span>
+                                        <small>{{ $notification['created_at'] }}</small>
+                                    </span>
+                                </button>
+                            @empty
+                                <div class="notification-empty">Belum ada notifikasi.</div>
+                            @endforelse
+                        </div>                  </div>
 
 
 
