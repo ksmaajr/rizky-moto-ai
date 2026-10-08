@@ -11407,3 +11407,48 @@
     .rms-engine-health-head{grid-template-columns:1fr!important}
     .rms-engine-health-meta{align-items:flex-start!important;flex-direction:row!important;justify-content:space-between!important}
 }
+
+/* =========================================================
+   DASHBOARD V30 — MOBILE ENGINE TOGGLE + MODEL ECOSYSTEM
+   ========================================================= */
+.rms-engine-mobile-toggle{
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:12px!important;
+}
+.rms-engine-mobile-toggle>span{
+    display:inline-flex!important;
+    align-items:center!important;
+    gap:8px!important;
+}
+.rms-engine-mobile-toggle>span>i{
+    width:7px!important;
+    height:7px!important;
+    border-radius:50%!important;
+    background:#22c55e!important;
+    box-shadow:0 0 0 4px rgba(34,197,94,.10)!important;
+}
+.rms-engine-mobile-toggle strong{font-size:7px!important;font-weight:950!important}
+.rms-engine-mobile-toggle b{font-size:12px!important;line-height:1!important}
+.rms-engine-ecosystem-card .rms-engine-model-list{
+    max-height:48px!important;
+    overflow:hidden!important;
+}
+@media(max-width:760px){
+    .rms-engine-mobile-toggle{
+        min-height:42px!important;
+        padding:0 13px!important;
+        border-color:#dedee3!important;
+        background:linear-gradient(180deg,#fff,#fafafa)!important;
+        box-shadow:0 3px 12px rgba(24,24,27,.04)!important;
+    }
+    .rms-engine-mobile-toggle strong{font-size:7.5px!important}
+    .rms-engine-mobile-toggle b{
+        width:25px!important;
+        height:25px!important;
+        font-size:14px!important;
+    }
+    .rms-engine-health-panel.is-collapsed .rms-engine-health-head{
+        padding-bottom:0!important;
+    }
+}
