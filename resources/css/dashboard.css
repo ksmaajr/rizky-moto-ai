@@ -10576,3 +10576,57 @@
     .rms-history-load-more{padding-inline:13px!important;align-items:stretch!important;flex-direction:column!important}
     .rms-history-load-more button{width:100%!important}
 }
+
+/* =========================================================
+   DASHBOARD V23 — GENERATION CARD / PREVIEW POLISH
+   ========================================================= */
+.rms-generation-card-error{
+    display:flex!important;
+    flex-direction:column!important;
+    gap:3px!important;
+    margin-top:8px!important;
+    padding:8px 9px!important;
+    border:1px solid #fee2e2!important;
+    border-radius:9px!important;
+    background:#fff7f7!important;
+}
+.rms-generation-card-error b{color:#dc2626!important;font-size:6.5px!important;font-weight:950!important}
+.rms-generation-card-error span{
+    overflow:hidden!important;
+    color:#a1a1aa!important;
+    font-size:6px!important;
+    line-height:1.45!important;
+    text-overflow:ellipsis!important;
+}
+.rms-generation-card-status.status-cancelled,
+.rms-generation-card-status.status-canceled{background:#fff7ed!important;color:#c2410c!important}
+.rms-generation-preview-downloads{
+    display:flex!important;
+    align-items:center!important;
+    flex-wrap:wrap!important;
+    gap:6px!important;
+}
+.rms-generation-preview-downloads a{
+    display:inline-flex!important;
+    min-height:30px!important;
+    align-items:center!important;
+    padding:0 10px!important;
+    border:1px solid #e4e4e7!important;
+    border-radius:8px!important;
+    background:#fff!important;
+    color:#3f3f46!important;
+    font-size:6.5px!important;
+    font-weight:900!important;
+    text-decoration:none!important;
+    transition:.2s ease!important;
+}
+.rms-generation-preview-downloads a:first-child{
+    border-color:#fecaca!important;
+    background:#fff1f2!important;
+    color:#dc2626!important;
+}
+.rms-generation-preview-downloads a:hover{border-color:#fecaca!important;color:#dc2626!important}
+@media(max-width:640px){
+    .rms-generation-preview-downloads{width:100%!important}
+    .rms-generation-preview-downloads a{flex:1 1 auto!important;justify-content:center!important}
+}
