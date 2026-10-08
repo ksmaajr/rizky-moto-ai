@@ -9482,3 +9482,133 @@
         margin-inline:8px!important;
     }
 }
+
+
+/* =========================================================
+   DASHBOARD V14 — UNIFY MOBILE SIDEBAR WITH DESKTOP + SAFE NOTIF
+   ========================================================= */
+
+/* Mobile uses the exact desktop sidebar visual system.
+   Only the interaction changes: it slides in/out. */
+@media(max-width:900px){
+    .dashboard-sidebar{
+        top:0!important;
+        left:0!important;
+        right:auto!important;
+        bottom:0!important;
+        width:278px!important;
+        max-width:278px!important;
+        max-height:none!important;
+        height:100dvh!important;
+        border-radius:0!important;
+        border:0!important;
+        box-shadow:18px 0 55px rgba(0,0,0,.24)!important;
+        overflow:hidden!important;
+        z-index:100000!important;
+    }
+
+    .dashboard-sidebar .sidebar-brand{
+        height:96px!important;
+        min-height:96px!important;
+    }
+
+    .dashboard-sidebar .sidebar-scroll{
+        padding:22px 12px 18px!important;
+    }
+
+    /* Keep the desktop topbar above the drawer while the drawer keeps
+       exactly the same width, logo, nav spacing and worker widget. */
+    .topbar{
+        z-index:100100!important;
+        backdrop-filter:none!important;
+        -webkit-backdrop-filter:none!important;
+        filter:none!important;
+        transform:none!important;
+        perspective:none!important;
+        contain:none!important;
+    }
+
+    .dashboard-overlay{
+        z-index:99990!important;
+    }
+
+    /* IMPORTANT: fixed notification must have no transformed/filtering
+       ancestor that can become its containing block. */
+    .notification-menu{
+        position:static!important;
+        z-index:100200!important;
+        isolation:auto!important;
+    }
+
+    .notification-dropdown{
+        position:fixed!important;
+        top:78px!important;
+        left:12px!important;
+        right:12px!important;
+        width:auto!important;
+        max-width:none!important;
+        max-height:min(72dvh,620px)!important;
+        margin:0!important;
+        transform:none!important;
+        z-index:2147483000!important;
+    }
+
+    .notification-dropdown::before,
+    .notification-dropdown::after{
+        display:none!important;
+    }
+}
+
+/* Desktop and tablet use the same bounded history frame.
+   No full-bleed cards touching the outer panel. */
+.rms-history-shell{
+    overflow:hidden!important;
+}
+
+.rms-history-scroll{
+    height:560px!important;
+    max-height:560px!important;
+    margin:0 18px 18px!important;
+    padding:16px!important;
+    gap:14px!important;
+    overflow-y:scroll!important;
+    overflow-x:hidden!important;
+    border:1px solid #e7e7ea!important;
+    border-radius:17px!important;
+    background:#f8f8fa!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.8)!important;
+    scrollbar-gutter:stable!important;
+}
+
+.rms-history-scroll::-webkit-scrollbar{
+    width:9px!important;
+}
+.rms-history-scroll::-webkit-scrollbar-track{
+    margin:8px 3px!important;
+    border-radius:999px!important;
+    background:#eeeeF1!important;
+}
+.rms-history-scroll::-webkit-scrollbar-thumb{
+    min-height:55px!important;
+    border:2px solid #eeeeF1!important;
+    border-radius:999px!important;
+    background:#bdbdc5!important;
+}
+
+@media(max-width:640px){
+    .rms-history-scroll{
+        height:520px!important;
+        max-height:520px!important;
+        margin:0 10px 10px!important;
+        padding:10px!important;
+        gap:10px!important;
+        border-radius:15px!important;
+    }
+
+    .notification-dropdown{
+        top:78px!important;
+        left:8px!important;
+        right:8px!important;
+        width:auto!important;
+    }
+}
