@@ -855,57 +855,99 @@ class extends Component
 
     public function getDashboardEngineProperty(): array
     {
-        $keys = \App\Models\VercelGatewayApiKey::query();
-        $totalKeys = (int) $keys->count();
-        $activeKeys = (int) (clone $keys)->where('is_active', true)->whereNotIn('status', ['disabled', 'invalid', 'exhausted'])->where(function ($q) {
-            $q->whereNull('cooldown_until')->orWhere('cooldown_until', '<=', now());
-        })->count();
-        $cooldownKeys = (int) (clone $keys)->where('status', 'cooldown')->count();
-        $exhaustedKeys = (int) (clone $keys)->whereIn('status', ['exhausted', 'invalid', 'disabled'])->count();
-        $lastKeyUse = (clone $keys)->whereNotNull('last_used_at')->latest('last_used_at')->first(['name', 'last_used_at', 'status']);
+        $cacheKey = 'dashboard-engine-health:' . (int) auth()->id();
 
-        $legacyConfigured = filled(\App\Models\OpenAiSetting::query()->value('api_key'));
-        $envConfigured = trim((string) env('AI_GATEWAY_API_KEY', '')) !== '';
-        $gatewayReady = $activeKeys > 0 || $legacyConfigured || $envConfigured;
-        $agentConnected = class_exists(\App\Services\AI\Providers\AgentKitProvider::class);
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 8, function (): array {
+            $keys = \App\Models\VercelGatewayApiKey::query();
+            $totalKeys = (int) $keys->count();
+            $activeKeys = (int) (clone $keys)
+                ->where('is_active', true)
+                ->whereNotIn('status', ['disabled', 'invalid', 'exhausted'])
+                ->where(function ($q) {
+                    $q->whereNull('cooldown_until')->orWhere('cooldown_until', '<=', now());
+                })
+                ->count();
+            $cooldownKeys = (int) (clone $keys)->where('status', 'cooldown')->count();
+            $unavailableKeys = (int) (clone $keys)->whereIn('status', ['exhausted', 'invalid', 'disabled'])->count();
+            $lastKeyUse = (clone $keys)
+                ->whereNotNull('last_used_at')
+                ->latest('last_used_at')
+                ->first(['name', 'last_used_at', 'status']);
 
-        $latestApi = \App\Models\ActivityLog::query()
-            ->where('category', 'api')
-            ->latest('created_at')
-            ->first(['status', 'title', 'created_at', 'http_status']);
+            $legacyConfigured = filled(\App\Models\OpenAiSetting::query()->value('api_key'));
+            $envConfigured = trim((string) env('AI_GATEWAY_API_KEY', '')) !== '';
+            $gatewayReady = $activeKeys > 0 || $legacyConfigured || $envConfigured;
 
-        $latestGeneration = \App\Models\Generation::query()
-            ->whereNotNull('model')
-            ->latest('created_at')
-            ->first(['model', 'created_at']);
+            $agentConnected = class_exists(\App\Services\AI\Providers\AgentKitProvider::class);
 
-        return [
-            'gateway' => [
-                'state' => $gatewayReady ? 'online' : 'offline',
-                'label' => $gatewayReady ? 'Gateway ready' : 'Gateway offline',
-                'keys_total' => $totalKeys,
-                'keys_active' => $activeKeys,
-                'keys_cooldown' => $cooldownKeys,
-                'keys_unavailable' => $exhaustedKeys,
-                'legacy' => $legacyConfigured,
-                'env' => $envConfigured,
-                'last_key' => $lastKeyUse?->name,
-                'last_used_at' => $lastKeyUse?->last_used_at?->diffForHumans(),
-                'last_status' => $lastKeyUse?->status,
-            ],
-            'provider' => [
-                'name' => 'Vercel AI Gateway',
-                'model' => $latestGeneration?->model ? \Illuminate\Support\Str::afterLast($latestGeneration->model, '/') : 'Belum ada generation',
-                'last_status' => $latestApi?->status,
-                'last_http' => $latestApi?->http_status,
-                'last_at' => $latestApi?->created_at?->diffForHumans(),
-            ],
-            'agent' => [
-                'state' => $agentConnected ? 'connected' : 'standby',
-                'label' => $agentConnected ? 'AgentKit connected' : 'Agent layer standby',
-                'detail' => $agentConnected ? 'Provider adapter AgentKit tersedia.' : 'Siap ditambahkan tanpa mengubah generation flow saat ini.',
-            ],
-        ];
+            $apiMetrics = \App\Models\ActivityLog::query()
+                ->where('category', 'api')
+                ->where('created_at', '>=', now()->subHours(24))
+                ->selectRaw('
+                    COUNT(*) as total_requests,
+                    SUM(CASE WHEN status = "success" THEN 1 ELSE 0 END) as successful_requests,
+                    SUM(CASE WHEN status = "error" THEN 1 ELSE 0 END) as failed_requests,
+                    AVG(CASE WHEN duration_ms IS NOT NULL THEN duration_ms END) as avg_duration_ms
+                ')
+                ->first();
+
+            $latestApi = \App\Models\ActivityLog::query()
+                ->where('category', 'api')
+                ->latest('created_at')
+                ->first(['status', 'title', 'created_at', 'http_status', 'duration_ms']);
+
+            $latestGeneration = \App\Models\Generation::query()
+                ->whereNotNull('model')
+                ->latest('created_at')
+                ->first(['model', 'created_at']);
+
+            $totalRequests = (int) ($apiMetrics?->total_requests ?? 0);
+            $successfulRequests = (int) ($apiMetrics?->successful_requests ?? 0);
+            $failedRequests = (int) ($apiMetrics?->failed_requests ?? 0);
+            $successRate = $totalRequests > 0
+                ? round(($successfulRequests / $totalRequests) * 100, 1)
+                : null;
+
+            return [
+                'gateway' => [
+                    'state' => $gatewayReady ? 'online' : 'offline',
+                    'label' => $gatewayReady ? 'Gateway ready' : 'Gateway offline',
+                    'keys_total' => $totalKeys,
+                    'keys_active' => $activeKeys,
+                    'keys_cooldown' => $cooldownKeys,
+                    'keys_unavailable' => $unavailableKeys,
+                    'legacy' => $legacyConfigured,
+                    'env' => $envConfigured,
+                    'last_key' => $lastKeyUse?->name,
+                    'last_used_at' => $lastKeyUse?->last_used_at?->diffForHumans(),
+                    'last_status' => $lastKeyUse?->status,
+                ],
+                'provider' => [
+                    'name' => 'Vercel AI Gateway',
+                    'model' => $latestGeneration?->model
+                        ? \Illuminate\Support\Str::afterLast($latestGeneration->model, '/')
+                        : 'Belum ada generation',
+                    'last_status' => $latestApi?->status,
+                    'last_http' => $latestApi?->http_status,
+                    'last_at' => $latestApi?->created_at?->diffForHumans(),
+                    'last_duration_ms' => $latestApi?->duration_ms,
+                    'requests_24h' => $totalRequests,
+                    'success_24h' => $successfulRequests,
+                    'failed_24h' => $failedRequests,
+                    'success_rate_24h' => $successRate,
+                    'avg_duration_ms_24h' => $apiMetrics?->avg_duration_ms !== null
+                        ? (int) round((float) $apiMetrics->avg_duration_ms)
+                        : null,
+                ],
+                'agent' => [
+                    'state' => $agentConnected ? 'connected' : 'standby',
+                    'label' => $agentConnected ? 'AgentKit connected' : 'Agent layer standby',
+                    'detail' => $agentConnected
+                        ? 'Provider adapter AgentKit tersedia.'
+                        : 'Siap ditambahkan tanpa mengubah generation flow saat ini.',
+                ],
+            ];
+        });
     }
 
     public function getDashboardNotificationUnreadCountProperty(): int
