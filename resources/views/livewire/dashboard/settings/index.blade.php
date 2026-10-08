@@ -4,7 +4,7 @@
             <span class="section-kicker">SYSTEM / SETTINGS</span>
             <h1 x-text="$wire.activeTab === 'provider' ? 'AI Provider Configuration' : 'General Settings'"></h1>
             <p x-text="$wire.activeTab === 'provider'
-                ? 'Kelola koneksi creative engine yang digunakan oleh Product Generator.'
+                ? 'Kelola provider AI, credential, failover, dan readiness untuk Product Generator.'
                 : 'Kelola preferensi dasar workspace internal Rizky Moto Shop.'"></p>
         </div>
 
@@ -1310,19 +1310,3 @@
 .rms-ai-toggle-field input{position:absolute;opacity:0;pointer-events:none}
 .rms-ai-toggle-ui{position:relative;width:28px;height:17px;flex:0 0 28px;border-radius:999px;background:#e4e4e7;transition:background .25s cubic-bezier(.2,.8,.2,1)}
 .rms-ai-toggle-ui:after{content:"";position:absolute;top:3px;left:3px;width:11px;height:11px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12);transition:transform .25s cubic-bezier(.2,.8,.2,1)}
-.rms-ai-toggle-field input:checked+.rms-ai-toggle-ui{background:#18181b}.rms-ai-toggle-field input:checked+.rms-ai-toggle-ui:after{transform:translateX(11px)}
-.rms-ai-toggle-field strong{display:block;color:#52525b;font-size:7.5px;font-weight:850}.rms-ai-toggle-field small{display:block;margin-top:2px;color:#a1a1aa;font-size:6.7px;line-height:1.35}
-.rms-ai-provider-save-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;border-top:1px solid #f0f0f2;background:#fafafa}
-.rms-ai-provider-save-row>div{display:flex;align-items:center;gap:7px;color:#a1a1aa;font-size:6.8px}.rms-ai-live-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.08)}
-.rms-ai-save-button{height:34px;padding:0 12px;border:1px solid #18181b;border-radius:9px;background:#18181b;color:#fff;font-size:7.5px;font-weight:850;cursor:pointer;transition:transform .2s ease,box-shadow .2s ease,background .2s ease}
-.rms-ai-save-button:hover{transform:translateY(-1px);box-shadow:0 9px 20px rgba(24,24,27,.14);background:#27272a}.rms-ai-save-button:active{transform:translateY(0) scale(.98)}
-.rms-ai-save-button i{display:inline-block;width:10px;height:10px;margin-right:5px;border:1.5px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;vertical-align:-2px;animation:rmsAiSpin .65s linear infinite}
-.rms-settings-activity-head{display:flex;align-items:center;gap:12px;padding:4px 0 20px;animation:rmsSettingsIn .35s cubic-bezier(.2,.8,.2,1) both}
-.rms-settings-activity-mark{display:grid;place-items:center;width:42px;height:42px;border:1px solid #e4e4e7;border-radius:12px;background:#18181b;color:#fff;font-size:18px;box-shadow:0 10px 24px rgba(0,0,0,.08)}
-.rms-settings-activity-head>div:nth-child(2){min-width:0;flex:1}.rms-settings-activity-head span{display:block;color:#a1a1aa;font-size:6.5px;font-weight:900;letter-spacing:.14em}.rms-settings-activity-head strong{display:block;margin-top:3px;color:#18181b;font-size:16px;font-weight:850;letter-spacing:-.02em}.rms-settings-activity-head small{display:block;margin-top:4px;color:#a1a1aa;font-size:7.5px;line-height:1.45}
-.rms-settings-activity-live{display:inline-flex!important;align-items:center;gap:6px;flex:0 0 auto;padding:6px 8px;border:1px solid #dcfce7;border-radius:999px;background:#f0fdf4;color:#15803d!important;font-size:6px!important;font-weight:900!important;letter-spacing:.08em!important}.rms-settings-activity-live i{width:5px;height:5px;border-radius:50%;background:#22c55e;animation:rmsAiBlink 1.8s ease-in-out infinite}
-.rms-settings-activity-note{display:flex;gap:8px;align-items:center;margin-top:14px;padding:10px 12px;border:1px solid #e4e4e7;border-radius:10px;background:#fafafa}.rms-settings-activity-note>span{color:#22c55e;font-size:8px}.rms-settings-activity-note strong{display:block;color:#52525b;font-size:7.5px}.rms-settings-activity-note small{display:block;margin-top:2px;color:#a1a1aa;font-size:6.8px}
-@keyframes rmsAiSpin{to{transform:rotate(360deg)}}@keyframes rmsAiPulse{0%{transform:scale(.72);opacity:.65}100%{transform:scale(1.4);opacity:0}}@keyframes rmsAiFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}@keyframes rmsAiBlink{0%,100%{opacity:.45}50%{opacity:1;transform:scale(1.2)}}@keyframes rmsSettingsIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
-@media(max-width:760px){.rms-ai-agent-grid,.rms-ai-failover-grid{grid-template-columns:1fr}.rms-ai-agent-meta{grid-template-columns:1fr}.rms-ai-provider-save-row{align-items:stretch;flex-direction:column}.rms-ai-save-button{width:100%}.rms-settings-activity-head{align-items:flex-start}.rms-settings-activity-live{margin-left:auto}}
-@media(prefers-reduced-motion:reduce){.rms-ai-provider-section,.rms-ai-save-button,.rms-ai-toggle-field,.rms-ai-readiness-orb,.rms-settings-activity-head,.rms-settings-activity-live{animation:none!important;transition:none!important}}
-</style>
