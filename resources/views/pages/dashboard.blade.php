@@ -3846,6 +3846,64 @@ public function getUserInitialsProperty(): string
         }
 
 
+        /* V22 — clean CSS chevron + natural collapse motion */
+        @media(max-width:760px){
+            .rms-engine-mobile-toggle>b{
+                position:relative!important;
+                width:34px!important;
+                height:34px!important;
+                flex:0 0 34px!important;
+                display:grid!important;
+                place-items:center!important;
+                font-size:0!important;
+                line-height:0!important;
+                transform:none!important;
+                transition:background .24s ease,border-color .24s ease,box-shadow .24s ease!important;
+            }
+            .rms-engine-mobile-toggle>b:before{
+                content:""!important;
+                width:7px!important;
+                height:7px!important;
+                display:block!important;
+                border-right:2px solid currentColor!important;
+                border-bottom:2px solid currentColor!important;
+                transform:rotate(45deg) translate(-1px,-1px)!important;
+                transition:transform .34s cubic-bezier(.22,1,.36,1),color .24s ease!important;
+                transform-origin:center!important;
+            }
+            .rms-engine-mobile-toggle>b.is-open:before{
+                transform:rotate(225deg) translate(-1px,-1px)!important;
+            }
+            .rms-engine-mobile-toggle>b.is-open{
+                transform:none!important;
+            }
+            .rms-engine-mobile-toggle:active>b:before{
+                transform:scale(.86) rotate(45deg) translate(-1px,-1px)!important;
+            }
+            .rms-engine-mobile-toggle:active>b.is-open:before{
+                transform:scale(.86) rotate(225deg) translate(-1px,-1px)!important;
+            }
+            .rms-engine-health-grid{
+                transform-origin:top center!important;
+                transition:max-height .48s cubic-bezier(.22,1,.36,1),opacity .28s ease,transform .48s cubic-bezier(.22,1,.36,1)!important;
+            }
+            .rms-engine-health-panel.is-collapsed .rms-engine-health-grid{
+                transform:translateY(-5px) scaleY(.985)!important;
+            }
+        }
+        @media(max-width:420px){
+            .rms-engine-mobile-toggle>b{
+                width:32px!important;
+                height:32px!important;
+                flex-basis:32px!important;
+            }
+            .rms-engine-mobile-toggle>b:before{
+                width:6px!important;
+                height:6px!important;
+            }
+        }
+
+
     </style>
 
 </div>
