@@ -374,14 +374,15 @@ new class extends Component
 
     public function getLatestGenerationProperty(): ?Generation
     {
+        $query = Generation::query()
+            ->with(['store', 'template', 'generatedImages'])
+            ->where('user_id', auth()->id());
+
         if ($this->latestGenerationId) {
-            return Generation::query()
-                ->with(['store', 'template', 'generatedImages'])
-                ->find($this->latestGenerationId);
+            return $query->whereKey($this->latestGenerationId)->first();
         }
 
-        return Generation::query()
-            ->with(['store', 'template', 'generatedImages'])
+        return $query
             ->whereIn('status', ['completed', 'success', 'succeeded'])
             ->latest()
             ->first();
