@@ -556,9 +556,9 @@
                                 <span>Configuration is stored server-side and applied to new generations.</span>
                             </div>
                             <button type="button" class="rms-ai-save-button" wire:click="saveAiProviderConfiguration" wire:loading.attr="disabled" wire:target="saveAiProviderConfiguration">
-                                <span class="rms-ai-save-label" wire:loading.remove wire:target="saveAiProviderConfiguration">Save AI Configuration</span>
-                                <b class="rms-ai-save-check" wire:loading.remove wire:target="saveAiProviderConfiguration" aria-hidden="true">✓</b>
-                                <span class="rms-ai-save-loading" wire:loading wire:target="saveAiProviderConfiguration">Saving...</span>
+                                <span class="rms-ai-save-label" wire:loading.class="rms-ai-save-hidden" wire:target="saveAiProviderConfiguration">Save AI Configuration</span>
+                                <b class="rms-ai-save-check" wire:loading.class="rms-ai-save-hidden" wire:target="saveAiProviderConfiguration" aria-hidden="true">✓</b>
+                                <span class="rms-ai-save-loading" wire:loading.class="rms-ai-save-visible" wire:target="saveAiProviderConfiguration">Saving...</span>
                             </button>
                         </div>
                     </section>
@@ -2888,4 +2888,17 @@
 }
 @media(prefers-reduced-motion:reduce){
     .rms-provider-block-failover .rms-ai-save-button{transition:none}
-}</style>
+}
+.rms-provider-block-failover .rms-ai-save-button .rms-ai-save-hidden{
+    display:none!important;
+}
+.rms-provider-block-failover .rms-ai-save-button .rms-ai-save-loading{
+    display:none!important;
+}
+.rms-provider-block-failover .rms-provider-block-failover .rms-ai-save-button .rms-ai-save-visible{
+    display:inline!important;
+}
+.rms-provider-block-failover .rms-ai-save-button .rms-ai-save-visible{
+    display:inline!important;
+}
+</style>
