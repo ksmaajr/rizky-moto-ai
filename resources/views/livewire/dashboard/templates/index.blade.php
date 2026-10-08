@@ -689,28 +689,29 @@
 /* V27 — template actions aligned to generation-history action language */
 .rms-template-card-actions-v2{
     display:grid!important;
-    grid-template-columns:minmax(0,1fr) minmax(108px,112px) 60px!important;
+    grid-template-columns:minmax(0,1fr) 140px 60px!important;
     gap:10px!important;
     align-items:stretch!important;
+    min-width:0!important;
 }
 .rms-template-card-actions-v2 > button{
     min-width:0!important;
     height:54px!important;
     min-height:54px!important;
     margin:0!important;
-    padding:0 18px!important;
+    padding:0 14px!important;
     box-sizing:border-box!important;
     display:flex!important;
     align-items:center!important;
     justify-content:center!important;
-    gap:8px!important;
+    gap:7px!important;
     border-radius:14px!important;
     white-space:nowrap!important;
     line-height:1!important;
 }
 .rms-template-card-actions-v2 > button:first-child{
-    padding-left:20px!important;
-    padding-right:16px!important;
+    padding-left:12px!important;
+    padding-right:12px!important;
     justify-content:center!important;
 }
 .rms-template-card-actions-v2 > button:first-child span{
@@ -771,3 +772,30 @@
     }
 }
 </style>
+
+/* V28 — prevent template action text overflow */
+.rms-template-card-actions-v2 > button:first-child{
+    min-width:0!important;
+    overflow:hidden!important;
+    font-size:10px!important;
+    letter-spacing:-.01em!important;
+}
+.rms-template-card-actions-v2 > button:first-child span{
+    min-width:0!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+}
+.rms-template-card-actions-v2 > button:first-child b{
+    flex:0 0 auto!important;
+}
+.rms-template-card-actions-v2 > .ghost{
+    width:140px!important;
+    min-width:140px!important;
+}
+@media(max-width:720px){
+    .rms-template-card-actions-v2{
+        grid-template-columns:minmax(0,1fr) 54px!important;
+    }
+    .rms-template-card-actions-v2 > .ghost{display:none!important}
+    .rms-template-card-actions-v2 > button:first-child{font-size:10px!important}
+}
