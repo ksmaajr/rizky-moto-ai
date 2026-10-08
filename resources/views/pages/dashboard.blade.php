@@ -4258,6 +4258,21 @@ public function getUserInitialsProperty(): string
         }
 
 
+        /* V27 — sidebar worker chevron direction */
+        .worker-widget-chevron:before{
+            transform:translate(-50%,-62%) rotate(45deg)!important;
+        }
+        .worker-widget-shell.is-open .worker-widget-chevron:before{
+            transform:translate(-50%,-38%) rotate(225deg)!important;
+        }
+        .worker-widget-mini:active .worker-widget-chevron:before{
+            transform:translate(-50%,-62%) scale(.82) rotate(45deg)!important;
+        }
+        .worker-widget-shell.is-open .worker-widget-mini:active .worker-widget-chevron:before{
+            transform:translate(-50%,-38%) scale(.82) rotate(225deg)!important;
+        }
+
+
     </style>
 
 </div>
