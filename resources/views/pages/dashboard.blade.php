@@ -2028,7 +2028,7 @@ public function getUserInitialsProperty(): string
                         <small>{{ $this->workerStatus['running_count'] }}/{{ $this->workerStatus['target_workers'] }} active</small>
                     </span>
                     <span class="worker-widget-mini-state {{ $this->workerStatus['running'] ? 'is-running' : 'is-stopped' }}"></span>
-                    <span class="worker-widget-chevron">⌃</span>
+                    <span class="worker-widget-chevron" aria-hidden="true"></span>
                 </button>
             </div>
 
@@ -2050,7 +2050,7 @@ public function getUserInitialsProperty(): string
                             @click="workerOpen = false"
                             aria-label="Hide queue worker status"
                             title="Hide worker status"
-                        >⌄</button>
+                        ><span class="collapse-chevron" aria-hidden="true"></span></button>
                     </div>
                 </div>
 
@@ -3939,6 +3939,95 @@ public function getUserInitialsProperty(): string
                 width:6px!important;
                 height:6px!important;
             }
+        }
+
+
+        /* V24 — unified collapse controls: centered chevrons + smooth motion */
+        .worker-collapse .collapse-chevron{
+            position:absolute;
+            left:50%;
+            top:50%;
+            width:7px;
+            height:7px;
+            border-right:1.8px solid currentColor;
+            border-bottom:1.8px solid currentColor;
+            transform:translate(-50%,-62%) rotate(225deg);
+            transform-origin:center;
+            transition:transform .32s cubic-bezier(.22,1,.36,1);
+            pointer-events:none;
+        }
+        .worker-collapse{position:relative!important;font-size:0!important}
+        .worker-collapse:active .collapse-chevron{transform:translate(-50%,-62%) scale(.86) rotate(225deg)}
+        .worker-widget-chevron{
+            position:relative!important;
+            width:20px!important;
+            height:20px!important;
+            display:grid!important;
+            place-items:center!important;
+            font-size:0!important;
+            line-height:0!important;
+        }
+        .worker-widget-chevron:before{
+            content:"";
+            position:absolute;
+            left:50%;
+            top:50%;
+            width:6px;
+            height:6px;
+            border-right:1.8px solid currentColor;
+            border-bottom:1.8px solid currentColor;
+            transform:translate(-50%,-62%) rotate(225deg);
+            transform-origin:center;
+            transition:transform .34s cubic-bezier(.22,1,.36,1);
+        }
+        .worker-widget-shell.is-open .worker-widget-chevron:before{
+            transform:translate(-50%,-38%) rotate(45deg);
+        }
+        .worker-widget-mini:active .worker-widget-chevron:before{
+            transform:translate(-50%,-62%) scale(.86) rotate(225deg);
+        }
+        .rms-collapse-button-lg b,
+        .rms-collapse-button b{
+            position:relative!important;
+            width:30px!important;
+            height:30px!important;
+            flex:0 0 30px!important;
+            display:grid!important;
+            place-items:center!important;
+            font-size:0!important;
+            line-height:0!important;
+            transform:none!important;
+            transition:background .24s ease,border-color .24s ease,box-shadow .24s ease!important;
+        }
+        .rms-collapse-button-lg b:before,
+        .rms-collapse-button b:before{
+            content:"";
+            position:absolute;
+            left:50%;
+            top:50%;
+            width:6px;
+            height:6px;
+            border-right:1.8px solid currentColor;
+            border-bottom:1.8px solid currentColor;
+            transform:translate(-50%,-62%) rotate(225deg);
+            transform-origin:center;
+            transition:transform .34s cubic-bezier(.22,1,.36,1);
+        }
+        .rms-collapse-button-lg b.is-closed:before,
+        .rms-collapse-button b.is-closed:before{
+            transform:translate(-50%,-38%) rotate(45deg);
+        }
+        .rms-collapse-button-lg:active b:before,
+        .rms-collapse-button:active b:before{
+            transform:translate(-50%,-62%) scale(.86) rotate(225deg);
+        }
+        .rms-collapse-button-lg:active b.is-closed:before,
+        .rms-collapse-button:active b.is-closed:before{
+            transform:translate(-50%,-38%) scale(.86) rotate(45deg);
+        }
+        @media(max-width:420px){
+            .worker-widget-chevron{width:20px!important;height:20px!important}
+            .rms-collapse-button-lg b,.rms-collapse-button b{width:29px!important;height:29px!important;flex-basis:29px!important}
         }
 
 
