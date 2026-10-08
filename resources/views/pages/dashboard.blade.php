@@ -638,6 +638,14 @@ class extends Component
         $this->refreshGenerationHistory();
     }
 
+    public function unloadGenerationHistory(): void
+    {
+        $this->generationHistory = [];
+        $this->generationHistoryStats = [];
+        $this->generationHistoryLoaded = false;
+        $this->historyLimit = 40;
+    }
+
     public function updatedHistoryStatus(): void
     {
         if ($this->generationHistoryLoaded) $this->refreshGenerationHistory();
@@ -2937,7 +2945,7 @@ public function getUserInitialsProperty(): string
                         <div class="rms-health-note"><i></i>{{ $workerStatus['healthy']?'Generation engine siap menerima pekerjaan.':'Worker belum aktif atau belum sehat.' }}</div>
                     </article>
                 </section>
-                <section class="rms-dashboard-card rms-recent-card rms-recent-card-v3 reveal reveal-5" x-data="{ recentOpen: true, previewOpen: false, previewUrl: '', previewDownloadUrl: '', previewTitle: '' }">
+                <section class="rms-dashboard-card rms-recent-card rms-recent-card-v3 reveal reveal-5" x-data="{ recentOpen: false, previewOpen: false, previewUrl: '', previewDownloadUrl: '', previewTitle: '' }">
                     <div class="rms-dashboard-card-head rms-recent-head rms-history-head">
                         <div class="rms-history-heading">
                             <span class="section-kicker">GENERATION HISTORY</span>
@@ -2946,7 +2954,7 @@ public function getUserInitialsProperty(): string
                         </div>
                         <div class="rms-history-head-actions">
                             <span class="rms-history-count">{{ $generationHistoryLoaded ? count($generationHistory) . ' results' : 'History ready' }}</span>
-                            <button type="button" class="rms-collapse-button rms-collapse-button-lg" @click="recentOpen=!recentOpen; if(recentOpen && !$wire.generationHistoryLoaded) $wire.loadGenerationHistory()" :aria-expanded="recentOpen.toString()">
+                            <button type="button" class="rms-collapse-button rms-collapse-button-lg" @click="recentOpen=!recentOpen; if(recentOpen && !$wire.generationHistoryLoaded) $wire.loadGenerationHistory(); if(!recentOpen && $wire.generationHistoryLoaded) $wire.unloadGenerationHistory()" :aria-expanded="recentOpen.toString()">
                                 <span x-text="recentOpen ? 'Collapse history' : 'Expand history'"></span><b :class="{ 'is-closed': !recentOpen }">⌄</b>
                             </button>
                         </div>
@@ -2959,7 +2967,7 @@ public function getUserInitialsProperty(): string
                         <div class="is-failed"><span>FAILED</span><strong>{{ $generationHistoryStats['failed'] ?? 0 }}</strong><small>failed / cancelled</small></div>
                     </div>
 
-                    <div class="rms-history-shell" wire:init="loadGenerationHistory" x-show="recentOpen" x-transition:enter="rms-history-enter" x-transition:leave="rms-history-leave" x-cloak>
+                    <div class="rms-history-shell" x-show="recentOpen" x-transition:enter="rms-history-enter" x-transition:leave="rms-history-leave" x-cloak>
                         @if(! $generationHistoryLoaded)
                             <div class="rms-history-load-state rms-history-loading-state">
                                 <div><span class="rms-history-load-icon">✦</span><strong>Memuat seluruh generation history…</strong><small>History dimuat setelah dashboard tampil agar initial render tetap ringan.</small></div>
