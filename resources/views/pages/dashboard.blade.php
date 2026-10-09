@@ -2213,7 +2213,7 @@ public function getUserInitialsProperty(): string
                         </span>
                     </button>
 
-                    <div class="worker-engine-body" x-show="queueOpen" x-collapse>
+                    <div class="worker-engine-body" x-show="queueOpen" x-cloak x-transition:enter="transition ease-out duration-180" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-120" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
                         <div class="worker-fleet-summary">
                             <span><small>QUEUE</small><strong>{{ $this->workerStatus['queue'] }}</strong></span>
                             <span><small>ACTIVE</small><strong>{{ $this->workerStatus['running_count'] }}/{{ $this->workerStatus['target_workers'] }}</strong></span>
@@ -2281,7 +2281,7 @@ public function getUserInitialsProperty(): string
                         </span>
                     </button>
 
-                    <div class="worker-engine-body" x-show="agentOpen" x-collapse>
+                    <div class="worker-engine-body" x-show="agentOpen" x-cloak x-transition:enter="transition ease-out duration-180" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-120" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
                         <div class="worker-fleet-summary">
                             <span><small>QUEUE</small><strong>{{ $this->agentWorkerStatus['queue'] }}</strong></span>
                             <span><small>CREDENTIALS</small><strong>{{ $this->agentAiActiveCredentialCount }}/{{ $this->agentAiCredentialCount }}</strong></span>
@@ -4491,7 +4491,97 @@ public function getUserInitialsProperty(): string
         }
 
 
-    </style>
+    
+        /* AgentKit worker accordion */
+        .worker-engine-section{
+            margin-top:8px;
+            border:1px solid rgba(255,255,255,.06);
+            border-radius:10px;
+            background:rgba(255,255,255,.018);
+            overflow:hidden;
+        }
+        .worker-engine-section + .worker-engine-section{margin-top:6px}
+        .worker-engine-toggle{
+            width:100%;
+            min-height:48px;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:8px;
+            padding:7px 9px;
+            border:0;
+            background:transparent;
+            color:#fff;
+            font:inherit;
+            text-align:left;
+            cursor:pointer;
+        }
+        .worker-engine-toggle:hover{background:rgba(255,255,255,.025)}
+        .worker-engine-toggle-left{display:flex;align-items:center;gap:7px;min-width:0}
+        .worker-engine-dot{
+            width:6px;height:6px;flex:0 0 6px;border-radius:50%;background:#71717a;
+        }
+        .worker-engine-dot.is-live{background:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.08),0 0 9px rgba(239,68,68,.2)}
+        .worker-engine-dot.is-agent-live{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.08),0 0 9px rgba(34,197,94,.2)}
+        .worker-engine-dot.is-agent-ready{background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.08),0 0 9px rgba(245,158,11,.18)}
+        .worker-engine-dot.is-off{background:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.07)}
+        .worker-engine-copy{display:grid;gap:2px;min-width:0}
+        .worker-engine-copy strong{font-size:8px;line-height:1.1;color:#e4e4e7;font-weight:850}
+        .worker-engine-copy small{font-size:6.7px;line-height:1.2;color:#71717a}
+        .worker-engine-state{display:flex;align-items:center;gap:7px;flex:0 0 auto}
+        .worker-engine-state b{font-size:5.7px;line-height:1;padding:4px 6px;border:1px solid rgba(255,255,255,.08);border-radius:999px;color:#71717a;font-weight:900;letter-spacing:.06em}
+        .worker-engine-section.is-open .worker-engine-state b{color:#a1a1aa}
+        .worker-section-chevron{
+            width:17px;height:17px;display:block;position:relative;border:1px solid rgba(255,255,255,.07);border-radius:5px;background:rgba(255,255,255,.025);
+            transition:transform .28s cubic-bezier(.22,1,.36,1),background .2s ease;
+        }
+        .worker-section-chevron:before{
+            content:"";position:absolute;left:50%;top:50%;width:5px;height:5px;
+            border-right:1.4px solid #71717a;border-bottom:1.4px solid #71717a;
+            transform:translate(-50%,-62%) rotate(45deg);
+            transition:transform .28s cubic-bezier(.22,1,.36,1);
+        }
+        .worker-engine-section.is-open .worker-section-chevron:before{
+            transform:translate(-50%,-38%) rotate(225deg);
+        }
+        .worker-engine-body{padding:0 8px 9px}
+        .worker-engine-body[x-cloak]{display:none!important}
+        .worker-engine-body .worker-fleet-summary{margin-top:0}
+        .worker-engine-body .worker-fleet-list{margin-top:7px}
+        .worker-agent-row.is-running{
+            border-color:rgba(34,197,94,.16);
+            background:rgba(34,197,94,.03);
+        }
+        .worker-agent-note{
+            display:flex;
+            align-items:flex-start;
+            gap:7px;
+            margin-top:7px;
+            padding:8px;
+            border:1px solid rgba(167,139,250,.12);
+            border-radius:8px;
+            background:rgba(124,58,237,.035);
+        }
+        .worker-agent-note>span{
+            width:19px;height:19px;flex:0 0 19px;display:grid;place-items:center;
+            border-radius:6px;background:rgba(167,139,250,.1);color:#c4b5fd;font-size:9px;
+        }
+        .worker-agent-note div{display:grid;gap:2px;min-width:0}
+        .worker-agent-note strong{font-size:6.8px;color:#c4b5fd;font-weight:850}
+        .worker-agent-note small{font-size:5.9px;line-height:1.45;color:#71717a}
+        .worker-action-full{grid-column:1 / -1;width:100%}
+        @media(max-width:640px){
+            .worker-engine-toggle{min-height:45px;padding:6px 8px}
+            .worker-engine-copy strong{font-size:7.7px}
+            .worker-engine-copy small{font-size:6.4px}
+            .worker-engine-body{padding:0 7px 8px}
+            .worker-agent-note{padding:7px}
+            .worker-agent-note small{font-size:5.8px}
+        }
+        @media(prefers-reduced-motion:reduce){
+            .worker-section-chevron,.worker-section-chevron:before{transition:none}
+        }
+</style>
 
 </div>
 
