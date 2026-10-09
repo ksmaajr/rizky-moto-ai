@@ -4561,6 +4561,39 @@
 .rms-agent-add-button{
     min-width:150px!important;
     min-height:42px!important;
+    border:1px solid #18181b!important;
+    background:linear-gradient(135deg,#18181b 0%,#27272a 100%)!important;
+    color:#fff!important;
+    cursor:pointer!important;
+    box-shadow:0 7px 16px rgba(24,24,27,.12);
+    transition:transform .22s ease,box-shadow .22s ease,background .22s ease,border-color .22s ease;
+}
+.rms-agent-add-button span{
+    color:#fff!important;
+    font-weight:850;
+}
+.rms-agent-add-button small{
+    color:#d4d4d8!important;
+    font-weight:700;
+}
+.rms-agent-add-button:hover{
+    transform:translateY(-1px);
+    border-color:#111113!important;
+    background:linear-gradient(135deg,#111113 0%,#303034 100%)!important;
+    box-shadow:0 10px 22px rgba(24,24,27,.16);
+}
+.rms-agent-add-button:active{
+    transform:translateY(0);
+}
+.rms-agent-add-button:focus-visible{
+    outline:2px solid rgba(24,24,27,.18);
+    outline-offset:2px;
+}
+@media(max-width:760px){
+    .rms-agent-add-button{
+        min-height:44px!important;
+        border-radius:10px!important;
+    }
 }
 .rms-agent-credential-form{
     margin:12px 14px 0;
