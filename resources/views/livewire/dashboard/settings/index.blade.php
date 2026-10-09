@@ -417,45 +417,150 @@
                                 <div class="rms-provider-block-copy">
                                     <span>PROVIDER 02 · BACKEND</span>
                                     <strong>Agent AI</strong>
-                                    <small>GPT Image 2.5 melalui Agent backend. Credential pool dan runtime controls disiapkan bertahap.</small>
+                                    <small>GPT Image 2.5 melalui AgentKit backend dengan shared credential pool dan dedicated worker queue.</small>
                                 </div>
-                                <div class="rms-provider-block-state is-pending"><i></i><span>Stage 5 next</span></div>
-                            </div>
-                        {{-- AGENT AI CONFIGURATION SHELL --}}
-                    <section class="rms-ai-provider-section rms-agent-provider-card">
-                        <div class="rms-ai-provider-section-head">
-                            <div class="rms-ai-provider-section-title">
-                                <span class="rms-ai-provider-icon rms-agent-icon">AG</span>
-                                <div>
-                                    <strong>Agent AI</strong>
-                                    <small>GPT Image 2.5 melalui Agent backend. Credential Pool akan ditambahkan pada Stage 5.</small>
-                                </div>
-                            </div>
-                            <span class="rms-ai-provider-status is-pending"><i></i> Pool setup next</span>
-                        </div>
-
-                        <div class="rms-ai-agent-grid">
-                            <div class="rms-ai-agent-readiness">
-                                <div class="rms-ai-readiness-orb"><span></span></div>
-                                <div>
-                                    <strong>Agent Credential Pool</strong>
-                                    <p>Siapkan beberapa credential Agent AI agar sistem dapat melakukan rotation, cooldown, dan automatic failover tanpa konfigurasi ulang saat runtime.</p>
+                                <div class="rms-provider-block-state {{ $agentAiActiveCredentialCount > 0 ? 'is-ready' : 'is-pending' }}">
+                                    <i></i><span>{{ $agentAiActiveCredentialCount > 0 ? 'Configured' : 'Not configured' }}</span>
                                 </div>
                             </div>
 
-                            <div class="rms-ai-agent-actions">
-                                <div class="rms-ai-agent-meta">
-                                    <span><b>Credential Pool</b><em>Stage 5</em></span>
-                                    <span><b>Connection Test</b><em>Stage 7</em></span>
-                                    <span><b>Auto Rotation</b><em>Stage 8</em></span>
+                            <section class="rms-ai-provider-section rms-agent-provider-card">
+                                <div class="rms-ai-provider-section-head">
+                                    <div class="rms-ai-provider-section-title">
+                                        <span class="rms-ai-provider-icon rms-agent-icon">AG</span>
+                                        <div>
+                                            <strong>Agent Credential Pool</strong>
+                                            <small>Token disimpan terenkripsi di server. Semua AgentKit worker dapat memakai credential sehat yang sama.</small>
+                                        </div>
+                                    </div>
+                                    <span class="rms-ai-provider-status {{ $agentAiActiveCredentialCount > 0 ? '' : 'is-pending' }}">
+                                        <i></i> {{ $agentAiActiveCredentialCount }}/{{ $agentAiCredentialCount }} active
+                                    </span>
                                 </div>
-                                <button type="button" class="rms-ai-secondary-button" disabled>
-                                    <span>Configure Agent Credentials</span>
-                                    <small>Coming in next stage</small>
-                                </button>
-                            </div>
-                        </div>
-                    </section>
+
+                                <div class="rms-agent-credential-toolbar">
+                                    <div>
+                                        <strong>Shared credentials</strong>
+                                        <small>Rotation, cooldown, rate-limit handling, dan failover berjalan di server-side pool.</small>
+                                    </div>
+                                    <button type="button" class="rms-ai-secondary-button rms-agent-add-button" wire:click="$set('showAgentCredentialForm', true)">
+                                        <span>+ Add Credential</span>
+                                        <small>Encrypted storage</small>
+                                    </button>
+                                </div>
+
+                                @if ($showAgentCredentialForm)
+                                    <div class="rms-agent-credential-form">
+                                        <div class="rms-agent-form-head">
+                                            <div>
+                                                <span>NEW AGENT CREDENTIAL</span>
+                                                <strong>Tambahkan token Agent</strong>
+                                                <small>Token tidak pernah ditampilkan kembali setelah disimpan.</small>
+                                            </div>
+                                            <button type="button" class="rms-agent-form-close" wire:click="$set('showAgentCredentialForm', false)" aria-label="Close">×</button>
+                                        </div>
+
+                                        <div class="rms-agent-form-grid">
+                                            <label>
+                                                <span>NAME</span>
+                                                <input type="text" wire:model="newAgentCredentialName" placeholder="Agent Account 01" autocomplete="off">
+                                                @error('newAgentCredentialName') <small class="rms-agent-form-error">{{ $message }}</small> @enderror
+                                            </label>
+                                            <label>
+                                                <span>ACCESS TOKEN</span>
+                                                <div class="rms-agent-token-input" x-data="{ reveal:false }">
+                                                    <input :type="reveal ? 'text' : 'password'" wire:model="newAgentCredentialToken" placeholder="Paste compatible Agent/Codex token" autocomplete="new-password">
+                                                    <button type="button" @click="reveal=!reveal" x-text="reveal ? 'Hide' : 'Show'"></button>
+                                                </div>
+                                                @error('newAgentCredentialToken') <small class="rms-agent-form-error">{{ $message }}</small> @enderror
+                                            </label>
+                                        </div>
+
+                                        <div class="rms-agent-form-foot">
+                                            <span>🔒 Encrypted at rest · raw token tidak masuk Activity Log.</span>
+                                            <div>
+                                                <button type="button" class="rms-agent-cancel-button" wire:click="$set('showAgentCredentialForm', false)">Cancel</button>
+                                                <button type="button" class="rms-agent-save-button" wire:click="addAgentAiCredential" wire:loading.attr="disabled" wire:target="addAgentAiCredential">
+                                                    <span wire:loading.remove wire:target="addAgentAiCredential">Save Credential</span>
+                                                    <span wire:loading wire:target="addAgentAiCredential">Saving...</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                <div class="rms-agent-credential-list">
+                                    @forelse ($agentAiCredentials as $credential)
+                                        @php
+                                            $credentialStatus = (string) ($credential['status'] ?? 'active');
+                                            $credentialActive = (bool) ($credential['is_active'] ?? false);
+                                            $credentialStatusLabel = match ($credentialStatus) {
+                                                'cooldown' => 'Cooldown',
+                                                'invalid' => 'Invalid',
+                                                'exhausted' => 'Exhausted',
+                                                'error' => 'Error',
+                                                'disabled' => 'Disabled',
+                                                default => $credentialActive ? 'Active' : 'Disabled',
+                                            };
+                                            $credentialStatusClass = match ($credentialStatus) {
+                                                'cooldown' => 'is-cooldown',
+                                                'invalid', 'error', 'exhausted' => 'is-error',
+                                                'disabled' => 'is-disabled',
+                                                default => 'is-active',
+                                            };
+                                        @endphp
+                                        <article class="rms-agent-credential-card {{ $credentialActive ? 'is-enabled' : 'is-disabled' }}">
+                                            <div class="rms-agent-credential-main">
+                                                <div class="rms-agent-credential-icon">AG</div>
+                                                <div class="rms-agent-credential-copy">
+                                                    <div class="rms-agent-credential-title">
+                                                        <strong>{{ $credential['name'] }}</strong>
+                                                        <span class="rms-agent-status {{ $credentialStatusClass }}"><i></i>{{ $credentialStatusLabel }}</span>
+                                                    </div>
+                                                    <code>••••••••••••••••••••</code>
+                                                    <small>{{ $credential['request_count'] }} requests · {{ $credential['success_count'] }} success · {{ $credential['failure_count'] }} failed</small>
+                                                </div>
+                                            </div>
+
+                                            <div class="rms-agent-credential-meta">
+                                                <span><b>Last used</b><em>{{ $credential['last_used_at'] ?: 'Never' }}</em></span>
+                                                <span><b>Last success</b><em>{{ $credential['last_success_at'] ?: 'Never' }}</em></span>
+                                            </div>
+
+                                            @if ($credential['cooldown_until'])
+                                                <div class="rms-agent-cooldown">Cooldown until {{ CarbonCarbon::parse($credential['cooldown_until'])->format('H:i:s') }}</div>
+                                            @endif
+
+                                            <div class="rms-agent-credential-actions">
+                                                <button type="button" class="rms-agent-test-button" wire:click="testAgentAiCredential({{ (int) $credential['id'] }})" wire:loading.attr="disabled" wire:target="testAgentAiCredential({{ (int) $credential['id'] }})">
+                                                    <span wire:loading.remove wire:target="testAgentAiCredential({{ (int) $credential['id'] }})">Test Token</span>
+                                                    <span wire:loading wire:target="testAgentAiCredential({{ (int) $credential['id'] }})">Testing...</span>
+                                                </button>
+                                                <button type="button" class="rms-agent-toggle-button" wire:click="toggleAgentAiCredential({{ (int) $credential['id'] }})">
+                                                    {{ $credentialActive ? 'Disable' : 'Enable' }}
+                                                </button>
+                                                <button type="button" class="rms-agent-delete-button" wire:click="deleteAgentAiCredential({{ (int) $credential['id'] }})" wire:confirm="Hapus credential Agent ini?">×</button>
+                                            </div>
+                                        </article>
+                                    @empty
+                                        <div class="rms-agent-empty">
+                                            <span>✦</span>
+                                            <div>
+                                                <strong>Belum ada Agent credential</strong>
+                                                <small>Tambahkan compatible ChatGPT/Codex access token untuk mengaktifkan AgentKit.</small>
+                                            </div>
+                                        </div>
+                                    @endforelse
+                                </div>
+
+                                <div class="rms-agent-test-note">
+                                    <span>!</span>
+                                    <div>
+                                        <strong>Test Token menjalankan live smoke test</strong>
+                                        <small>AgentKit tidak menyediakan auth-only endpoint; test ini melakukan satu live image invocation dan dapat menggunakan quota/limit akun.</small>
+                                    </div>
+                                </div>
+                            </section>
                         </section>
 
                         <section class="rms-provider-block rms-provider-block-failover">
@@ -4423,5 +4528,269 @@
     .rms-provider-block-failover .rms-ai-save-button{
         transition:none!important;
     }
+}
+</style>
+
+<style>
+/* =========================================================
+   AGENT CREDENTIAL POOL — STAGE 5
+   ========================================================= */
+.rms-provider-block-agent .rms-agent-credential-toolbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    padding:14px 18px;
+    border-bottom:1px solid #f0f0f3;
+}
+.rms-provider-block-agent .rms-agent-credential-toolbar>div{
+    min-width:0;
+    display:grid;
+    gap:4px;
+}
+.rms-provider-block-agent .rms-agent-credential-toolbar strong{
+    font-size:9px;
+    color:#18181b;
+    font-weight:850;
+}
+.rms-provider-block-agent .rms-agent-credential-toolbar small{
+    font-size:7px;
+    line-height:1.5;
+    color:#71717a;
+}
+.rms-agent-add-button{
+    min-width:150px!important;
+    min-height:42px!important;
+}
+.rms-agent-credential-form{
+    margin:12px 14px 0;
+    border:1px solid #e7e7eb;
+    border-radius:13px;
+    background:#fafafa;
+    overflow:hidden;
+}
+.rms-agent-form-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    padding:13px 14px;
+    border-bottom:1px solid #ededf0;
+}
+.rms-agent-form-head>div{
+    display:grid;
+    gap:3px;
+}
+.rms-agent-form-head span{
+    font-size:6px;
+    letter-spacing:.13em;
+    font-weight:900;
+    color:#a1a1aa;
+}
+.rms-agent-form-head strong{font-size:9px;color:#27272a}
+.rms-agent-form-head small{font-size:7px;color:#71717a}
+.rms-agent-form-close{
+    width:25px;height:25px;border:1px solid #e4e4e7;border-radius:7px;background:#fff;color:#71717a;cursor:pointer;
+}
+.rms-agent-form-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+    padding:13px 14px;
+}
+.rms-agent-form-grid label{
+    display:grid;
+    gap:6px;
+    min-width:0;
+}
+.rms-agent-form-grid label>span{
+    font-size:6px;
+    color:#71717a;
+    letter-spacing:.12em;
+    font-weight:900;
+}
+.rms-agent-form-grid input{
+    width:100%;
+    min-height:42px;
+    border:1px solid #e4e4e7;
+    border-radius:9px;
+    background:#fff;
+    padding:0 11px;
+    color:#18181b;
+    outline:none;
+    font-size:8px;
+}
+.rms-agent-form-grid input:focus{
+    border-color:#c4b5fd;
+    box-shadow:0 0 0 3px rgba(139,92,246,.08);
+}
+.rms-agent-token-input{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    border:1px solid #e4e4e7;
+    border-radius:9px;
+    background:#fff;
+    overflow:hidden;
+}
+.rms-agent-token-input input{
+    border:0!important;
+    box-shadow:none!important;
+    min-width:0;
+}
+.rms-agent-token-input button{
+    border:0;
+    border-left:1px solid #ededf0;
+    background:#fafafa;
+    padding:0 10px;
+    color:#71717a;
+    font-size:7px;
+    font-weight:800;
+    cursor:pointer;
+}
+.rms-agent-form-error{font-size:7px;color:#dc2626}
+.rms-agent-form-foot{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:11px 14px;
+    border-top:1px solid #ededf0;
+}
+.rms-agent-form-foot>span{
+    font-size:6.7px;
+    color:#71717a;
+}
+.rms-agent-form-foot>div{
+    display:flex;
+    align-items:center;
+    gap:7px;
+}
+.rms-agent-cancel-button,
+.rms-agent-save-button{
+    min-height:34px;
+    padding:0 12px;
+    border-radius:8px;
+    font-size:7px;
+    font-weight:850;
+    cursor:pointer;
+}
+.rms-agent-cancel-button{border:1px solid #e4e4e7;background:#fff;color:#71717a}
+.rms-agent-save-button{border:0;background:#18181b;color:#fff}
+.rms-agent-credential-list{
+    display:grid;
+    gap:8px;
+    padding:12px 14px;
+}
+.rms-agent-credential-card{
+    position:relative;
+    display:grid;
+    grid-template-columns:minmax(0,1.4fr) minmax(130px,.7fr) auto;
+    align-items:center;
+    gap:12px;
+    padding:11px;
+    border:1px solid #e8e8ec;
+    border-radius:11px;
+    background:#fff;
+    min-width:0;
+}
+.rms-agent-credential-card.is-disabled{opacity:.72}
+.rms-agent-credential-main{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    min-width:0;
+}
+.rms-agent-credential-icon{
+    width:34px;height:34px;flex:0 0 34px;display:grid;place-items:center;
+    border-radius:9px;background:#18181b;color:#fff;font-size:7px;font-weight:950;
+}
+.rms-agent-credential-copy{display:grid;gap:4px;min-width:0}
+.rms-agent-credential-title{display:flex;align-items:center;gap:7px;min-width:0}
+.rms-agent-credential-title strong{font-size:8.5px;color:#27272a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rms-agent-credential-copy code{font-family:"SFMono-Regular",Consolas,monospace;font-size:7px;color:#71717a}
+.rms-agent-credential-copy small{font-size:6.5px;color:#a1a1aa}
+.rms-agent-status{
+    display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 6px;border-radius:999px;
+    font-size:5.5px;font-weight:900;white-space:nowrap;
+}
+.rms-agent-status i{width:4px;height:4px;border-radius:50%;background:#71717a}
+.rms-agent-status.is-active{background:#ecfdf3;color:#15803d}.rms-agent-status.is-active i{background:#22c55e}
+.rms-agent-status.is-cooldown{background:#fffbeb;color:#a16207}.rms-agent-status.is-cooldown i{background:#f59e0b}
+.rms-agent-status.is-error{background:#fef2f2;color:#b91c1c}.rms-agent-status.is-error i{background:#ef4444}
+.rms-agent-status.is-disabled{background:#f4f4f5;color:#71717a}
+.rms-agent-credential-meta{display:grid;grid-template-columns:1fr 1fr;gap:7px;min-width:0}
+.rms-agent-credential-meta span{display:grid;gap:3px;min-width:0}
+.rms-agent-credential-meta b{font-size:5.7px;letter-spacing:.08em;text-transform:uppercase;color:#a1a1aa}
+.rms-agent-credential-meta em{font-size:6.5px;color:#52525b;font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rms-agent-cooldown{
+    grid-column:1/-1;
+    margin-top:-2px;
+    padding:6px 8px;
+    border-radius:7px;
+    background:#fffbeb;
+    color:#a16207;
+    font-size:6.3px;
+}
+.rms-agent-credential-actions{
+    display:flex;
+    align-items:center;
+    gap:5px;
+}
+.rms-agent-test-button,
+.rms-agent-toggle-button,
+.rms-agent-delete-button{
+    min-height:30px;
+    border-radius:7px;
+    padding:0 8px;
+    font-size:6.2px;
+    font-weight:850;
+    cursor:pointer;
+    white-space:nowrap;
+}
+.rms-agent-test-button{border:1px solid #ddd6fe;background:#faf5ff;color:#6d28d9}
+.rms-agent-toggle-button{border:1px solid #e4e4e7;background:#fff;color:#52525b}
+.rms-agent-delete-button{width:30px;border:1px solid #fee2e2;background:#fff5f5;color:#dc2626;font-size:12px}
+.rms-agent-test-button:disabled,.rms-agent-toggle-button:disabled,.rms-agent-delete-button:disabled{opacity:.5;cursor:wait}
+.rms-agent-empty{
+    display:flex;align-items:center;gap:10px;padding:14px;border:1px dashed #d4d4d8;border-radius:11px;background:#fafafa;
+}
+.rms-agent-empty>span{
+    width:34px;height:34px;display:grid;place-items:center;border-radius:9px;background:#f4f4f5;color:#71717a;font-size:12px;
+}
+.rms-agent-empty div{display:grid;gap:3px}.rms-agent-empty strong{font-size:8px;color:#52525b}.rms-agent-empty small{font-size:6.7px;line-height:1.45;color:#a1a1aa}
+.rms-agent-test-note{
+    display:flex;align-items:flex-start;gap:8px;margin:0 14px 14px;padding:9px;border:1px solid #fef3c7;border-radius:9px;background:#fffbeb;
+}
+.rms-agent-test-note>span{
+    width:18px;height:18px;flex:0 0 18px;display:grid;place-items:center;border-radius:6px;background:#fef3c7;color:#a16207;font-size:8px;font-weight:900;
+}
+.rms-agent-test-note div{display:grid;gap:2px}.rms-agent-test-note strong{font-size:6.7px;color:#92400e}.rms-agent-test-note small{font-size:6.3px;line-height:1.45;color:#a16207}
+@media(max-width:900px){
+    .rms-agent-credential-card{grid-template-columns:1fr auto}
+    .rms-agent-credential-meta{grid-column:1/-1}
+    .rms-agent-credential-actions{grid-column:1/-1;justify-content:flex-end}
+}
+@media(max-width:760px){
+    .rms-provider-block-agent .rms-agent-credential-toolbar{align-items:stretch;flex-direction:column;padding:12px}
+    .rms-agent-add-button{width:100%!important}
+    .rms-agent-form-grid{grid-template-columns:1fr;padding:11px 12px}
+    .rms-agent-form-foot{align-items:stretch;flex-direction:column}
+    .rms-agent-form-foot>div{width:100%}.rms-agent-form-foot button{flex:1}
+    .rms-agent-credential-list{padding:10px 8px}
+    .rms-agent-credential-card{grid-template-columns:1fr;padding:10px}
+    .rms-agent-credential-meta{grid-template-columns:1fr 1fr}
+    .rms-agent-credential-actions{justify-content:stretch}
+    .rms-agent-credential-actions button{flex:1}
+    .rms-agent-delete-button{flex:0 0 34px!important}
+    .rms-agent-test-note{margin:0 8px 10px}
+}
+@media(max-width:390px){
+    .rms-agent-credential-meta{grid-template-columns:1fr}
+    .rms-agent-credential-title{align-items:flex-start;flex-direction:column;gap:4px}
+    .rms-agent-credential-actions{flex-wrap:wrap}
+    .rms-agent-test-button,.rms-agent-toggle-button{min-width:0}
+}
+@media(prefers-reduced-motion:reduce){
+    .rms-agent-credential-card,.rms-agent-test-button,.rms-agent-toggle-button{transition:none!important}
 }
 </style>
