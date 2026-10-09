@@ -1,0 +1,23 @@
+; Rizky Moto AI — AgentKit dedicated queue
+; AWS Ubuntu / Supervisor
+; Adjust APP_PATH before installing if your Laravel directory differs.
+
+[program:rizky-moto-ai-agent]
+process_name=%(program_name)s-%(process_num)02d
+command=/usr/bin/php /var/www/rizky-moto-ai/artisan queue:work database --queue=agentkit --sleep=2 --tries=1 --timeout=300 --max-jobs=100 --max-time=3600
+directory=/var/www/rizky-moto-ai
+user=www-data
+numprocs=3
+numprocs_start=0
+autostart=true
+autorestart=true
+startsecs=3
+startretries=5
+stopasgroup=true
+killasgroup=true
+stopwaitsecs=30
+redirect_stderr=true
+stdout_logfile=/var/log/supervisor/rizky-moto-ai-agent-%(process_num)02d.log
+stdout_logfile_maxbytes=20MB
+stdout_logfile_backups=5
+environment=HOME="/var/www/rizky-moto-ai/storage/app/agent-ai/home",PATH="/var/www/rizky-moto-ai/agent-ai/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
