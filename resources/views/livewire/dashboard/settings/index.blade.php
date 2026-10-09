@@ -4041,3 +4041,387 @@
     }
 }
 </style>
+<style>
+/* =========================================================
+   PROVIDER FAILOVER — ALL DEVICE PREMIUM POLISH
+   Scoped only to the failover block. Vercel + Agent remain locked.
+   ========================================================= */
+.rms-provider-block-failover{
+    position:relative!important;
+    min-width:0!important;
+}
+.rms-provider-block-failover .rms-ai-provider-section{
+    min-width:0!important;
+    margin:14px 14px 16px!important;
+    overflow:visible!important;
+}
+.rms-provider-block-failover .rms-ai-provider-section-head{
+    min-height:72px;
+    align-items:center;
+}
+.rms-provider-block-failover .rms-ai-provider-section-title{
+    min-width:0;
+    flex:1 1 auto;
+}
+.rms-provider-block-failover .rms-ai-provider-section-title>div{
+    min-width:0;
+}
+.rms-provider-block-failover .rms-ai-provider-section-title small{
+    max-width:620px;
+}
+.rms-provider-block-failover .rms-ai-provider-status{
+    flex:0 0 auto;
+    white-space:nowrap;
+}
+.rms-provider-block-failover .rms-ai-failover-grid{
+    align-items:stretch;
+}
+.rms-provider-block-failover .rms-ai-config-field{
+    min-width:0;
+}
+.rms-provider-block-failover .rms-ai-config-field>span{
+    padding-left:2px;
+}
+.rms-provider-block-failover .rms-custom-select{
+    min-width:0;
+}
+.rms-provider-block-failover .rms-custom-select-value{
+    min-width:0;
+}
+.rms-provider-block-failover .rms-custom-select-value strong,
+.rms-provider-block-failover .rms-custom-select-value small{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+.rms-provider-block-failover .rms-ai-toggle-field{
+    min-width:0;
+    min-height:66px;
+    align-items:flex-start;
+}
+.rms-provider-block-failover .rms-ai-toggle-field>div{
+    min-width:0;
+}
+.rms-provider-block-failover .rms-ai-toggle-field strong,
+.rms-provider-block-failover .rms-ai-toggle-field small{
+    display:block;
+}
+.rms-provider-block-failover .rms-ai-toggle-field small{
+    max-width:100%;
+}
+.rms-provider-block-failover .rms-ai-provider-save-row{
+    min-width:0;
+}
+.rms-provider-block-failover .rms-ai-provider-save-row>div{
+    min-width:0;
+}
+.rms-provider-block-failover .rms-ai-provider-save-row>div>span:last-child{
+    max-width:680px;
+}
+.rms-provider-block-failover .rms-ai-save-button{
+    flex:0 0 auto;
+    min-width:185px;
+    transition:transform .22s ease,box-shadow .22s ease,background .22s ease;
+}
+.rms-provider-block-failover .rms-ai-save-button:not(:disabled):hover{
+    transform:translateY(-1px);
+}
+
+/* Large desktop */
+@media(min-width:1280px){
+    .rms-provider-block-failover .rms-ai-provider-section{
+        margin-left:16px!important;
+        margin-right:16px!important;
+    }
+    .rms-provider-block-failover .rms-ai-provider-section-head{
+        padding:18px 20px;
+    }
+    .rms-provider-block-failover .rms-ai-failover-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:14px;
+        padding:18px 20px;
+    }
+    .rms-provider-block-failover .rms-ai-config-field>span{
+        font-size:7px;
+    }
+    .rms-provider-block-failover .rms-ai-toggle-field{
+        min-height:72px;
+        padding:13px;
+    }
+    .rms-provider-block-failover .rms-ai-toggle-field strong{
+        font-size:8.5px;
+    }
+    .rms-provider-block-failover .rms-ai-toggle-field small{
+        font-size:7px;
+        line-height:1.5;
+    }
+    .rms-provider-block-failover .rms-ai-provider-save-row{
+        padding:15px 20px;
+    }
+}
+
+/* Laptop / tablet landscape */
+@media(min-width:761px) and (max-width:1100px){
+    .rms-provider-block-failover .rms-ai-provider-section-head{
+        padding:15px;
+        align-items:flex-start;
+    }
+    .rms-provider-block-failover .rms-ai-provider-status{
+        margin-top:2px;
+    }
+    .rms-provider-block-failover .rms-ai-failover-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:10px;
+        padding:14px;
+    }
+    .rms-provider-block-failover .rms-custom-select-trigger{
+        min-height:50px;
+    }
+    .rms-provider-block-failover .rms-ai-toggle-field{
+        min-height:62px;
+        padding:10px;
+    }
+    .rms-provider-block-failover .rms-ai-provider-save-row{
+        padding:12px 14px;
+        gap:12px;
+    }
+    .rms-provider-block-failover .rms-ai-provider-save-row>div>span:last-child{
+        font-size:7px;
+    }
+}
+
+/* Tablet / mobile */
+@media(max-width:760px){
+    .rms-provider-block-failover{
+        border-radius:17px!important;
+    }
+    .rms-provider-block-failover .rms-provider-block-head{
+        padding:16px 14px 15px!important;
+        gap:11px!important;
+    }
+    .rms-provider-block-failover .rms-provider-block-icon{
+        width:42px!important;
+        height:42px!important;
+        flex-basis:42px!important;
+        border-radius:12px!important;
+    }
+    .rms-provider-block-failover .rms-provider-block-copy strong{
+        font-size:16px!important;
+        line-height:1.12!important;
+    }
+    .rms-provider-block-failover .rms-provider-block-copy small{
+        font-size:9px!important;
+        line-height:1.45!important;
+    }
+
+    .rms-provider-block-failover .rms-ai-provider-section{
+        margin:10px 8px 12px!important;
+        border-radius:14px!important;
+    }
+    .rms-provider-block-failover .rms-ai-provider-section-head{
+        min-height:0!important;
+        padding:14px!important;
+        gap:10px!important;
+        align-items:flex-start!important;
+        flex-wrap:wrap!important;
+    }
+    .rms-provider-block-failover .rms-ai-provider-section-title{
+        width:100%!important;
+        align-items:flex-start!important;
+        gap:9px!important;
+    }
+    .rms-provider-block-failover .rms-ai-provider-icon{
+        width:33px!important;
+        height:33px!important;
+        flex-basis:33px!important;
+        border-radius:9px!important;
+    }
+    .rms-provider-block-failover .rms-ai-provider-section-title strong{
+        font-size:11.5px!important;
+        line-height:1.2!important;
+    }
+    .rms-provider-block-failover .rms-ai-provider-section-title small{
+        max-width:none!important;
+        margin-top:3px!important;
+        font-size:7.8px!important;
+        line-height:1.45!important;
+    }
+    .rms-provider-block-failover .rms-ai-provider-status{
+        align-self:flex-start!important;
+        height:23px!important;
+        font-size:6.1px!important;
+        padding:0 8px!important;
+    }
+
+    .rms-provider-block-failover .rms-ai-failover-grid{
+        grid-template-columns:1fr!important;
+        gap:9px!important;
+        padding:11px!important;
+    }
+    .rms-provider-block-failover .rms-ai-config-field{
+        gap:6px!important;
+    }
+    .rms-provider-block-failover .rms-ai-config-field>span{
+        padding-left:2px!important;
+        font-size:6.7px!important;
+    }
+    .rms-provider-block-failover .rms-custom-select-trigger{
+        min-height:52px!important;
+        padding:8px 9px!important;
+        border-radius:11px!important;
+        gap:9px!important;
+    }
+    .rms-provider-block-failover .rms-custom-select-leading{
+        width:33px!important;
+        height:33px!important;
+        flex-basis:33px!important;
+        border-radius:9px!important;
+    }
+    .rms-provider-block-failover .rms-custom-select-value strong{
+        font-size:9.5px!important;
+        line-height:1.2!important;
+    }
+    .rms-provider-block-failover .rms-custom-select-value small{
+        margin-top:1px!important;
+        font-size:7px!important;
+    }
+    .rms-provider-block-failover .rms-custom-select-arrow{
+        width:30px!important;
+        height:30px!important;
+        flex-basis:30px!important;
+    }
+
+    .rms-provider-block-failover .rms-ai-toggle-field{
+        min-height:0!important;
+        padding:12px!important;
+        gap:9px!important;
+        border-radius:11px!important;
+    }
+    .rms-provider-block-failover .rms-ai-toggle-ui{
+        width:29px!important;
+        height:18px!important;
+        flex-basis:29px!important;
+        margin-top:1px!important;
+    }
+    .rms-provider-block-failover .rms-ai-toggle-field strong{
+        font-size:9.5px!important;
+        line-height:1.3!important;
+    }
+    .rms-provider-block-failover .rms-ai-toggle-field small{
+        margin-top:3px!important;
+        font-size:7.5px!important;
+        line-height:1.5!important;
+    }
+
+    .rms-provider-block-failover .rms-ai-provider-save-row{
+        align-items:stretch!important;
+        flex-direction:column!important;
+        gap:10px!important;
+        padding:12px!important;
+    }
+    .rms-provider-block-failover .rms-ai-provider-save-row>div{
+        align-items:flex-start!important;
+        gap:7px!important;
+    }
+    .rms-provider-block-failover .rms-ai-provider-save-row>div>span:last-child{
+        font-size:7.5px!important;
+        line-height:1.5!important;
+    }
+    .rms-provider-block-failover .rms-ai-save-button{
+        width:100%!important;
+        min-width:0!important;
+        height:46px!important;
+        border-radius:10px!important;
+    }
+
+    /* Dropdown stays readable and safely scrollable on small screens. */
+    .rms-provider-block-failover .rms-custom-select-menu{
+        max-height:min(280px,55vh)!important;
+        border-radius:13px!important;
+        padding:6px!important;
+    }
+    .rms-provider-block-failover .rms-custom-select-label{
+        padding:7px 8px 6px!important;
+        font-size:6.3px!important;
+    }
+    .rms-provider-block-failover .rms-custom-select-option{
+        min-height:50px!important;
+        grid-template-columns:31px minmax(0,1fr) 22px!important;
+        gap:8px!important;
+        padding:7px!important;
+    }
+    .rms-provider-block-failover .rms-custom-option-icon{
+        width:30px!important;
+        height:30px!important;
+        flex-basis:30px!important;
+    }
+    .rms-provider-block-failover .rms-custom-select-option strong{
+        font-size:8px!important;
+    }
+    .rms-provider-block-failover .rms-custom-select-option small{
+        font-size:6.6px!important;
+    }
+}
+
+/* Small phones */
+@media(max-width:390px){
+    .rms-provider-block-failover .rms-provider-block-head{
+        padding:15px 12px 14px!important;
+    }
+    .rms-provider-block-failover .rms-provider-block-icon{
+        width:40px!important;
+        height:40px!important;
+        flex-basis:40px!important;
+    }
+    .rms-provider-block-failover .rms-provider-block-copy strong{
+        font-size:15px!important;
+    }
+    .rms-provider-block-failover .rms-provider-block-copy small{
+        font-size:8.5px!important;
+    }
+    .rms-provider-block-failover .rms-ai-provider-section-head{
+        padding:13px!important;
+    }
+    .rms-provider-block-failover .rms-ai-provider-section-title strong{
+        font-size:11px!important;
+    }
+    .rms-provider-block-failover .rms-ai-provider-section-title small{
+        font-size:7.5px!important;
+    }
+    .rms-provider-block-failover .rms-ai-failover-grid{
+        padding:9px!important;
+        gap:8px!important;
+    }
+    .rms-provider-block-failover .rms-custom-select-trigger{
+        min-height:50px!important;
+    }
+    .rms-provider-block-failover .rms-custom-select-value strong{
+        font-size:9px!important;
+    }
+    .rms-provider-block-failover .rms-custom-select-value small{
+        font-size:6.7px!important;
+    }
+    .rms-provider-block-failover .rms-ai-toggle-field{
+        padding:11px!important;
+    }
+    .rms-provider-block-failover .rms-ai-toggle-field strong{
+        font-size:9px!important;
+    }
+    .rms-provider-block-failover .rms-ai-toggle-field small{
+        font-size:7.2px!important;
+    }
+    .rms-provider-block-failover .rms-ai-provider-save-row{
+        padding:11px!important;
+    }
+    .rms-provider-block-failover .rms-ai-provider-save-row>div>span:last-child{
+        font-size:7.2px!important;
+    }
+}
+
+/* Reduced motion */
+@media(prefers-reduced-motion:reduce){
+    .rms-provider-block-failover .rms-ai-save-button{
+        transition:none!important;
+    }
+}
+</style>
