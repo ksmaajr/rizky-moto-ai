@@ -3,6 +3,7 @@
 namespace App\Livewire\Concerns;
 
 use App\Models\AgentAiCredential;
+use App\Services\AI\Providers\AgentKitProvider;
 use Illuminate\Support\Facades\Auth;
 
 trait ManagesAgentAiCredentials
@@ -35,6 +36,9 @@ trait ManagesAgentAiCredentials
             'success_count' => (int) $credential->success_count,
             'failure_count' => (int) $credential->failure_count,
             'last_used_at' => $credential->last_used_at?->diffForHumans(),
+            'last_success_at' => $credential->last_success_at?->diffForHumans(),
+            'last_failure_at' => $credential->last_failure_at?->diffForHumans(),
+            'last_error_type' => $credential->last_error_type,
             'cooldown_until' => $credential->cooldown_until?->toIso8601String(),
         ])->all();
 
@@ -71,6 +75,47 @@ trait ManagesAgentAiCredentials
             title: 'Agent credential added',
             message: 'Credential tersimpan terenkripsi dan siap masuk pool.'
         );
+    }
+
+    public function testAgentAiCredential(int $credentialId): void
+    {
+        $credential = $this->agentCredentialForCurrentUser($credentialId);
+
+        if (! $credential) {
+            return;
+        }
+
+        if (! $credential->is_active) {
+            $this->dispatch(
+                'toast',
+                type: 'warning',
+                title: 'Credential tidak aktif',
+                message: 'Aktifkan credential sebelum menjalankan test.'
+            );
+            return;
+        }
+
+        try {
+            $result = app(AgentKitProvider::class)->testCredential($credential);
+            $this->loadAgentAiCredentials();
+
+            $this->dispatch(
+                'toast',
+                type: ($result['success'] ?? false) ? 'success' : 'error',
+                title: ($result['success'] ?? false) ? 'Agent credential valid' : 'Agent credential test gagal',
+                message: (string) ($result['message'] ?? 'Test selesai.'),
+            );
+        } catch (\Throwable $e) {
+            report($e);
+            $this->loadAgentAiCredentials();
+
+            $this->dispatch(
+                'toast',
+                type: 'error',
+                title: 'Agent credential test gagal',
+                message: $e->getMessage(),
+            );
+        }
     }
 
     public function toggleAgentAiCredential(int $credentialId): void
