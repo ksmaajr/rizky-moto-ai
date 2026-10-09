@@ -494,7 +494,7 @@ PS1;
             usleep(150000);
         }
 
-        if (PHP_OS_FAMILY !== 'Windows' && $this->inspectProcess($pid)['running') {
+        if (PHP_OS_FAMILY !== 'Windows' && $this->inspectProcess($pid)['running'] {
             if (function_exists('posix_kill')) {
                 @posix_kill($pid, SIGKILL);
             } else {
