@@ -447,13 +447,12 @@
                                         type="button"
                                         class="rms-ai-secondary-button rms-agent-add-button"
                                         wire:click="beginCodexLogin"
-                                        :aria-expanded="credentialFormOpen ? 'true' : 'false'"
                                         aria-controls="agent-codex-login-bridge"
                                     >
                                         <span class="rms-agent-add-label" x-text="'+ Add Account'"></span>
                                         <small class="rms-agent-add-meta">
                                             <span>Encrypted storage</span>
-                                            <i :class="{ 'is-open': credentialFormOpen }" aria-hidden="true"></i>
+                                            <i aria-hidden="true"></i>
                                         </small>
                                     </button>
                                 </div>
@@ -485,12 +484,14 @@
                                                 'exhausted' => 'Exhausted',
                                                 'error' => 'Error',
                                                 'disabled' => 'Disabled',
+                                                'pending_validation' => 'Pending Validation',
                                                 default => $credentialActive ? 'Active' : 'Disabled',
                                             };
                                             $credentialStatusClass = match ($credentialStatus) {
                                                 'cooldown' => 'is-cooldown',
                                                 'invalid', 'error', 'exhausted' => 'is-error',
                                                 'disabled' => 'is-disabled',
+                                                'pending_validation' => 'is-pending',
                                                 default => 'is-active',
                                             };
                                         @endphp
@@ -533,7 +534,7 @@
                                             <span>✦</span>
                                             <div>
                                                 <strong>Belum ada Agent credential</strong>
-                                                <small>Tambahkan compatible ChatGPT/Codex access token untuk mengaktifkan AgentKit.</small>
+                                                <small>Jalankan codex login, impor sesi lewat Artisan, lalu uji kompatibilitas sebelum akun masuk ke pool aktif.</small>
                                             </div>
                                         </div>
                                     @endforelse
