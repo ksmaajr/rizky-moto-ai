@@ -811,11 +811,16 @@ class extends Component
             })
             ->count();
 
+        $durationExpression = match (\Illuminate\Support\Facades\DB::connection()->getDriverName()) {
+            'sqlite' => '(julianday(completed_at) - julianday(started_at)) * 86400',
+            default => 'TIMESTAMPDIFF(SECOND, started_at, completed_at)',
+        };
+
         $avgDuration = (clone $base)
             ->whereIn('status', ['completed', 'success', 'succeeded'])
             ->whereNotNull('started_at')
             ->whereNotNull('completed_at')
-            ->selectRaw('AVG(TIMESTAMPDIFF(SECOND, started_at, completed_at)) as average_seconds')
+            ->selectRaw("AVG({$durationExpression}) as average_seconds")
             ->value('average_seconds');
 
         $avgDuration = $avgDuration !== null ? (int) round((float) $avgDuration) : 0;
