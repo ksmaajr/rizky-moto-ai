@@ -326,14 +326,20 @@ PS1;
             }
 
             $workers = [];
-            $prefix = preg_quote($this->supervisorProgram(), '/');
+            $prefix = $this->supervisorProgram();
 
             foreach (preg_split('/\R+/', trim($result->output())) as $line) {
+                $line = trim($line);
+
                 if ($line === '') {
                     continue;
                 }
 
-                if (preg_match('/^(?:' . $prefix . ':)?(' . $prefix . '(?:_[0-9]+|:[0-9]+)?)\s+(RUNNING|STOPPED|STARTING|FATAL|EXITED|BACKOFF)\s*(?:pid\s+(\d+))?/i', trim($line), $m) !== 1) {
+                if (preg_match('/^(\S+\s+\S+)\s+(RUNNING|STOPPED|STARTING|FATAL|EXITED|BACKOFF)(?:\s+pid\s+(\d+))?/i', $line, $m) !== 1) {
+                    continue;
+                }
+
+                if (! str_starts_with($m[1], $prefix . ':')) {
                     continue;
                 }
 
@@ -494,7 +500,7 @@ PS1;
             usleep(150000);
         }
 
-        if (PHP_OS_FAMILY !== 'Windows' && $this->inspectProcess($pid)['running'] {
+        if (PHP_OS_FAMILY !== 'Windows' && $this->inspectProcess($pid)['running']) {
             if (function_exists('posix_kill')) {
                 @posix_kill($pid, SIGKILL);
             } else {
