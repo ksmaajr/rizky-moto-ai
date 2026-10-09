@@ -111,6 +111,18 @@ final class AgentKitProvider implements ImageProviderInterface
 
             app(AgentAiCredentialPool::class)->reportSuccess($credential->id, auth()->id());
 
+            // A newly imported Codex session stays out of the rotation pool until
+            // this explicit live image smoke test proves AgentKit compatibility.
+            if ($credential->status === 'pending_validation') {
+                $credential->forceFill([
+                    'is_active' => true,
+                    'status' => 'active',
+                    'cooldown_until' => null,
+                    'last_error_type' => null,
+                    'last_error' => null,
+                ])->save();
+            }
+
             $this->activity->success(
                 action: 'agent_credential_test',
                 category: 'api',
