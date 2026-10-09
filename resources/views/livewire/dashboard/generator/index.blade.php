@@ -4,6 +4,7 @@ use App\Models\Store;
 use App\Models\Template;
 use App\Models\Generation;
 use Livewire\Component;
+use Livewire\Attributes\On;
 use Livewire\WithFileUploads;
 
 new class extends Component
@@ -425,29 +426,17 @@ new class extends Component
             report($e);
             $this->providerResolutionError = $e->getMessage();
 
-            // Keep the UI deterministic even if the provider registry itself
-            // cannot be resolved. Agent AI has a fixed upstream catalog.
-            if ($this->activeGenerationProvider === 'agentkit') {
-                return [
-                    [
-                        'id' => 'openai/gpt-image-2.5-sunburst',
-                        'value' => 'openai/gpt-image-2.5-sunburst',
-                        'label' => 'GPT Image 2.5 Sunburst',
-                        'description' => 'Agent AI · precision generation & editing',
-                        'owned_by' => 'Agent AI',
-                    ],
-                    [
-                        'id' => 'openai/gpt-image-2.5-flare',
-                        'value' => 'openai/gpt-image-2.5-flare',
-                        'label' => 'GPT Image 2.5 Flare',
-                        'description' => 'Agent AI · fast everyday generation',
-                        'owned_by' => 'Agent AI',
-                    ],
-                ];
-            }
-
-            return app(\App\Services\OpenAiImageService::class)->availableImageModels();
+            // Never silently fall back to the legacy Vercel catalog.
+            // The provider selected in Settings is the source of truth.
+            return [];
         }
+    }
+
+    #[On('ai-provider-configuration-updated')]
+    public function refreshProviderConfiguration(): void
+    {
+        $this->providerResolutionError = '';
+        $this->syncGenerationModelToProvider();
     }
 
     public function syncGenerationModelToProvider(): void
