@@ -30,7 +30,7 @@ return [
 
     'agent_ai' => [
         'python_binary' => env('AGENT_AI_PYTHON_BINARY', 'python'),
-        'command' => env('AGENT_AI_COMMAND', 'gpt-image25-agent'),
+        'module' => env('AGENT_AI_MODULE', 'gpt_image25_agent'),
         'timeout' => (int) env('AGENT_AI_TIMEOUT', 300),
         'queue' => env('AGENT_AI_QUEUE', 'agentkit'),
         'worker_count' => (int) env('AGENT_AI_WORKER_COUNT', 3),
