@@ -2122,34 +2122,57 @@ public function getUserInitialsProperty(): string
             </div>
         </div>
 
-        {{-- AI ENGINE / QUEUE WORKER STATUS --}}
+        {{-- AI ENGINE / QUEUE + AGENTKIT WORKER STATUS --}}
         <div
             class="sidebar-api worker-widget-shell"
             :class="workerOpen ? 'is-open' : 'is-collapsed'"
             x-data="{
                 workerOpen: true,
+                queueOpen: true,
+                agentOpen: true,
                 workerAction: '',
                 init() {
                     try {
                         const saved = window.localStorage.getItem('rms-worker-widget-open');
                         if (saved !== null) this.workerOpen = saved === '1';
+                        const queueSaved = window.localStorage.getItem('rms-queue-worker-open');
+                        if (queueSaved !== null) this.queueOpen = queueSaved === '1';
+                        const agentSaved = window.localStorage.getItem('rms-agent-worker-open');
+                        if (agentSaved !== null) this.agentOpen = agentSaved === '1';
                     } catch (_) {}
                     this.$watch('workerOpen', value => {
-                        try {
-                            window.localStorage.setItem('rms-worker-widget-open', value ? '1' : '0');
-                        } catch (_) {}
+                        try { window.localStorage.setItem('rms-worker-widget-open', value ? '1' : '0'); } catch (_) {}
                     });
+                    this.$watch('queueOpen', value => {
+                        try { window.localStorage.setItem('rms-queue-worker-open', value ? '1' : '0'); } catch (_) {}
+                    });
+                    this.$watch('agentOpen', value => {
+                        try { window.localStorage.setItem('rms-agent-worker-open', value ? '1' : '0'); } catch (_) {}
+                    });
+                },
+                run(action, endpoint) {
+                    this.workerAction = action;
+                    fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                            'Accept': 'application/json'
+                        },
+                        credentials: 'same-origin'
+                    }).then(() => Livewire.dispatch('worker-status-refresh'))
+                      .catch(console.error)
+                      .finally(() => this.workerAction = '');
                 }
             }"
         >
             <div class="worker-widget-collapsed">
-                <button type="button" class="worker-widget-mini" @click="workerOpen = true" aria-label="Show queue worker status">
+                <button type="button" class="worker-widget-mini" @click="workerOpen = true" aria-label="Show AI Engine status">
                     <span class="worker-widget-mini-icon">AI</span>
                     <span class="worker-widget-mini-copy">
-                        <strong>Workers</strong>
-                        <small>{{ $this->workerStatus['running_count'] }}/{{ $this->workerStatus['target_workers'] }} active</small>
+                        <strong>AI Engine</strong>
+                        <small>{{ $this->workerStatus['running_count'] + $this->agentWorkerStatus['running_count'] }}/{{ $this->workerStatus['target_workers'] + $this->agentWorkerStatus['target_workers'] }} workers active</small>
                     </span>
-                    <span class="worker-widget-mini-state {{ $this->workerStatus['running'] ? 'is-running' : 'is-stopped' }}"></span>
+                    <span class="worker-widget-mini-state {{ ($this->workerStatus['running'] || $this->agentWorkerStatus['running']) ? 'is-running' : 'is-stopped' }}"></span>
                     <span class="worker-widget-chevron" aria-hidden="true"></span>
                 </button>
             </div>
@@ -2165,87 +2188,158 @@ public function getUserInitialsProperty(): string
                     </div>
 
                     <div class="worker-widget-top-actions">
-                        <span class="api-live-dot {{ $this->workerStatus['running'] ? 'worker-live' : 'worker-offline' }}" aria-hidden="true"></span>
-                        <button
-                            type="button"
-                            class="worker-collapse"
-                            @click="workerOpen = false"
-                            aria-label="Hide queue worker status"
-                            title="Hide worker status"
-                        ><span class="collapse-chevron" aria-hidden="true"></span></button>
+                        <span class="api-live-dot {{ ($this->workerStatus['running'] || $this->agentWorkerStatus['running']) ? 'worker-live' : 'worker-offline' }}" aria-hidden="true"></span>
+                        <button type="button" class="worker-collapse" @click="workerOpen = false" aria-label="Hide AI Engine status">
+                            <span class="collapse-chevron" aria-hidden="true"></span>
+                        </button>
                     </div>
                 </div>
 
                 <div class="worker-mini-divider"></div>
 
-                <div class="worker-fleet-head">
-                    <div class="worker-status-line">
-                        <span class="api-status-dot {{ $this->workerStatus['healthy'] ? 'is-connected' : 'is-error' }}"></span>
-                        <div class="worker-status-copy">
-                            <strong>Queue Workers</strong>
-                            <span>{{ $this->workerStatus['running_count'] }}/{{ $this->workerStatus['target_workers'] }} process aktif</span>
+                {{-- QUEUE WORKERS --}}
+                <section class="worker-engine-section" :class="{ 'is-open': queueOpen }">
+                    <button type="button" class="worker-engine-toggle" @click="queueOpen = !queueOpen" :aria-expanded="queueOpen">
+                        <span class="worker-engine-toggle-left">
+                            <span class="worker-engine-dot {{ $this->workerStatus['healthy'] ? 'is-live' : 'is-off' }}"></span>
+                            <span class="worker-engine-copy">
+                                <strong>Queue Workers</strong>
+                                <small>{{ $this->workerStatus['running_count'] }}/{{ $this->workerStatus['target_workers'] }} proses aktif</small>
+                            </span>
+                        </span>
+                        <span class="worker-engine-state">
+                            <b>{{ $this->workerStatus['healthy'] ? 'ON' : 'OFF' }}</b>
+                            <i class="worker-section-chevron"></i>
+                        </span>
+                    </button>
+
+                    <div class="worker-engine-body" x-show="queueOpen" x-collapse>
+                        <div class="worker-fleet-summary">
+                            <span><small>QUEUE</small><strong>{{ $this->workerStatus['queue'] }}</strong></span>
+                            <span><small>ACTIVE</small><strong>{{ $this->workerStatus['running_count'] }}/{{ $this->workerStatus['target_workers'] }}</strong></span>
+                        </div>
+
+                        <div class="worker-fleet-list">
+                            @php
+                                $workerRows = $this->workerStatus['workers'] ?? [];
+                                $targetWorkers = max(1, (int) ($this->workerStatus['target_workers'] ?? 3));
+                            @endphp
+                            @for ($workerIndex = 0; $workerIndex < $targetWorkers; $workerIndex++)
+                                @php
+                                    $worker = $workerRows[$workerIndex] ?? [];
+                                    $workerId = $worker['id'] ?? ($workerIndex + 1);
+                                    $workerRunning = (bool) ($worker['running'] ?? false);
+                                    $workerPid = $worker['pid'] ?? null;
+                                @endphp
+                                <div class="worker-fleet-row {{ $workerRunning ? 'is-running' : 'is-stopped' }}">
+                                    <div class="worker-fleet-indicator"></div>
+                                    <div class="worker-fleet-copy">
+                                        <strong>W{{ $workerId }}</strong>
+                                        <span>{{ $workerRunning ? 'Running' : 'Stopped' }}</span>
+                                    </div>
+                                    <code>{{ $workerPid ?: '—' }}</code>
+                                </div>
+                            @endfor
+                        </div>
+
+                        <div class="worker-actions">
+                            @if ($this->workerStatus['running'])
+                                <button type="button" class="worker-action worker-action-restart" @click="run('queue-restart','/dashboard/queue-workers/restart')" :disabled="!!workerAction">
+                                    <span x-show="workerAction !== 'queue-restart'">↻</span>
+                                    <span x-show="workerAction === 'queue-restart'" class="worker-spinner" x-cloak>◌</span>
+                                    Restart
+                                </button>
+                                <button type="button" class="worker-action worker-action-stop" @click="run('queue-stop','/dashboard/queue-workers/stop')" :disabled="!!workerAction">
+                                    <span x-show="workerAction !== 'queue-stop'">■</span>
+                                    <span x-show="workerAction === 'queue-stop'" class="worker-spinner" x-cloak>◌</span>
+                                    Stop
+                                </button>
+                            @else
+                                <button type="button" class="worker-action worker-action-start worker-action-full" @click="run('queue-start','/dashboard/queue-workers/start')" :disabled="!!workerAction">
+                                    <span x-show="workerAction !== 'queue-start'">▶</span>
+                                    <span x-show="workerAction === 'queue-start'" class="worker-spinner" x-cloak>◌</span>
+                                    Start Workers
+                                </button>
+                            @endif
                         </div>
                     </div>
-                    <span class="api-status-badge">{{ $this->workerStatus['healthy'] ? 'LIVE' : 'OFF' }}</span>
-                </div>
+                </section>
 
-                <div class="worker-fleet-summary">
-                    <span><small>QUEUE</small><strong>{{ $this->workerStatus['queue'] }}</strong></span>
-                    <span><small>ACTIVE</small><strong>{{ $this->workerStatus['running_count'] }}/{{ $this->workerStatus['target_workers'] }}</strong></span>
-                </div>
+                {{-- AGENTKIT WORKERS --}}
+                <section class="worker-engine-section worker-engine-agent" :class="{ 'is-open': agentOpen }">
+                    <button type="button" class="worker-engine-toggle" @click="agentOpen = !agentOpen" :aria-expanded="agentOpen">
+                        <span class="worker-engine-toggle-left">
+                            <span class="worker-engine-dot {{ $this->agentWorkerStatus['healthy'] ? 'is-agent-live' : ($this->agentAiActiveCredentialCount > 0 ? 'is-agent-ready' : 'is-off') }}"></span>
+                            <span class="worker-engine-copy">
+                                <strong>AgentKit Workers</strong>
+                                <small>{{ $this->agentWorkerStatus['running_count'] }}/{{ $this->agentWorkerStatus['target_workers'] }} proses aktif</small>
+                            </span>
+                        </span>
+                        <span class="worker-engine-state">
+                            <b>{{ $this->agentWorkerStatus['healthy'] ? 'ON' : ($this->agentAiActiveCredentialCount > 0 ? 'READY' : 'OFF') }}</b>
+                            <i class="worker-section-chevron"></i>
+                        </span>
+                    </button>
 
-                <div class="worker-fleet-list">
-                    @php
-                        $workerRows = $this->workerStatus['workers'] ?? [];
-                        $targetWorkers = max(1, (int) ($this->workerStatus['target_workers'] ?? 3));
-                    @endphp
-
-                    @for ($workerIndex = 0; $workerIndex < $targetWorkers; $workerIndex++)
-                        @php
-                            $worker = $workerRows[$workerIndex] ?? [];
-                            $workerId = $worker['id'] ?? ($workerIndex + 1);
-                            $workerRunning = (bool) ($worker['running'] ?? false);
-                            $workerPid = $worker['pid'] ?? null;
-                        @endphp
-
-                        <div class="worker-fleet-row {{ $workerRunning ? 'is-running' : 'is-stopped' }}">
-                            <div class="worker-fleet-indicator"></div>
-                            <div class="worker-fleet-copy">
-                                <strong>W{{ $workerId }}</strong>
-                                <span>{{ $workerRunning ? 'Running' : 'Stopped' }}</span>
-                            </div>
-                            <code>{{ $workerPid ?: '—' }}</code>
+                    <div class="worker-engine-body" x-show="agentOpen" x-collapse>
+                        <div class="worker-fleet-summary">
+                            <span><small>QUEUE</small><strong>{{ $this->agentWorkerStatus['queue'] }}</strong></span>
+                            <span><small>CREDENTIALS</small><strong>{{ $this->agentAiActiveCredentialCount }}/{{ $this->agentAiCredentialCount }}</strong></span>
                         </div>
-                    @endfor
-                </div>
 
-                <div class="worker-actions">
-                    @if ($this->workerStatus['running'])
-                        <button type="button" class="worker-action worker-action-restart"
-                            @click="workerAction='restart'; fetch('/dashboard/queue-workers/restart',{method:'POST',headers:{'X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]').content,'Accept':'application/json'},credentials:'same-origin'}).then(() => Livewire.dispatch('worker-status-refresh')).catch(console.error).finally(() => workerAction='')" :disabled="!!workerAction">
-                            <span x-show="workerAction !== 'restart'">↻</span>
-                            <span x-show="workerAction === 'restart'" class="worker-spinner" x-cloak>◌</span>
-                            Restart
-                        </button>
-                        <button type="button" class="worker-action worker-action-stop"
-                            @click="workerAction='stop'; fetch('/dashboard/queue-workers/stop',{method:'POST',headers:{'X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]').content,'Accept':'application/json'},credentials:'same-origin'}).then(() => Livewire.dispatch('worker-status-refresh')).catch(console.error).finally(() => workerAction='')" :disabled="!!workerAction">
-                            <span x-show="workerAction !== 'stop'">■</span>
-                            <span x-show="workerAction === 'stop'" class="worker-spinner" x-cloak>◌</span>
-                            Stop
-                        </button>
-                    @else
-                        <button type="button" class="worker-action worker-action-start"
-                            @click="workerAction='start'; fetch('/dashboard/queue-workers/start',{method:'POST',headers:{'X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]').content,'Accept':'application/json'},credentials:'same-origin'}).then(() => Livewire.dispatch('worker-status-refresh')).catch(console.error).finally(() => workerAction='')" :disabled="!!workerAction">
-                            <span x-show="workerAction !== 'start'">▶</span>
-                            <span x-show="workerAction === 'start'" class="worker-spinner" x-cloak>◌</span>
-                            Start Worker
-                        </button>
-                    @endif
-                </div>
+                        <div class="worker-fleet-list">
+                            @php
+                                $agentRows = $this->agentWorkerStatus['workers'] ?? [];
+                                $agentTargetWorkers = max(1, (int) ($this->agentWorkerStatus['target_workers'] ?? 3));
+                            @endphp
+                            @for ($agentIndex = 0; $agentIndex < $agentTargetWorkers; $agentIndex++)
+                                @php
+                                    $agentWorker = $agentRows[$agentIndex] ?? [];
+                                    $agentId = $agentWorker['id'] ?? ($agentIndex + 1);
+                                    $agentRunning = (bool) ($agentWorker['running'] ?? false);
+                                    $agentPid = $agentWorker['pid'] ?? null;
+                                @endphp
+                                <div class="worker-fleet-row worker-agent-row {{ $agentRunning ? 'is-running' : 'is-stopped' }}">
+                                    <div class="worker-fleet-indicator"></div>
+                                    <div class="worker-fleet-copy">
+                                        <strong>A{{ $agentId }}</strong>
+                                        <span>{{ $agentRunning ? 'Running' : 'Stopped' }}</span>
+                                    </div>
+                                    <code>{{ $agentPid ?: '—' }}</code>
+                                </div>
+                            @endfor
+                        </div>
 
-                @if ($this->workerStatus['running'] && $this->workerStatus['started_at'])
-                    <div class="worker-started-at">Started {{ $this->workerStatus['started_at'] }}</div>
-                @endif
+                        <div class="worker-agent-note">
+                            <span>✦</span>
+                            <div>
+                                <strong>Shared credential pool</strong>
+                                <small>Semua worker dapat memakai credential sehat yang sama. Rate limit atau auth error akan memicu cooldown / failover.</small>
+                            </div>
+                        </div>
+
+                        <div class="worker-actions">
+                            @if ($this->agentWorkerStatus['running'])
+                                <button type="button" class="worker-action worker-action-restart" @click="run('agent-restart','/dashboard/agentkit-workers/restart')" :disabled="!!workerAction">
+                                    <span x-show="workerAction !== 'agent-restart'">↻</span>
+                                    <span x-show="workerAction === 'agent-restart'" class="worker-spinner" x-cloak>◌</span>
+                                    Restart
+                                </button>
+                                <button type="button" class="worker-action worker-action-stop" @click="run('agent-stop','/dashboard/agentkit-workers/stop')" :disabled="!!workerAction">
+                                    <span x-show="workerAction !== 'agent-stop'">■</span>
+                                    <span x-show="workerAction === 'agent-stop'" class="worker-spinner" x-cloak>◌</span>
+                                    Stop
+                                </button>
+                            @else
+                                <button type="button" class="worker-action worker-action-start worker-action-full" @click="run('agent-start','/dashboard/agentkit-workers/start')" :disabled="!!workerAction">
+                                    <span x-show="workerAction !== 'agent-start'">▶</span>
+                                    <span x-show="workerAction === 'agent-start'" class="worker-spinner" x-cloak>◌</span>
+                                    Start Agent Workers
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                </section>
 
                 <div class="worker-api-footer">
                     <button type="button" class="worker-refresh" wire:click="refreshWorkerStatus" wire:loading.attr="disabled" wire:target="refreshWorkerStatus" title="Refresh worker status" aria-label="Refresh worker status">
@@ -2258,7 +2352,9 @@ public function getUserInitialsProperty(): string
                         API {{ $this->openAiStatus['label'] }}
                     </span>
 
-                    <span class="worker-step">{{ $this->workerStatus['running'] ? 'ENGINE READY' : 'ENGINE PAUSED' }}</span>
+                    <span class="worker-step">
+                        {{ ($this->workerStatus['running'] || $this->agentWorkerStatus['running']) ? 'ENGINE READY' : 'ENGINE PAUSED' }}
+                    </span>
                 </div>
             </div>
         </div>
