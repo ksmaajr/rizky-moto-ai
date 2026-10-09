@@ -317,6 +317,45 @@ final class AgentKitProvider implements ImageProviderInterface
         return (string) config('services.agent_ai.module', 'gpt_image25_agent');
     }
 
+    private function lockedPrompt(ImageGenerationRequest $request): string
+    {
+
+        // Provider-level policy injection: keep branding and Template identity locked
+        // even when a caller changes its orchestration or builds a provider request
+        // through a different workflow.
+        $prompt = $request->prompt;
+        $roles = array_map(
+            static fn ($reference): string => strtolower(trim((string) $reference->role)),
+            $request->references,
+        );
+        $hasStoreLogo = in_array('store_logo', $roles, true)
+            || in_array('logo', $roles, true)
+            || in_array('branding', $roles, true);
+        $hasTemplate = in_array('template', $roles, true)
+            || in_array('layout', $roles, true)
+            || in_array('template_master', $roles, true);
+        $hasInstalled = in_array('installed', $roles, true)
+            || in_array('installed_reference', $roles, true);
+
+        $prompt .= "\n\nPROVIDER-LEVEL LOCKED BRANDING AND TEMPLATE POLICY — HIGHEST PRIORITY:\n"
+            . "- The selected Template's prompt and visual reference define one fixed reusable design system. Keep the same composition, layout zones, visual hierarchy, typography placement, color palette, background treatment, graphic motifs, badges/callouts, spacing and overall art direction for every product generated with this Template.\n"
+            . "- Product category, product packaging, product color, and whether an installed-motorcycle reference is present MUST NOT redesign or randomize the Template. Adapt only the product-specific content and the factual installed view when one is supplied.\n"
+            . "- Do not copy the example product or store logo embedded in the Template reference. The Template image is a layout/style authority only; the selected Store's own logo reference is the sole authority for store branding.\n"
+            . ($hasTemplate
+                ? "- A Template/layout reference is attached. Preserve its design system consistently; do not create a new layout for another product.\n"
+                : "- No Template image is attached. Follow the selected Template prompt as the fixed design system and do not invent a different style between products.\n")
+            . ($hasStoreLogo
+                ? "- OFFICIAL STORE LOGO IS ATTACHED AS A DEDICATED REFERENCE. It is mandatory and must be used as the store logo in the final image. Match the exact supplied artwork, wordmark, lettering, icon, colors, proportions and spacing. Never redraw, retype, approximate, stylize, replace, merge or hallucinate the logo. Never use a logo from the Template, product packaging or installed photo as a substitute.\n"
+                . "- Place the official Store logo in a clear, intentional branding position consistent with the selected Template prompt and the same Template's prior design logic. Its position may be chosen to fit the composition, but the branding treatment must remain consistent across products and both generation modes.\n"
+                : "- No readable Store logo reference was supplied. Do not fabricate, guess, or substitute a store logo.\n")
+            . ($hasInstalled
+                ? "- An installed/in-use reference is present. Use it only for factual fitment and usage context; it must not override the Template design system or Store logo.\n"
+                : "- No installed/in-use reference is present. Do not invent an installation scene; the absence of that photo must not change the Template design system or Store branding rules.\n")
+            . "- These rules are mandatory for every provider invocation and override conflicting creative suggestions. Preserve product identity while keeping Template design and Store branding locked.";
+
+        return $prompt;
+    }
+
     private function promptFile(ImageGenerationRequest $request): string
     {
         $directory = storage_path('app/agent-ai/prompts');
@@ -329,7 +368,7 @@ final class AgentKitProvider implements ImageProviderInterface
             ($request->generationId ?: uniqid('prompt-', true)) .
             '-' . uniqid('', true) . '.txt';
 
-        if (@file_put_contents($path, $request->prompt) === false) {
+        if (@file_put_contents($path, $this->lockedPrompt($request)) === false) {
             throw new RuntimeException('Prompt Agent AI tidak dapat disimpan sementara.');
         }
 
