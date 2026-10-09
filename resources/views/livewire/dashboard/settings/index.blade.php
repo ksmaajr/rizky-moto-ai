@@ -3872,3 +3872,172 @@
     }
 }
 </style>
+<style>
+/* =========================================================
+   AGENT AI — MOBILE PREMIUM REFINEMENT
+   Improve mobile readability without changing the locked
+   Vercel Gateway layout.
+   ========================================================= */
+@media(max-width:760px){
+    .rms-provider-block-agent .rms-provider-block-head{
+        padding:17px 14px 16px!important;
+        gap:11px!important;
+    }
+    .rms-provider-block-agent .rms-provider-block-icon{
+        width:42px!important;
+        height:42px!important;
+        flex:0 0 42px!important;
+        border-radius:12px!important;
+    }
+    .rms-provider-block-agent .rms-provider-block-copy strong{
+        font-size:16px!important;
+        line-height:1.12!important;
+    }
+    .rms-provider-block-agent .rms-provider-block-copy small{
+        margin-top:4px!important;
+        font-size:9px!important;
+        line-height:1.45!important;
+    }
+    .rms-provider-block-agent .rms-provider-block-state{
+        flex:0 0 auto!important;
+        margin-left:auto!important;
+        white-space:nowrap!important;
+    }
+
+    .rms-provider-block-agent .rms-ai-provider-section-head{
+        padding:15px!important;
+        gap:11px!important;
+    }
+    .rms-provider-block-agent .rms-ai-provider-icon{
+        width:34px!important;
+        height:34px!important;
+        flex-basis:34px!important;
+        border-radius:9px!important;
+    }
+    .rms-provider-block-agent .rms-ai-provider-section-title strong{
+        font-size:12px!important;
+        line-height:1.2!important;
+    }
+    .rms-provider-block-agent .rms-ai-provider-section-title small{
+        margin-top:3px!important;
+        font-size:8px!important;
+        line-height:1.45!important;
+    }
+    .rms-provider-block-agent .rms-ai-provider-status{
+        height:24px!important;
+        padding:0 8px!important;
+        font-size:6.2px!important;
+    }
+
+    .rms-provider-block-agent .rms-ai-agent-grid{
+        gap:10px!important;
+        padding:11px!important;
+    }
+    .rms-provider-block-agent .rms-ai-agent-readiness{
+        grid-template-columns:42px minmax(0,1fr)!important;
+        gap:11px!important;
+        padding:13px!important;
+        border-radius:12px!important;
+    }
+    .rms-provider-block-agent .rms-ai-readiness-orb{
+        width:42px!important;
+        height:42px!important;
+        flex-basis:42px!important;
+    }
+    .rms-provider-block-agent .rms-ai-agent-readiness strong{
+        font-size:10px!important;
+        line-height:1.25!important;
+    }
+    .rms-provider-block-agent .rms-ai-agent-readiness p{
+        margin-top:4px!important;
+        font-size:8px!important;
+        line-height:1.55!important;
+    }
+
+    .rms-provider-block-agent .rms-ai-agent-meta{
+        gap:7px!important;
+    }
+    .rms-provider-block-agent .rms-ai-agent-meta span{
+        padding:10px 8px!important;
+        border-radius:10px!important;
+        min-height:52px!important;
+    }
+    .rms-provider-block-agent .rms-ai-agent-meta b{
+        font-size:6.8px!important;
+        line-height:1.3!important;
+    }
+    .rms-provider-block-agent .rms-ai-agent-meta em{
+        margin-top:4px!important;
+        font-size:6.8px!important;
+        line-height:1.2!important;
+    }
+    .rms-provider-block-agent .rms-ai-secondary-button{
+        min-height:46px!important;
+        padding:0 12px!important;
+        border-radius:10px!important;
+    }
+    .rms-provider-block-agent .rms-ai-secondary-button span{
+        font-size:8px!important;
+    }
+    .rms-provider-block-agent .rms-ai-secondary-button small{
+        font-size:6.5px!important;
+    }
+}
+
+@media(max-width:390px){
+    .rms-provider-block-agent .rms-provider-block-head{
+        padding:15px 12px 14px!important;
+    }
+    .rms-provider-block-agent .rms-provider-block-icon{
+        width:40px!important;
+        height:40px!important;
+        flex-basis:40px!important;
+    }
+    .rms-provider-block-agent .rms-provider-block-copy strong{
+        font-size:15px!important;
+    }
+    .rms-provider-block-agent .rms-provider-block-copy small{
+        font-size:8.5px!important;
+    }
+
+    .rms-provider-block-agent .rms-ai-provider-section-head{
+        padding:13px!important;
+    }
+    .rms-provider-block-agent .rms-ai-provider-section-title strong{
+        font-size:11.5px!important;
+    }
+    .rms-provider-block-agent .rms-ai-provider-section-title small{
+        font-size:7.7px!important;
+    }
+
+    .rms-provider-block-agent .rms-ai-agent-grid{
+        padding:9px!important;
+    }
+    .rms-provider-block-agent .rms-ai-agent-readiness{
+        grid-template-columns:40px minmax(0,1fr)!important;
+        gap:10px!important;
+        padding:12px!important;
+    }
+    .rms-provider-block-agent .rms-ai-readiness-orb{
+        width:40px!important;
+        height:40px!important;
+        flex-basis:40px!important;
+    }
+    .rms-provider-block-agent .rms-ai-agent-readiness strong{
+        font-size:9.5px!important;
+    }
+    .rms-provider-block-agent .rms-ai-agent-readiness p{
+        font-size:7.7px!important;
+    }
+    .rms-provider-block-agent .rms-ai-agent-meta span{
+        min-height:0!important;
+        padding:9px 10px!important;
+    }
+    .rms-provider-block-agent .rms-ai-agent-meta b{
+        font-size:6.6px!important;
+    }
+    .rms-provider-block-agent .rms-ai-agent-meta em{
+        font-size:6.6px!important;
+    }
+}
+</style>
