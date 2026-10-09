@@ -22,6 +22,7 @@ class extends Component
 
     use \App\Livewire\Concerns\ManagesVercelGatewayKeys;
     use \App\Livewire\Concerns\ManagesAiProviderSettings;
+    use \App\Livewire\Concerns\ManagesAgentAiCredentials;
 
 
 
@@ -124,6 +125,7 @@ class extends Component
     {
 
         $this->loadAiProviderSettings();
+        $this->loadAgentAiCredentials();
 
         $settings = \App\Models\OpenAiSetting::query()->first();
 
