@@ -10,6 +10,19 @@ Branch: `feature/ai-provider-architecture`
 - Codex CLI supports the official `codex login` flow and manages its own session credentials. Its local credential-store representation is an implementation detail unless a supported public interface explicitly guarantees otherwise.
 - The Laravel model encrypts `AgentAiCredential.access_token` at rest, and the AgentKit provider passes that value to the child process as an environment variable.
 
+## Current experimental bridge
+
+The repository now includes `agent-ai:codex-import`. This is a deliberately version-sensitive adapter, not an official Codex token-export API:
+
+1. On the same machine as the Laravel app, complete `codex login` in a terminal first.
+2. Confirm Codex is using file-based auth storage. The importer supports the currently observed `auth.json` shape only: `auth_mode=chatgpt` and `tokens.access_token`.
+3. Run `php artisan agent-ai:codex-import --user-id=ID_USER --name="Codex Account"`. To choose another file explicitly, pass `--auth-file="FULL_PATH_TO_AUTH_JSON"`. On Windows, use the actual path to the logged-in user's `.codex\auth.json`.
+4. The command imports only the access token into Laravel's encrypted cast. It does not save the auth file, ID token, refresh token, or account ID. The credential starts as `pending_validation` and inactive.
+5. In Settings, click `Test Token` for that pending credential only after deciding to spend one live image request. A successful AgentKit smoke test activates the credential; failure leaves it out of rotation.
+6. Each account must use its own isolated Codex home and auth file before importing. Do not point multiple accounts at one shared default home.
+
+This is experimental because Codex's local auth-file schema is an implementation detail and AgentKit has no auth-only endpoint. The importer intentionally fails closed when the expected fields are missing. Do not expose this command to untrusted users or run it on a multi-user server without OS-level account isolation. The web button does not itself open an interactive browser login; it explains the host-terminal steps.
+
 ## Required bridge behavior
 
 1. Start the official Codex sign-in flow on the same host/environment that owns the account session.
