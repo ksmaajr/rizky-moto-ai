@@ -752,8 +752,9 @@ class OpenAiImageService
             category: 'generator',
             title: 'Generate AI image masuk antrean.',
             description: sprintf(
-                'Generation #%d siap diproses di background. %d reference image akan digunakan.',
+                'Generation #%d siap diproses via %s. %d reference image akan digunakan.',
                 $generation->id,
+                $provider->name() === 'agentkit' ? 'Agent AI' : 'Vercel AI Gateway',
                 $referenceCount
             ),
             metadata: [
@@ -762,6 +763,7 @@ class OpenAiImageService
                 'store_id' => $store->id,
                 'template_id' => $template->id,
                 'model' => $model,
+                'provider' => $provider->name(),
                 'reference_count' => $referenceCount,
                 'has_template_reference' => $hasTemplateReference,
                 'template_reference_attached' => $attachTemplateReference,
