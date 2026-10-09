@@ -56,7 +56,8 @@ final class AgentKitProvider implements ImageProviderInterface
 
             $arguments = [
                 $this->binary(),
-                $this->command(),
+                '-m',
+                $this->module(),
                 '--prompt-file', $promptFile,
                 '--live',
                 '--auth-provider', 'env',
@@ -172,7 +173,8 @@ final class AgentKitProvider implements ImageProviderInterface
 
             $arguments = [
                 $this->binary(),
-                $this->command(),
+                '-m',
+                $this->module(),
                 '--prompt-file', $promptFile,
                 '--live',
                 '--auth-provider', 'env',
@@ -310,9 +312,9 @@ final class AgentKitProvider implements ImageProviderInterface
         return (string) config('services.agent_ai.python_binary', 'python');
     }
 
-    private function command(): string
+    private function module(): string
     {
-        return (string) config('services.agent_ai.command', 'gpt-image25-agent');
+        return (string) config('services.agent_ai.module', 'gpt_image25_agent');
     }
 
     private function promptFile(ImageGenerationRequest $request): string
@@ -357,14 +359,26 @@ final class AgentKitProvider implements ImageProviderInterface
             2 => ['pipe', 'w'],
         ];
 
+        $environment = getenv();
+        if (! is_array($environment)) {
+            $environment = [];
+        }
+
+        $environment['CHATGPT_CODEX_ACCESS_TOKEN'] = $token;
+        $environment['PATH'] = $environment['PATH'] ?? '/usr/local/bin:/usr/bin:/bin';
+        $environment['HOME'] = $environment['HOME'] ?? storage_path('app/agent-ai/home');
+        $environment['USER'] = $environment['USER'] ?? get_current_user();
+
+        if (! is_dir($environment['HOME'])) {
+            @mkdir($environment['HOME'], 0700, true);
+        }
+
         $process = proc_open(
             $command,
             $descriptorSpec,
             $pipes,
             base_path(),
-            array_merge($_ENV, [
-                'CHATGPT_CODEX_ACCESS_TOKEN' => $token,
-            ]),
+            $environment,
         );
 
         if (! is_resource($process)) {
