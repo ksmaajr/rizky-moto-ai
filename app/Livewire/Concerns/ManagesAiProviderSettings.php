@@ -60,6 +60,8 @@ trait ManagesAiProviderSettings
         // provider change, so their model catalog cannot remain stale.
         $this->generationProviderVersion++;
 
+        $this->dispatch('ai-provider-configuration-updated');
+
         $this->dispatch(
             'toast',
             type: 'success',
