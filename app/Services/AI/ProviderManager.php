@@ -46,7 +46,7 @@ final class ProviderManager
 
     public function generate(ImageGenerationRequest $request): ImageGenerationResult
     {
-                $setting = $this->settingFor($request->userId);
+        $setting = $this->settingFor($request->userId);
         $primary = $this->providerFor($request->model, $request->userId);
 
         try {
