@@ -143,6 +143,9 @@ class OpenAiImageService
         $hasStoreLogo = $this->hasStoreLogo($store);
         $generationMode = $this->generationMode($hasInstalledReference);
         $customTitle = $this->normalizeCustomTitle($customTitle);
+        // Keep the submitted custom title immutable throughout this request.
+        // The same value is also persisted in generation metadata for queued processing.
+        $requestedCustomTitle = $customTitle;
         $titleSource = $customTitle !== null ? 'custom' : 'ai';
         $referenceCount = ($attachTemplateReference ? 1 : 0)
             + 1
@@ -710,6 +713,9 @@ class OpenAiImageService
         $hasStoreLogo = $this->hasStoreLogo($store);
         $generationMode = $this->generationMode($hasInstalledReference);
         $customTitle = $this->normalizeCustomTitle($customTitle);
+        // Keep the submitted custom title immutable throughout this request.
+        // The same value is also persisted in generation metadata for queued processing.
+        $requestedCustomTitle = $customTitle;
         $titleSource = $customTitle !== null ? 'custom' : 'ai';
         $referenceCount = ($attachTemplateReference ? 1 : 0)
             + 1
