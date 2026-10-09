@@ -518,8 +518,11 @@ new class extends Component
                 imageCount: $this->imageCount,
             );
 
+            $generationQueue = app(\App\Services\AI\ProviderManager::class)
+                ->queueForGeneration($this->model, auth()->id());
+
             try {
-                \App\Jobs\GenerateOpenAiImageJob::dispatch($generation->id);
+                \App\Jobs\GenerateOpenAiImageJob::dispatch($generation->id)->onQueue($generationQueue);
             } catch (\Throwable $dispatchException) {
                 $generation->update([
                     'status' => 'failed',
@@ -540,7 +543,7 @@ new class extends Component
             $generation->update([
                 'metadata' => array_merge($generation->metadata ?? [], [
                     'dispatched_at' => now()->toIso8601String(),
-                    'queue' => (string) config('queue.default', 'database'),
+                    'queue' => $generationQueue,
                 ]),
             ]);
 
@@ -686,8 +689,11 @@ new class extends Component
         $retry->metadata = $metadata;
         $retry->save();
 
+        $retryQueue = app(\App\Services\AI\ProviderManager::class)
+            ->queueForGeneration((string) $retry->model, auth()->id());
+
         try {
-            \App\Jobs\GenerateOpenAiImageJob::dispatch($retry->id);
+            \App\Jobs\GenerateOpenAiImageJob::dispatch($retry->id)->onQueue($retryQueue);
         } catch (\Throwable $dispatchException) {
             $retry->update([
                 'status' => 'failed',
@@ -721,7 +727,7 @@ new class extends Component
         $retry->update([
             'metadata' => array_merge($retry->metadata ?? [], [
                 'dispatched_at' => now()->toIso8601String(),
-                'queue' => (string) config('queue.default', 'database'),
+                'queue' => $retryQueue,
             ]),
         ]);
 
