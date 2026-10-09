@@ -152,6 +152,16 @@ trait ManagesAgentAiCredentials
             return;
         }
 
+        if ($credential->status === 'pending_validation') {
+            $this->dispatch(
+                'toast',
+                type: 'warning',
+                title: 'Credential belum tervalidasi',
+                message: 'Jalankan Test Token terlebih dahulu. Credential baru hanya dapat aktif setelah live validation berhasil.'
+            );
+            return;
+        }
+
         $credential->update([
             'is_active' => ! $credential->is_active,
             'status' => $credential->is_active ? 'disabled' : 'active',
