@@ -75,31 +75,17 @@ trait ManagesAgentAiCredentials
             return false;
         }
     }
+    /**
+     * Raw token entry is intentionally disabled. New accounts must pass through
+     * the guarded Codex importer and explicit compatibility validation.
+     */
     public function addAgentAiCredential(): void
     {
-        $this->validate([
-            'newAgentCredentialName' => ['required', 'string', 'max:120'],
-            'newAgentCredentialToken' => ['required', 'string', 'min:20', 'max:10000'],
-        ]);
-
-        AgentAiCredential::create([
-            'user_id' => Auth::id(),
-            'name' => trim($this->newAgentCredentialName),
-            'access_token' => trim($this->newAgentCredentialToken),
-            'is_active' => true,
-            'status' => 'active',
-        ]);
-
-        $this->newAgentCredentialName = '';
-        $this->newAgentCredentialToken = '';
-        $this->showAgentCredentialForm = false;
-        $this->loadAgentAiCredentials();
-
         $this->dispatch(
             'toast',
-            type: 'success',
-            title: 'Agent credential added',
-            message: 'Credential tersimpan terenkripsi dan siap masuk pool.'
+            type: 'warning',
+            title: 'Import melalui Codex CLI',
+            message: 'Input token manual dinonaktifkan. Gunakan codex login dan agent-ai:codex-import, lalu validasi credential sebelum diaktifkan.'
         );
     }
 
