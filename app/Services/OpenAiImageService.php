@@ -675,13 +675,22 @@ class OpenAiImageService
         $startedAt = microtime(true);
         $store = $this->resolveStoreForTemplate($store, $template);
 
-        if (! $this->apiPool()->hasAvailableKey($user->id)) {
+        $model = trim($model);
+        if ($model === '') {
+            throw new RuntimeException('Model image belum dipilih.');
+        }
+
+        // Resolve the provider before persisting the queued generation so the
+        // selected Settings provider is authoritative from the first step.
+        $providerManager = app(ProviderManager::class);
+        $provider = $providerManager->providerFor($model, $user->id);
+
+        if ($provider->name() === 'vercel' && ! $this->apiPool()->hasAvailableKey($user->id)) {
             throw new RuntimeException('Belum ada Vercel AI Gateway API Key yang tersedia. Buka Settings → AI Gateway.');
         }
 
-        $model = trim($model);
-        if ($model === '') {
-            throw new RuntimeException('Model image Vercel AI Gateway belum dipilih.');
+        if ($provider->name() === 'agentkit' && ! app(\App\Services\AgentAiCredentialPool::class)->hasAvailableCredential($user->id)) {
+            throw new RuntimeException('Belum ada Agent AI credential aktif. Buka Settings → AI Provider → Agent AI.');
         }
 
         $sourceOne = $imageOne->store('generations/source', 'public');
