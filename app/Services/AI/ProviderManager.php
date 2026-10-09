@@ -103,6 +103,17 @@ final class ProviderManager
         }
     }
 
+    private function supportsProvider(string $name, string $model): bool
+    {
+        foreach ($this->providers as $provider) {
+            if ($provider->name() === $name) {
+                return $provider->supportsModel($model);
+            }
+        }
+
+        return false;
+    }
+
     private function settingFor(?int $userId): ?AiProviderSetting
     {
         if ($userId === null) {
