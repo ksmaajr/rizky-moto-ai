@@ -143,6 +143,8 @@ final class AgentKitProvider implements ImageProviderInterface
 
     public function generate(ImageGenerationRequest $request): ImageGenerationResult
     {
+        $this->assertStoreLogoReference($request);
+
         $credential = $this->credentialPool->acquire($request->userId);
 
         if (! $credential) {
@@ -315,6 +317,28 @@ final class AgentKitProvider implements ImageProviderInterface
     private function module(): string
     {
         return (string) config('services.agent_ai.module', 'gpt_image25_agent');
+    }
+
+    /**
+     * Require the official Store logo as a real, readable image reference.
+     * The application orchestrator resolves it from the Store attached to the
+     * selected Template; providers must never silently proceed without it.
+     */
+    private function assertStoreLogoReference(ImageGenerationRequest $request): void
+    {
+        foreach ($request->references as $reference) {
+            $role = strtolower(trim((string) $reference->role));
+            if (
+                in_array($role, ['store_logo', 'logo', 'branding'], true)
+                && is_readable($reference->path)
+            ) {
+                return;
+            }
+        }
+
+        throw new RuntimeException(
+            'Generation dibatalkan: reference logo resmi Store tidak tersedia. Pilih Template dengan Store yang memiliki logo valid.'
+        );
     }
 
     private function lockedPrompt(ImageGenerationRequest $request): string
