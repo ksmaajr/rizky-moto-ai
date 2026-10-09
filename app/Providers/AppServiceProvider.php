@@ -22,7 +22,7 @@ class AppServiceProvider extends ServiceProvider
             return new ProviderManager([
                 $app->make(VercelProvider::class),
                 $app->make(AgentKitProvider::class),
-            ]);
+            ], $app->make(\App\Services\ActivityLogService::class));
         });
     }
 
