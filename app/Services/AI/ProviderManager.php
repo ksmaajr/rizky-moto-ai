@@ -44,6 +44,24 @@ final class ProviderManager
         );
     }
 
+    /**
+     * Resolve the queue that should execute a generation. AgentKit gets its
+     * dedicated queue so the AgentKit worker pool can be stopped independently
+     * from the normal application queue workers.
+     */
+    public function queueForGeneration(string $model, ?int $userId = null): string
+    {
+        $setting = $this->settingFor($userId);
+        $agentEnabled = in_array($setting?->active_provider, ['agentkit'], true)
+            || in_array($setting?->fallback_provider, ['agentkit'], true);
+
+        if ($agentEnabled && $this->supportsProvider('agentkit', $model)) {
+            return (string) config('services.agent_ai.queue', 'agentkit');
+        }
+
+        return (string) config('queue.default', 'database');
+    }
+
     public function generate(ImageGenerationRequest $request): ImageGenerationResult
     {
         $setting = $this->settingFor($request->userId);
