@@ -693,6 +693,10 @@ class OpenAiImageService
             throw new RuntimeException('Belum ada Agent AI credential aktif. Buka Settings → AI Provider → Agent AI.');
         }
 
+        if ($provider->name() === 'agentkit' && $imageCount > 1) {
+            throw new RuntimeException('Agent AI saat ini memproses satu live invocation untuk satu image. Gunakan Image Count = 1; dukungan multi-image Agent AI akan menggunakan fan-out invocation terpisah.');
+        }
+
         $sourceOne = $imageOne->store('generations/source', 'public');
         $sourceTwo = $imageTwo ? $imageTwo->store('generations/source', 'public') : null;
 
