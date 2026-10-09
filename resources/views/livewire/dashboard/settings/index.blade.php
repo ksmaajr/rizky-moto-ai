@@ -701,23 +701,37 @@
                                 </div>
                             </div>
 
-                            <label class="rms-ai-toggle-field">
-                                <input type="checkbox" wire:model.live="allowProviderFallback">
+                            <button
+                                type="button"
+                                class="rms-ai-toggle-field {{ $allowProviderFallback ? 'is-enabled' : '' }}"
+                                wire:click="$toggle('allowProviderFallback')"
+                                wire:loading.attr="disabled"
+                                wire:target="$toggle('allowProviderFallback')"
+                                aria-pressed="{{ $allowProviderFallback ? 'true' : 'false' }}"
+                            >
                                 <span class="rms-ai-toggle-ui"></span>
-                                <div>
+                                <span class="rms-ai-toggle-copy">
                                     <strong>Allow provider fallback</strong>
-                                    <small>Gunakan provider cadangan jika seluruh credential provider utama tidak tersedia.</small>
-                                </div>
-                            </label>
+                                    <small>Gunakan provider cadangan jika provider utama gagal.</small>
+                                </span>
+                                <span class="rms-ai-toggle-state">{{ $allowProviderFallback ? 'ON' : 'OFF' }}</span>
+                            </button>
 
-                            <label class="rms-ai-toggle-field">
-                                <input type="checkbox" wire:model.live="emergencyFallback">
+                            <button
+                                type="button"
+                                class="rms-ai-toggle-field {{ $emergencyFallback ? 'is-enabled' : '' }}"
+                                wire:click="$toggle('emergencyFallback')"
+                                wire:loading.attr="disabled"
+                                wire:target="$toggle('emergencyFallback')"
+                                aria-pressed="{{ $emergencyFallback ? 'true' : 'false' }}"
+                            >
                                 <span class="rms-ai-toggle-ui"></span>
-                                <div>
+                                <span class="rms-ai-toggle-copy">
                                     <strong>Emergency fallback</strong>
-                                    <small>Prioritaskan availability untuk kebutuhan mendadak ketika provider utama unavailable.</small>
-                                </div>
-                            </label>
+                                    <small>Prioritaskan availability saat provider utama unavailable.</small>
+                                </span>
+                                <span class="rms-ai-toggle-state">{{ $emergencyFallback ? 'ON' : 'OFF' }}</span>
+                            </button>
                         </div>
 
                         <div class="rms-ai-provider-save-row">
@@ -1640,9 +1654,16 @@
 .rms-ai-config-field select:focus{border-color:#18181b;box-shadow:0 0 0 3px rgba(24,24,27,.045)}
 .rms-ai-toggle-field{display:flex;align-items:center;gap:9px;padding:11px;border:1px solid #ededf0;border-radius:10px;background:#fff;cursor:pointer;transition:background .2s ease,border-color .2s ease,transform .2s ease}
 .rms-ai-toggle-field:hover{background:#fcfcfd;border-color:#dedee4;transform:translateY(-1px)}
+.rms-ai-toggle-field{position:relative;width:100%;border:0;text-align:left;font:inherit;color:inherit}
 .rms-ai-toggle-field input{position:absolute;opacity:0;pointer-events:none}
 .rms-ai-toggle-ui{position:relative;width:28px;height:17px;flex:0 0 28px;border-radius:999px;background:#e4e4e7;transition:background .25s cubic-bezier(.2,.8,.2,1)}
 .rms-ai-toggle-ui:after{content:"";position:absolute;top:3px;left:3px;width:11px;height:11px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12);transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+.rms-ai-toggle-field.is-enabled{border-color:#b9e4c8;background:#f4fbf6}
+.rms-ai-toggle-field.is-enabled .rms-ai-toggle-ui{background:#27ae60}
+.rms-ai-toggle-field.is-enabled .rms-ai-toggle-ui:after{transform:translateX(11px)}
+.rms-ai-toggle-copy{display:flex;min-width:0;flex:1;flex-direction:column;gap:2px}
+.rms-ai-toggle-state{margin-left:auto;min-width:27px;text-align:center;font-size:7px;font-weight:900;letter-spacing:.08em;color:#a1a1aa}
+.rms-ai-toggle-field.is-enabled .rms-ai-toggle-state{color:#1f9d55}
 
 <style>
 /* =========================================================
