@@ -24,24 +24,78 @@ final class ProviderManager
     public function providerFor(string $model, ?int $userId = null): ImageProviderInterface
     {
         $setting = $this->settingFor($userId);
+        $activeName = $setting?->active_provider ?: 'vercel';
 
-        if ($setting?->active_provider) {
-            foreach ($this->providers as $provider) {
-                if ($provider->name() === $setting->active_provider && $provider->supportsModel($model)) {
-                    return $provider;
+        foreach ($this->providers as $provider) {
+            if ($provider->name() !== $activeName) {
+                continue;
+            }
+
+            if ($provider->supportsModel($model)) {
+                return $provider;
+            }
+
+            break;
+        }
+
+        if ($setting?->allow_provider_fallback && $setting?->fallback_provider) {
+            foreach ($this->providers as $fallback) {
+                if (
+                    $fallback->name() === $setting->fallback_provider
+                    && $fallback->supportsModel($model)
+                ) {
+                    return $fallback;
                 }
             }
         }
 
-        foreach ($this->providers as $provider) {
-            if ($provider->supportsModel($model)) {
-                return $provider;
-            }
+        throw new RuntimeException(sprintf(
+            'Model "%s" tidak tersedia untuk provider aktif "%s". Pilih model yang tersedia untuk provider tersebut.',
+            $model,
+            $activeName
+        ));
+    }
+
+    /**
+     * Return the provider currently selected in Settings.
+     */
+    public function activeProviderName(?int $userId = null): string
+    {
+        return $this->settingFor($userId)?->active_provider ?: 'vercel';
+    }
+
+    /**
+     * Return the image model catalog for the currently selected provider.
+     *
+     * Vercel keeps its live Gateway catalog. AgentKit intentionally exposes
+     * only the two models supported by the upstream toolkit.
+     *
+     * @return array<int,array{id:string,value:string,label:string,description:string,owned_by:string}>
+     */
+    public function availableModels(?int $userId = null): array
+    {
+        $provider = $this->activeProviderName($userId);
+
+        if ($provider === 'agentkit') {
+            return [
+                [
+                    'id' => 'openai/gpt-image-2.5-sunburst',
+                    'value' => 'openai/gpt-image-2.5-sunburst',
+                    'label' => 'GPT Image 2.5 Sunburst',
+                    'description' => 'Agent AI · precision generation & editing',
+                    'owned_by' => 'Agent AI',
+                ],
+                [
+                    'id' => 'openai/gpt-image-2.5-flare',
+                    'value' => 'openai/gpt-image-2.5-flare',
+                    'label' => 'GPT Image 2.5 Flare',
+                    'description' => 'Agent AI · fast everyday generation',
+                    'owned_by' => 'Agent AI',
+                ],
+            ];
         }
 
-        throw new RuntimeException(
-            'Tidak ada AI image provider yang mendukung model: ' . $model
-        );
+        return app(AppServicesOpenAiImageService::class)->availableImageModels();
     }
 
     /**
@@ -51,15 +105,11 @@ final class ProviderManager
      */
     public function queueForGeneration(string $model, ?int $userId = null): string
     {
-        $setting = $this->settingFor($userId);
-        $agentEnabled = in_array($setting?->active_provider, ['agentkit'], true)
-            || in_array($setting?->fallback_provider, ['agentkit'], true);
+        $provider = $this->providerFor($model, $userId);
 
-        if ($agentEnabled && $this->supportsProvider('agentkit', $model)) {
-            return (string) config('services.agent_ai.queue', 'agentkit');
-        }
-
-        return (string) config('queue.default', 'database');
+        return $provider->name() === 'agentkit'
+            ? (string) config('services.agent_ai.queue', 'agentkit')
+            : (string) config('queue.default', 'database');
     }
 
     public function generate(ImageGenerationRequest $request): ImageGenerationResult
