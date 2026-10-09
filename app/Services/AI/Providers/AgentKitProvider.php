@@ -338,9 +338,16 @@ final class AgentKitProvider implements ImageProviderInterface
 
     private function normalizeRole(string $role): string
     {
-        return in_array($role, ['identity', 'style', 'logo', 'layout', 'general'], true)
-            ? $role
-            : 'general';
+        // Map the shared provider-neutral reference roles to AgentKit's supported
+        // semantic roles. In particular, store_logo must never degrade to general.
+        return match (strtolower(trim($role))) {
+            'product', 'product_reference', 'primary_product' => 'identity',
+            'template', 'template_reference', 'template_master' => 'layout',
+            'store_logo', 'logo', 'brand', 'branding' => 'logo',
+            'installed', 'installed_reference', 'in_use' => 'general',
+            'identity', 'style', 'layout', 'general' => strtolower(trim($role)),
+            default => 'general',
+        };
     }
 
     /**
