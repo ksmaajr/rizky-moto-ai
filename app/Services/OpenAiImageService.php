@@ -1229,7 +1229,10 @@ class OpenAiImageService
                     : ($hasInstalledReference ? 'IMAGE 3 — OFFICIAL STORE LOGO:' : 'IMAGE 2 — OFFICIAL STORE LOGO:'))
                 : 'NO STORE LOGO IMAGE:',
             $hasStoreLogo
-                ? '- Treat the supplied Store logo as the authoritative branding asset. Preserve its recognizable logo design, proportions and identity. Do not redesign, replace, invent or distort it.'
+                ? '- Treat the supplied Store logo image as the single, exclusive authority for the STORE BRAND LOGO. Reproduce that exact supplied mark, including its actual wordmark, icon, letter shapes, colors, proportions and spacing. Do not redraw it from memory or approximate the lettering.'
+                . PHP_EOL . '- NEVER copy, infer, substitute or blend a logo/wordmark from the product packaging, product photo, installed motorcycle photo, Template example, or any other reference into the Store logo position. Those images are NOT Store-brand authorities.'
+                . PHP_EOL . '- If a product/package has its own manufacturer branding, preserve it only on that actual product/package. Do not promote it to the Store header/logo.'
+                . PHP_EOL . '- Keep the official Store logo visually separate from product branding and do not alter the supplied logo artwork.'
                 : '- No Store logo image is supplied. Do not invent a logo or fabricate brand marks.',
         ];
 
