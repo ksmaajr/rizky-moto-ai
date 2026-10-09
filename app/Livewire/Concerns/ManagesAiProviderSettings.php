@@ -11,6 +11,7 @@ trait ManagesAiProviderSettings
     public string $fallbackProvider = '';
     public bool $allowProviderFallback = false;
     public bool $emergencyFallback = false;
+    public int $generationProviderVersion = 0;
 
     public function loadAiProviderSettings(): void
     {
@@ -54,6 +55,10 @@ trait ManagesAiProviderSettings
         if (method_exists($this, 'syncGenerationModelToProvider')) {
             $this->syncGenerationModelToProvider();
         }
+
+        // Force provider-aware Generator children to remount after a saved
+        // provider change, so their model catalog cannot remain stale.
+        $this->generationProviderVersion++;
 
         $this->dispatch(
             'toast',
