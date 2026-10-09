@@ -16,14 +16,9 @@ Route::middleware('auth')->group(function () {
     // Account settings pages.
     Route::middleware('verified')->group(function () {
         Route::livewire('/settings/profile', 'pages::settings.profile')->name('profile.edit');
-        Route::livewire('/settings/security', 'pages::settings.security')->name('security.edit');
-        Route::livewire('/settings/appearance', 'pages::settings.appearance')->name('appearance.edit');
-    });
-
-    // Account settings pages retained by the Livewire starter kit.
-    Route::middleware('verified')->group(function () {
-        Route::livewire('/settings/profile', 'pages::settings.profile')->name('profile.edit');
-        Route::livewire('/settings/security', 'pages::settings.security')->name('security.edit');
+        Route::livewire('/settings/security', 'pages::settings.security')
+            ->middleware('password.confirm')
+            ->name('security.edit');
         Route::livewire('/settings/appearance', 'pages::settings.appearance')->name('appearance.edit');
     });
 
