@@ -9,6 +9,7 @@ use Livewire\Attributes\On;
 
 use App\Models\Store;
 use App\Services\QueueWorkerManager;
+use App\Services\AgentKitWorkerManager;
 
 
 
@@ -70,6 +71,20 @@ class extends Component
         'pid' => null,
         'queue' => 'database',
         'started_at' => null,
+    ];
+
+    public array $agentWorkerStatus = [
+        'running' => false,
+        'healthy' => false,
+        'running_count' => 0,
+        'worker_count' => 0,
+        'target_workers' => 3,
+        'workers' => [],
+        'pid' => null,
+        'queue' => 'agentkit',
+        'started_at' => null,
+        'credential_count' => 0,
+        'active_credential_count' => 0,
     ];
 
 // Legacy OpenAI connection logs kept for the existing settings activity UI.
@@ -1327,6 +1342,113 @@ class extends Component
                 'queue' => (string) config('queue.default', 'database'),
                 'started_at' => null,
             ];
+        }
+
+        $this->refreshAgentWorkerStatus();
+    }
+
+    public function refreshAgentWorkerStatus(): void
+    {
+        try {
+            $this->assertWorkerControlAccess();
+
+            $status = app(AgentKitWorkerManager::class)->status();
+
+            $this->agentWorkerStatus = [
+                'running' => (bool) ($status['running'] ?? false),
+                'healthy' => (bool) ($status['healthy'] ?? false),
+                'running_count' => (int) ($status['running_count'] ?? 0),
+                'worker_count' => (int) ($status['worker_count'] ?? 0),
+                'target_workers' => (int) ($status['target_workers'] ?? 3),
+                'workers' => $status['workers'] ?? [],
+                'pid' => $status['pid'] ?? null,
+                'queue' => (string) ($status['queue'] ?? config('services.agent_ai.queue', 'agentkit')),
+                'started_at' => $status['started_at'] ?? null,
+                'credential_count' => (int) ($this->agentAiCredentialCount ?? 0),
+                'active_credential_count' => (int) ($this->agentAiActiveCredentialCount ?? 0),
+            ];
+        } catch (\Throwable $e) {
+            report($e);
+
+            $this->agentWorkerStatus = [
+                'running' => false,
+                'healthy' => false,
+                'running_count' => 0,
+                'worker_count' => 0,
+                'target_workers' => 3,
+                'workers' => [],
+                'pid' => null,
+                'queue' => (string) config('services.agent_ai.queue', 'agentkit'),
+                'started_at' => null,
+                'credential_count' => (int) ($this->agentAiCredentialCount ?? 0),
+                'active_credential_count' => (int) ($this->agentAiActiveCredentialCount ?? 0),
+            ];
+        }
+    }
+
+    public function startAgentKitWorker(): void
+    {
+        try {
+            $this->assertWorkerControlAccess();
+
+            $result = app(AgentKitWorkerManager::class)->start();
+            $this->refreshAgentWorkerStatus();
+
+            $this->dispatch(
+                'toast',
+                type: ($result['success'] ?? false) ? 'success' : 'info',
+                title: ($result['success'] ?? false) ? 'AgentKit worker berhasil dijalankan' : 'AgentKit worker sudah berjalan',
+                message: (string) ($result['message'] ?? 'AgentKit worker siap digunakan.'),
+            );
+        } catch (\Throwable $e) {
+            report($e);
+            $this->refreshAgentWorkerStatus();
+
+            $this->dispatch('toast', type: 'error', title: 'AgentKit worker gagal dijalankan', message: $e->getMessage());
+        }
+    }
+
+    public function stopAgentKitWorker(): void
+    {
+        try {
+            $this->assertWorkerControlAccess();
+
+            $result = app(AgentKitWorkerManager::class)->stop();
+            $this->refreshAgentWorkerStatus();
+
+            $this->dispatch(
+                'toast',
+                type: ($result['success'] ?? false) ? 'success' : 'info',
+                title: ($result['success'] ?? false) ? 'AgentKit worker stopped' : 'AgentKit worker sudah berhenti',
+                message: (string) ($result['message'] ?? 'AgentKit worker tidak aktif.'),
+            );
+        } catch (\Throwable $e) {
+            report($e);
+            $this->refreshAgentWorkerStatus();
+
+            $this->dispatch('toast', type: 'error', title: 'AgentKit worker gagal dihentikan', message: $e->getMessage());
+        }
+    }
+
+    public function restartAgentKitWorker(): void
+    {
+        try {
+            $this->assertWorkerControlAccess();
+
+            $result = app(AgentKitWorkerManager::class)->restart();
+            $this->refreshAgentWorkerStatus();
+
+            $this->dispatch(
+                'toast',
+                type: ($result['success'] ?? false) ? 'success' : 'error',
+                title: ($result['success'] ?? false) ? 'AgentKit worker restarted' : 'Restart AgentKit worker gagal',
+                message: (string) ($result['message'] ?? 'AgentKit worker sudah direstart.'),
+            );
+        } catch (\Throwable $e) {
+            report($e);
+            $this->refreshAgentWorkerStatus();
+
+            $this->dispatch('toast', type: 'error', title: 'AgentKit worker gagal direstart', message: $e->getMessage());
         }
     }
 
