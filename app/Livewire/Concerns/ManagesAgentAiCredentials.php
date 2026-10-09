@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 trait ManagesAgentAiCredentials
 {
     public string $newAgentCredentialName = '';
-    public string $newAgentCredentialToken = '';
+    public string $newAgentCredentialToken = '';\n    public string $codexLoginCommand = 'codex login';\n    public bool $codexCliAvailable = false;
     public bool $showAgentCredentialForm = false;
     public array $agentAiCredentials = [];
     public int $agentAiCredentialCount = 0;
