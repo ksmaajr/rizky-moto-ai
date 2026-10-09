@@ -74,6 +74,13 @@ class GenerateOpenAiImageJob implements ShouldQueue
     private function workerLabel(): string
     {
         $process = trim((string) env('RIZKY_QUEUE_WORKER_PROCESS', ''));
+        $queue = (string) ($this->job?->getQueue() ?: config('queue.default', 'database'));
+
+        if ($queue === (string) config('services.agent_ai.queue', 'agentkit')) {
+            return $process !== ''
+                ? 'agentkit-worker-' . $process
+                : 'agentkit-worker-pid-' . getmypid();
+        }
 
         return $process !== ''
             ? 'worker-' . $process
