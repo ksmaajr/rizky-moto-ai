@@ -55,7 +55,6 @@ trait ManagesAiProviderSettings
             $this->syncGenerationModelToProvider();
         }
 
-        $this->saved = true;
         $this->dispatch(
             'toast',
             type: 'success',
