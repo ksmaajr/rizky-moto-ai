@@ -424,7 +424,7 @@
                                 </div>
                             </div>
 
-                            <section class="rms-ai-provider-section rms-agent-provider-card" x-data="{ credentialFormOpen: @entangle('showAgentCredentialForm').live }">
+                            <section class="rms-ai-provider-section rms-agent-provider-card" x-data="{ credentialFormOpen: @entangle('showAgentCredentialForm').live, credentialDeleteOpen: false, credentialDeleteId: null, credentialDeleteName: '', credentialDeleting: false, confirmCredentialDelete(id, name) { this.credentialDeleteId = id; this.credentialDeleteName = name || 'credential Agent ini'; this.credentialDeleteOpen = true; }, closeCredentialDelete() { if (!this.credentialDeleting) this.credentialDeleteOpen = false; }, async deleteCredential() { if (!this.credentialDeleteId || this.credentialDeleting) return; this.credentialDeleting = true; try { await $wire.deleteAgentAiCredential(this.credentialDeleteId); this.credentialDeleteOpen = false; } catch (e) { console.error(e); } finally { this.credentialDeleting = false; this.credentialDeleteId = null; } } }" @keydown.escape.window="closeCredentialDelete()">
                                 <div class="rms-ai-provider-section-head">
                                     <div class="rms-ai-provider-section-title">
                                         <span class="rms-ai-provider-icon rms-agent-icon">AG</span>
@@ -551,10 +551,11 @@
                                                     <span wire:loading.remove wire:target="testAgentAiCredential({{ (int) $credential['id'] }})">Test Token</span>
                                                     <span wire:loading wire:target="testAgentAiCredential({{ (int) $credential['id'] }})">Testing...</span>
                                                 </button>
-                                                <button type="button" class="rms-agent-toggle-button" wire:click="toggleAgentAiCredential({{ (int) $credential['id'] }})">
-                                                    {{ $credentialActive ? 'Disable' : 'Enable' }}
+                                                <button type="button" class="rms-agent-toggle-button {{ $credentialActive ? 'is-enabled' : 'is-disabled' }}" wire:click="toggleAgentAiCredential({{ (int) $credential['id'] }})" wire:loading.attr="disabled" wire:target="toggleAgentAiCredential({{ (int) $credential['id'] }})">
+                                                    <span wire:loading.remove wire:target="toggleAgentAiCredential({{ (int) $credential['id'] }})">{{ $credentialActive ? 'Disable' : 'Enable' }}</span>
+                                                    <span wire:loading wire:target="toggleAgentAiCredential({{ (int) $credential['id'] }})">Updating...</span>
                                                 </button>
-                                                <button type="button" class="rms-agent-delete-button" wire:click="deleteAgentAiCredential({{ (int) $credential['id'] }})" wire:confirm="Hapus credential Agent ini?">×</button>
+                                                <button type="button" class="rms-agent-delete-button" @click.stop="confirmCredentialDelete({{ (int) $credential['id'] }}, @js($credential['name']))" title="Remove credential">×</button>
                                             </div>
                                         </article>
                                     @empty
@@ -567,6 +568,55 @@
                                         </div>
                                     @endforelse
                                 </div>
+
+                                <template x-teleport="body">
+                                    <div
+                                        x-show="credentialDeleteOpen"
+                                        x-cloak
+                                        x-transition:enter="transition ease-out duration-200"
+                                        x-transition:enter-start="opacity-0"
+                                        x-transition:enter-end="opacity-100"
+                                        x-transition:leave="transition ease-in duration-150"
+                                        x-transition:leave-start="opacity-100"
+                                        x-transition:leave-end="opacity-0"
+                                        class="rms-agent-delete-overlay"
+                                        @keydown.escape.window="closeCredentialDelete()"
+                                    >
+                                        <div class="rms-agent-delete-backdrop" @click="closeCredentialDelete()"></div>
+                                        <div
+                                            class="rms-agent-delete-modal"
+                                            x-show="credentialDeleteOpen"
+                                            x-transition:enter="transition ease-out duration-250"
+                                            x-transition:enter-start="opacity-0 scale-90 translate-y-4"
+                                            x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                                            x-transition:leave="transition ease-in duration-150"
+                                            x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                                            x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+                                            @click.stop
+                                        >
+                                            <div class="rms-agent-delete-orb"><span></span></div>
+                                            <div class="rms-agent-delete-copy">
+                                                <span>REMOVE AGENT CREDENTIAL</span>
+                                                <h3>Hapus credential ini?</h3>
+                                                <p>Credential <strong x-text="credentialDeleteName"></strong> akan dihapus dari pool dan tidak dapat digunakan lagi oleh AgentKit worker.</p>
+                                            </div>
+                                            <div class="rms-agent-delete-warning">
+                                                <span>!</span>
+                                                <div>
+                                                    <strong>Tindakan ini tidak dapat dibatalkan</strong>
+                                                    <small>Riwayat activity tetap tersimpan untuk audit.</small>
+                                                </div>
+                                            </div>
+                                            <div class="rms-agent-delete-actions">
+                                                <button type="button" class="rms-agent-delete-cancel" @click="closeCredentialDelete()" :disabled="credentialDeleting">Batal</button>
+                                                <button type="button" class="rms-agent-delete-confirm" @click="deleteCredential()" :disabled="credentialDeleting">
+                                                    <span x-show="!credentialDeleting">Hapus Credential</span>
+                                                    <span x-show="credentialDeleting" x-cloak class="rms-agent-delete-loading"><i></i>Menghapus...</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
 
                                 <div class="rms-agent-test-note">
                                     <span>!</span>
@@ -4840,18 +4890,77 @@
 .rms-agent-test-button,
 .rms-agent-toggle-button,
 .rms-agent-delete-button{
-    min-height:30px;
-    border-radius:7px;
-    padding:0 8px;
-    font-size:6.2px;
-    font-weight:850;
+    position:relative;
+    min-height:36px;
+    border-radius:9px;
+    padding:0 12px;
+    font-size:7.4px;
+    font-weight:900;
     cursor:pointer;
     white-space:nowrap;
+    transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease,background .2s ease,border-color .2s ease,color .2s ease;
 }
-.rms-agent-test-button{border:1px solid #ddd6fe;background:#faf5ff;color:#6d28d9}
-.rms-agent-toggle-button{border:1px solid #e4e4e7;background:#fff;color:#52525b}
-.rms-agent-delete-button{width:30px;border:1px solid #fee2e2;background:#fff5f5;color:#dc2626;font-size:12px}
-.rms-agent-test-button:disabled,.rms-agent-toggle-button:disabled,.rms-agent-delete-button:disabled{opacity:.5;cursor:wait}
+.rms-agent-test-button{
+    border:1px solid #ddd6fe;
+    background:#faf5ff;
+    color:#6d28d9;
+    box-shadow:0 2px 5px rgba(109,40,217,.05);
+}
+.rms-agent-test-button:hover{
+    transform:translateY(-1px);
+    border-color:#c4b5fd;
+    background:#f5f3ff;
+    box-shadow:0 7px 15px rgba(109,40,217,.12);
+}
+.rms-agent-test-button:active{transform:translateY(0) scale(.98)}
+.rms-agent-toggle-button{
+    min-width:78px;
+    border:1px solid #e4e4e7;
+    background:#fff;
+    color:#52525b;
+    box-shadow:0 2px 5px rgba(24,24,27,.04);
+}
+.rms-agent-toggle-button.is-enabled{
+    border-color:#bbf7d0;
+    background:#f0fdf4;
+    color:#15803d;
+}
+.rms-agent-toggle-button.is-disabled{
+    border-color:#e4e4e7;
+    background:#fafafa;
+    color:#71717a;
+}
+.rms-agent-toggle-button:hover{
+    transform:translateY(-1px);
+    border-color:#a1a1aa;
+    box-shadow:0 7px 15px rgba(24,24,27,.10);
+}
+.rms-agent-toggle-button.is-enabled:hover{
+    border-color:#86efac;
+    background:#dcfce7;
+    box-shadow:0 7px 15px rgba(34,197,94,.13);
+}
+.rms-agent-toggle-button.is-disabled:hover{
+    background:#f4f4f5;
+}
+.rms-agent-toggle-button:active{transform:translateY(0) scale(.98)}
+.rms-agent-delete-button{
+    width:36px;
+    padding:0;
+    border:1px solid #fecaca;
+    background:#fff5f5;
+    color:#dc2626;
+    font-size:15px;
+    box-shadow:0 2px 5px rgba(220,38,38,.04);
+}
+.rms-agent-delete-button:hover{
+    transform:translateY(-1px) rotate(2deg);
+    border-color:#fca5a5;
+    background:#fee2e2;
+    box-shadow:0 7px 15px rgba(220,38,38,.13);
+}
+.rms-agent-delete-button:active{transform:translateY(0) scale(.95)}
+.rms-agent-test-button:disabled,.rms-agent-toggle-button:disabled,.rms-agent-delete-button:disabled{opacity:.5;cursor:wait;transform:none}
 .rms-agent-empty{
     display:flex;align-items:center;gap:10px;padding:14px;border:1px dashed #d4d4d8;border-radius:11px;background:#fafafa;
 }
@@ -4866,6 +4975,177 @@
     width:18px;height:18px;flex:0 0 18px;display:grid;place-items:center;border-radius:6px;background:#fef3c7;color:#a16207;font-size:8px;font-weight:900;
 }
 .rms-agent-test-note div{display:grid;gap:2px}.rms-agent-test-note strong{font-size:6.7px;color:#92400e}.rms-agent-test-note small{font-size:6.3px;line-height:1.45;color:#a16207}
+.rms-agent-save-button,
+.rms-agent-cancel-button,
+.rms-agent-form-close,
+.rms-agent-token-input button{
+    transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease,background .2s ease,border-color .2s ease,color .2s ease;
+}
+.rms-agent-save-button:hover{
+    transform:translateY(-1px);
+    background:#27272a;
+    box-shadow:0 7px 16px rgba(24,24,27,.16);
+}
+.rms-agent-save-button:active,.rms-agent-cancel-button:active,.rms-agent-form-close:active{transform:scale(.97)}
+.rms-agent-cancel-button:hover{
+    transform:translateY(-1px);
+    background:#f4f4f5;
+    border-color:#d4d4d8;
+    color:#27272a;
+}
+.rms-agent-form-close:hover{
+    transform:rotate(90deg);
+    background:#f4f4f5;
+    color:#27272a;
+}
+.rms-agent-token-input button:hover{
+    background:#f4f4f5;
+    color:#27272a;
+}
+.rms-agent-delete-overlay{
+    position:fixed;
+    inset:0;
+    z-index:9999;
+    display:grid;
+    place-items:center;
+    padding:24px;
+}
+.rms-agent-delete-backdrop{
+    position:absolute;
+    inset:0;
+    background:rgba(15,23,42,.52);
+    backdrop-filter:blur(9px);
+}
+.rms-agent-delete-modal{
+    position:relative;
+    width:min(470px,calc(100vw - 32px));
+    border-radius:20px;
+    border:1px solid rgba(239,68,68,.18);
+    background:#fff;
+    box-shadow:0 30px 80px rgba(15,23,42,.24);
+    padding:25px;
+    overflow:hidden;
+}
+.rms-agent-delete-modal::before{
+    content:"";
+    position:absolute;
+    inset:0 0 auto;
+    height:3px;
+    background:#ef4444;
+}
+.rms-agent-delete-orb{
+    width:58px;
+    height:58px;
+    display:grid;
+    place-items:center;
+    margin:0 auto 17px;
+    border:1px solid #fecaca;
+    border-radius:18px;
+    background:#fff5f5;
+    box-shadow:0 0 0 8px rgba(239,68,68,.035);
+}
+.rms-agent-delete-orb span{
+    width:13px;
+    height:13px;
+    border-radius:50%;
+    background:#ef4444;
+    box-shadow:0 0 0 7px rgba(239,68,68,.10),0 0 0 14px rgba(239,68,68,.045);
+}
+.rms-agent-delete-copy{text-align:center}
+.rms-agent-delete-copy>span{
+    display:block;
+    margin-bottom:7px;
+    color:#ef4444;
+    font-size:8px;
+    font-weight:950;
+    letter-spacing:.16em;
+}
+.rms-agent-delete-copy h3{
+    margin:0;
+    color:#18181b;
+    font-size:20px;
+    line-height:1.2;
+    font-weight:900;
+}
+.rms-agent-delete-copy p{
+    margin:10px auto 0;
+    max-width:390px;
+    color:#71717a;
+    font-size:10px;
+    line-height:1.55;
+}
+.rms-agent-delete-copy p strong{color:#27272a}
+.rms-agent-delete-warning{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    margin:19px 0;
+    padding:12px;
+    border:1px solid #fecaca;
+    border-radius:12px;
+    background:#fff7f7;
+}
+.rms-agent-delete-warning>span{
+    width:25px;
+    height:25px;
+    flex:0 0 25px;
+    display:grid;
+    place-items:center;
+    border-radius:8px;
+    background:#ef4444;
+    color:#fff;
+    font-size:12px;
+    font-weight:950;
+}
+.rms-agent-delete-warning div{display:grid;gap:3px}
+.rms-agent-delete-warning strong{font-size:9px;color:#b91c1c}
+.rms-agent-delete-warning small{font-size:8px;line-height:1.45;color:#a16262}
+.rms-agent-delete-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rms-agent-delete-cancel,.rms-agent-delete-confirm{
+    min-height:44px;
+    border-radius:10px;
+    font-size:9px;
+    font-weight:900;
+    cursor:pointer;
+    transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease,background .2s ease,border-color .2s ease;
+}
+.rms-agent-delete-cancel{
+    border:1px solid #e4e4e7;
+    background:#fff;
+    color:#52525b;
+}
+.rms-agent-delete-cancel:hover{
+    transform:translateY(-1px);
+    background:#f4f4f5;
+    box-shadow:0 7px 15px rgba(24,24,27,.08);
+}
+.rms-agent-delete-confirm{
+    border:1px solid #ef4444;
+    background:#ef3333;
+    color:#fff;
+    box-shadow:0 7px 18px rgba(239,68,68,.17);
+}
+.rms-agent-delete-confirm:hover{
+    transform:translateY(-1px);
+    background:#dc2626;
+    box-shadow:0 10px 22px rgba(239,68,68,.23);
+}
+.rms-agent-delete-cancel:active,.rms-agent-delete-confirm:active{transform:translateY(0) scale(.98)}
+.rms-agent-delete-cancel:disabled,.rms-agent-delete-confirm:disabled{opacity:.55;cursor:wait;transform:none}
+.rms-agent-delete-loading{display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.rms-agent-delete-loading i{
+    width:10px;height:10px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:rms-agent-spin .7s linear infinite;
+}
+@keyframes rms-agent-spin{to{transform:rotate(360deg)}}
+@media(max-width:760px){
+    .rms-agent-test-button,.rms-agent-toggle-button,.rms-agent-delete-button{min-height:40px;font-size:8px}
+    .rms-agent-toggle-button{min-width:86px}
+    .rms-agent-delete-modal{padding:22px;border-radius:18px}
+    .rms-agent-delete-copy h3{font-size:18px}
+    .rms-agent-delete-copy p{font-size:9px}
+    .rms-agent-delete-actions{grid-template-columns:1fr}
+}
+
 @media(max-width:900px){
     .rms-agent-credential-card{grid-template-columns:1fr auto}
     .rms-agent-credential-meta{grid-column:1/-1}
