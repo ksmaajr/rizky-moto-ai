@@ -5554,3 +5554,92 @@ new class extends Component
 .rms-generator-history-grid .rms-generation-stage{padding-top:14px}
 @media(max-width:760px){.rms-generator-history-grid .rms-generation-processing-visual-v3{min-height:280px;padding:48px 12px 42px;gap:10px}.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-visual-core{width:116px;height:116px}.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-topline,.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-visual-badge,.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-stage-label{width:100%}.rms-generator-history-grid .rms-generation-eta-v3 small{font-size:8px}}
 </style>
+
+
+<style>
+/* V20 — Final layout guard: keep progress labels and history metadata readable. */
+.rms-generator-history-grid .rms-generation-processing-visual-v3{
+    display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;
+    gap:14px!important;min-height:320px!important;padding:18px 16px 20px!important;overflow:hidden!important;
+}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-topline{
+    position:relative!important;inset:auto!important;order:0!important;width:100%!important;max-width:none!important;
+    min-height:38px!important;flex:0 0 auto!important;justify-content:flex-start!important;margin:0!important;
+    padding:8px 12px!important;box-sizing:border-box!important;white-space:normal!important;
+}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-topline strong{font-size:12px!important;line-height:1.25!important;letter-spacing:.04em!important;white-space:nowrap!important}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-topline small{font-size:11px!important;line-height:1.35!important;white-space:normal!important}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-visual-core{
+    position:relative!important;inset:auto!important;order:1!important;display:grid!important;place-items:center!important;
+    flex:0 0 148px!important;width:148px!important;height:148px!important;min-height:148px!important;max-width:100%!important;
+    margin:0 auto!important;overflow:visible!important;
+}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-orbit{max-width:100%;max-height:100%}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-core-ring{
+    position:relative!important;inset:auto!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
+    width:96px!important;height:96px!important;min-width:96px!important;min-height:96px!important;margin:0!important;flex:0 0 96px!important;
+}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-core-ring b{
+    display:block!important;position:static!important;font-size:24px!important;line-height:1!important;margin:0!important;
+}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-core-ring small{
+    display:block!important;position:static!important;margin-top:7px!important;font-size:8px!important;line-height:1.2!important;letter-spacing:.12em!important;
+}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-stage-label{
+    position:relative!important;inset:auto!important;order:2!important;width:100%!important;max-width:none!important;
+    min-height:36px!important;display:flex!important;align-items:center!important;justify-content:center!important;
+    margin:0!important;padding:8px 10px!important;text-align:center!important;box-sizing:border-box!important;
+}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-stage-label span{
+    display:block!important;position:static!important;font-size:12px!important;line-height:1.4!important;font-weight:750!important;
+    overflow-wrap:anywhere!important;white-space:normal!important;
+}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-visual-badge{
+    position:relative!important;inset:auto!important;order:3!important;width:100%!important;max-width:none!important;
+    min-height:38px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;
+    gap:8px!important;margin:0!important;padding:9px 12px!important;box-sizing:border-box!important;
+}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-visual-badge span{font-size:11px!important;line-height:1.3!important}
+.rms-generator-history-grid .rms-generation-eta-v3{
+    display:flex!important;align-items:center!important;gap:12px!important;min-height:74px!important;
+    margin-top:12px!important;padding:14px!important;box-sizing:border-box!important;
+}
+.rms-generator-history-grid .rms-generation-eta-v3 strong{display:block!important;font-size:10px!important;line-height:1.35!important}
+.rms-generator-history-grid .rms-generation-eta-v3 b{display:block!important;margin-top:3px!important;font-size:13px!important;line-height:1.3!important}
+.rms-generator-history-grid .rms-generation-eta-v3 small{display:block!important;margin-top:4px!important;font-size:10px!important;line-height:1.45!important;white-space:normal!important}
+.rms-generator-history-grid .rms-generation-stage{display:grid!important;gap:9px!important;padding-top:14px!important}
+.rms-generator-history-grid .rms-generation-stage-item{display:flex!important;align-items:center!important;gap:9px!important;min-height:18px!important}
+.rms-generator-history-grid .rms-generation-stage-item span{font-size:11px!important;line-height:1.35!important;white-space:normal!important}
+.rms-generator-history-grid .rms-generation-card-meta{
+    display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;
+    width:100%!important;margin:0 0 14px!important;align-items:stretch!important;
+}
+.rms-generator-history-grid .rms-generation-card-meta>span{
+    min-width:0!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:4px!important;
+    padding:9px 10px!important;border:1px solid #e9edf2!important;border-radius:11px!important;background:#fafbfc!important;
+    box-sizing:border-box!important;white-space:normal!important;
+}
+.rms-generator-history-grid .rms-generation-card-meta b{
+    display:block!important;color:#9298a3!important;font-size:9px!important;line-height:1.2!important;font-weight:850!important;
+    letter-spacing:.08em!important;text-transform:uppercase!important;
+}
+.rms-generator-history-grid .rms-generation-card-meta strong{
+    display:block!important;max-width:100%!important;overflow:hidden!important;color:#424751!important;font-size:11px!important;
+    line-height:1.35!important;font-weight:800!important;text-overflow:ellipsis!important;white-space:nowrap!important;
+}
+@media(max-width:760px){
+    .rms-generator-history-grid .rms-generation-processing-visual-v3{min-height:300px!important;padding:14px 12px 16px!important;gap:12px!important}
+    .rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-visual-core{flex-basis:132px!important;width:132px!important;height:132px!important;min-height:132px!important}
+    .rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-core-ring{width:88px!important;height:88px!important;min-width:88px!important;min-height:88px!important;flex-basis:88px!important}
+    .rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-core-ring b{font-size:22px!important}
+    .rms-generator-history-grid .rms-generation-card-meta{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+    .rms-generator-history-grid .rms-generation-card-meta>span{padding:8px!important}
+    .rms-generator-history-grid .rms-generation-card-meta strong{font-size:10px!important}
+    .rms-generator-history-grid .rms-generation-eta-v3 small{font-size:9px!important}
+}
+@media(prefers-reduced-motion:reduce){
+    .rms-generator-history-grid .rms-generation-processing-visual-v3 *,
+    .rms-generator-history-grid .rms-generation-processing-visual-v3 *::before,
+    .rms-generator-history-grid .rms-generation-processing-visual-v3 *::after{animation-duration:.01ms!important;animation-iteration-count:1!important}
+}
+</style>
