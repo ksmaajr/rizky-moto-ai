@@ -1390,7 +1390,7 @@ class extends Component
             @elseif ($activeSection === 'generator')
                 <div
                     class="workspace-section-shell rms-content-enter"
-                    wire:key="workspace-generator"
+                    wire:key="workspace-generator-provider-v2"
                 >
                     <livewire:dashboard.generator.index />
                 </div>
