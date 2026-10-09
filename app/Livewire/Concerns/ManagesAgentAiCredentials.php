@@ -71,7 +71,7 @@ trait ManagesAgentAiCredentials
     {
         try {
             return Process::timeout(5)->run(['codex', '--version'])->successful();
-        } catch (\\Throwable) {
+        } catch (\Throwable) {
             return false;
         }
     }
