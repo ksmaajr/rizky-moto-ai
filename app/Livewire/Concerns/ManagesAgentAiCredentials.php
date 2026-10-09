@@ -64,7 +64,7 @@ trait ManagesAgentAiCredentials
             return;
         }
 
-        $this->dispatch('toast', type: 'info', title: 'Login Codex perlu dijalankan pada host', message: 'Jalankan codex login pada terminal host AgentKit. Login saja belum menambahkan akun ke pool; token bridge belum diaktifkan karena format credential perlu kompatibilitas yang terverifikasi.');
+        $this->dispatch('toast', type: 'info', title: 'Satu langkah lagi: import sesi Codex', message: 'Jalankan codex login pada terminal mesin yang sama dengan Laravel, lalu jalankan php artisan agent-ai:codex-import --user-id=ID_USER --name="Nama Akun". Akun masuk sebagai Pending Validation dan baru aktif setelah Test Token berhasil. Bridge file-based ini eksperimental.');
     }
 
     private function codexCliIsAvailable(): bool
@@ -111,12 +111,12 @@ trait ManagesAgentAiCredentials
             return;
         }
 
-        if (! $credential->is_active) {
+        if (! $credential->is_active && $credential->status !== 'pending_validation') {
             $this->dispatch(
                 'toast',
                 type: 'warning',
-                title: 'Credential tidak aktif',
-                message: 'Aktifkan credential sebelum menjalankan test.'
+                title: 'Credential tidak siap diuji',
+                message: 'Credential harus aktif atau berstatus Pending Validation.'
             );
             return;
         }
