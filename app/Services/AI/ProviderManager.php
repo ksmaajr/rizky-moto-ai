@@ -95,7 +95,7 @@ final class ProviderManager
             ];
         }
 
-        return app(AppServicesOpenAiImageService::class)->availableImageModels();
+        return app(\App\Services\OpenAiImageService::class)->availableImageModels();
     }
 
     /**
