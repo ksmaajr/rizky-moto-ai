@@ -5,7 +5,6 @@ namespace App\Console\Commands;
 use App\Models\AgentAiCredential;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
-use RuntimeException;
 use Throwable;
 
 class ImportCodexCredentialCommand extends Command
@@ -26,7 +25,7 @@ class ImportCodexCredentialCommand extends Command
         }
 
         $path = $this->resolveAuthPath();
-        if (! is_file($path) || ! is_readable($path)) {
+        if ($path === '' || ! is_file($path) || ! is_readable($path)) {
             $this->error('File auth Codex tidak ditemukan atau tidak dapat dibaca. Jalankan "codex login" pada mesin ini terlebih dahulu dan pastikan Codex menggunakan file credential store.');
             return self::FAILURE;
         }
@@ -92,7 +91,7 @@ class ImportCodexCredentialCommand extends Command
 
         $home = getenv('USERPROFILE') ?: getenv('HOME') ?: '';
         if ($home === '') {
-            throw new RuntimeException('Home directory tidak dapat ditentukan. Gunakan --auth-file.');
+            return '';
         }
 
         return rtrim($home, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'.codex'.DIRECTORY_SEPARATOR.'auth.json';
