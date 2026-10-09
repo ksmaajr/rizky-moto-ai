@@ -1770,18 +1770,20 @@ PROMPT;
             ];
         }
 
-        // IMPORTANT: the logo always comes from the Store attached to the selected Template.
-        // Never accept a logo uploaded by the generator form as a replacement.
-        if ($this->hasStoreLogo($store)) {
-            $logoPath = Storage::disk('public')->path($store->logo_path);
-            if (is_readable($logoPath)) {
-                $references[] = [
-                    'role' => 'store_logo',
-                    'path' => $logoPath,
-                    'filename' => 'store-logo-' . basename($logoPath),
-                ];
-            }
+        // Branding is mandatory: fail closed rather than silently asking the model
+        // to invent a logo when the selected Store's original asset is missing.
+        if (! $this->hasStoreLogo($store)) {
+            throw new RuntimeException(
+                'Logo resmi Store tidak ditemukan atau tidak dapat dibaca. Periksa logo_path pada Store pemilik Template sebelum generate.'
+            );
         }
+
+        $logoPath = Storage::disk('public')->path($store->logo_path);
+        $references[] = [
+            'role' => 'store_logo',
+            'path' => $logoPath,
+            'filename' => 'store-logo-' . basename($logoPath),
+        ];
 
         return $references;
     }
