@@ -51,6 +51,10 @@ trait ManagesAiProviderSettings
             ]
         );
 
+        if (method_exists($this, 'syncGenerationModelToProvider')) {
+            $this->syncGenerationModelToProvider();
+        }
+
         $this->saved = true;
         $this->dispatch(
             'toast',
