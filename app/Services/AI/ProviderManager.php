@@ -122,7 +122,7 @@ final class ProviderManager
         } catch (Throwable $primaryError) {
             $fallbackName = $setting?->fallback_provider;
 
-            if (! $setting?->allow_provider_fallback || ! $fallbackName || $fallbackName === $primary->name()) {
+            if (! ($setting?->allow_provider_fallback || $setting?->emergency_fallback) || ! $fallbackName || $fallbackName === $primary->name()) {
                 throw $primaryError;
             }
 
