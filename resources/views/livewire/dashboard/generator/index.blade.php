@@ -5643,3 +5643,81 @@ new class extends Component
     .rms-generator-history-grid .rms-generation-processing-visual-v3 *::after{animation-duration:.01ms!important;animation-iteration-count:1!important}
 }
 </style>
+
+
+<style>
+/*
+ * V21 — LOCKED GENERATION HISTORY CARD CONTRACT.
+ * Keep this scoped to the history grid so generator-form styles cannot alter cards.
+ * Any future UI changes must preserve these selectors and the 3-column desktop /
+ * 2-column mobile metadata layout unless the user explicitly requests a card redesign.
+ */
+.rms-generator-history-grid .rms-generation-card,
+.rms-generator-history-grid .rms-generation-card *{
+    box-sizing:border-box;
+}
+.rms-generator-history-grid .rms-generation-card{
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+}
+.rms-generator-history-grid .rms-generation-card-meta{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:8px!important;
+    width:100%!important;
+    align-items:stretch!important;
+}
+.rms-generator-history-grid .rms-generation-card-meta>span{
+    min-width:0!important;
+    min-height:48px;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:flex-start!important;
+    justify-content:center!important;
+    gap:4px!important;
+    padding:9px 10px!important;
+    border:1px solid #e9edf2!important;
+    border-radius:11px!important;
+    background:#fafbfc!important;
+}
+.rms-generator-history-grid .rms-generation-card-meta>span>b{
+    display:block!important;
+    margin:0!important;
+    font-size:9px!important;
+    line-height:1.2!important;
+    letter-spacing:.08em!important;
+    font-weight:850!important;
+    text-transform:uppercase!important;
+    color:#9298a3!important;
+}
+.rms-generator-history-grid .rms-generation-card-meta>span>strong{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    overflow:hidden!important;
+    font-size:11px!important;
+    line-height:1.35!important;
+    font-weight:800!important;
+    white-space:nowrap!important;
+    text-overflow:ellipsis!important;
+    color:#424751!important;
+}
+.rms-generator-history-grid .rms-generation-actions{
+    margin-top:auto;
+}
+@media(max-width:760px){
+    .rms-generator-history-grid .rms-generation-card-meta{
+        grid-template-columns:repeat(2,minmax(0,1fr))!important;
+        gap:7px!important;
+    }
+    .rms-generator-history-grid .rms-generation-card-meta>span{
+        min-height:46px;
+        padding:8px!important;
+    }
+    .rms-generator-history-grid .rms-generation-card-meta>span>strong{
+        font-size:10px!important;
+    }
+}
+</style>
