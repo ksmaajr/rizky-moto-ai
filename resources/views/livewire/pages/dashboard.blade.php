@@ -3,11 +3,18 @@
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use App\Models\Store;
+use App\Livewire\Concerns\ManagesAiProviderSettings;
+use App\Livewire\Concerns\ManagesVercelGatewayKeys;
+use App\Livewire\Concerns\ManagesAgentAiCredentials;
 
 new
 #[Layout('layouts::app')]
 class extends Component
 {
+    use ManagesAiProviderSettings;
+    use ManagesVercelGatewayKeys;
+    use ManagesAgentAiCredentials;
+
     public function getUserProperty(): ?object
     {
         return auth()->user();
@@ -46,6 +53,9 @@ class extends Component
             $this->hasOpenAiKey = filled($settings->api_key);
         }
 
+        $this->loadAiProviderSettings();
+        $this->loadAgentAiCredentials();
+        $this->loadVercelGatewayLogs();
         $this->loadActivityLogs();
     }
 
@@ -267,19 +277,19 @@ class extends Component
     public function openOpenAiSettings(): void
     {
         $this->activeSection = 'settings-openai';
-        $this->activeTab = 'openai';
+        $this->activeTab = 'provider';
     }
 
     public function selectTab(string $tab): void
     {
-        if (! in_array($tab, ['general', 'openai'], true)) {
+        if (! in_array($tab, ['general', 'provider', 'activity'], true)) {
             return;
         }
 
         $this->activeTab = $tab;
-        $this->activeSection = $tab === 'openai'
-            ? 'settings-openai'
-            : 'settings-general';
+        $this->activeSection = $tab === 'general'
+            ? 'settings-general'
+            : 'settings-openai';
     }
 
     public function testConnection(): void
