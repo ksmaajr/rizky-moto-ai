@@ -145,166 +145,210 @@ final class AgentKitProvider implements ImageProviderInterface
     {
         $this->assertStoreLogoReference($request);
 
-        $credential = $this->credentialPool->acquire($request->userId);
-
-        if (! $credential) {
-            throw new RuntimeException(
-                'Belum ada Agent AI credential aktif. Buka Settings → AI Provider → Agent AI.'
-            );
-        }
-
-        $output = storage_path(
-            'app/agent-ai/' .
-            ($request->generationId ?: uniqid('generation-', true)) .
-            '-' . uniqid('', true) . '.png'
-        );
+        $maxAttempts = max(1, min(
+            (int) config('services.agent_ai.credential_retry_attempts', 3),
+            5,
+        ));
+        $excludedCredentialIds = [];
+        $lastError = null;
+        $lastExitCode = null;
+        $model = str_starts_with(strtolower($request->model), 'openai/')
+            ? substr($request->model, 7)
+            : $request->model;
         $promptFile = null;
 
         try {
-            $directory = dirname($output);
-
-            if (! is_dir($directory) && ! @mkdir($directory, 0775, true) && ! is_dir($directory)) {
-                throw new RuntimeException('Folder Agent AI output tidak dapat dibuat.');
-            }
-
-            $model = str_starts_with(strtolower($request->model), 'openai/')
-                ? substr($request->model, 7)
-                : $request->model;
-
             $promptFile = $this->promptFile($request);
 
-            $arguments = [
-                $this->binary(),
-                '-m',
-                $this->module(),
-                '--prompt-file', $promptFile,
-                '--live',
-                '--auth-provider', 'env',
-                '--image-model', $model,
-                '--quality', $request->quality,
-                '--size', $request->size,
-                '--output-format', $request->outputFormat,
-                '--out', $output,
-            ];
-
-            foreach ($request->references as $reference) {
-                $arguments[] = '--ref';
-                $arguments[] = $reference->path;
-                $arguments[] = '--ref-role';
-                $arguments[] = $this->normalizeRole($reference->role);
-            }
-
-            $this->activity->processing(
-                action: 'ai_provider_request',
-                category: 'api',
-                title: 'Agent AI request dimulai.',
-                description: sprintf(
-                    'Invocation menggunakan credential %s untuk model %s.',
-                    $credential['name'],
-                    $model
-                ),
-                metadata: [
-                    'provider' => $this->name(),
-                    'model' => $model,
-                    'generation_id' => $request->generationId,
-                    'agent_credential_id' => $credential['id'],
-                    'agent_credential_name' => $credential['name'],
-                    'image_count' => 1,
-                    'invocation_mode' => 'one_invocation_one_image',
-                ],
-            );
-
-            [$exitCode, $stdout, $stderr] = $this->runProcess(
-                $arguments,
-                $credential['key'],
-                (int) config('services.agent_ai.timeout', 300),
-            );
-
-            if ($exitCode !== 0 || ! is_file($output) || filesize($output) === 0) {
-                $detail = trim($stderr) !== '' ? trim($stderr) : trim($stdout);
-                $detail = $detail !== ''
-                    ? mb_substr($detail, -2000)
-                    : 'Agent AI invocation gagal tanpa detail.';
-
-                $this->credentialPool->reportFailure(
-                    $credential['id'],
+            for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+                $credential = $this->credentialPool->acquire(
                     $request->userId,
-                    $detail,
-                    $exitCode,
+                    $excludedCredentialIds,
                 );
 
-                $this->activity->error(
-                    action: 'ai_provider_request',
-                    category: 'api',
-                    title: 'Agent AI request gagal.',
-                    description: $detail,
-                    metadata: [
-                        'provider' => $this->name(),
-                        'model' => $model,
-                        'generation_id' => $request->generationId,
-                        'agent_credential_id' => $credential['id'],
-                        'agent_credential_name' => $credential['name'],
-                        'exit_code' => $exitCode,
-                    ],
+                if (! $credential) {
+                    if ($lastError !== null) {
+                        throw new RuntimeException($lastError);
+                    }
+
+                    throw new RuntimeException(
+                        'Belum ada Agent AI credential aktif. Buka Settings → AI Provider → Agent AI.'
+                    );
+                }
+
+                $excludedCredentialIds[] = (int) $credential['id'];
+                $output = storage_path(
+                    'app/agent-ai/' .
+                    ($request->generationId ?: uniqid('generation-', true)) .
+                    '-' . uniqid('', true) . '.png'
                 );
 
-                throw new RuntimeException($detail);
+                try {
+                    $directory = dirname($output);
+
+                    if (! is_dir($directory) && ! @mkdir($directory, 0775, true) && ! is_dir($directory)) {
+                        throw new RuntimeException('Folder Agent AI output tidak dapat dibuat.');
+                    }
+
+                    $arguments = [
+                        $this->binary(),
+                        '-m',
+                        $this->module(),
+                        '--prompt-file', $promptFile,
+                        '--live',
+                        '--auth-provider', 'env',
+                        '--image-model', $model,
+                        '--quality', $request->quality,
+                        '--size', $request->size,
+                        '--output-format', $request->outputFormat,
+                        '--out', $output,
+                    ];
+
+                    foreach ($request->references as $reference) {
+                        $arguments[] = '--ref';
+                        $arguments[] = $reference->path;
+                        $arguments[] = '--ref-role';
+                        $arguments[] = $this->normalizeRole($reference->role);
+                    }
+
+                    $this->activity->processing(
+                        action: 'ai_provider_request',
+                        category: 'api',
+                        title: 'Agent AI request dimulai.',
+                        description: sprintf(
+                            'Percobaan %d/%d menggunakan credential %s untuk model %s.',
+                            $attempt,
+                            $maxAttempts,
+                            $credential['name'],
+                            $model
+                        ),
+                        metadata: [
+                            'provider' => $this->name(),
+                            'model' => $model,
+                            'generation_id' => $request->generationId,
+                            'agent_credential_id' => $credential['id'],
+                            'agent_credential_name' => $credential['name'],
+                            'attempt' => $attempt,
+                            'max_attempts' => $maxAttempts,
+                            'image_count' => 1,
+                            'invocation_mode' => 'one_invocation_one_image',
+                        ],
+                    );
+
+                    [$exitCode, $stdout, $stderr] = $this->runProcess(
+                        $arguments,
+                        $credential['key'],
+                        (int) config('services.agent_ai.timeout', 300),
+                    );
+
+                    if ($exitCode !== 0 || ! is_file($output) || filesize($output) === 0) {
+                        $detail = trim($stderr) !== '' ? trim($stderr) : trim($stdout);
+                        $detail = $detail !== ''
+                            ? mb_substr($detail, -2000)
+                            : 'Agent AI invocation gagal tanpa detail.';
+                        $lastError = $detail;
+                        $lastExitCode = $exitCode;
+
+                        $classification = $this->credentialPool->reportFailure(
+                            $credential['id'],
+                            $request->userId,
+                            $detail,
+                            $exitCode,
+                        );
+
+                        $this->activity->error(
+                            action: 'ai_provider_request',
+                            category: 'api',
+                            title: 'Agent AI request gagal.',
+                            description: $detail,
+                            metadata: [
+                                'provider' => $this->name(),
+                                'model' => $model,
+                                'generation_id' => $request->generationId,
+                                'agent_credential_id' => $credential['id'],
+                                'agent_credential_name' => $credential['name'],
+                                'attempt' => $attempt,
+                                'max_attempts' => $maxAttempts,
+                                'exit_code' => $exitCode,
+                                'failure_reason' => $classification['reason'] ?? 'agent_request_failed',
+                                'retryable' => (bool) ($classification['retry'] ?? false),
+                            ],
+                        );
+
+                        if (! ($classification['retry'] ?? false) || $attempt >= $maxAttempts) {
+                            throw new RuntimeException($detail);
+                        }
+
+                        continue;
+                    }
+
+                    $binary = file_get_contents($output);
+
+                    if ($binary === false || $binary === '') {
+                        $lastError = 'Agent AI output image tidak dapat dibaca.';
+                        $lastExitCode = $exitCode;
+                        $classification = $this->credentialPool->reportFailure(
+                            $credential['id'],
+                            $request->userId,
+                            $lastError,
+                            $exitCode,
+                        );
+
+                        if (! ($classification['retry'] ?? false) || $attempt >= $maxAttempts) {
+                            throw new RuntimeException($lastError);
+                        }
+
+                        continue;
+                    }
+
+                    $this->credentialPool->reportSuccess($credential['id'], $request->userId);
+
+                    $this->activity->success(
+                        action: 'ai_provider_request',
+                        category: 'api',
+                        title: 'Agent AI request berhasil.',
+                        description: 'Agent backend mengembalikan satu image yang tervalidasi.',
+                        metadata: [
+                            'provider' => $this->name(),
+                            'model' => $model,
+                            'generation_id' => $request->generationId,
+                            'agent_credential_id' => $credential['id'],
+                            'agent_credential_name' => $credential['name'],
+                            'attempt' => $attempt,
+                            'max_attempts' => $maxAttempts,
+                            'image_count' => 1,
+                            'invocation_mode' => 'one_invocation_one_image',
+                        ],
+                    );
+
+                    return new ImageGenerationResult(
+                        images: [[
+                            'b64_json' => base64_encode($binary),
+                            'url' => null,
+                            'provider' => $this->name(),
+                            'model' => $model,
+                        ]],
+                        provider: $this->name(),
+                        model: $model,
+                        metadata: [
+                            'agent_credential_id' => $credential['id'],
+                            'agent_credential_name' => $credential['name'],
+                            'agent_credential_source' => $credential['source'],
+                            'attempt' => $attempt,
+                            'http_status' => 200,
+                        ],
+                    );
+                } finally {
+                    if (is_file($output)) {
+                        @unlink($output);
+                    }
+                }
             }
 
-            $binary = file_get_contents($output);
-
-            if ($binary === false || $binary === '') {
-                $this->credentialPool->reportFailure(
-                    $credential['id'],
-                    $request->userId,
-                    'Agent AI output image tidak dapat dibaca.',
-                    $exitCode,
-                );
-
-                throw new RuntimeException('Agent AI output image tidak dapat dibaca.');
-            }
-
-            $this->credentialPool->reportSuccess($credential['id'], $request->userId);
-
-            $this->activity->success(
-                action: 'ai_provider_request',
-                category: 'api',
-                title: 'Agent AI request berhasil.',
-                description: 'Agent backend mengembalikan satu image yang tervalidasi.',
-                metadata: [
-                    'provider' => $this->name(),
-                    'model' => $model,
-                    'generation_id' => $request->generationId,
-                    'agent_credential_id' => $credential['id'],
-                    'agent_credential_name' => $credential['name'],
-                    'image_count' => 1,
-                    'invocation_mode' => 'one_invocation_one_image',
-                ],
-            );
-
-            return new ImageGenerationResult(
-                images: [[
-                    'b64_json' => base64_encode($binary),
-                    'url' => null,
-                    'provider' => $this->name(),
-                    'model' => $model,
-                ]],
-                provider: $this->name(),
-                model: $model,
-                metadata: [
-                    'agent_credential_id' => $credential['id'],
-                    'agent_credential_name' => $credential['name'],
-                    'agent_credential_source' => $credential['source'],
-                    'http_status' => 200,
-                ],
-            );
+            throw new RuntimeException($lastError ?: 'Agent AI gagal setelah seluruh percobaan.');
         } finally {
             if ($promptFile && is_file($promptFile)) {
                 @unlink($promptFile);
-            }
-
-            if (is_file($output)) {
-                @unlink($output);
             }
         }
     }
