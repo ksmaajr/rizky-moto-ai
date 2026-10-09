@@ -446,7 +446,7 @@
                                     <button
                                         type="button"
                                         class="rms-ai-secondary-button rms-agent-add-button"
-                                        @click="credentialFormOpen = !credentialFormOpen"
+                                        wire:click="beginCodexLogin"
                                         :aria-expanded="credentialFormOpen ? 'true' : 'false'"
                                         aria-controls="agent-credential-form"
                                     >
@@ -458,50 +458,20 @@
                                     </button>
                                 </div>
 
-                                <div
-                                    id="agent-credential-form"
-                                    class="rms-agent-form-collapse"
-                                    :class="{ 'is-open': credentialFormOpen }"
-                                    x-cloak
-                                    aria-hidden="false"
-                                >
-                                    <div class="rms-agent-credential-form">
-                                        <div class="rms-agent-form-head">
-                                            <div>
-                                                <span>NEW AGENT CREDENTIAL</span>
-                                                <strong>Tambahkan token Agent</strong>
-                                                <small>Token tidak pernah ditampilkan kembali setelah disimpan.</small>
-                                            </div>
-                                            <button type="button" class="rms-agent-form-close" @click="credentialFormOpen = false" aria-label="Hide credential form">×</button>
-                                        </div>
-
-                                        <div class="rms-agent-form-grid">
-                                            <label>
-                                                <span>NAME</span>
-                                                <input type="text" wire:model="newAgentCredentialName" placeholder="Agent Account 01" autocomplete="off">
-                                                @error('newAgentCredentialName') <small class="rms-agent-form-error">{{ $message }}</small> @enderror
-                                            </label>
-                                            <label>
-                                                <span>ACCESS TOKEN</span>
-                                                <div class="rms-agent-token-input" x-data="{ reveal:false }">
-                                                    <input :type="reveal ? 'text' : 'password'" wire:model="newAgentCredentialToken" placeholder="Paste compatible Agent/Codex token" autocomplete="new-password">
-                                                    <button type="button" @click="reveal=!reveal" x-text="reveal ? 'Hide' : 'Show'"></button>
-                                                </div>
-                                                @error('newAgentCredentialToken') <small class="rms-agent-form-error">{{ $message }}</small> @enderror
-                                            </label>
-                                        </div>
-
-                                        <div class="rms-agent-form-foot">
-                                            <span>🔒 Encrypted at rest · raw token tidak masuk Activity Log.</span>
-                                            <div>
-                                                <button type="button" class="rms-agent-cancel-button" @click="credentialFormOpen = false">Cancel</button>
-                                                <button type="button" class="rms-agent-save-button" wire:click="addAgentAiCredential" wire:loading.attr="disabled" wire:target="addAgentAiCredential">
-                                                    <span wire:loading.remove wire:target="addAgentAiCredential">Save Credential</span>
-                                                    <span wire:loading wire:target="addAgentAiCredential">Saving...</span>
-                                                </button>
-                                            </div>
+                                <div class="rms-agent-login-bridge" id="agent-codex-login-bridge">
+                                    <div class="rms-agent-login-bridge-icon" aria-hidden="true">↗</div>
+                                    <div class="rms-agent-login-bridge-copy">
+                                        <strong>Connect with official Codex login</strong>
+                                        <p>Login resmi Codex dikelola oleh Codex CLI pada host yang menjalankan AgentKit. Akun belum dimasukkan ke pool sampai token yang dibutuhkan AgentKit dapat diambil dan diverifikasi dengan aman.</p>
+                                        <div class="rms-agent-login-bridge-status">
+                                            <span class="{{ $codexCliAvailable ? 'is-detected' : 'is-pending' }}"><i></i>{{ $codexCliAvailable ? 'Codex CLI detected' : 'Codex CLI not detected by web process' }}</span>
+                                            <span><i></i>Token bridge: not connected</span>
                                         </div>
                                     </div>
+                                    <button type="button" class="rms-agent-save-button" wire:click="beginCodexLogin" wire:loading.attr="disabled" wire:target="beginCodexLogin">
+                                        <span wire:loading.remove wire:target="beginCodexLogin">Start Codex Login</span>
+                                        <span wire:loading wire:target="beginCodexLogin">Checking...</span>
+                                    </button>
                                 </div>
 
                                 <div class="rms-agent-credential-list">
