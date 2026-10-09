@@ -211,7 +211,7 @@ PS1;
             $name = strtolower((string) ($decoded['Name'] ?? ''));
             $command = trim((string) ($decoded['CommandLine'] ?? ''));
             $isPhp = $name === 'php.exe' || str_ends_with($name, '\\php.exe');
-            $isAgentQueue = preg_match('~(?:^|[\s"\\])artisan(?:\.php)?\s+queue:work(?:\s|$)~i', $command) === 1
+            $isAgentQueue = preg_match('~artisan(?:\.php)?\s+queue:work(?:\s|$)~i', $command) === 1
                 && str_contains(strtolower($command), '--queue=' . strtolower($this->queue));
 
             return ['running' => $isPhp && $isAgentQueue, 'command' => $command !== '' ? $command : null];
