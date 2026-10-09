@@ -1,0 +1,122 @@
+<?php
+
+namespace App\Livewire\Concerns;
+
+use App\Models\AgentAiCredential;
+use Illuminate\Support\Facades\Auth;
+
+trait ManagesAgentAiCredentials
+{
+    public string $newAgentCredentialName = '';
+    public string $newAgentCredentialToken = '';
+    public bool $showAgentCredentialForm = false;
+    public array $agentAiCredentials = [];
+    public int $agentAiCredentialCount = 0;
+    public int $agentAiActiveCredentialCount = 0;
+
+    public function loadAgentAiCredentials(): void
+    {
+        $query = AgentAiCredential::query()
+            ->where(function ($query) {
+                $query->where('user_id', Auth::id())
+                    ->orWhereNull('user_id');
+            })
+            ->orderBy('last_used_at')
+            ->orderBy('id');
+
+        $rows = $query->get();
+
+        $this->agentAiCredentials = $rows->map(fn (AgentAiCredential $credential): array => [
+            'id' => $credential->id,
+            'name' => $credential->name,
+            'status' => $credential->status,
+            'is_active' => (bool) $credential->is_active,
+            'request_count' => (int) $credential->request_count,
+            'success_count' => (int) $credential->success_count,
+            'failure_count' => (int) $credential->failure_count,
+            'last_used_at' => $credential->last_used_at?->diffForHumans(),
+            'cooldown_until' => $credential->cooldown_until?->toIso8601String(),
+        ])->all();
+
+        $this->agentAiCredentialCount = count($this->agentAiCredentials);
+        $this->agentAiActiveCredentialCount = collect($this->agentAiCredentials)
+            ->where('is_active', true)
+            ->whereNotIn('status', ['disabled', 'invalid', 'exhausted'])
+            ->count();
+    }
+
+    public function addAgentAiCredential(): void
+    {
+        $this->validate([
+            'newAgentCredentialName' => ['required', 'string', 'max:120'],
+            'newAgentCredentialToken' => ['required', 'string', 'min:20', 'max:10000'],
+        ]);
+
+        AgentAiCredential::create([
+            'user_id' => Auth::id(),
+            'name' => trim($this->newAgentCredentialName),
+            'access_token' => trim($this->newAgentCredentialToken),
+            'is_active' => true,
+            'status' => 'active',
+        ]);
+
+        $this->newAgentCredentialName = '';
+        $this->newAgentCredentialToken = '';
+        $this->showAgentCredentialForm = false;
+        $this->loadAgentAiCredentials();
+
+        $this->dispatch(
+            'toast',
+            type: 'success',
+            title: 'Agent credential added',
+            message: 'Credential tersimpan terenkripsi dan siap masuk pool.'
+        );
+    }
+
+    public function toggleAgentAiCredential(int $credentialId): void
+    {
+        $credential = $this->agentCredentialForCurrentUser($credentialId);
+
+        if (! $credential) {
+            return;
+        }
+
+        $credential->update([
+            'is_active' => ! $credential->is_active,
+            'status' => $credential->is_active ? 'disabled' : 'active',
+            'cooldown_until' => null,
+        ]);
+
+        $this->loadAgentAiCredentials();
+    }
+
+    public function deleteAgentAiCredential(int $credentialId): void
+    {
+        $credential = $this->agentCredentialForCurrentUser($credentialId);
+
+        if (! $credential) {
+            return;
+        }
+
+        $credential->delete();
+        $this->loadAgentAiCredentials();
+
+        $this->dispatch(
+            'toast',
+            type: 'success',
+            title: 'Agent credential removed',
+            message: 'Credential dihapus dari pool.'
+        );
+    }
+
+    private function agentCredentialForCurrentUser(int $credentialId): ?AgentAiCredential
+    {
+        return AgentAiCredential::query()
+            ->whereKey($credentialId)
+            ->where(function ($query) {
+                $query->where('user_id', Auth::id())
+                    ->orWhereNull('user_id');
+            })
+            ->first();
+    }
+}
