@@ -37,6 +37,7 @@ new class extends Component
     public int $imageCount = 1;
     public bool $isGenerating = false;
     public ?int $latestGenerationId = null;
+    public string $providerResolutionError = '';
 
     public function getStoresProperty()
     {
@@ -391,10 +392,19 @@ new class extends Component
     public function getActiveGenerationProviderProperty(): string
     {
         try {
+            $this->providerResolutionError = '';
             return app(\App\Services\AI\ProviderManager::class)->activeProviderName(auth()->id());
         } catch (\Throwable $e) {
             report($e);
-            return 'vercel';
+            $this->providerResolutionError = $e->getMessage();
+
+            return (string) (\App\Models\AiProviderSetting::query()
+                ->where(function ($query) {
+                    $query->where('user_id', auth()->id())
+                        ->orWhereNull('user_id');
+                })
+                ->orderByRaw('CASE WHEN user_id = ? THEN 0 ELSE 1 END', [auth()->id()])
+                ->value('active_provider') ?: 'vercel');
         }
     }
 
@@ -409,10 +419,34 @@ new class extends Component
     public function getAvailableModelsProperty(): array
     {
         try {
+            $this->providerResolutionError = '';
             return app(\App\Services\AI\ProviderManager::class)->availableModels(auth()->id());
         } catch (\Throwable $e) {
             report($e);
-            return [];
+            $this->providerResolutionError = $e->getMessage();
+
+            // Keep the UI deterministic even if the provider registry itself
+            // cannot be resolved. Agent AI has a fixed upstream catalog.
+            if ($this->activeGenerationProvider === 'agentkit') {
+                return [
+                    [
+                        'id' => 'openai/gpt-image-2.5-sunburst',
+                        'value' => 'openai/gpt-image-2.5-sunburst',
+                        'label' => 'GPT Image 2.5 Sunburst',
+                        'description' => 'Agent AI · precision generation & editing',
+                        'owned_by' => 'Agent AI',
+                    ],
+                    [
+                        'id' => 'openai/gpt-image-2.5-flare',
+                        'value' => 'openai/gpt-image-2.5-flare',
+                        'label' => 'GPT Image 2.5 Flare',
+                        'description' => 'Agent AI · fast everyday generation',
+                        'owned_by' => 'Agent AI',
+                    ],
+                ];
+            }
+
+            return app(\App\Services\OpenAiImageService::class)->availableImageModels();
         }
     }
 
@@ -436,8 +470,10 @@ new class extends Component
         $imageService = app(\App\Services\OpenAiImageService::class);
 
         // The active Settings provider is the source of truth for the model
-        // catalog. Do not default to a Vercel model when Agent AI is active.
-        $this->model = $imageService->defaultImageModel();
+        // catalog. Resolve the first model from that catalog instead of using
+        // OpenAiImageService's legacy Vercel-only default.
+        $availableModels = app(\App\Services\AI\ProviderManager::class)->availableModels(auth()->id());
+        $this->model = (string) ($availableModels[0]['id'] ?? $imageService->defaultImageModel());
         $this->aspectRatio = $settings?->default_aspect_ratio ?: '1:1';
         $this->quality = $settings?->default_quality ?: 'high';
 
