@@ -5535,3 +5535,22 @@ new class extends Component
     }
 }
 </style>
+
+<style>
+/* V19 — center the queue animation as one balanced unit inside history cards. */
+.rms-generator-history-grid .rms-generation-processing-visual-v3{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-height:320px;padding:54px 16px 48px;box-sizing:border-box;isolation:isolate}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-visual-core{position:relative;inset:auto;display:grid;place-items:center;flex:0 0 auto;width:132px;height:132px;margin:0 auto}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-core-ring{position:relative;z-index:5;width:96px;height:96px;flex:0 0 96px;margin:0}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-spin-svg{inset:-7px;width:110px;height:110px}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-topline,.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-visual-badge,.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-stage-label{position:relative;inset:auto;width:min(100%,320px);max-width:100%;box-sizing:border-box;margin:0}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-topline{order:0;justify-content:center;min-height:34px;padding:0 12px}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-visual-core{order:1}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-stage-label{order:2;text-align:center;overflow-wrap:anywhere}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-visual-badge{order:3;justify-content:center}
+.rms-generator-history-grid .rms-generation-eta-v3{display:flex;align-items:center;gap:11px;min-height:66px;padding:12px 14px}
+.rms-generator-history-grid .rms-generation-eta-v3 .rms-generation-eta-clock{flex:0 0 32px;width:32px;height:32px}
+.rms-generator-history-grid .rms-generation-eta-v3 > div{min-width:0;flex:1}
+.rms-generator-history-grid .rms-generation-eta-v3 small{font-size:9px;line-height:1.4}
+.rms-generator-history-grid .rms-generation-stage{padding-top:14px}
+@media(max-width:760px){.rms-generator-history-grid .rms-generation-processing-visual-v3{min-height:280px;padding:48px 12px 42px;gap:10px}.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-visual-core{width:116px;height:116px}.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-topline,.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-visual-badge,.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-stage-label{width:100%}.rms-generator-history-grid .rms-generation-eta-v3 small{font-size:8px}}
+</style>
