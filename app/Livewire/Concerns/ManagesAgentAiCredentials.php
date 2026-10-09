@@ -19,6 +19,8 @@ trait ManagesAgentAiCredentials
 
     public function loadAgentAiCredentials(): void
     {
+        $this->codexCliAvailable = $this->codexCliIsAvailable();
+
         $query = AgentAiCredential::query()
             ->where(function ($query) {
                 $query->where('user_id', Auth::id())
