@@ -29,7 +29,7 @@ return [
     ],
 
     'agent_ai' => [
-        'python_binary' => env('AGENT_AI_PYTHON_BINARY', 'python'),
+        'python_binary' => env('AGENT_AI_PYTHON_BINARY', PHP_OS_FAMILY === 'Windows' ? 'python' : 'python3'),
         'module' => env('AGENT_AI_MODULE', 'gpt_image25_agent'),
         'timeout' => (int) env('AGENT_AI_TIMEOUT', 300),
         'queue' => env('AGENT_AI_QUEUE', 'agentkit'),
