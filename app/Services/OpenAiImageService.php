@@ -600,7 +600,7 @@ class OpenAiImageService
             $this->activity()->success(
                 action: 'generate_openai_image',
                 category: 'generator',
-                title: 'Generate AI image via Vercel berhasil.',
+                title: 'Generate AI image via ' . ($providerName === 'agentkit' ? 'Agent AI' : 'Vercel AI Gateway') . ' berhasil.',
                 description: sprintf(
                     '%d gambar berhasil dibuat dan disimpan. Generation #%d.',
                     $saved,
@@ -851,16 +851,27 @@ class OpenAiImageService
                 throw new RuntimeException('Store atau Template generation tidak ditemukan.');
             }
 
-            $credential = $this->apiPool()->acquire($generation->user_id);
+            // Resolve the provider again inside the worker. The queued generation
+            // must never assume Vercel merely because this service historically
+            // handled OpenAI image requests.
+            $providerManager = app(ProviderManager::class);
+            $provider = $providerManager->providerFor((string) $generation->model, $generation->user_id);
+            $providerName = $provider->name();
+
+            $credential = $providerName === 'vercel'
+                ? $this->apiPool()->acquire($generation->user_id)
+                : null;
             $apiKey = $credential['key'] ?? null;
-            if (! filled($apiKey)) {
-                throw new RuntimeException('Belum ada Vercel AI Gateway API Key yang tersedia.');
+
+            $model = (string) $generation->model;
+            if ($providerName === 'vercel') {
+                $model = $this->normalizeGatewayImageModel($model);
             }
 
-            $model = $this->normalizeGatewayImageModel((string) $generation->model);
             if ($model === '') {
-                throw new RuntimeException('Model image Vercel AI Gateway belum dipilih.');
+                throw new RuntimeException('Model image belum dipilih untuk provider aktif.');
             }
+
             if ($generation->model !== $model) {
                 $generation->update(['model' => $model]);
             }
@@ -882,7 +893,7 @@ class OpenAiImageService
                 return $generation->fresh(['generatedImages', 'store', 'template']);
             }
 
-            if ($customTitle === null) {
+            if ($customTitle === null && $providerName === 'vercel' && filled($apiKey)) {
                 $autoTitle = $this->resolveAutomaticProductTitle(
                     apiKey: $apiKey,
                     productPath: $productOnePath,
@@ -958,8 +969,8 @@ class OpenAiImageService
             $this->activity()->processing(
                 action: 'generate_openai_image',
                 category: 'generator',
-                title: 'Mengirim request ke Vercel AI Gateway.',
-                description: sprintf('Vercel AI Gateway POST /v1/images/edits dengan %d attachment, model %s.', count($attachments), $model),
+                title: $providerName === 'agentkit' ? 'Mengirim request ke Agent AI.' : 'Mengirim request ke Vercel AI Gateway.',
+                description: sprintf('%s memproses %d attachment, model %s.', $providerName === 'agentkit' ? 'Agent AI' : 'Vercel AI Gateway', count($attachments), $model),
                 metadata: [
                     'source' => 'openai_image_queue',
                     'generation_id' => $generation->id,
@@ -1029,12 +1040,12 @@ class OpenAiImageService
 
             $generation->update(['metadata' => array_merge($generation->metadata ?? [], [
                 'progress' => 78,
-                'progress_stage' => 'Memproses hasil OpenAI',
+                'progress_stage' => 'Memproses hasil ' . ($providerName === 'agentkit' ? 'Agent AI' : 'Vercel'),
             ])]);
 
             $data = $providerResult->images;
             if (! is_array($data) || $data === []) {
-                throw new RuntimeException('Vercel AI Gateway tidak mengembalikan gambar.');
+                throw new RuntimeException(($providerName === 'agentkit' ? 'Agent AI' : 'Vercel AI Gateway') . ' tidak mengembalikan gambar.');
             }
 
             $saved = 0;
@@ -1045,7 +1056,7 @@ class OpenAiImageService
                 }
                 $binary = $this->resolveImageBinary($item);
                 if ($binary === null || $binary === '') {
-                    throw new RuntimeException('Vercel AI Gateway mengembalikan item image #' . ($index + 1) . ' tanpa binary image.');
+                    throw new RuntimeException(($providerName === 'agentkit' ? 'Agent AI' : 'Vercel AI Gateway') . ' mengembalikan item image #' . ($index + 1) . ' tanpa binary image.');
                 }
 
                 $filename = 'generation-' . $generation->id . '-' . ($index + 1) . '-' . uniqid() . '.png';
