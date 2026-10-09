@@ -1,0 +1,8 @@
+# Allow the Laravel web user to control only the AgentKit Supervisor process group.
+# Install as: /etc/sudoers.d/rizky-moto-ai-agent
+# Validate with: visudo -cf /etc/sudoers.d/rizky-moto-ai-agent
+
+www-data ALL=(root) NOPASSWD: /usr/bin/supervisorctl status rizky-moto-ai-agent:*
+www-data ALL=(root) NOPASSWD: /usr/bin/supervisorctl start rizky-moto-ai-agent:*
+www-data ALL=(root) NOPASSWD: /usr/bin/supervisorctl stop rizky-moto-ai-agent:*
+www-data ALL=(root) NOPASSWD: /usr/bin/supervisorctl restart rizky-moto-ai-agent:*
