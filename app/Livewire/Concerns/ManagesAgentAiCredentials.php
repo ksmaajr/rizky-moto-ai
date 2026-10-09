@@ -5,11 +5,13 @@ namespace App\Livewire\Concerns;
 use App\Models\AgentAiCredential;
 use App\Services\AI\Providers\AgentKitProvider;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Process;
 
 trait ManagesAgentAiCredentials
 {
     public string $newAgentCredentialName = '';
-    public string $newAgentCredentialToken = '';\n    public string $codexLoginCommand = 'codex login';\n    public bool $codexCliAvailable = false;
+    public string $newAgentCredentialToken = '';
+    public bool $codexCliAvailable = false;
     public bool $showAgentCredentialForm = false;
     public array $agentAiCredentials = [];
     public int $agentAiCredentialCount = 0;
@@ -49,6 +51,28 @@ trait ManagesAgentAiCredentials
             ->count();
     }
 
+    /**
+     * Codex CLI owns the official OAuth flow. Do not claim login succeeded or
+     * import an undocumented auth.json format from the Laravel web process.
+     */
+    public function beginCodexLogin(): void
+    {
+        if (! $this->codexCliIsAvailable()) {
+            $this->dispatch('toast', type: 'warning', title: 'Codex CLI belum tersedia', message: 'Install Codex CLI pada host AgentKit, lalu jalankan codex login. Akun belum ditambahkan.');
+            return;
+        }
+
+        $this->dispatch('toast', type: 'info', title: 'Login Codex perlu dijalankan pada host', message: 'Jalankan codex login pada terminal host AgentKit. Login saja belum menambahkan akun ke pool; token bridge belum diaktifkan karena format credential perlu kompatibilitas yang terverifikasi.');
+    }
+
+    private function codexCliIsAvailable(): bool
+    {
+        try {
+            return Process::timeout(5)->run(['codex', '--version'])->successful();
+        } catch (\\Throwable) {
+            return false;
+        }
+    }
     public function addAgentAiCredential(): void
     {
         $this->validate([
