@@ -424,7 +424,7 @@
                                 </div>
                             </div>
 
-                            <section class="rms-ai-provider-section rms-agent-provider-card">
+                            <section class="rms-ai-provider-section rms-agent-provider-card" x-data="{ credentialFormOpen: @entangle('showAgentCredentialForm').live }">
                                 <div class="rms-ai-provider-section-head">
                                     <div class="rms-ai-provider-section-title">
                                         <span class="rms-ai-provider-icon rms-agent-icon">AG</span>
@@ -443,13 +443,28 @@
                                         <strong>Shared credentials</strong>
                                         <small>Rotation, cooldown, rate-limit handling, dan failover berjalan di server-side pool.</small>
                                     </div>
-                                    <button type="button" class="rms-ai-secondary-button rms-agent-add-button" wire:click="$set('showAgentCredentialForm', true)">
-                                        <span>+ Add Credential</span>
-                                        <small>Encrypted storage</small>
+                                    <button
+                                        type="button"
+                                        class="rms-ai-secondary-button rms-agent-add-button"
+                                        @click="credentialFormOpen = !credentialFormOpen"
+                                        :aria-expanded="credentialFormOpen ? 'true' : 'false'"
+                                        aria-controls="agent-credential-form"
+                                    >
+                                        <span class="rms-agent-add-label" x-text="credentialFormOpen ? 'Hide Credential Form' : '+ Add Credential'"></span>
+                                        <small class="rms-agent-add-meta">
+                                            <span>Encrypted storage</span>
+                                            <i :class="{ 'is-open': credentialFormOpen }" aria-hidden="true"></i>
+                                        </small>
                                     </button>
                                 </div>
 
-                                @if ($showAgentCredentialForm)
+                                <div
+                                    id="agent-credential-form"
+                                    class="rms-agent-form-collapse"
+                                    :class="{ 'is-open': credentialFormOpen }"
+                                    x-cloak
+                                    aria-hidden="false"
+                                >
                                     <div class="rms-agent-credential-form">
                                         <div class="rms-agent-form-head">
                                             <div>
@@ -457,7 +472,7 @@
                                                 <strong>Tambahkan token Agent</strong>
                                                 <small>Token tidak pernah ditampilkan kembali setelah disimpan.</small>
                                             </div>
-                                            <button type="button" class="rms-agent-form-close" wire:click="$set('showAgentCredentialForm', false)" aria-label="Close">×</button>
+                                            <button type="button" class="rms-agent-form-close" @click="credentialFormOpen = false" aria-label="Hide credential form">×</button>
                                         </div>
 
                                         <div class="rms-agent-form-grid">
@@ -479,7 +494,7 @@
                                         <div class="rms-agent-form-foot">
                                             <span>🔒 Encrypted at rest · raw token tidak masuk Activity Log.</span>
                                             <div>
-                                                <button type="button" class="rms-agent-cancel-button" wire:click="$set('showAgentCredentialForm', false)">Cancel</button>
+                                                <button type="button" class="rms-agent-cancel-button" @click="credentialFormOpen = false">Cancel</button>
                                                 <button type="button" class="rms-agent-save-button" wire:click="addAgentAiCredential" wire:loading.attr="disabled" wire:target="addAgentAiCredential">
                                                     <span wire:loading.remove wire:target="addAgentAiCredential">Save Credential</span>
                                                     <span wire:loading wire:target="addAgentAiCredential">Saving...</span>
@@ -487,7 +502,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                @endif
+                                </div>
 
                                 <div class="rms-agent-credential-list">
                                     @forelse ($agentAiCredentials as $credential)
@@ -4595,12 +4610,65 @@
         border-radius:10px!important;
     }
 }
+.rms-agent-add-label{
+    display:inline-flex;
+    align-items:center;
+    min-width:0;
+    transition:opacity .18s ease,transform .22s ease;
+}
+.rms-agent-add-meta{
+    display:inline-flex!important;
+    align-items:center;
+    justify-content:flex-end;
+    gap:8px;
+    white-space:nowrap;
+}
+.rms-agent-add-meta>span{
+    font-size:6.5px;
+    color:#d4d4d8!important;
+    font-weight:700;
+}
+.rms-agent-add-meta>i{
+    position:relative;
+    width:7px;
+    height:7px;
+    border-right:1.5px solid #d4d4d8;
+    border-bottom:1.5px solid #d4d4d8;
+    transform:rotate(45deg) translateY(-2px);
+    transition:transform .25s cubic-bezier(.2,.8,.2,1);
+}
+.rms-agent-add-meta>i.is-open{
+    transform:rotate(225deg) translate(-1px,-1px);
+}
+.rms-agent-form-collapse{
+    display:grid;
+    grid-template-rows:0fr;
+    opacity:0;
+    visibility:hidden;
+    transition:grid-template-rows .42s cubic-bezier(.2,.8,.2,1),opacity .25s ease,visibility 0s linear .42s;
+}
+.rms-agent-form-collapse.is-open{
+    grid-template-rows:1fr;
+    opacity:1;
+    visibility:visible;
+    transition:grid-template-rows .42s cubic-bezier(.2,.8,.2,1),opacity .25s ease,visibility 0s linear 0s;
+}
+.rms-agent-form-collapse>.rms-agent-credential-form{
+    min-height:0;
+}
 .rms-agent-credential-form{
     margin:12px 14px 0;
     border:1px solid #e7e7eb;
     border-radius:13px;
     background:#fafafa;
     overflow:hidden;
+    transform:translateY(-5px) scale(.99);
+    transform-origin:top center;
+    transition:transform .42s cubic-bezier(.2,.8,.2,1),box-shadow .42s ease;
+}
+.rms-agent-form-collapse.is-open>.rms-agent-credential-form{
+    transform:translateY(0) scale(1);
+    box-shadow:0 12px 28px rgba(15,23,42,.045);
 }
 .rms-agent-form-head{
     display:flex;
