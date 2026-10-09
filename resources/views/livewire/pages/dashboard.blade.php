@@ -1398,11 +1398,8 @@ class extends Component
                 </div>
 
             @elseif ($activeSection === 'generator')
-                <div
-                    class="workspace-section-shell rms-content-enter"
-                    wire:key="workspace-generator-provider-{{ $generationProviderVersion }}"
-                >
-                    <livewire:dashboard.generator.index />
+                <div class="workspace-section-shell rms-content-enter">
+                    <livewire:dashboard.generator.index :key="'generator-provider-' . $generationProviderVersion" />
                 </div>
 
             @elseif (in_array($activeSection, ['settings-general', 'settings-openai'], true))
