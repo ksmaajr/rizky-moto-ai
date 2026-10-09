@@ -47,7 +47,7 @@ class GenerateOpenAiImageJob implements ShouldQueue
             'worker_label' => $this->workerLabel(),
             'queue_attempt' => $this->attempts(),
             'queue_job_id' => $this->job?->getJobId(),
-            'queue' => (string) config('queue.default', 'database'),
+            'queue' => (string) ($this->job?->getQueue() ?: config('queue.connections.' . config('queue.default', 'database') . '.queue', 'default')),
             'worker_started_at' => now()->toIso8601String(),
         ]);
 
@@ -64,7 +64,7 @@ class GenerateOpenAiImageJob implements ShouldQueue
                 'worker_label' => $this->workerLabel(),
                 'queue_attempt' => $this->attempts(),
                 'queue_job_id' => $this->job?->getJobId(),
-                'queue' => (string) config('queue.default', 'database'),
+                'queue' => (string) ($this->job?->getQueue() ?: config('queue.connections.' . config('queue.default', 'database') . '.queue', 'default')),
             ],
         );
 
