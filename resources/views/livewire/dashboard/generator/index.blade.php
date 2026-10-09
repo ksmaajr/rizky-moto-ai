@@ -388,13 +388,45 @@ new class extends Component
             ->first();
     }
 
+    public function getActiveGenerationProviderProperty(): string
+    {
+        try {
+            return app(\App\Services\AI\ProviderManager::class)->activeProviderName(auth()->id());
+        } catch (\Throwable $e) {
+            report($e);
+            return 'vercel';
+        }
+    }
+
+    public function getActiveGenerationProviderLabelProperty(): string
+    {
+        return match ($this->activeGenerationProvider) {
+            'agentkit' => 'Agent AI',
+            default => 'Vercel AI Gateway',
+        };
+    }
+
     public function getAvailableModelsProperty(): array
     {
         try {
-            return app(\App\Services\OpenAiImageService::class)->availableImageModels();
+            return app(\App\Services\AI\ProviderManager::class)->availableModels(auth()->id());
         } catch (\Throwable $e) {
             report($e);
             return [];
+        }
+    }
+
+    public function syncGenerationModelToProvider(): void
+    {
+        $availableIds = collect($this->availableModels)->pluck('id')->filter()->values();
+
+        if ($availableIds->isEmpty()) {
+            $this->model = '';
+            return;
+        }
+
+        if (! $availableIds->contains($this->model)) {
+            $this->model = (string) $availableIds->first();
         }
     }
 
@@ -403,8 +435,8 @@ new class extends Component
         $settings = \App\Models\OpenAiSetting::query()->first();
         $imageService = app(\App\Services\OpenAiImageService::class);
 
-        // DEFAULT_IMAGE_MODEL dari OpenAiImageService adalah source of truth.
-        // Settings lama tetap dipakai untuk aspect ratio dan quality saja.
+        // The active Settings provider is the source of truth for the model
+        // catalog. Do not default to a Vercel model when Agent AI is active.
         $this->model = $imageService->defaultImageModel();
         $this->aspectRatio = $settings?->default_aspect_ratio ?: '1:1';
         $this->quality = $settings?->default_quality ?: 'high';
@@ -423,11 +455,7 @@ new class extends Component
             $this->historyOpen = true;
         }
 
-        // Pastikan default service memang tersedia di katalog Gateway.
-        $availableIds = collect($this->availableModels)->pluck('id');
-        if (! $availableIds->contains($this->model)) {
-            $this->model = $availableIds->first() ?: $imageService->defaultImageModel();
-        }
+        $this->syncGenerationModelToProvider();
     }
 
     public function selectStore(int $storeId): void
@@ -481,7 +509,11 @@ new class extends Component
                 'customTitle' => $this->useCustomTitle
                     ? ['required', 'string', 'max:120']
                     : ['nullable', 'string', 'max:120'],
-                'model' => ['required', 'string', 'max:150'],
+                'model' => ['required', 'string', 'max:150', function ($attribute, $value, $fail) {
+                    if (! collect($this->availableModels)->pluck('id')->contains($value)) {
+                        $fail('Model tersebut tidak tersedia untuk provider aktif ' . $this->activeGenerationProviderLabel . '.');
+                    }
+                }],
                 'aspectRatio' => ['required', 'in:1:1,4:5,3:4,16:9,9:16'],
                 'quality' => ['required', 'in:standard,high'],
                 'imageCount' => ['required', 'integer', 'min:1', 'max:4'],
@@ -493,7 +525,7 @@ new class extends Component
                 'imageTwo.image' => 'Foto referensi pemasangan harus berupa gambar yang valid.',
                 'imageTwo.mimes' => 'Foto referensi harus JPG, PNG, atau WEBP.',
                 'imageTwo.max' => 'Foto referensi maksimal 10MB.',
-                'model.required' => 'Model Vercel AI Gateway belum tersedia. Pastikan koneksi Gateway dapat diakses.',
+                'model.required' => 'Model image belum tersedia untuk provider aktif. Pilih model yang tersedia terlebih dahulu.',
             ]);
 
             $template = Template::query()
@@ -1179,11 +1211,11 @@ new class extends Component
 
                         <div class="rms-generator-settings-grid" x-show="settingsOpen" x-transition.opacity>
                             <div class="rms-custom-select rms-custom-select-enhanced full" x-data="{ open:false }" x-on:click.outside="open=false">
-                                <span class="rms-custom-select-label">Model Vercel AI Gateway</span>
+                                <span class="rms-custom-select-label">Model {{ $this->activeGenerationProviderLabel }}</span>
                                 <button type="button" class="rms-custom-select-trigger" :class="{ 'is-open': open }" x-on:click="open=!open">
                                     <span>
                                         <b>{{ $model ?: 'Model belum tersedia' }}</b>
-                                        <small>{{ count($this->availableModels) }} model image tersedia dari Vercel AI Gateway</small>
+                                        <small>{{ count($this->availableModels) }} model image tersedia untuk {{ $this->activeGenerationProviderLabel }}</small>
                                     </span>
                                     <i><svg viewBox="0 0 24 24"><path d="m7 9 5 5 5-5"/></svg></i>
                                 </button>
@@ -1193,12 +1225,12 @@ new class extends Component
                                             <span class="rms-option-model">AI</span>
                                             <span>
                                                 <strong>{{ $openAiModel['id'] }}</strong>
-                                                <small>{{ $openAiModel['owned_by'] ?? 'Vercel AI Gateway' }}</small>
+                                                <small>{{ $openAiModel['description'] ?? ($openAiModel['owned_by'] ?? $this->activeGenerationProviderLabel) }}</small>
                                             </span>
                                             <i>{{ $model === $openAiModel['id'] ? '✓' : '' }}</i>
                                         </button>
                                     @empty
-                                        <div class="rms-generator-empty-mini">Model image tidak ditemukan dari Vercel AI Gateway. Cek koneksi Gateway.</div>
+                                        <div class="rms-generator-empty-mini">Model image tidak tersedia untuk {{ $this->activeGenerationProviderLabel }} saat ini.</div>
                                     @endforelse
                                 </div>
                             </div>
