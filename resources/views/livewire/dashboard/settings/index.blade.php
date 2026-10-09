@@ -448,9 +448,9 @@
                                         class="rms-ai-secondary-button rms-agent-add-button"
                                         wire:click="beginCodexLogin"
                                         :aria-expanded="credentialFormOpen ? 'true' : 'false'"
-                                        aria-controls="agent-credential-form"
+                                        aria-controls="agent-codex-login-bridge"
                                     >
-                                        <span class="rms-agent-add-label" x-text="credentialFormOpen ? 'Hide Credential Form' : '+ Add Credential'"></span>
+                                        <span class="rms-agent-add-label" x-text="'+ Add Account'"></span>
                                         <small class="rms-agent-add-meta">
                                             <span>Encrypted storage</span>
                                             <i :class="{ 'is-open': credentialFormOpen }" aria-hidden="true"></i>
