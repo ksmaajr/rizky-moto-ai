@@ -107,9 +107,16 @@ final class ProviderManager
     {
         $provider = $this->providerFor($model, $userId);
 
-        return $provider->name() === 'agentkit'
-            ? (string) config('services.agent_ai.queue', 'agentkit')
-            : (string) config('queue.default', 'database');
+        if ($provider->name() === 'agentkit') {
+            return (string) config('services.agent_ai.queue', 'agentkit');
+        }
+
+        // queue:work's first argument is the connection name, not the queue name.
+        // Route normal providers to the connection's configured default queue
+        // (usually "default") instead of incorrectly enqueueing onto "database".
+        $connection = (string) config('queue.default', 'database');
+
+        return (string) config("queue.connections.{$connection}.queue", 'default');
     }
 
     public function generate(ImageGenerationRequest $request): ImageGenerationResult
