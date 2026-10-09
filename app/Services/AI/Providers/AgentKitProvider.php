@@ -34,6 +34,85 @@ final class AgentKitProvider implements ImageProviderInterface
         ], true);
     }
 
+    /**
+     * Perform an explicit live credential smoke test. Agent Kit has no separate
+     * auth-only endpoint, so this intentionally consumes one live image request.
+     */
+    public function testCredential(\App\Models\AgentAiCredential $credential): array
+    {
+        $output = storage_path('app/agent-ai/tests/' . $credential->id . '-' . uniqid('', true) . '.png');
+        $promptFile = storage_path('app/agent-ai/tests/' . $credential->id . '-' . uniqid('', true) . '.txt');
+
+        try {
+            $directory = dirname($output);
+
+            if (! is_dir($directory) && ! @mkdir($directory, 0775, true) && ! is_dir($directory)) {
+                throw new RuntimeException('Folder Agent AI test tidak dapat dibuat.');
+            }
+
+            if (@file_put_contents($promptFile, 'Minimal premium product hero for a motorcycle spare part package, clean studio lighting, no text.') === false) {
+                throw new RuntimeException('Prompt Agent AI test tidak dapat dibuat.');
+            }
+
+            $arguments = [
+                $this->binary(),
+                $this->command(),
+                '--prompt-file', $promptFile,
+                '--live',
+                '--auth-provider', 'env',
+                '--token-env', 'CHATGPT_CODEX_ACCESS_TOKEN',
+                '--image-model', 'gpt-image-2.5-sunburst',
+                '--quality', 'low',
+                '--size', '1024x1024',
+                '--output-format', 'png',
+                '--out', $output,
+                '--json',
+            ];
+
+            [$exitCode, $stdout, $stderr] = $this->runProcess(
+                $arguments,
+                (string) $credential->access_token,
+                (int) config('services.agent_ai.timeout', 300),
+            );
+
+            $detail = trim($stderr) !== '' ? trim($stderr) : trim($stdout);
+            $detail = $detail !== '' ? mb_substr($detail, -2000) : null;
+
+            if ($exitCode !== 0 || ! is_file($output) || filesize($output) === 0) {
+                $classification = app(AgentAiCredentialPool::class)->reportFailure(
+                    $credential->id,
+                    auth()->id(),
+                    $detail ?: 'Agent credential test gagal tanpa detail.',
+                    $exitCode,
+                );
+
+                return [
+                    'success' => false,
+                    'status' => $classification['reason'] ?? 'agent_request_failed',
+                    'message' => $detail ?: 'Agent credential test gagal.',
+                    'exit_code' => $exitCode,
+                ];
+            }
+
+            app(AgentAiCredentialPool::class)->reportSuccess($credential->id, auth()->id());
+
+            return [
+                'success' => true,
+                'status' => 'active',
+                'message' => 'Agent credential berhasil digunakan untuk live smoke test.',
+                'exit_code' => 0,
+            ];
+        } finally {
+            if (is_file($promptFile)) {
+                @unlink($promptFile);
+            }
+
+            if (is_file($output)) {
+                @unlink($output);
+            }
+        }
+    }
+
     public function generate(ImageGenerationRequest $request): ImageGenerationResult
     {
         $credential = $this->credentialPool->acquire($request->userId);
