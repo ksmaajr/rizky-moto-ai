@@ -28,6 +28,12 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'agent_ai' => [
+        'python_binary' => env('AGENT_AI_PYTHON_BINARY', 'python'),
+        'command' => env('AGENT_AI_COMMAND', 'gpt-image25-agent'),
+        'timeout' => (int) env('AGENT_AI_TIMEOUT', 300),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
