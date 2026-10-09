@@ -539,3 +539,18 @@
 @media(prefers-reduced-motion:reduce){
     .rms-settings-reveal{animation:none!important}
 }
+
+/* Codex login onboarding bridge */
+.rms-agent-login-bridge{display:flex;align-items:center;gap:16px;padding:18px;margin:14px 0 18px;border:1px solid #dce7e0;border-radius:16px;background:linear-gradient(135deg,#f8fcf9 0%,#f4f8f6 100%);min-width:0}
+.rms-agent-login-bridge-icon{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;border-radius:13px;background:#e3f4e9;color:#16834b;font-size:22px;font-weight:700}
+.rms-agent-login-bridge-copy{flex:1;min-width:0}
+.rms-agent-login-bridge-copy strong{display:block;color:#1b2d23;font-size:14px;font-weight:750}
+.rms-agent-login-bridge-copy p{margin:6px 0 10px;color:#637168;font-size:12px;line-height:1.65}
+.rms-agent-login-bridge-status{display:flex;flex-wrap:wrap;gap:8px}
+.rms-agent-login-bridge-status span{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid #e0e8e2;border-radius:999px;background:#fff;color:#68746c;font-size:10px;font-weight:650}
+.rms-agent-login-bridge-status span i{width:6px;height:6px;border-radius:50%;background:#a3ada6}
+.rms-agent-login-bridge-status span.is-detected i{background:#22a05a}
+.rms-agent-login-bridge-status span.is-pending i{background:#d99a28}
+.rms-agent-login-bridge>.rms-agent-save-button{flex:0 0 auto;white-space:nowrap}
+@media(max-width:720px){.rms-agent-login-bridge{align-items:stretch;flex-direction:column;padding:15px}.rms-agent-login-bridge>.rms-agent-save-button{width:100%}.rms-agent-login-bridge-status{align-items:flex-start;flex-direction:column}}
+@media(prefers-reduced-motion:reduce){.rms-agent-login-bridge *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
