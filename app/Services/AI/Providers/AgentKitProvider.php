@@ -86,6 +86,20 @@ final class AgentKitProvider implements ImageProviderInterface
                     $exitCode,
                 );
 
+                $this->activity->error(
+                    action: 'agent_credential_test',
+                    category: 'api',
+                    title: 'Agent credential test gagal.',
+                    description: $detail ?: 'Agent credential test gagal.',
+                    metadata: [
+                        'provider' => $this->name(),
+                        'credential_id' => $credential->id,
+                        'credential_name' => $credential->name,
+                        'classification' => $classification['reason'] ?? 'agent_request_failed',
+                        'exit_code' => $exitCode,
+                    ],
+                );
+
                 return [
                     'success' => false,
                     'status' => $classification['reason'] ?? 'agent_request_failed',
@@ -95,6 +109,19 @@ final class AgentKitProvider implements ImageProviderInterface
             }
 
             app(AgentAiCredentialPool::class)->reportSuccess($credential->id, auth()->id());
+
+            $this->activity->success(
+                action: 'agent_credential_test',
+                category: 'api',
+                title: 'Agent credential test berhasil.',
+                description: 'Credential berhasil digunakan untuk live smoke test.',
+                metadata: [
+                    'provider' => $this->name(),
+                    'credential_id' => $credential->id,
+                    'credential_name' => $credential->name,
+                    'model' => 'gpt-image-2.5-sunburst',
+                ],
+            );
 
             return [
                 'success' => true,
