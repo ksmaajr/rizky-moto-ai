@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Dashboard\Settings;
 
+use App\Livewire\Concerns\ManagesAgentAiCredentials;
 use App\Models\AiProviderSetting;
 use App\Models\ActivityLog;
 use App\Models\VercelGatewayApiKey;
@@ -12,6 +13,8 @@ use Livewire\Component;
 
 class Index extends Component
 {
+    use ManagesAgentAiCredentials;
+
     public string $activeTab = 'general';
 
     public string $activeProvider = 'vercel';
@@ -52,6 +55,7 @@ class Index extends Component
             : 'general';
 
         $this->loadAiProviderSettings();
+        $this->loadAgentAiCredentials();
         $this->refreshVercelGatewayKeys();
         $this->refreshActivityLogs();
     }
