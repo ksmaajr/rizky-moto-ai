@@ -84,7 +84,7 @@ class ImportCodexCredentialCommandTest extends TestCase
     private function makeAuthFile(string $token): string
     {
         $directory = storage_path('framework/testing');
-        if (! is_dir($directory)) {
+        if (!is_dir($directory)) {
             mkdir($directory, 0775, true);
         }
 
