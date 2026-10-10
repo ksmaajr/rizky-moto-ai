@@ -5461,3 +5461,215 @@
  .rms-provider-block-agent .rms-agent-add-button,.rms-provider-block-agent .rms-agent-credential-actions button{transition:none}
 }
 </style>
+
+
+<style>
+/* Agent AI premium pass — unify the entire provider surface, not just its controls. */
+.rms-provider-block-agent{
+ position:relative;isolation:isolate;overflow:hidden;
+ border:1px solid #e7e2d8!important;border-radius:24px!important;
+ background:linear-gradient(155deg,#fff 0%,#fdfcf9 62%,#fbfaf7 100%)!important;
+ box-shadow:0 14px 38px rgba(28,25,23,.045),0 2px 6px rgba(28,25,23,.025)!important;
+}
+.rms-provider-block-agent:before{
+ content:"";position:absolute;z-index:-1;inset:0 0 auto;height:3px;
+ background:linear-gradient(90deg,#292524 0%,#a8a29e 22%,#fbbf24 70%,#f59e0b 100%);
+}
+.rms-provider-block-agent .rms-provider-block-head{
+ position:relative;padding:27px 28px 24px!important;gap:17px!important;
+ border-bottom:1px solid #eeeae3;background:linear-gradient(110deg,rgba(255,255,255,.94),rgba(250,248,243,.82));
+}
+.rms-provider-block-agent .rms-provider-block-icon{
+ width:52px!important;height:52px!important;flex:0 0 52px;border-radius:17px!important;
+ background:linear-gradient(145deg,#fffdf8,#fff7e8)!important;border:1px solid #f0dfbd!important;
+ color:#c78308!important;box-shadow:0 7px 18px rgba(161,98,7,.07),inset 0 1px 0 #fff!important;
+}
+.rms-provider-block-agent .rms-provider-block-icon span{font-size:25px;filter:drop-shadow(0 2px 3px rgba(217,119,6,.15))}
+.rms-provider-block-agent .rms-provider-block-copy{gap:6px!important}
+.rms-provider-block-agent .rms-provider-block-copy>span{font-size:9px!important;letter-spacing:.2em!important;color:#b91c1c!important}
+.rms-provider-block-agent .rms-provider-block-copy>strong{font-size:22px!important;line-height:1.12;letter-spacing:-.045em!important;color:#18181b!important}
+.rms-provider-block-agent .rms-provider-block-copy>small{font-size:11px!important;line-height:1.7!important;color:#71717a!important;max-width:660px}
+.rms-provider-block-agent .rms-provider-block-state{
+ padding:8px 12px!important;min-height:32px;border:1px solid #e4e4e7!important;
+ border-radius:999px!important;background:rgba(255,255,255,.88);box-shadow:0 2px 5px rgba(24,24,27,.025);
+}
+.rms-provider-block-agent .rms-provider-block-state span{font-size:8px!important;letter-spacing:.08em}
+.rms-provider-block-agent .rms-provider-block-state i{width:7px;height:7px;box-shadow:0 0 0 4px rgba(34,197,94,.09)}
+.rms-provider-block-agent .rms-agent-provider-card{
+ margin:0 18px 18px!important;border:1px solid #e7e5e4!important;border-radius:19px!important;
+ background:rgba(255,255,255,.92)!important;box-shadow:0 4px 15px rgba(28,25,23,.025)!important;
+ overflow:hidden;
+}
+.rms-provider-block-agent .rms-ai-provider-section-head{
+ padding:20px 22px!important;min-height:82px;border-bottom:1px solid #f0eeeb!important;
+ background:linear-gradient(110deg,#fff,#fdfcfb);
+}
+.rms-provider-block-agent .rms-ai-provider-icon.rms-agent-icon{
+ width:43px!important;height:43px!important;border-radius:14px!important;
+ background:linear-gradient(145deg,#27272a,#09090b)!important;color:#fff!important;
+ box-shadow:0 4px 9px rgba(24,24,27,.12),inset 0 1px 0 rgba(255,255,255,.1);
+}
+.rms-provider-block-agent .rms-ai-provider-section-title strong{font-size:14px!important;font-weight:850;letter-spacing:-.035em;color:#27272a}
+.rms-provider-block-agent .rms-ai-provider-section-title small{font-size:10px!important;line-height:1.65!important;color:#85858f!important}
+.rms-provider-block-agent .rms-ai-provider-status{
+ display:inline-flex;align-items:center;gap:7px;padding:7px 10px!important;
+ border:1px solid #d1fae5;border-radius:999px;background:#f0fdf4;color:#15803d!important;
+ font-size:9px!important;font-weight:850;white-space:nowrap;
+}
+.rms-provider-block-agent .rms-ai-provider-status i{width:6px;height:6px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.1)}
+.rms-provider-block-agent .rms-agent-credential-toolbar{
+ padding:19px 22px!important;gap:20px!important;background:#fff;
+}
+.rms-provider-block-agent .rms-agent-credential-toolbar>div:first-child strong{font-size:12px!important;letter-spacing:-.02em;margin-bottom:5px}
+.rms-provider-block-agent .rms-agent-credential-toolbar>div:first-child small{font-size:10px!important;line-height:1.7!important;color:#85858f!important}
+.rms-provider-block-agent .rms-agent-add-button{
+ min-width:174px!important;min-height:49px!important;padding:0 19px!important;border-radius:13px!important;
+ background:linear-gradient(135deg,#292524,#18181b)!important;border-color:#292524!important;
+ box-shadow:0 7px 17px rgba(24,24,27,.13),inset 0 1px 0 rgba(255,255,255,.1)!important;
+}
+.rms-provider-block-agent .rms-agent-add-button:before{width:3px;background:linear-gradient(180deg,#fbbf24,#f97316)}
+.rms-provider-block-agent .rms-agent-add-plus{
+ width:28px;height:28px;border-radius:9px;background:rgba(255,255,255,.09);
+ border-color:rgba(255,255,255,.2);font-size:18px;
+}
+.rms-provider-block-agent .rms-agent-add-label{font-size:12px!important;letter-spacing:-.02em}
+.rms-provider-block-agent .rms-agent-add-button:hover:not(:disabled){
+ box-shadow:0 11px 25px rgba(24,24,27,.19),0 0 0 4px rgba(245,158,11,.075)!important;transform:translateY(-2px)
+}
+.rms-agent-login-hint{
+ margin:0 18px 17px!important;padding:13px 15px!important;gap:12px!important;
+ border:1px solid #ece9e4!important;border-radius:13px!important;
+ background:linear-gradient(110deg,#fafaf9,#f8f7f4)!important;
+}
+.rms-agent-login-hint-icon{
+ width:30px;height:30px;flex-basis:30px;border-radius:10px!important;
+ background:#fff8eb!important;border-color:#f3dfbd!important;color:#b45309!important;
+ box-shadow:inset 0 1px 0 #fff;
+}
+.rms-agent-login-hint-copy strong{font-size:10px!important;color:#44403c!important;letter-spacing:-.01em}
+.rms-agent-login-hint-copy span{font-size:9px!important;line-height:1.65!important;color:#78716c!important}
+.rms-agent-login-hint-state{padding:7px 9px;border:1px solid #d1fae5;border-radius:999px;background:#f0fdf4;font-size:8px!important;color:#15803d!important}
+.rms-agent-login-hint-state i{width:6px;height:6px}
+.rms-provider-block-agent .rms-agent-credential-list{padding:0 18px 20px!important;gap:12px!important}
+.rms-provider-block-agent .rms-agent-credential-card{
+ position:relative;grid-template-columns:minmax(0,1.2fr) minmax(260px,.9fr)!important;
+ gap:16px 22px!important;padding:21px!important;border:1px solid #e7e5e4!important;
+ border-radius:17px!important;background:linear-gradient(145deg,#fff 0%,#fff 70%,#fdfcfb 100%)!important;
+ box-shadow:0 3px 10px rgba(28,25,23,.025)!important;
+}
+.rms-provider-block-agent .rms-agent-credential-card:before{
+ content:"";position:absolute;inset:0 auto 0 0;width:3px;border-radius:17px 0 0 17px;
+ background:linear-gradient(180deg,#d6d3d1,#f5f5f4);opacity:.9;
+}
+.rms-provider-block-agent .rms-agent-credential-card.is-enabled:before{background:linear-gradient(180deg,#86efac,#16a34a)}
+.rms-provider-block-agent .rms-agent-credential-card.is-disabled:before{background:linear-gradient(180deg,#d4d4d8,#71717a)}
+.rms-provider-block-agent .rms-agent-credential-card:hover{
+ border-color:#d6d3d1!important;box-shadow:0 12px 28px rgba(28,25,23,.055)!important;transform:translateY(-2px)
+}
+.rms-provider-block-agent .rms-agent-credential-icon{
+ width:44px!important;height:44px!important;flex-basis:44px!important;border-radius:14px!important;
+ background:linear-gradient(145deg,#27272a,#09090b)!important;color:#fff!important;
+ box-shadow:0 5px 12px rgba(24,24,27,.13),inset 0 1px 0 rgba(255,255,255,.1);
+}
+.rms-provider-block-agent .rms-agent-credential-copy{gap:7px!important}
+.rms-provider-block-agent .rms-agent-credential-title{align-items:center;gap:9px}
+.rms-provider-block-agent .rms-agent-credential-title strong{font-size:13px!important;font-weight:850;letter-spacing:-.025em;color:#27272a}
+.rms-provider-block-agent .rms-agent-status{padding:5px 9px!important;font-size:8px!important;font-weight:850;letter-spacing:.015em;border:1px solid transparent}
+.rms-provider-block-agent .rms-agent-status.is-active{background:#ecfdf3;border-color:#d1fae5;color:#15803d}
+.rms-provider-block-agent .rms-agent-status.is-cooldown{background:#fffbeb;border-color:#fde68a;color:#a16207}
+.rms-provider-block-agent .rms-agent-status.is-error{background:#fef2f2;border-color:#fecaca;color:#b91c1c}
+.rms-provider-block-agent .rms-agent-status.is-disabled{background:#f4f4f5;border-color:#e4e4e7;color:#71717a}
+.rms-provider-block-agent .rms-agent-status.is-pending{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
+.rms-provider-block-agent .rms-agent-credential-copy code{
+ display:inline-flex;align-items:center;max-width:max-content;padding:5px 8px;border:1px solid #f0eeeb;
+ border-radius:7px;background:#fafaf9;color:#a1a1aa;font-size:10px!important;letter-spacing:.15em!important;
+}
+.rms-provider-block-agent .rms-agent-credential-copy small{font-size:9px!important;color:#85858f!important;line-height:1.6}
+.rms-provider-block-agent .rms-agent-credential-meta{gap:9px!important}
+.rms-provider-block-agent .rms-agent-credential-meta>span{
+ padding:12px 13px!important;border:1px solid #eeece8!important;border-radius:12px!important;
+ background:linear-gradient(145deg,#fff,#fdfcfb)!important;gap:5px!important;
+}
+.rms-provider-block-agent .rms-agent-credential-meta b{font-size:8px!important;letter-spacing:.08em!important;color:#a1a1aa!important}
+.rms-provider-block-agent .rms-agent-credential-meta em{font-size:10px!important;font-weight:600;color:#57534e!important}
+.rms-provider-block-agent .rms-agent-cooldown{
+ grid-column:1/-1;margin:0!important;padding:11px 13px!important;border:1px solid #f5dfa0!important;
+ border-radius:10px!important;background:linear-gradient(90deg,#fffbeb,#fffdf6)!important;
+ color:#a16207!important;font-size:9px!important;font-weight:650;
+}
+.rms-provider-block-agent .rms-agent-credential-actions{
+ grid-column:1/-1;display:flex;align-items:center;gap:9px!important;
+ padding-top:15px!important;border-top:1px solid #f0eeeb;
+}
+.rms-provider-block-agent .rms-agent-credential-actions button{
+ min-height:42px!important;border-radius:11px!important;font-size:10px!important;font-weight:850!important;
+ box-shadow:0 2px 5px rgba(28,25,23,.035);transition:transform .18s ease,box-shadow .18s ease,background .18s ease,border-color .18s ease;
+}
+.rms-provider-block-agent .rms-agent-test-button{min-width:132px!important;background:#f5f3ff!important;border-color:#ddd6fe!important;color:#6d28d9!important}
+.rms-provider-block-agent .rms-agent-test-button:hover:not(:disabled){background:#ede9fe!important;box-shadow:0 7px 16px rgba(109,40,217,.12)!important;transform:translateY(-2px)}
+.rms-provider-block-agent .rms-agent-toggle-button.is-enabled{min-width:124px!important;background:#fff!important;border-color:#e4e4e7!important;color:#52525b!important}
+.rms-provider-block-agent .rms-agent-toggle-button.is-enabled:hover:not(:disabled){background:#f4f4f5!important;border-color:#d4d4d8!important;box-shadow:0 7px 16px rgba(24,24,27,.07)!important;transform:translateY(-2px)}
+.rms-provider-block-agent .rms-agent-toggle-button.is-disabled{min-width:124px!important;background:linear-gradient(135deg,#16834a,#166534)!important;border-color:#16834a!important;color:#fff!important}
+.rms-provider-block-agent .rms-agent-toggle-button.is-disabled:hover:not(:disabled){box-shadow:0 7px 16px rgba(22,101,52,.18)!important;transform:translateY(-2px)}
+.rms-provider-block-agent .rms-agent-delete-button{
+ width:42px!important;min-width:42px!important;flex:0 0 42px!important;
+ border-radius:11px!important;background:#fff!important;border-color:#fee2e2!important;color:#dc2626!important;
+}
+.rms-provider-block-agent .rms-agent-delete-button:hover:not(:disabled){background:#fef2f2!important;border-color:#fca5a5!important;box-shadow:0 7px 16px rgba(220,38,38,.10)!important;transform:translateY(-2px)}
+.rms-provider-block-agent .rms-agent-test-note{
+ margin:0 18px 18px!important;padding:12px 14px!important;border:1px solid #f5e7b1!important;
+ border-radius:12px!important;background:linear-gradient(100deg,#fffbeb,#fffdf6)!important;
+}
+.rms-provider-block-agent .rms-agent-test-note strong{font-size:9px!important;font-weight:850;color:#92400e}
+.rms-provider-block-agent .rms-agent-test-note small{font-size:8px!important;line-height:1.65;color:#a16207}
+.rms-provider-block-agent .rms-agent-empty{
+ margin:0!important;padding:27px 20px!important;border:1px dashed #d6d3d1!important;border-radius:15px!important;background:#fafaf9!important;
+}
+.rms-provider-block-agent .rms-agent-empty>span{border-radius:13px;background:#fff7ed;color:#c2410c}
+.rms-provider-block-agent .rms-agent-empty strong{font-size:12px!important;color:#292524}
+.rms-provider-block-agent .rms-agent-empty small{font-size:10px!important;line-height:1.7!important;color:#78716c}
+@media(max-width:900px){
+ .rms-provider-block-agent .rms-agent-credential-card{grid-template-columns:minmax(0,1fr)!important;padding:17px!important}
+ .rms-provider-block-agent .rms-agent-credential-meta{grid-column:1;grid-row:auto}
+ .rms-provider-block-agent .rms-agent-credential-actions{grid-column:1}
+}
+@media(max-width:760px){
+ .rms-provider-block-agent{border-radius:18px!important}
+ .rms-provider-block-agent .rms-provider-block-head{padding:20px 16px!important;gap:12px!important}
+ .rms-provider-block-agent .rms-provider-block-icon{width:44px!important;height:44px!important;flex-basis:44px!important;border-radius:14px!important}
+ .rms-provider-block-agent .rms-provider-block-copy>strong{font-size:19px!important}
+ .rms-provider-block-agent .rms-provider-block-copy>small{font-size:10px!important}
+ .rms-provider-block-agent .rms-provider-block-state{grid-column:2;justify-self:start}
+ .rms-provider-block-agent .rms-agent-provider-card{margin:0 9px 12px!important;border-radius:15px!important}
+ .rms-provider-block-agent .rms-ai-provider-section-head{padding:15px!important;gap:10px}
+ .rms-provider-block-agent .rms-ai-provider-section-title{align-items:flex-start;gap:10px}
+ .rms-provider-block-agent .rms-ai-provider-section-title strong{font-size:12px!important}
+ .rms-provider-block-agent .rms-ai-provider-status{font-size:8px!important;padding:6px 8px!important}
+ .rms-provider-block-agent .rms-agent-credential-toolbar{padding:15px!important}
+ .rms-provider-block-agent .rms-agent-add-button{min-height:46px!important}
+ .rms-agent-login-hint{margin:0 9px 13px!important;padding:11px!important}
+ .rms-agent-login-hint-state{white-space:normal;max-width:100%}
+ .rms-provider-block-agent .rms-agent-credential-list{padding:0 9px 13px!important;gap:10px!important}
+ .rms-provider-block-agent .rms-agent-credential-card{padding:15px!important;gap:13px!important;border-radius:14px!important}
+ .rms-provider-block-agent .rms-agent-credential-meta{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+ .rms-provider-block-agent .rms-agent-credential-meta>span{padding:10px!important}
+ .rms-provider-block-agent .rms-agent-credential-actions{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 42px;display:grid;gap:7px!important;padding-top:12px!important}
+ .rms-provider-block-agent .rms-agent-credential-actions button{width:100%;min-width:0!important;min-height:42px!important;padding:0 8px!important;font-size:9px!important}
+ .rms-provider-block-agent .rms-agent-credential-actions .rms-agent-delete-button{width:42px!important;min-width:42px!important;flex-basis:42px!important}
+ .rms-provider-block-agent .rms-agent-test-note{margin:0 9px 13px!important}
+}
+@media(max-width:420px){
+ .rms-provider-block-agent .rms-ai-provider-section-head{align-items:flex-start}
+ .rms-provider-block-agent .rms-agent-credential-meta{grid-template-columns:minmax(0,1fr)!important}
+ .rms-agent-login-hint{align-items:flex-start;flex-wrap:wrap}
+ .rms-agent-login-hint-copy{flex-basis:calc(100% - 43px)}
+ .rms-agent-login-hint-state{margin-left:41px}
+ .rms-provider-block-agent .rms-agent-credential-actions{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 38px}
+ .rms-provider-block-agent .rms-agent-credential-actions button{font-size:8px!important;gap:5px;padding:0 5px!important}
+ .rms-provider-block-agent .rms-agent-credential-actions .rms-agent-delete-button{width:38px!important;min-width:38px!important;flex-basis:38px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .rms-provider-block-agent .rms-agent-credential-card,.rms-provider-block-agent .rms-agent-credential-actions button,.rms-provider-block-agent .rms-agent-add-button{transition:none!important}
+ .rms-provider-block-agent .rms-agent-credential-card:hover,.rms-provider-block-agent .rms-agent-credential-actions button:hover{transform:none!important}
+}
+</style>
