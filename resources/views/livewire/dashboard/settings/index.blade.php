@@ -517,7 +517,22 @@
                                             </div>
 
                                             @if ($credential['cooldown_until'])
-                                                <div class="rms-agent-cooldown">Cooldown until {{ \Illuminate\Support\Carbon::parse($credential['cooldown_until'])->format('H:i:s') }}</div>
+                                                @php
+                                                    $credentialCooldownUntil = \Illuminate\Support\Carbon::parse($credential['cooldown_until']);
+                                                    $credentialCooldownActive = $credentialCooldownUntil->isFuture();
+                                                @endphp
+                                                @if ($credentialCooldownActive)
+                                                    <div class="rms-agent-cooldown">
+                                                        <span>Cooldown until {{ $credentialCooldownUntil->format('d M Y, H:i:s') }}</span>
+                                                        <strong
+                                                            x-data="{ remaining: {{ max(0, $credentialCooldownUntil->timestamp - now()->timestamp) }} }"
+                                                            x-init="setInterval(() => remaining = Math.max(0, remaining - 1), 1000)"
+                                                            x-text="(Math.floor(remaining / 86400) > 0 ? Math.floor(remaining / 86400) + 'd ' : '') + [Math.floor((remaining % 86400) / 3600), Math.floor((remaining % 3600) / 60), remaining % 60].map(value => String(value).padStart(2, '0')).join(':')"
+                                                        ></strong>
+                                                    </div>
+                                                @else
+                                                    <div class="rms-agent-cooldown is-expired">Cooldown elapsed · {{ $credentialCooldownUntil->format('d M Y, H:i:s') }}</div>
+                                                @endif
                                             @endif
 
                                             <div class="rms-agent-credential-actions">
