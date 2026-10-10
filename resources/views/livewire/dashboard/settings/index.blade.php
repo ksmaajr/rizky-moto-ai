@@ -451,9 +451,16 @@
                                         wire:target="beginCodexLogin"
                                         aria-controls="agent-codex-login-bridge"
                                     >
-                                        <span class="rms-agent-add-plus" aria-hidden="true">+</span>
-                                        <span class="rms-agent-add-label" x-text="'+ Add Account'"></span>
-                                        <span class="rms-agent-add-loading" wire:loading wire:target="beginCodexLogin">Opening login…</span>
+                                        <span class="rms-agent-add-icon" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" fill="none" focusable="false">
+                                                <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                            </svg>
+                                        </span>
+                                        <span class="rms-agent-add-label" wire:loading.remove wire:target="beginCodexLogin">Add Account</span>
+                                        <span class="rms-agent-add-label" wire:loading wire:target="beginCodexLogin">Opening login…</span>
+                                        <svg class="rms-agent-add-chevron" wire:loading.remove wire:target="beginCodexLogin" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                            <path d="m7.5 4.5 5.5 5.5-5.5 5.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
                                     </button>
                                 </div>
 
@@ -5671,5 +5678,53 @@
 @media(prefers-reduced-motion:reduce){
  .rms-provider-block-agent .rms-agent-credential-card,.rms-provider-block-agent .rms-agent-credential-actions button,.rms-provider-block-agent .rms-agent-add-button{transition:none!important}
  .rms-provider-block-agent .rms-agent-credential-card:hover,.rms-provider-block-agent .rms-agent-credential-actions button:hover{transform:none!important}
+}
+</style>
+
+
+<style>
+/* Add Account: icon-led premium action, no text symbols or numeric-looking glyphs. */
+.rms-provider-block-agent .rms-agent-add-button{
+ min-width:180px!important;min-height:50px!important;padding:0 15px!important;
+ display:inline-flex!important;align-items:center!important;justify-content:flex-start!important;gap:11px!important;
+ border:1px solid #292524!important;border-radius:14px!important;
+ background:linear-gradient(135deg,#292524 0%,#18181b 72%,#111113 100%)!important;color:#fff!important;
+ box-shadow:0 8px 20px rgba(24,24,27,.15),inset 0 1px 0 rgba(255,255,255,.12)!important;
+}
+.rms-provider-block-agent .rms-agent-add-button:before{
+ width:3px!important;background:linear-gradient(180deg,#fcd34d,#f59e0b,#ea580c)!important;border-radius:14px 0 0 14px;
+}
+.rms-provider-block-agent .rms-agent-add-icon{
+ width:30px;height:30px;flex:0 0 30px;display:grid;place-items:center;
+ border:1px solid rgba(255,255,255,.17);border-radius:10px;
+ background:rgba(255,255,255,.085);color:#fef3c7;
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+}
+.rms-provider-block-agent .rms-agent-add-icon svg{display:block;width:16px;height:16px}
+.rms-provider-block-agent .rms-agent-add-label{
+ flex:1;display:inline-flex;align-items:center;justify-content:flex-start;
+ font-size:11px!important;font-weight:800!important;letter-spacing:.005em;white-space:nowrap;
+}
+.rms-provider-block-agent .rms-agent-add-chevron{
+ width:16px;height:16px;flex:0 0 16px;color:#a8a29e;transition:transform .18s ease,color .18s ease;
+}
+.rms-provider-block-agent .rms-agent-add-button:hover:not(:disabled){
+ background:linear-gradient(135deg,#1c1917,#09090b)!important;
+ box-shadow:0 12px 26px rgba(24,24,27,.2),0 0 0 4px rgba(245,158,11,.08)!important;
+ transform:translateY(-2px);
+}
+.rms-provider-block-agent .rms-agent-add-button:hover:not(:disabled) .rms-agent-add-icon{
+ background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.3);color:#fbbf24;
+}
+.rms-provider-block-agent .rms-agent-add-button:hover:not(:disabled) .rms-agent-add-chevron{transform:translateX(2px);color:#fef3c7}
+.rms-provider-block-agent .rms-agent-add-button:active:not(:disabled){transform:translateY(0) scale(.99)}
+.rms-provider-block-agent .rms-agent-add-button:disabled{opacity:.7;cursor:wait;transform:none}
+@media(max-width:760px){
+ .rms-provider-block-agent .rms-agent-add-button{width:100%!important;min-width:0!important;justify-content:center!important}
+ .rms-provider-block-agent .rms-agent-add-label{flex:0 1 auto}
+ .rms-provider-block-agent .rms-agent-add-chevron{margin-left:2px}
+}
+@media(prefers-reduced-motion:reduce){
+ .rms-provider-block-agent .rms-agent-add-button,.rms-provider-block-agent .rms-agent-add-chevron{transition:none!important}
 }
 </style>
