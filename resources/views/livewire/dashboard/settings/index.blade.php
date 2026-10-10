@@ -659,13 +659,13 @@
                                                 </div>
                                                 <section class="rms-agent-monitor-cooldown-control">
                                                     <div>
-                                                        <span class="rms-agent-monitor-control-eyebrow">MANUAL COOLDOWN</span>
-                                                        <strong>Atur durasi cooldown akun ini</strong>
-                                                        <p>Credential tidak akan dipilih oleh worker sampai timer selesai. Pilih durasi 1 menit sampai 24 jam.</p>
+                                                        <span class="rms-agent-monitor-control-eyebrow">AUTO COOLDOWN POLICY</span>
+                                                        <strong>Atur durasi saat rate limit terdeteksi</strong>
+                                                        <p>Durasi ini diterapkan otomatis saat akun terkena rate limit. Countdown dimulai dari waktu limit terdeteksi, bukan saat pengaturan disimpan.</p>
                                                     </div>
                                                     <div class="rms-agent-monitor-cooldown-form">
                                                         <label><span>Durasi (menit)</span><input type="number" min="1" max="1440" step="1" wire:model="agentCredentialCooldownMinutes" /></label>
-                                                        <button type="button" wire:click="applyAgentCredentialCooldown" wire:loading.attr="disabled" wire:target="applyAgentCredentialCooldown"><span wire:loading.remove wire:target="applyAgentCredentialCooldown">Terapkan cooldown</span><span wire:loading wire:target="applyAgentCredentialCooldown">Menerapkan…</span></button>
+                                                        <button type="button" wire:click="saveAgentCredentialCooldownPreference" wire:loading.attr="disabled" wire:target="saveAgentCredentialCooldownPreference"><span wire:loading.remove wire:target="saveAgentCredentialCooldownPreference">Simpan durasi</span><span wire:loading wire:target="saveAgentCredentialCooldownPreference">Menyimpan…</span></button>
                                                     </div>
                                                 </section>
                                                 <section class="rms-agent-monitor-section">
