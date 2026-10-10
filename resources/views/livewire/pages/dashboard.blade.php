@@ -53,9 +53,9 @@ class extends Component
             $this->hasOpenAiKey = filled($settings->api_key);
         }
 
+        // Keep the initial dashboard request lightweight. Runtime status checks
+        // inspect OS processes and are only needed when the AI Provider panel opens.
         $this->loadAiProviderSettings();
-        $this->loadAgentAiCredentials();
-        $this->loadVercelGatewayLogs();
         $this->loadActivityLogs();
     }
 
@@ -278,6 +278,13 @@ class extends Component
     {
         $this->activeSection = 'settings-openai';
         $this->activeTab = 'provider';
+        $this->loadProviderPanelData();
+    }
+
+    private function loadProviderPanelData(): void
+    {
+        $this->loadAgentAiCredentials();
+        $this->loadVercelGatewayLogs();
     }
 
     public function selectTab(string $tab): void
@@ -290,6 +297,10 @@ class extends Component
         $this->activeSection = $tab === 'general'
             ? 'settings-general'
             : 'settings-openai';
+
+        if ($tab === 'provider') {
+            $this->loadProviderPanelData();
+        }
     }
 
     public function testConnection(): void
