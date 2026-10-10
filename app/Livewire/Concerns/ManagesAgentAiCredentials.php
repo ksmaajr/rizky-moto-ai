@@ -99,7 +99,7 @@ trait ManagesAgentAiCredentials
 
         try {
             $claims = json_decode($decoded, true, 32, JSON_THROW_ON_ERROR);
-        } catch (\\Throwable) {
+        } catch (\Throwable) {
             return;
         }
 
