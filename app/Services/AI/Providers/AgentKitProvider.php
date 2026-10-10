@@ -7,6 +7,7 @@ use App\Services\AI\DTO\ImageGenerationRequest;
 use App\Services\AI\DTO\ImageGenerationResult;
 use App\Services\ActivityLogService;
 use App\Services\AgentAiCredentialPool;
+use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 final class AgentKitProvider implements ImageProviderInterface
