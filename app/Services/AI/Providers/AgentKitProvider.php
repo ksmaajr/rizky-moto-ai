@@ -38,171 +38,196 @@ final class AgentKitProvider implements ImageProviderInterface
      * Perform an explicit live credential smoke test. Agent Kit has no separate
      * auth-only endpoint, so this intentionally consumes one live image request.
      */
+    /**
+     * Validate the Codex session without invoking image generation or consuming
+     * image-generation quota. The model catalog is a read-only auth/session
+     * probe; it does not claim that every image model or image endpoint is available.
+     */
     public function testCredential(\App\Models\AgentAiCredential $credential): array
     {
-        // A live image smoke test can take longer than PHP's default 30-second
-        // web-request limit. Align the request budget with the subprocess timeout.
-        $processTimeout = max(30, (int) config('services.agent_ai.timeout', 300));
-        @set_time_limit($processTimeout + 30);
+        $token = (string) $credential->access_token;
+        $headers = [
+            'Authorization' => 'Bearer ' . $token,
+            'Accept' => 'application/json',
+            'User-Agent' => 'codex_cli_rs/0.0.0',
+            'originator' => 'codex_cli_rs',
+        ];
 
-        $output = storage_path('app/agent-ai/tests/' . $credential->id . '-' . uniqid('', true) . '.png');
-        $promptFile = storage_path('app/agent-ai/tests/' . $credential->id . '-' . uniqid('', true) . '.txt');
+        // Codex expects the account context when it is present in the OAuth JWT.
+        // Only decoded public claims are used; the token itself is never logged.
+        try {
+            $parts = explode('.', $token);
+            if (count($parts) >= 2 && $parts[1] !== '') {
+                $payload = strtr($parts[1], '-_', '+/');
+                $payload .= str_repeat('=', (4 - strlen($payload) % 4) % 4);
+                $decoded = base64_decode($payload, true);
+                $claims = is_string($decoded) ? json_decode($decoded, true) : null;
+
+                if (is_array($claims)) {
+                    $auth = $claims['https://api.openai.com/auth'] ?? [];
+                    if (is_array($auth)) {
+                        $accountId = $auth['chatgpt_account_id'] ?? null;
+                        if (is_string($accountId) && $accountId !== '') {
+                            $headers['ChatGPT-Account-ID'] = $accountId;
+                        }
+
+                        $residency = $auth['chatgpt_data_residency'] ?? $auth['chatgpt_compute_residency'] ?? null;
+                        if (is_string($residency) && trim($residency) !== '') {
+                            $headers['x-openai-internal-codex-residency'] = trim($residency);
+                        }
+                    }
+
+                    $expiresAt = $claims['exp'] ?? null;
+                    if (is_numeric($expiresAt) && (int) $expiresAt <= time()) {
+                        $credential->forceFill([
+                            'is_active' => false,
+                            'status' => 'invalid',
+                            'cooldown_until' => null,
+                            'last_error_type' => 'token_expired',
+                            'last_error' => 'Access token sudah kedaluwarsa. Login Codex ulang dan tambahkan akun kembali.',
+                            'last_exit_code' => null,
+                        ])->save();
+
+                        return [
+                            'success' => false,
+                            'status' => 'invalid_credential',
+                            'message' => 'Access token sudah kedaluwarsa. Login Codex ulang untuk memperbarui akun.',
+                        ];
+                    }
+                }
+            }
+        } catch (\Throwable) {
+            // Continue with the server-side probe so the endpoint can provide
+            // the authoritative response for malformed or changed JWT formats.
+        }
 
         try {
-            $directory = dirname($output);
-
-            if (! is_dir($directory) && ! @mkdir($directory, 0775, true) && ! is_dir($directory)) {
-                throw new RuntimeException('Folder Agent AI test tidak dapat dibuat.');
-            }
-
-            if (@file_put_contents($promptFile, 'Minimal premium product hero for a motorcycle spare part package, clean studio lighting, no text.') === false) {
-                throw new RuntimeException('Prompt Agent AI test tidak dapat dibuat.');
-            }
-
-            $arguments = [
-                $this->binary(),
-                '-m',
-                $this->module(),
-                '--prompt-file', $promptFile,
-                '--live',
-                '--auth-provider', 'env',
-                '--token-env', 'CHATGPT_CODEX_ACCESS_TOKEN',
-                '--image-model', 'gpt-image-2.5-sunburst',
-                '--quality', 'low',
-                '--size', '1024x1024',
-                '--output-format', 'png',
-                '--out', $output,
-                '--json',
-            ];
-
-            [$exitCode, $stdout, $stderr] = $this->runProcess(
-                $arguments,
-                (string) $credential->access_token,
-                (int) config('services.agent_ai.timeout', 300),
+            $response = Http::withHeaders($headers)
+                ->timeout(20)
+                ->get('https://chatgpt.com/backend-api/codex/models', [
+                    'client_version' => '99.0.0',
+                ]);
+        } catch (\Throwable $e) {
+            $message = 'Tidak dapat menghubungi endpoint validasi Codex. Periksa koneksi host AgentKit, lalu coba lagi.';
+            $this->activity->error(
+                action: 'agent_credential_test',
+                category: 'api',
+                title: 'Validasi sesi AgentKit gagal dijangkau.',
+                description: $message,
+                metadata: [
+                    'provider' => $this->name(),
+                    'credential_id' => $credential->id,
+                    'classification' => 'codex_validation_unreachable',
+                ],
             );
 
-            $detail = trim($stderr) !== '' ? trim($stderr) : trim($stdout);
-            $detail = $detail !== '' ? mb_substr($detail, -2000) : null;
+            return [
+                'success' => false,
+                'status' => 'validation_unreachable',
+                'message' => $message,
+            ];
+        }
 
-            // This specific HTTP 400 is a Codex Responses API/tool-routing
-            // incompatibility in the AgentKit client, not evidence of a bad token.
-            // Keep a newly imported account pending so it can be retried after the
-            // upstream client/backend compatibility is resolved.
-            if (
-                $exitCode !== 0
-                && $detail !== null
-                && str_contains(strtolower($detail), "tool choice 'image_generation' not found in 'tools' parameter")
-            ) {
-                $message = 'Token belum dapat divalidasi: endpoint Codex menolak tool image_generation (HTTP 400). Ini masalah kompatibilitas AgentKit/Codex, bukan bukti token salah. Credential tetap Pending Validation dan tidak dimasukkan ke pool aktif.';
+        $body = $response->json();
+        $models = is_array($body) ? ($body['models'] ?? null) : null;
 
-                // A credential may have been enabled by an earlier test attempt
-                // before this compatibility error was classified. Enforce the
-                // invariant every time: unsupported tool routing can never leave
-                // the credential enabled or eligible for generation.
-                $credential->forceFill([
-                    'is_active' => false,
-                    'status' => 'pending_validation',
-                    'cooldown_until' => null,
-                    'last_error_type' => 'codex_image_tool_unsupported',
-                    'last_error' => mb_substr($message, 0, 2000),
-                    'last_exit_code' => $exitCode,
-                    'updated_at' => now(),
-                ])->save();
-
-                $this->activity->error(
-                    action: 'agent_credential_test',
-                    category: 'api',
-                    title: 'Agent credential test terhambat kompatibilitas Codex.',
-                    description: $message,
-                    metadata: [
-                        'provider' => $this->name(),
-                        'credential_id' => $credential->id,
-                        'credential_name' => $credential->name,
-                        'classification' => 'codex_image_tool_unsupported',
-                        'exit_code' => $exitCode,
-                    ],
-                );
-
-                return [
-                    'success' => false,
-                    'status' => 'provider_incompatible',
-                    'message' => $message,
-                    'exit_code' => $exitCode,
-                ];
-            }
-
-            if ($exitCode !== 0 || ! is_file($output) || filesize($output) === 0) {
-                $classification = app(AgentAiCredentialPool::class)->reportFailure(
-                    $credential->id,
-                    auth()->id(),
-                    $detail ?: 'Agent credential test gagal tanpa detail.',
-                    $exitCode,
-                );
-
-                $this->activity->error(
-                    action: 'agent_credential_test',
-                    category: 'api',
-                    title: 'Agent credential test gagal.',
-                    description: $detail ?: 'Agent credential test gagal.',
-                    metadata: [
-                        'provider' => $this->name(),
-                        'credential_id' => $credential->id,
-                        'credential_name' => $credential->name,
-                        'classification' => $classification['reason'] ?? 'agent_request_failed',
-                        'exit_code' => $exitCode,
-                    ],
-                );
-
-                return [
-                    'success' => false,
-                    'status' => $classification['reason'] ?? 'agent_request_failed',
-                    'message' => $detail ?: 'Agent credential test gagal.',
-                    'exit_code' => $exitCode,
-                ];
-            }
-
+        if ($response->successful() && is_array($models) && count($models) > 0) {
             app(AgentAiCredentialPool::class)->reportSuccess($credential->id, auth()->id());
 
-            // A newly imported Codex session stays out of the rotation pool until
-            // this explicit live image smoke test proves AgentKit compatibility.
-            if ($credential->status === 'pending_validation') {
-                $credential->forceFill([
-                    'is_active' => true,
-                    'status' => 'active',
-                    'cooldown_until' => null,
-                    'last_error_type' => null,
-                    'last_error' => null,
-                ])->save();
-            }
+            $credential->forceFill([
+                'is_active' => true,
+                'status' => 'active',
+                'cooldown_until' => null,
+                'last_error_type' => null,
+                'last_error' => null,
+                'last_exit_code' => null,
+            ])->save();
 
+            $message = 'Sesi Codex tervalidasi. Akun aktif dan siap dipilih oleh worker AgentKit. Tes ini tidak menjalankan generate gambar.';
             $this->activity->success(
                 action: 'agent_credential_test',
                 category: 'api',
-                title: 'Agent credential test berhasil.',
-                description: 'Credential berhasil digunakan untuk live smoke test.',
+                title: 'Validasi token AgentKit berhasil.',
+                description: $message,
                 metadata: [
                     'provider' => $this->name(),
                     'credential_id' => $credential->id,
                     'credential_name' => $credential->name,
-                    'model' => 'gpt-image-2.5-sunburst',
+                    'validation' => 'codex_models_catalog',
+                    'image_generation_tested' => false,
+                    'model_count' => count($models),
                 ],
             );
 
             return [
                 'success' => true,
                 'status' => 'active',
-                'message' => 'Agent credential berhasil digunakan untuk live smoke test.',
-                'exit_code' => 0,
+                'message' => $message,
+                'validation' => 'codex_models_catalog',
+                'image_generation_tested' => false,
             ];
-        } finally {
-            if (is_file($promptFile)) {
-                @unlink($promptFile);
-            }
-
-            if (is_file($output)) {
-                @unlink($output);
-            }
         }
+
+        $httpStatus = $response->status();
+        $errorType = match ($httpStatus) {
+            401 => 'invalid_credential',
+            403 => 'provider_access_denied',
+            429 => 'rate_limited',
+            default => 'codex_validation_failed',
+        };
+
+        // Only a definitive 401 invalidates the token. A 403 can mean that this
+        // endpoint or account is not permitted; it is not proof of a bad login.
+        $updates = [
+            'last_error_type' => $errorType,
+            'last_error' => 'Codex session validation returned HTTP ' . $httpStatus . '.',
+            'last_exit_code' => null,
+        ];
+
+        if ($httpStatus === 401) {
+            $updates['is_active'] = false;
+            $updates['status'] = 'invalid';
+            $updates['cooldown_until'] = null;
+        } elseif (! $credential->is_active && $credential->status === 'pending_validation') {
+            $updates['status'] = 'pending_validation';
+            $updates['cooldown_until'] = null;
+        } elseif ($credential->is_active) {
+            // Keep a previously validated account usable while recording a
+            // non-auth failure in the read-only probe.
+            $updates['status'] = 'active';
+        }
+
+        $credential->forceFill($updates)->save();
+
+        $message = match ($httpStatus) {
+            401 => 'Codex menolak autentikasi token. Login ulang diperlukan.',
+            403 => 'Endpoint validasi Codex menolak akses (HTTP 403). Token tidak otomatis dianggap invalid; akun baru tetap Pending Validation.',
+            429 => 'Endpoint validasi Codex membatasi request. Coba lagi nanti; token tidak otomatis dianggap invalid.',
+            default => 'Validasi sesi Codex gagal (HTTP ' . $httpStatus . '). Akun tidak diaktifkan oleh tes ini.',
+        };
+
+        $this->activity->error(
+            action: 'agent_credential_test',
+            category: 'api',
+            title: 'Validasi token AgentKit gagal.',
+            description: $message,
+            metadata: [
+                'provider' => $this->name(),
+                'credential_id' => $credential->id,
+                'credential_name' => $credential->name,
+                'http_status' => $httpStatus,
+                'classification' => $errorType,
+                'validation' => 'codex_models_catalog',
+                'image_generation_tested' => false,
+            ],
+        );
+
+        return [
+            'success' => false,
+            'status' => $errorType,
+            'message' => $message,
+            'http_status' => $httpStatus,
+        ];
     }
 
     public function generate(ImageGenerationRequest $request): ImageGenerationResult
