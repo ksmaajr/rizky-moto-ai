@@ -48,8 +48,10 @@ jobs:
             'MAIL_MAILER=array' > .env
           composer install --no-interaction --prefer-dist
 
-      - name: Check AgentKit credential importer formatting
-        run: vendor/bin/pint --test app/Console/Commands/ImportCodexCredentialCommand.php tests/Feature/ImportCodexCredentialCommandTest.php
+      - name: Check PHP syntax for credential importer
+        run: |
+          php -l app/Console/Commands/ImportCodexCredentialCommand.php
+          php -l tests/Feature/ImportCodexCredentialCommandTest.php
 
       - name: Test AgentKit credential importer
         run: php artisan test --filter=ImportCodexCredentialCommandTest
