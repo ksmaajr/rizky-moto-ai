@@ -304,7 +304,7 @@ trait ManagesAgentAiCredentials
             ]);
 
             return $result->successful();
-        } catch (\\Throwable) {
+        } catch (\Throwable) {
             return false;
         }
     }
