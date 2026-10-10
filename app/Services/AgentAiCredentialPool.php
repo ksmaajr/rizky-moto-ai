@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 final class AgentAiCredentialPool
 {
-    private const RATE_LIMIT_COOLDOWN_SECONDS = 60;
+    private const RATE_LIMIT_COOLDOWN_SECONDS = 300;
     private const BACKEND_ERROR_COOLDOWN_SECONDS = 30;
 
     /**
@@ -122,13 +122,32 @@ final class AgentAiCredentialPool
             ];
         }
 
-        $classification = $this->classifyFailure($reason, $exitCode);
         $query = AgentAiCredential::query()->whereKey($id);
 
         if ($userId !== null) {
             $query->where(function ($q) use ($userId) {
                 $q->where('user_id', $userId)->orWhereNull('user_id');
             });
+        }
+
+        $credential = (clone $query)->first();
+
+        if (! $credential) {
+            return [
+                'status' => 'failed',
+                'retry' => false,
+                'seconds' => 0,
+                'reason' => 'credential_not_found',
+            ];
+        }
+
+        $classification = $this->classifyFailure($reason, $exitCode);
+
+        // A detected provider rate limit starts this credential's configured
+        // cooldown from the detection timestamp, not from when the drawer opens.
+        if (($classification['reason'] ?? null) === 'rate_limited') {
+            $minutes = max(1, min(1440, (int) ($credential->cooldown_duration_minutes ?: 300)));
+            $classification['seconds'] = $minutes * 60;
         }
 
         $updates = [
