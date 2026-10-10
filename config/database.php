@@ -61,7 +61,8 @@ return [
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
+                PDO::ATTR_TIMEOUT => max(1, (int) env('DB_CONNECT_TIMEOUT', 5)),
+            ], static fn ($value) => $value !== null && $value !== '') : [],
         ],
 
         'mariadb' => [
