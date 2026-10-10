@@ -615,22 +615,31 @@
                                             </header>
                                             @php
                                                 $monitorStatus = (string) ($selectedAgentCredentialMonitoring['status'] ?? 'unknown');
-                                                $monitorStatusLabel = match ($monitorStatus) {
-                                                    'cooldown' => 'Cooldown',
-                                                    'invalid' => 'Invalid authentication',
-                                                    'exhausted' => 'Limit / exhausted',
-                                                    'error' => 'Error',
-                                                    'disabled' => 'Disabled',
-                                                    'pending_validation' => 'Pending validation',
-                                                    default => !empty($selectedAgentCredentialMonitoring['is_active']) ? 'Healthy / enabled' : 'Disabled',
-                                                };
+                                                $monitorErrorType = strtolower((string) ($selectedAgentCredentialMonitoring['last_error_type'] ?? ''));
+                                                $monitorCooldownUntil = !empty($selectedAgentCredentialMonitoring['cooldown_until'])
+                                                    ? \Illuminate\Support\Carbon::parse($selectedAgentCredentialMonitoring['cooldown_until'])
+                                                    : null;
+                                                $monitorCooldownActive = $monitorCooldownUntil !== null && $monitorCooldownUntil->isFuture();
+                                                $monitorRateLimited = in_array($monitorErrorType, ['rate_limited', 'rate_limit', 'quota_exceeded'], true)
+                                                    || ($monitorStatus === 'cooldown' && $monitorErrorType !== '');
+                                                $monitorStatusLabel = $monitorRateLimited
+                                                    ? ($monitorCooldownActive ? 'Rate limited · cooldown active' : ($monitorCooldownUntil ? 'Rate limit · cooldown elapsed' : 'Rate limit detected'))
+                                                    : match ($monitorStatus) {
+                                                        'cooldown' => 'Cooldown',
+                                                        'invalid' => 'Invalid authentication',
+                                                        'exhausted' => 'Limit / exhausted',
+                                                        'error' => 'Error',
+                                                        'disabled' => 'Disabled',
+                                                        'pending_validation' => 'Pending validation',
+                                                        default => !empty($selectedAgentCredentialMonitoring['is_active']) ? 'Enabled · health unverified' : 'Disabled',
+                                                    };
                                                 $monitorSuccessRate = (int) ($selectedAgentCredentialMonitoring['request_count'] ?? 0) > 0
                                                     ? round(((int) ($selectedAgentCredentialMonitoring['success_count'] ?? 0) / (int) $selectedAgentCredentialMonitoring['request_count']) * 100)
                                                     : null;
                                             @endphp
                                             <div class="rms-agent-monitor-scroll">
                                                 <div class="rms-agent-monitor-status-row">
-                                                    <span class="rms-agent-monitor-status-dot {{ $monitorStatus === 'active' && !empty($selectedAgentCredentialMonitoring['is_active']) ? 'is-healthy' : (in_array($monitorStatus, ['cooldown','pending_validation'], true) ? 'is-warning' : 'is-problem') }}"></span>
+                                                    <span class="rms-agent-monitor-status-dot {{ $monitorRateLimited || in_array($monitorStatus, ['cooldown','pending_validation'], true) ? 'is-warning' : ($monitorStatus === 'active' && !empty($selectedAgentCredentialMonitoring['is_active']) && $monitorErrorType === '' ? 'is-healthy' : 'is-problem') }}"></span>
                                                     <div><strong>{{ $monitorStatusLabel }}</strong><small>Current stored credential state</small></div>
                                                     <button type="button" wire:click="refreshAgentCredentialMonitoring({{ (int) $selectedAgentCredentialMonitoring['id'] }})" wire:loading.attr="disabled" wire:target="refreshAgentCredentialMonitoring" class="rms-agent-monitor-refresh"><span wire:loading.remove wire:target="refreshAgentCredentialMonitoring">↻ Refresh</span><span wire:loading wire:target="refreshAgentCredentialMonitoring">Refreshing…</span></button>
                                                 </div>
@@ -638,7 +647,7 @@
                                                     <article><span>Total requests</span><strong>{{ number_format((int) ($selectedAgentCredentialMonitoring['request_count'] ?? 0)) }}</strong><small>Recorded invocations</small></article>
                                                     <article><span>Success rate</span><strong>{{ $monitorSuccessRate === null ? '—' : $monitorSuccessRate . '%' }}</strong><small>{{ number_format((int) ($selectedAgentCredentialMonitoring['success_count'] ?? 0)) }} successful</small></article>
                                                     <article><span>Failed requests</span><strong>{{ number_format((int) ($selectedAgentCredentialMonitoring['failure_count'] ?? 0)) }}</strong><small>Recorded failures</small></article>
-                                                    <article><span>Cooldown</span><strong>{{ !empty($selectedAgentCredentialMonitoring['cooldown_until']) ? \Illuminate\Support\Carbon::parse($selectedAgentCredentialMonitoring['cooldown_until'])->format('H:i:s') : '—' }}</strong><small>{{ !empty($selectedAgentCredentialMonitoring['cooldown_until']) ? 'Until local server time' : 'No active cooldown recorded' }}</small></article>
+                                                    <article><span>Cooldown</span><strong>{{ $monitorCooldownActive ? $monitorCooldownUntil->format('H:i:s') : ($monitorRateLimited ? 'Not active' : '—') }}</strong><small>{{ $monitorCooldownActive ? 'Until local server time' : ($monitorRateLimited ? ($monitorCooldownUntil ? 'Recorded cooldown has elapsed' : 'Rate limit recorded, but no cooldown timestamp is stored') : 'No active cooldown recorded') }}</small></article>
                                                 </div>
                                                 <section class="rms-agent-monitor-section">
                                                     <div class="rms-agent-monitor-section-head"><div><span>01 / HEALTH &amp; AUTH</span><h3>Account health</h3></div></div>
