@@ -92,7 +92,7 @@ trait ManagesAgentAiCredentials
         // Backfill a timer for rate-limit events recorded before the configurable
         // duration existed. The countdown is anchored to last_failure_at.
         if ($credential->last_error_type === 'rate_limited' && ! $credential->cooldown_until && $credential->last_failure_at) {
-            $durationMinutes = max(1, min(1440, (int) ($credential->cooldown_duration_minutes ?: 300)));
+            $durationMinutes = max(1, min(10080, (int) ($credential->cooldown_duration_minutes ?: 300)));
             $until = $credential->last_failure_at->copy()->addMinutes($durationMinutes);
             $credential->forceFill([
                 'status' => $until->isFuture() ? 'cooldown' : 'error',
@@ -154,7 +154,7 @@ trait ManagesAgentAiCredentials
     public function saveAgentCredentialCooldownPreference(): void
     {
         $this->validate([
-            'agentCredentialCooldownMinutes' => ['required', 'integer', 'min:1', 'max:1440'],
+            'agentCredentialCooldownMinutes' => ['required', 'integer', 'min:1', 'max:10080'],
         ]);
 
         $credentialId = (int) ($this->selectedAgentCredentialMonitoring['id'] ?? 0);
@@ -165,7 +165,7 @@ trait ManagesAgentAiCredentials
             return;
         }
 
-        $durationMinutes = max(1, min(1440, (int) $this->agentCredentialCooldownMinutes));
+        $durationMinutes = max(1, min(10080, (int) $this->agentCredentialCooldownMinutes));
         $updates = ['cooldown_duration_minutes' => $durationMinutes];
 
         // If this account is already rate-limited, recalculate from the original
