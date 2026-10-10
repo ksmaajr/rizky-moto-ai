@@ -101,7 +101,7 @@ trait ManagesAgentAiCredentials
             $credential->refresh();
         }
 
-        $this->agentCredentialCooldownMinutes = max(1, min(1440, (int) ($credential->cooldown_duration_minutes ?: 300)));
+        $this->agentCredentialCooldownMinutes = max(1, min(10080, (int) ($credential->cooldown_duration_minutes ?: 1440)));
 
         $this->selectedAgentCredentialMonitoring = [
             'id' => $credential->id,
@@ -115,7 +115,7 @@ trait ManagesAgentAiCredentials
             'last_success_at' => $credential->last_success_at?->toIso8601String(),
             'last_failure_at' => $credential->last_failure_at?->toIso8601String(),
             'cooldown_until' => $credential->cooldown_until?->toIso8601String(),
-            'cooldown_duration_minutes' => (int) ($credential->cooldown_duration_minutes ?: 300),
+            'cooldown_duration_minutes' => (int) ($credential->cooldown_duration_minutes ?: 1440),
             'last_error_type' => $credential->last_error_type,
             'last_error' => $credential->last_error,
             'last_exit_code' => $credential->last_exit_code,
@@ -273,9 +273,7 @@ trait ManagesAgentAiCredentials
         }
 
         $userId = (int) Auth::id();
-        $accountName = trim($this->newAgentCredentialName) !== ''
-            ? mb_substr(trim($this->newAgentCredentialName), 0, 120)
-            : 'Codex Account';
+        $accountName = $this->uniqueAgentCredentialName($this->newAgentCredentialName);
 
         $binary = trim((string) config('services.agent_ai.codex_cli_binary', ''), " \\t\\n\\r\\0\\x0B\\\"'");
         if ($binary === '') {
@@ -386,6 +384,38 @@ trait ManagesAgentAiCredentials
         }
 
         return false;
+    }
+
+    /** Ensure every imported account has a distinct, readable label within this user's pool. */
+    private function uniqueAgentCredentialName(?string $requestedName = null): string
+    {
+        $base = mb_substr(trim((string) $requestedName), 0, 110);
+        if ($base === '') {
+            $base = 'Codex Account';
+        }
+
+        $query = AgentAiCredential::query()
+            ->where(function ($query) {
+                $query->where('user_id', Auth::id())
+                    ->orWhereNull('user_id');
+            });
+
+        $existing = $query->pluck('name')->filter()->map(
+            static fn ($name): string => mb_strtolower(trim((string) $name))
+        )->all();
+
+        if (! in_array(mb_strtolower($base), $existing, true)) {
+            return $base;
+        }
+
+        for ($suffix = 2; $suffix < 10000; $suffix++) {
+            $candidate = mb_substr($base, 0, 120 - mb_strlen((string) $suffix) - 1) . ' ' . $suffix;
+            if (! in_array(mb_strtolower($candidate), $existing, true)) {
+                return $candidate;
+            }
+        }
+
+        return mb_substr($base, 0, 100) . ' ' . now()->format('YmdHis');
     }
 
     /**
