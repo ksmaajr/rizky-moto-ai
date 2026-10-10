@@ -144,7 +144,18 @@ trait ManagesAgentAiCredentials
     private function codexCliIsAvailable(): bool
     {
         try {
-            return Process::timeout(5)->run(['codex', '--version'])->successful();
+            $binary = trim((string) config('services.agent_ai.codex_cli_binary', ''));
+            if ($binary === '') {
+                $binary = PHP_OS_FAMILY === 'Windows' ? 'codex.cmd' : 'codex';
+            }
+
+            // npm installs the Windows CLI as a .cmd shim; invoke it through cmd.exe
+            // so detection works in the same PHP/Laravel process environment.
+            $command = PHP_OS_FAMILY === 'Windows'
+                ? ['cmd.exe', '/d', '/s', '/c', '"' . str_replace('"', '', $binary) . '" --version']
+                : [$binary, '--version'];
+
+            return Process::timeout(8)->run($command)->successful();
         } catch (\Throwable) {
             return false;
         }
