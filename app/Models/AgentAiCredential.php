@@ -20,6 +20,7 @@ class AgentAiCredential extends Model
         'last_success_at',
         'last_failure_at',
         'cooldown_until',
+        'cooldown_duration_minutes',
         'last_error_type',
         'last_error',
         'last_exit_code',
