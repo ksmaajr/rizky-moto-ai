@@ -32,8 +32,21 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Setup Application
-        run: composer setup
+      - name: Prepare test environment
+        run: |
+          printf '%s\n' \
+            'APP_NAME="Rizky Tools AI"' \
+            'APP_ENV=testing' \
+            'APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=' \
+            'APP_DEBUG=true' \
+            'APP_URL=http://localhost' \
+            'DB_CONNECTION=sqlite' \
+            'DB_DATABASE=:memory:' \
+            'CACHE_STORE=array' \
+            'SESSION_DRIVER=array' \
+            'QUEUE_CONNECTION=sync' \
+            'MAIL_MAILER=array' > .env
+          composer install --no-interaction --prefer-dist
 
       - name: Run CI Checks
         run: composer ci:check
