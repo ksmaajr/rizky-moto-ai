@@ -4,6 +4,7 @@ namespace App\Livewire\Concerns;
 
 use App\Models\AgentAiCredential;
 use App\Services\AI\Providers\AgentKitProvider;
+use App\Services\AgentKitWorkerManager;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Process;
 
@@ -16,10 +17,13 @@ trait ManagesAgentAiCredentials
     public array $agentAiCredentials = [];
     public int $agentAiCredentialCount = 0;
     public int $agentAiActiveCredentialCount = 0;
+    public array $agentAiRuntimeStatus = [];
+    public bool $agentAiRuntimeBusy = false;
 
     public function loadAgentAiCredentials(): void
     {
         $this->codexCliAvailable = $this->codexCliIsAvailable();
+        $this->refreshAgentAiRuntimeStatus();
 
         $query = AgentAiCredential::query()
             ->where(function ($query) {
@@ -51,6 +55,60 @@ trait ManagesAgentAiCredentials
             ->where('is_active', true)
             ->whereNotIn('status', ['disabled', 'invalid', 'exhausted'])
             ->count();
+    }
+
+    public function refreshAgentAiRuntimeStatus(): void
+    {
+        try {
+            $this->agentAiRuntimeStatus = app(AgentKitWorkerManager::class)->status();
+        } catch (\\Throwable $e) {
+            report($e);
+            $this->agentAiRuntimeStatus = [
+                'success' => false,
+                'running' => false,
+                'status' => 'unknown',
+                'message' => 'Runtime status belum dapat dibaca. Periksa konfigurasi worker.',
+            ];
+        }
+    }
+
+    public function controlAgentAiRuntime(string $action): void
+    {
+        $action = strtolower(trim($action));
+        if (! in_array($action, ['start', 'stop', 'restart'], true)) {
+            $this->dispatch('toast', type: 'error', title: 'Aksi tidak valid', message: 'Gunakan Start, Stop, atau Restart.');
+            return;
+        }
+
+        if ($this->agentAiRuntimeBusy) {
+            return;
+        }
+
+        $this->agentAiRuntimeBusy = true;
+
+        try {
+            $manager = app(AgentKitWorkerManager::class);
+            $result = match ($action) {
+                'start' => $manager->start(),
+                'stop' => $manager->stop(),
+                'restart' => $manager->restart(),
+            };
+
+            $this->refreshAgentAiRuntimeStatus();
+            $success = (bool) ($result['success'] ?? false);
+            $this->dispatch(
+                'toast',
+                type: $success ? 'success' : 'error',
+                title: $success ? 'Agent AI runtime diperbarui' : 'Kontrol runtime gagal',
+                message: (string) ($result['message'] ?? 'Perintah runtime selesai.')
+            );
+        } catch (\\Throwable $e) {
+            report($e);
+            $this->refreshAgentAiRuntimeStatus();
+            $this->dispatch('toast', type: 'error', title: 'Kontrol runtime gagal', message: 'Runtime tidak dapat dikendalikan. Periksa konfigurasi driver dan log worker.');
+        } finally {
+            $this->agentAiRuntimeBusy = false;
+        }
     }
 
     /**
