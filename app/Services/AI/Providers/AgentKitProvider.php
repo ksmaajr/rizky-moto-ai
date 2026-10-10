@@ -95,6 +95,20 @@ final class AgentKitProvider implements ImageProviderInterface
             ) {
                 $message = 'Token belum dapat divalidasi: endpoint Codex menolak tool image_generation (HTTP 400). Ini masalah kompatibilitas AgentKit/Codex, bukan bukti token salah. Credential tetap Pending Validation dan tidak dimasukkan ke pool aktif.';
 
+                // A credential may have been enabled by an earlier test attempt
+                // before this compatibility error was classified. Enforce the
+                // invariant every time: unsupported tool routing can never leave
+                // the credential enabled or eligible for generation.
+                $credential->forceFill([
+                    'is_active' => false,
+                    'status' => 'pending_validation',
+                    'cooldown_until' => null,
+                    'last_error_type' => 'codex_image_tool_unsupported',
+                    'last_error' => mb_substr($message, 0, 2000),
+                    'last_exit_code' => $exitCode,
+                    'updated_at' => now(),
+                ])->save();
+
                 $this->activity->error(
                     action: 'agent_credential_test',
                     category: 'api',
