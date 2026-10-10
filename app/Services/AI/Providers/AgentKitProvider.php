@@ -697,6 +697,14 @@ final class AgentKitProvider implements ImageProviderInterface
         $environment['HOME'] = $environment['HOME'] ?? storage_path('app/agent-ai/home');
         $environment['USER'] = $environment['USER'] ?? get_current_user();
 
+        // Override only AgentKit's Python Codex transport. The vendored package
+        // extends the installed package path and replaces client.py; no Vercel
+        // provider code or configuration is touched.
+        $agentKitTransportPath = base_path('packages/agentkit-codex-transport');
+        $existingPythonPath = trim((string) ($environment['PYTHONPATH'] ?? ''));
+        $environment['PYTHONPATH'] = $agentKitTransportPath
+            . ($existingPythonPath !== '' ? PATH_SEPARATOR . $existingPythonPath : '');
+
         if (! is_dir($environment['HOME'])) {
             @mkdir($environment['HOME'], 0700, true);
         }
