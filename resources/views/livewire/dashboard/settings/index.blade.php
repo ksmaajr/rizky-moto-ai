@@ -485,18 +485,20 @@
                                     </div>
                                     <span class="rms-agent-login-hint-state {{ $codexCliAvailable ? 'is-ready' : 'is-pending' }}"><i></i>{{ $codexCliAvailable ? 'CLI detected' : 'CLI not detected' }}</span>
                                 </div>
-                                <div wire:poll.3s="refreshCodexLoginStatus" class="rms-agent-login-progress" role="status" aria-live="polite">
-                                    @if ($codexLoginInProgress)
-                                        <span class="rms-agent-login-progress-dot is-running"></span>
-                                        <div><strong>{{ $codexLoginState === 'importing' ? 'Menyimpan credential' : 'Menunggu autentikasi Codex' }}</strong><small>{{ $codexLoginMessage ?: 'Selesaikan login pada jendela PowerShell yang terbuka.' }}</small></div>
-                                    @elseif ($codexLoginState === 'completed')
-                                        <span class="rms-agent-login-progress-dot is-success"></span>
-                                        <div><strong>Login selesai</strong><small>{{ $codexLoginMessage ?: 'Credential diimpor dan menunggu validasi AgentKit.' }}</small></div>
-                                    @elseif ($codexLoginState === 'failed')
-                                        <span class="rms-agent-login-progress-dot is-failed"></span>
-                                        <div><strong>Login gagal</strong><small>{{ $codexLoginMessage ?: 'Periksa pesan pada jendela PowerShell.' }}</small></div>
-                                    @endif
-                                </div>
+                                @if ($codexLoginState !== 'idle')
+                                    <div wire:poll.3s="refreshCodexLoginStatus" class="rms-agent-login-progress" role="status" aria-live="polite">
+                                        @if ($codexLoginInProgress)
+                                            <span class="rms-agent-login-progress-dot is-running"></span>
+                                            <div><strong>{{ $codexLoginState === 'importing' ? 'Menyimpan credential' : 'Menunggu autentikasi Codex' }}</strong><small>{{ $codexLoginMessage ?: 'Selesaikan login pada jendela PowerShell yang terbuka.' }}</small></div>
+                                        @elseif ($codexLoginState === 'completed')
+                                            <span class="rms-agent-login-progress-dot is-success"></span>
+                                            <div><strong>Login selesai</strong><small>{{ $codexLoginMessage ?: 'Credential diimpor dan menunggu validasi AgentKit.' }}</small></div>
+                                        @elseif ($codexLoginState === 'failed')
+                                            <span class="rms-agent-login-progress-dot is-failed"></span>
+                                            <div><strong>Login gagal</strong><small>{{ $codexLoginMessage ?: 'Periksa pesan pada jendela PowerShell.' }}</small></div>
+                                        @endif
+                                    </div>
+                                @endif
 
                                 {{-- Worker controls live in the dedicated sidebar page. Keep this panel focused on credentials. --}}
 
