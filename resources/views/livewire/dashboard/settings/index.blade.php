@@ -473,37 +473,7 @@
                                     </button>
                                 </div>
 
-                                <section class="rms-agent-runtime-panel" aria-labelledby="rms-agent-runtime-title">
-                                    <div class="rms-agent-runtime-head">
-                                        <div>
-                                            <span class="rms-agent-runtime-kicker">AGENTKIT RUNTIME</span>
-                                            <strong id="rms-agent-runtime-title">Worker Control Center</strong>
-                                            <small>Kelola worker AgentKit secara terpisah dari Laravel queue worker dan Vercel provider.</small>
-                                        </div>
-                                        @php
-                                            $agentRuntimeRunning = (bool) ($agentAiRuntimeStatus['running'] ?? false);
-                                            $agentRuntimeStatus = $agentRuntimeRunning
-                                                ? ((bool) ($agentAiRuntimeStatus['healthy'] ?? false) ? 'Healthy' : 'Partial')
-                                                : (!empty($agentAiRuntimeStatus['supervisor_error']) ? 'Unavailable' : 'Stopped');
-                                        @endphp
-                                        <span class="rms-agent-runtime-state {{ $agentRuntimeRunning ? 'is-running' : 'is-stopped' }}"><i></i>{{ $agentRuntimeRunning ? 'Running' : ucfirst($agentRuntimeStatus) }}</span>
-                                    </div>
-                                    <div class="rms-agent-runtime-meta">
-                                        <span><b>Driver</b><em>{{ $agentAiRuntimeStatus['driver'] ?? 'not configured' }}</em></span>
-                                        <span><b>Platform</b><em>{{ $agentAiRuntimeStatus['platform'] ?? PHP_OS_FAMILY }}</em></span>
-                                        <span><b>Queue</b><em>{{ config('services.agent_ai.queue', 'agentkit') }}</em></span>
-                                        <span><b>Workers</b><em>{{ $agentAiRuntimeStatus['worker_count'] ?? $agentAiRuntimeStatus['target_workers'] ?? config('services.agent_ai.worker_count', 3) }}</em></span>
-                                    </div>
-                                    @if (!empty($agentAiRuntimeStatus['message']) || !empty($agentAiRuntimeStatus['supervisor_error']))
-                                        <p class="rms-agent-runtime-message">{{ $agentAiRuntimeStatus['message'] ?? $agentAiRuntimeStatus['supervisor_error'] ?? '' }}</p>
-                                    @endif
-                                    <div class="rms-agent-runtime-actions">
-                                        <button type="button" wire:click="controlAgentAiRuntime('start')" wire:loading.attr="disabled" wire:target="controlAgentAiRuntime" @disabled($agentRuntimeRunning || $agentAiRuntimeBusy)><span>▶</span> Start</button>
-                                        <button type="button" wire:click="controlAgentAiRuntime('restart')" wire:loading.attr="disabled" wire:target="controlAgentAiRuntime" @disabled($agentAiRuntimeBusy)><span>↻</span> Restart</button>
-                                        <button type="button" wire:click="controlAgentAiRuntime('stop')" wire:loading.attr="disabled" wire:target="controlAgentAiRuntime" @disabled(!$agentRuntimeRunning || $agentAiRuntimeBusy)><span>■</span> Stop</button>
-                                        <button type="button" wire:click="refreshAgentAiRuntimeStatus" wire:loading.attr="disabled" wire:target="refreshAgentAiRuntimeStatus"><span>↻</span> Refresh status</button>
-                                    </div>
-                                </section>
+                                {{-- Worker controls live in the dedicated sidebar page. Keep this panel focused on credentials. --}}
 
                                 <div class="rms-agent-credential-list">
                                     @forelse ($agentAiCredentials as $credential)
@@ -5252,4 +5222,80 @@
 .rms-agent-credential-copy small{font-size:7px;color:#71717a}
 @media(max-width:760px){.rms-provider-block-agent .rms-agent-login-bridge{grid-template-columns:38px minmax(0,1fr);gap:11px;margin:12px 9px;padding:13px}.rms-agent-login-bridge-icon{width:38px;height:38px}.rms-agent-login-bridge-copy>strong{font-size:11px}.rms-agent-login-bridge-copy>p{font-size:9px}.rms-agent-login-bridge>.rms-agent-save-button{grid-column:1/-1;width:100%;min-height:42px}.rms-agent-runtime-panel{margin:0 9px 13px;padding:13px}.rms-agent-runtime-meta{gap:7px}.rms-agent-runtime-meta span{padding:10px}.rms-agent-credential-list{padding:10px 9px 13px}}
 @media(max-width:390px){.rms-agent-runtime-meta{grid-template-columns:1fr 1fr}.rms-agent-runtime-actions{grid-template-columns:1fr}}
+</style>
+
+
+<style>
+/* AgentKit provider: credential-first layout, independent from the sidebar worker controls. */
+.rms-provider-block-agent{overflow:hidden;background:#fff}
+.rms-provider-block-agent .rms-provider-block-head{padding:23px 25px;gap:16px}
+.rms-provider-block-agent .rms-provider-block-icon{width:46px;height:46px;border-radius:14px;box-shadow:0 5px 16px rgba(245,158,11,.12)}
+.rms-provider-block-agent .rms-provider-block-copy>span{font-size:9px;letter-spacing:.17em}
+.rms-provider-block-agent .rms-provider-block-copy>strong{font-size:18px;letter-spacing:-.035em}
+.rms-provider-block-agent .rms-provider-block-copy>small{max-width:620px;font-size:11px;line-height:1.65}
+.rms-provider-block-agent .rms-ai-provider-section{margin:0 18px 18px!important;border:1px solid #e6e7eb!important;border-radius:16px!important;background:#fff;overflow:hidden}
+.rms-provider-block-agent .rms-ai-provider-section-head{padding:19px 20px!important;gap:14px}
+.rms-provider-block-agent .rms-ai-provider-section-title{gap:12px}
+.rms-provider-block-agent .rms-ai-provider-section-title strong{font-size:13px;letter-spacing:-.015em}
+.rms-provider-block-agent .rms-ai-provider-section-title small{max-width:650px;font-size:10px;line-height:1.6}
+.rms-provider-block-agent .rms-agent-credential-toolbar{padding:14px 20px;gap:14px}
+.rms-provider-block-agent .rms-agent-credential-toolbar>div:first-child{max-width:220px}
+.rms-provider-block-agent .rms-agent-credential-toolbar strong{font-size:10px}
+.rms-provider-block-agent .rms-agent-credential-toolbar small{font-size:9px;line-height:1.55}
+.rms-provider-block-agent .rms-agent-login-bridge{margin:15px 18px 18px;grid-template-columns:46px minmax(0,1fr) auto;gap:15px;padding:20px;border-radius:16px;background:linear-gradient(120deg,#fff 0%,#fffdf8 58%,#fff7ed 100%)}
+.rms-provider-block-agent .rms-agent-login-bridge-icon{width:46px;height:46px;border-radius:14px;font-size:21px}
+.rms-agent-login-bridge-copy>strong{font-size:13px;letter-spacing:-.02em}
+.rms-agent-login-bridge-copy>p{font-size:11px;line-height:1.75;max-width:780px}
+.rms-agent-login-bridge-status>span{min-height:28px;padding:0 10px;font-size:9px}
+.rms-agent-login-bridge>.rms-agent-save-button{min-height:42px;padding:0 17px;font-size:10px}
+.rms-provider-block-agent .rms-agent-credential-list{padding:0 18px 20px;gap:12px}
+.rms-provider-block-agent .rms-agent-credential-card{padding:16px;border:1px solid #e7e8ec;border-radius:14px;background:linear-gradient(180deg,#fff,#fdfdfd);display:grid;grid-template-columns:minmax(0,1.25fr) minmax(180px,.8fr);align-items:center;column-gap:20px;row-gap:13px;transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}
+.rms-provider-block-agent .rms-agent-credential-card:hover{border-color:#d4d4d8;box-shadow:0 8px 22px rgba(24,24,27,.045);transform:translateY(-1px)}
+.rms-provider-block-agent .rms-agent-credential-main{min-width:0}
+.rms-provider-block-agent .rms-agent-credential-icon{width:38px;height:38px;border-radius:12px;flex:0 0 38px}
+.rms-provider-block-agent .rms-agent-credential-copy{gap:7px;min-width:0}
+.rms-provider-block-agent .rms-agent-credential-title{gap:8px;flex-wrap:wrap}
+.rms-provider-block-agent .rms-agent-credential-title strong{font-size:12px;overflow-wrap:anywhere}
+.rms-provider-block-agent .rms-agent-credential-copy code{font-size:10px;letter-spacing:.12em}
+.rms-provider-block-agent .rms-agent-credential-copy small{font-size:9px;line-height:1.5}
+.rms-provider-block-agent .rms-agent-credential-meta{grid-column:2;grid-row:1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.rms-provider-block-agent .rms-agent-credential-meta>span{padding:10px;border:1px solid #eeeef1;border-radius:10px;background:#fff;min-width:0}
+.rms-provider-block-agent .rms-agent-credential-meta b{font-size:8px;letter-spacing:.04em}
+.rms-provider-block-agent .rms-agent-credential-meta em{font-size:10px;overflow-wrap:anywhere}
+.rms-provider-block-agent .rms-agent-cooldown{grid-column:1/-1;margin:0;padding:9px 11px;border-radius:9px;font-size:9px}
+.rms-provider-block-agent .rms-agent-credential-actions{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;padding-top:12px;border-top:1px solid #f0f0f2}
+.rms-provider-block-agent .rms-agent-credential-actions button{min-height:35px;padding:0 13px;border-radius:9px;font-size:10px}
+.rms-provider-block-agent .rms-agent-delete-button{width:35px;min-width:35px}
+.rms-provider-block-agent .rms-agent-empty{margin:0 18px 20px;padding:24px;border:1px dashed #d4d4d8;border-radius:14px;background:#fafafa}
+.rms-provider-block-agent .rms-agent-empty strong{font-size:12px}
+.rms-provider-block-agent .rms-agent-empty small{font-size:10px;line-height:1.65}
+@media(max-width:760px){
+ .rms-provider-block-agent .rms-provider-block-head{padding:18px 15px;gap:11px}
+ .rms-provider-block-agent .rms-provider-block-copy>strong{font-size:16px}
+ .rms-provider-block-agent .rms-ai-provider-section{margin:0 9px 12px!important}
+ .rms-provider-block-agent .rms-ai-provider-section-head{padding:15px!important;align-items:flex-start}
+ .rms-provider-block-agent .rms-agent-credential-toolbar{padding:12px 15px;display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+ .rms-provider-block-agent .rms-agent-credential-toolbar>div:first-child{max-width:none}
+ .rms-provider-block-agent .rms-agent-login-bridge{grid-template-columns:38px minmax(0,1fr);margin:12px 9px 14px;padding:14px;gap:11px}
+ .rms-provider-block-agent .rms-agent-login-bridge-icon{width:38px;height:38px}
+ .rms-agent-login-bridge-copy>strong{font-size:12px}
+ .rms-agent-login-bridge-copy>p{font-size:10px}
+ .rms-provider-block-agent .rms-agent-login-bridge>.rms-agent-save-button{grid-column:1/-1;width:100%;white-space:normal}
+ .rms-provider-block-agent .rms-agent-credential-list{padding:0 9px 14px;gap:10px}
+ .rms-provider-block-agent .rms-agent-credential-card{grid-template-columns:minmax(0,1fr);gap:12px;padding:13px}
+ .rms-provider-block-agent .rms-agent-credential-meta{grid-column:1;grid-row:auto}
+ .rms-provider-block-agent .rms-agent-credential-actions{grid-column:1;gap:7px}
+ .rms-provider-block-agent .rms-agent-credential-actions button{flex:1;min-width:0}
+ .rms-provider-block-agent .rms-agent-credential-actions .rms-agent-delete-button{flex:0 0 35px}
+}
+@media(max-width:390px){
+ .rms-provider-block-agent .rms-provider-block-state{grid-column:2;justify-self:start}
+ .rms-provider-block-agent .rms-agent-credential-meta{grid-template-columns:minmax(0,1fr)}
+ .rms-provider-block-agent .rms-agent-credential-actions{display:grid;grid-template-columns:1fr 1fr}
+ .rms-provider-block-agent .rms-agent-credential-actions .rms-agent-delete-button{grid-column:2;justify-self:end}
+}
+@media(prefers-reduced-motion:reduce){
+ .rms-provider-block-agent .rms-agent-credential-card{transition:none}
+ .rms-provider-block-agent .rms-agent-credential-card:hover{transform:none}
+}
 </style>
