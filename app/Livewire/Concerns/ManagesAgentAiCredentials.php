@@ -337,7 +337,9 @@ trait ManagesAgentAiCredentials
                 '-ExecutionPolicy',
                 'Bypass',
                 '-Command',
-                "Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File','" . str_replace("'", "''", $scriptPath) . "')",
+                // -NoExit keeps errors visible; quote the script path because the project
+                // directory commonly contains spaces on Windows.
+                "Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-NoExit','-File','\"" . str_replace('"', '\"', $scriptPath) . "\"')",
             ]);
 
             if ($result->failed()) {
@@ -351,7 +353,7 @@ trait ManagesAgentAiCredentials
                 'toast',
                 type: 'success',
                 title: 'Jendela login Codex dibuka',
-                message: 'Selesaikan login ChatGPT pada jendela PowerShell yang baru. Setelah login berhasil, sesi akan diimpor sebagai Pending Validation; jalankan Test Token sebelum mengaktifkannya.'
+                message: 'Selesaikan login pada jendela PowerShell. Jendela akan tetap terbuka agar pesan error dapat dibaca jika login atau import gagal.'
             );
         } catch (\Throwable $e) {
             report($e);
