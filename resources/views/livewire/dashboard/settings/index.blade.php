@@ -460,15 +460,15 @@
                                 <div class="rms-agent-login-bridge" id="agent-codex-login-bridge">
                                     <div class="rms-agent-login-bridge-icon" aria-hidden="true">↗</div>
                                     <div class="rms-agent-login-bridge-copy">
-                                        <strong>Connect with official Codex login</strong>
-                                        <p>Login resmi Codex dikelola oleh Codex CLI pada host yang menjalankan AgentKit. Akun belum dimasukkan ke pool sampai token yang dibutuhkan AgentKit dapat diambil dan diverifikasi dengan aman.</p>
+                                        <strong>Codex Session Bridge · Experimental</strong>
+                                        <p>Runtime worker bisa dikelola dari dashboard. Login browser/device-code dari tombol ini belum tersedia; selesaikan login Codex pada host AgentKit dan gunakan importer eksperimental hanya jika file auth kompatibel. Akun tidak akan aktif sebelum validasi berhasil.</p>
                                         <div class="rms-agent-login-bridge-status">
                                             <span class="{{ $codexCliAvailable ? 'is-detected' : 'is-pending' }}"><i></i>{{ $codexCliAvailable ? 'Codex CLI detected' : 'Codex CLI not detected by web process' }}</span>
                                             <span><i></i>Token bridge: not connected</span>
                                         </div>
                                     </div>
                                     <button type="button" class="rms-agent-save-button" wire:click="beginCodexLogin" wire:loading.attr="disabled" wire:target="beginCodexLogin">
-                                        <span wire:loading.remove wire:target="beginCodexLogin">Start Codex Login</span>
+                                        <span wire:loading.remove wire:target="beginCodexLogin">Check Login Setup</span>
                                         <span wire:loading wire:target="beginCodexLogin">Checking...</span>
                                     </button>
                                 </div>
@@ -566,7 +566,7 @@
                                             <span>✦</span>
                                             <div>
                                                 <strong>Belum ada Agent credential</strong>
-                                                <small>Jalankan codex login, impor sesi lewat Artisan, lalu uji kompatibilitas sebelum akun masuk ke pool aktif.</small>
+                                                <small>Browser login worker belum terhubung. Setelah Codex login di host yang sama, importer file-based eksperimental dapat dipakai bila format sesi kompatibel.</small>
                                             </div>
                                         </div>
                                     @endforelse
