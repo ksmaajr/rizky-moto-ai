@@ -66,3 +66,10 @@ The AI Provider settings page now exposes Start, Stop, Restart, and Refresh Stat
 The currently implemented AgentKit invocation passes the encrypted `AgentAiCredential.access_token` as `CHATGPT_CODEX_ACCESS_TOKEN`. The generation worker retrieves that token through the credential pool for each invocation. This is the only credential material the current adapter explicitly passes to AgentKit.
 
 Do not assume this access token is a durable full session or that it can be refreshed by AgentKit. The current experimental importer reads a file-based Codex `auth.json` shape; Codex may instead use OS secure storage, and its local format is not a stable public token-export API. A proper in-dashboard authentication worker still requires a supported login/token acquisition path that AgentKit can consume. Until that contract is proven, do not present the Add Account button as a completed browser-based login flow and do not activate an account before compatibility validation.
+
+
+## Status for local testing
+
+The runtime control center can be tested independently from authentication. The `Add Account` action is intentionally labeled as an experimental session bridge and does not claim to launch browser/device login yet. Do not interpret the presence of Codex CLI or a successful `codex login status` on a Windows developer laptop as proof that Laravel's web process or the Ubuntu VPS can access that same session.
+
+Before production use, a dedicated authentication onboarding worker still needs to launch and supervise a supported login flow, report device/browser instructions and completion status without exposing secrets, and provide AgentKit with a credential lifecycle it can actually refresh. The current AgentKit interface only documents a compatible access-token input; the experimental backend and subscription access can change. See the upstream project documentation and review the applicable product terms before exposing this as a multi-user service.
