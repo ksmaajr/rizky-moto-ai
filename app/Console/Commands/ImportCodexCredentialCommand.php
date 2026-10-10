@@ -191,12 +191,18 @@ class ImportCodexCredentialCommand extends Command
             $sources[] = $claims;
         }
 
+        // Codex does not expose a stable "username" field in every session.
+        // Some accounts expose only a display/name claim inside the profile or
+        // namespaced OpenAI claims, so accept those as the visible account label.
         $username = $this->firstMetadataValue($sources, [
             'preferred_username',
             'username',
             'user_name',
+            'display_name',
             'nickname',
             'handle',
+            'name',
+            'given_name',
         ]);
 
         $email = $this->firstMetadataValue($sources, ['email']);
