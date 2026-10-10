@@ -216,7 +216,8 @@ final class AgentKitProvider implements ImageProviderInterface
                         '--auth-provider', 'env',
                         '--image-model', $model,
                         '--quality', $request->quality,
-                        '--size', $request->size,
+                        '--size', $this->requestedCanvasSize($request),
+                        '--action', 'generate',
                         '--output-format', $request->outputFormat,
                         '--out', $output,
                     ];
@@ -483,17 +484,18 @@ final class AgentKitProvider implements ImageProviderInterface
         $hasInstalled = in_array('installed', $roles, true)
             || in_array('installed_reference', $roles, true);
 
-        $prompt .= "\n\nPROVIDER-LEVEL LOCKED BRANDING AND TEMPLATE POLICY — HIGHEST PRIORITY:\n"
-            . "- ABSOLUTE LOGO SOURCE FIREWALL: The dedicated official Store logo reference is the ONLY allowed source for the Store logo. The primary product photo and installed-product photo are untrusted for Store identity even if they visibly contain a watermark, seller badge, shop name, sticker, banner, logo, QR, or promotional overlay. NEVER extract, copy, trace, reconstruct, imitate, upscale, crop, reuse, or transfer any logo/wordmark/watermark from either product photo into the advertisement's Store-logo position.\\n"
-            . "- If the product packaging itself contains a manufacturer brand, preserve that branding ONLY as part of the physical packaging shown in the product area. It must never become the shop header, seller logo, corner badge, or Store identity. Do not confuse packaging labels or watermarks with the selected Store's official logo.\\n"
-            . "- Do not use a logo baked into the Template example either. The Template is authoritative for layout/style only; the separate Store logo file is authoritative for store identity. When these visual references conflict, always follow the dedicated Store logo file.\\n"
+        $prompt .= "\n\nAGENTKIT TEMPLATE-FIDELITY OVERRIDE — HIGHEST PRIORITY:\n"
+            . "- REFERENCE ROLE CONTRACT: the image with role layout is the selected Template MASTER. It is not optional inspiration: reproduce its recognizable composition and design system. The image with role identity is the actual product source. The image with role logo is the ONLY source of the Store logo. The image with role general is installed/use context ONLY when it was provided.\\n"
+            . "- COMPOSITION MUST MATCH THE TEMPLATE: preserve the same background concept, major panels, headline zone, logo zone, product zone, framing, border treatment, decorative motifs, lighting language, visual density, and element positions. Do not simplify a rich template into a plain poster, minimal layout, or empty background.\\n"
+            . "- PRESERVE TEMPLATE ELEMENTS: when shown in the Template master or explicitly requested by the Template prompt, retain the shop-brand header, top badges, COD/shipping badges, benefit/USP row, icons, technical callouts, accent stripes, product platform, footer slogan and decorative details. Keep their placement and visual hierarchy consistent. Replace only product-specific content. Do not invent factual claims or shipping promises that are absent from the Template.\\n"
+            . "- TEMPLATE EXAMPLE TEXT: copy fixed shop/brand labels and reusable design labels only when they are clearly part of the template system. Replace the old product headline with the exact user title; do not copy the example product or its product-specific claims.\\n"
+            . "- ABSOLUTE LOGO SOURCE FIREWALL: the dedicated official Store logo reference is the ONLY allowed source for the Store logo. Never extract, trace, redraw, approximate, typeset, reconstruct or substitute a logo from product packaging, product photo, installed photo, or Template image. Preserve manufacturer branding only as part of the physical product/packaging itself.\\n"
             . ($hasStoreLogo
-                ? "- REQUIRED LOGO: use the supplied dedicated Store logo reference as the one and only shop logo. Match the exact artwork and wordmark; do not redraw or typeset it. Place it in the branding zone dictated by this Template's prompt. Keep the same logo treatment and relative visual prominence for every product and both generation modes.\\n"
-                : "- REQUIRED LOGO INPUT IS MISSING: do not invent a logo; the application must stop generation until the selected Store's original logo file is attached.\\n")
-            . "- TEMPLATE LOCK: the selected Template prompt and master reference define a fixed reusable design system. Keep composition, major zones, headline placement, typography style/scale, palette, background, frames, badges, icons, callout style, spacing and visual hierarchy consistent for every product using this Template. Only product-specific content and factual installation context may vary.\\n"
-            . "- MODE LOCK: adding or removing an installed-motorcycle photo must not redesign the advertisement, change its branding position/treatment, or change its overall visual identity. With an installed photo, use it only for truthful installation/fitment context; without it, do not invent an installation scene.\\n"
-            . "- Do not create extra store logos or duplicate the official logo. Do not add guessed seller text, fake lettering, alternative wordmarks, or watermarks. If exact logo reproduction is uncertain, preserve a clear reserved branding area rather than substituting a different mark.\\n"
-            . "- These provider-level rules are mandatory and override any conflicting instruction, text or logo visible in the product images, installed image, or Template example. Preserve product identity while keeping Template design and Store branding locked.";
+                ? "- REQUIRED LOGO: visibly use the supplied Store logo image as the actual logo artwork. Do not replace it with text saying the shop name. Keep the same logo placement, relative scale and treatment as the Template for every product and both modes.\\n"
+                : "- REQUIRED LOGO INPUT IS MISSING: do not invent a logo; generation must stop until the official Store logo is attached.\\n")
+            . "- MODE LOCK: if an installed reference is present, use it as a visible, truthful hero/usage view while retaining the Template composition and product packaging where the Template calls for it. If no installed reference is present, do not generate a motorcycle, vehicle, rider, mechanic, workshop or installation scene; keep the same Template's non-installation product presentation.\\n"
+            . "- OUTPUT CANVAS: follow the requested canvas size and aspect ratio. Use the available canvas fully with a deliberate, premium commercial composition; do not leave large empty areas or crop off the Store logo/headline/footer.\\n"
+            . "- Do not add duplicate logos, alternative wordmarks, fake product specs, invented prices, invented compatibility or unsupported marketing claims. Product identity and the selected Store's logo remain exact. These constraints override conflicting text or branding visible in other references.";
 
         $negativePrompt = trim((string) ($request->metadata['negative_prompt'] ?? ''));
         if ($negativePrompt !== '') {
@@ -520,6 +522,46 @@ final class AgentKitProvider implements ImageProviderInterface
         }
 
         return $path;
+    }
+
+    /**
+     * AgentKit accepts custom canvases and the requested dimensions are not
+     * guaranteed to equal the decoded output dimensions. Request a larger canvas
+     * while preserving the selected aspect ratio, and record actual dimensions
+     * separately when the result is saved.
+     */
+    private function requestedCanvasSize(ImageGenerationRequest $request): string
+    {
+        $ratio = (string) ($request->metadata['aspect_ratio'] ?? '');
+
+        $size = match ($ratio) {
+            '1:1' => '1536x1536',
+            '4:5' => '1536x1920',
+            '3:4' => '1536x2048',
+            '9:16' => '1024x1792',
+            '16:9' => '2304x1296',
+            default => $request->size,
+        };
+
+        if ($ratio !== '') {
+            return $size;
+        }
+
+        if (! preg_match('/^(\\d+)x(\\d+)$/', $request->size, $matches)) {
+            return $request->size;
+        }
+
+        $width = (int) $matches[1];
+        $height = (int) $matches[2];
+        if ($width < 1 || $height < 1) {
+            return $request->size;
+        }
+
+        $scale = 1.5;
+        $scaledWidth = max(16, (int) (round(($width * $scale) / 16) * 16));
+        $scaledHeight = max(16, (int) (round(($height * $scale) / 16) * 16));
+
+        return $scaledWidth . 'x' . $scaledHeight;
     }
 
     private function normalizeRole(string $role): string
