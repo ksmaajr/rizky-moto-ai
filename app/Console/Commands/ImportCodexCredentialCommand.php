@@ -58,6 +58,7 @@ class ImportCodexCredentialCommand extends Command
         }
 
         $token = trim($token);
+        $metadata = $this->extractAccountMetadata($auth);
         if (strlen($token) > 65535) {
             unset($token, $auth);
             $this->error('Access token memiliki ukuran tidak wajar. Import dibatalkan.');
@@ -80,11 +81,15 @@ class ImportCodexCredentialCommand extends Command
 
         unset($existing, $storedCredential);
 
-        $name = trim((string) $this->option('name'));
-        if ($name === '') {
+        $requestedName = trim((string) $this->option('name'));
+        if ($requestedName === '') {
             $this->error('Nama akun tidak boleh kosong.');
             return self::FAILURE;
         }
+
+        // Prefer the username supplied by Codex when it exists. If not, retain
+        // the friendly fallback; do not fabricate identity fields from the email. 
+        $name = $metadata['username'] ?: $requestedName;
 
         // Keep account labels unique even when this command is invoked directly
         // rather than through the Settings Add Account flow.
@@ -107,6 +112,8 @@ class ImportCodexCredentialCommand extends Command
         $credential = AgentAiCredential::create([
             'user_id' => $userId,
             'name' => $uniqueName,
+            'username' => $metadata['username'],
+            'email' => $metadata['email'],
             'access_token' => $token,
             'is_active' => false,
             'status' => 'pending_validation',
@@ -116,10 +123,120 @@ class ImportCodexCredentialCommand extends Command
 
         $this->components->info('Access token berhasil diimpor ke encrypted storage sebagai PENDING VALIDATION.');
         $this->line('Credential ID: '.$credential->id);
+        $this->line('Codex username: '.($credential->username ?: 'Tidak tersedia dari Codex'));
+        $this->line('Codex email: '.($credential->email ?: 'Tidak tersedia dari Codex'));
         $this->warn('Credential belum aktif. Gunakan tombol Test Token di Settings untuk menjalankan satu live image request yang dapat memakai kuota.');
         $this->line('Catatan: adapter ini membaca struktur auth.json Codex yang bersifat internal dan dapat berubah. Jangan gunakan pada server multi-user tanpa isolasi CODEX_HOME per akun.');
 
         return self::SUCCESS;
+    }
+
+
+    /**
+     * Read optional identity metadata from the Codex auth payload/JWT claims.
+     * These claims are used only for display; auth.json and identity tokens are
+     * never persisted. Codex does not guarantee that either field is present.
+     *
+     * @return array{username: ?string, email: ?string}
+     */
+    private function extractAccountMetadata(array $auth): array
+    {
+        $sources = [];
+
+        foreach ([$auth['profile'] ?? null, $auth['user'] ?? null] as $source) {
+            if (is_array($source)) {
+                $sources[] = $source;
+            }
+        }
+
+        foreach (['id_token', 'access_token'] as $tokenKey) {
+            $jwt = $auth['tokens'][$tokenKey] ?? null;
+            if (! is_string($jwt)) {
+                continue;
+            }
+
+            $parts = explode('.', $jwt);
+            if (count($parts) < 2 || $parts[1] === '') {
+                continue;
+            }
+
+            $payload = strtr($parts[1], '-_', '+/');
+            $payload .= str_repeat('=', (4 - strlen($payload) % 4) % 4);
+            $decoded = base64_decode($payload, true);
+            if (! is_string($decoded)) {
+                continue;
+            }
+
+            try {
+                $claims = json_decode($decoded, true, 32, JSON_THROW_ON_ERROR);
+            } catch (Throwable) {
+                continue;
+            }
+
+            if (! is_array($claims)) {
+                continue;
+            }
+
+            // OpenAI profile claims may be namespaced rather than top-level.
+            foreach ([
+                $claims['profile'] ?? null,
+                $claims['https://api.openai.com/profile'] ?? null,
+                $claims['https://api.openai.com/auth'] ?? null,
+            ] as $nested) {
+                if (is_array($nested)) {
+                    $sources[] = $nested;
+                }
+            }
+
+            $sources[] = $claims;
+        }
+
+        $username = $this->firstMetadataValue($sources, [
+            'preferred_username',
+            'username',
+            'user_name',
+            'nickname',
+            'handle',
+        ]);
+
+        $email = $this->firstMetadataValue($sources, ['email']);
+        if ($email !== null) {
+            $email = filter_var($email, FILTER_VALIDATE_EMAIL) ? mb_strtolower($email) : null;
+        }
+
+        // Never treat an email address as a username.
+        if ($username !== null && filter_var($username, FILTER_VALIDATE_EMAIL)) {
+            $username = null;
+        }
+
+        return [
+            'username' => $username !== null ? mb_substr($username, 0, 190) : null,
+            'email' => $email !== null ? mb_substr($email, 0, 254) : null,
+        ];
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $sources
+     */
+    private function firstMetadataValue(array $sources, array $keys): ?string
+    {
+        foreach ($sources as $source) {
+            foreach ($keys as $key) {
+                $value = $source[$key] ?? null;
+                if (! is_string($value) || trim($value) === '') {
+                    continue;
+                }
+
+                $value = trim($value);
+                if (mb_strlen($value) > 254 || preg_match('/[\\x00-\\x1F\\x7F]/u', $value)) {
+                    continue;
+                }
+
+                return $value;
+            }
+        }
+
+        return null;
     }
 
     private function resolveAuthPath(): string
