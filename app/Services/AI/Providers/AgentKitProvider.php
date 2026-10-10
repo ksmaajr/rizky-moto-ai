@@ -36,10 +36,6 @@ final class AgentKitProvider implements ImageProviderInterface
     }
 
     /**
-     * Perform an explicit live credential smoke test. Agent Kit has no separate
-     * auth-only endpoint, so this intentionally consumes one live image request.
-     */
-    /**
      * Validate the Codex session with a minimal text-only request. This verifies
      * real server-side token acceptance without invoking image generation or
      * consuming image-generation quota.
