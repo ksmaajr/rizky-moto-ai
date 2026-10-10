@@ -184,7 +184,6 @@ final class AgentAiCredentialPool
 
         if (
             str_contains($body, '401')
-            || str_contains($body, '403')
             || str_contains($body, 'unauthorized')
             || str_contains($body, 'invalid token')
         ) {
@@ -193,6 +192,18 @@ final class AgentAiCredentialPool
                 'retry' => true,
                 'seconds' => 0,
                 'reason' => 'invalid_credential',
+            ];
+        }
+
+        // HTTP 403 means the request was forbidden, not necessarily that the
+        // OAuth token is invalid. Keep the credential out of the invalid bucket
+        // so account-level/endpoint permissions do not poison the token pool.
+        if (str_contains($body, '403') || str_contains($body, 'forbidden')) {
+            return [
+                'status' => 'failed',
+                'retry' => false,
+                'seconds' => 0,
+                'reason' => 'provider_access_denied',
             ];
         }
 
