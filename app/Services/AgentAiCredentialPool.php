@@ -200,6 +200,22 @@ final class AgentAiCredentialPool
             ];
         }
 
+        // The Codex Responses backend can reject the hosted image tool even when
+        // the upstream AgentKit payload correctly includes it. This is a protocol /
+        // backend capability mismatch, not a credential failure; do not rotate
+        // through other tokens or put this account into cooldown for the same error.
+        if (
+            str_contains($body, "tool choice 'image_generation' not found in 'tools' parameter")
+            || str_contains($body, 'tool_choice') && str_contains($body, 'image_generation') && str_contains($body, 'not found in')
+        ) {
+            return [
+                'status' => 'failed',
+                'retry' => false,
+                'seconds' => 0,
+                'reason' => 'unsupported_image_generation_tool',
+            ];
+        }
+
         // HTTP 403 means the request was forbidden, not necessarily that the
         // OAuth token is invalid. Keep the credential out of the invalid bucket
         // so account-level/endpoint permissions do not poison the token pool.
