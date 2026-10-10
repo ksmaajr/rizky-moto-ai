@@ -86,11 +86,27 @@ class ImportCodexCredentialCommand extends Command
             return self::FAILURE;
         }
 
+        // Keep account labels unique even when this command is invoked directly
+        // rather than through the Settings Add Account flow.
+        $existingNames = AgentAiCredential::query()
+            ->where(function ($query) use ($userId) {
+                $query->where('user_id', $userId)->orWhereNull('user_id');
+            })
+            ->pluck('name')
+            ->filter()
+            ->map(static fn ($value): string => mb_strtolower(trim((string) $value)))
+            ->all();
+        $baseName = mb_substr($name, 0, 110);
+        $uniqueName = $baseName;
+        for ($suffix = 2; in_array(mb_strtolower($uniqueName), $existingNames, true); $suffix++) {
+            $uniqueName = mb_substr($baseName, 0, 120 - mb_strlen((string) $suffix) - 1) . ' ' . $suffix;
+        }
+
         // Never persist auth.json, refresh tokens, ID tokens, or account IDs.
         // The extracted access token is encrypted by AgentAiCredential's cast.
         $credential = AgentAiCredential::create([
             'user_id' => $userId,
-            'name' => mb_substr($name, 0, 120),
+            'name' => $uniqueName,
             'access_token' => $token,
             'is_active' => false,
             'status' => 'pending_validation',
