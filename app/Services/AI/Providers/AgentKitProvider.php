@@ -40,6 +40,11 @@ final class AgentKitProvider implements ImageProviderInterface
      */
     public function testCredential(\App\Models\AgentAiCredential $credential): array
     {
+        // A live image smoke test can take longer than PHP's default 30-second
+        // web-request limit. Align the request budget with the subprocess timeout.
+        $processTimeout = max(30, (int) config('services.agent_ai.timeout', 300));
+        @set_time_limit($processTimeout + 30);
+
         $output = storage_path('app/agent-ai/tests/' . $credential->id . '-' . uniqid('', true) . '.png');
         $promptFile = storage_path('app/agent-ai/tests/' . $credential->id . '-' . uniqid('', true) . '.txt');
 
