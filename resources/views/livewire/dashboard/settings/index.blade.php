@@ -476,7 +476,7 @@
 
                                 {{-- Worker controls live in the dedicated sidebar page. Keep this panel focused on credentials. --}}
 
-                                <div class="rms-agent-credential-list">
+                                <div class="rms-agent-credential-list" wire:poll.10s="loadAgentAiCredentials">
                                     @forelse ($agentAiCredentials as $credential)
                                         @php
                                             $credentialStatus = (string) ($credential['status'] ?? 'active');
