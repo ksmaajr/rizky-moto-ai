@@ -314,6 +314,55 @@ final class AgentKitProvider implements ImageProviderInterface
                         $lastError = $detail;
                         $lastExitCode = $exitCode;
 
+                        // Codex Responses currently rejects AgentKit's hosted
+                        // image_generation tool_choice. This is a protocol
+                        // incompatibility, not an account failure or rate limit.
+                        // Do not rotate through other accounts or classify the
+                        // credential as failed/cooldown for the same deterministic 400.
+                        if (str_contains(
+                            strtolower($detail),
+                            "tool choice 'image_generation' not found in 'tools' parameter"
+                        )) {
+                            $message = 'AgentKit belum kompatibel dengan endpoint Codex yang digunakan: server menolak tool image_generation (HTTP 400). Ini bukan bukti token salah atau limit akun. Percobaan dihentikan agar tidak menghabiskan request pada akun lain. Gunakan Vercel untuk sementara; perbaikan penuh memerlukan dukungan protokol image-generation yang kompatibel pada AgentKit.';
+
+                            \\App\\Models\\AgentAiCredential::query()
+                                ->whereKey($credential['id'])
+                                ->where(function ($query) use ($request) {
+                                    $query->where('user_id', $request->userId)
+                                        ->orWhereNull('user_id');
+                                })
+                                ->update([
+                                    'is_active' => false,
+                                    'status' => 'pending_validation',
+                                    'cooldown_until' => null,
+                                    'last_error_type' => 'codex_image_tool_unsupported',
+                                    'last_error' => mb_substr($message, 0, 2000),
+                                    'last_exit_code' => $exitCode,
+                                    'updated_at' => now(),
+                                ]);
+
+                            $this->activity->error(
+                                action: 'ai_provider_request',
+                                category: 'api',
+                                title: 'AgentKit/Codex tidak kompatibel.',
+                                description: $message,
+                                metadata: [
+                                    'provider' => $this->name(),
+                                    'model' => $model,
+                                    'generation_id' => $request->generationId,
+                                    'agent_credential_id' => $credential['id'],
+                                    'agent_credential_name' => $credential['name'],
+                                    'attempt' => $attempt,
+                                    'max_attempts' => $maxAttempts,
+                                    'exit_code' => $exitCode,
+                                    'failure_reason' => 'codex_image_tool_unsupported',
+                                    'retryable' => false,
+                                ],
+                            );
+
+                            throw new RuntimeException($message);
+                        }
+
                         $classification = $this->credentialPool->reportFailure(
                             $credential['id'],
                             $request->userId,
