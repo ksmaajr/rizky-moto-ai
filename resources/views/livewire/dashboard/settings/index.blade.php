@@ -447,13 +447,13 @@
                                         type="button"
                                         class="rms-ai-secondary-button rms-agent-add-button"
                                         wire:click="beginCodexLogin"
+                                        wire:loading.attr="disabled"
+                                        wire:target="beginCodexLogin"
                                         aria-controls="agent-codex-login-bridge"
                                     >
+                                        <span class="rms-agent-add-plus" aria-hidden="true">+</span>
                                         <span class="rms-agent-add-label" x-text="'+ Add Account'"></span>
-                                        <small class="rms-agent-add-meta">
-                                            <span>Encrypted storage</span>
-                                            <i aria-hidden="true"></i>
-                                        </small>
+                                        <span class="rms-agent-add-loading" wire:loading wire:target="beginCodexLogin">Opening login…</span>
                                     </button>
                                 </div>
 
@@ -5297,5 +5297,74 @@
 @media(prefers-reduced-motion:reduce){
  .rms-provider-block-agent .rms-agent-credential-card{transition:none}
  .rms-provider-block-agent .rms-agent-credential-card:hover{transform:none}
+}
+</style>
+
+
+<style>
+/* Final Agent AI interaction polish: compact actions, clear hierarchy, tactile feedback. */
+.rms-provider-block-agent .rms-agent-credential-toolbar{
+ display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px 20px;
+}
+.rms-provider-block-agent .rms-agent-credential-toolbar>div:first-child{flex:1;max-width:440px}
+.rms-provider-block-agent .rms-agent-credential-toolbar>div:first-child strong{display:block;font-size:11px;font-weight:850;color:#27272a;margin-bottom:4px}
+.rms-provider-block-agent .rms-agent-credential-toolbar>div:first-child small{display:block;font-size:10px;line-height:1.55;color:#71717a}
+.rms-provider-block-agent .rms-agent-add-button{
+ flex:0 0 auto!important;width:auto!important;min-width:148px;min-height:42px;padding:0 16px!important;
+ display:inline-flex!important;align-items:center;justify-content:center;gap:9px;
+ border:1px solid #27272a!important;border-radius:11px!important;background:#27272a!important;color:#fff!important;
+ box-shadow:0 4px 10px rgba(24,24,27,.10);font-size:11px!important;font-weight:800!important;
+ transition:background .18s ease,border-color .18s ease,box-shadow .18s ease,transform .18s ease;
+}
+.rms-provider-block-agent .rms-agent-add-button:hover:not(:disabled){background:#09090b!important;border-color:#09090b!important;box-shadow:0 7px 16px rgba(24,24,27,.17);transform:translateY(-1px)}
+.rms-provider-block-agent .rms-agent-add-button:active:not(:disabled){transform:translateY(0) scale(.98)}
+.rms-provider-block-agent .rms-agent-add-button:disabled{opacity:.6;cursor:wait}
+.rms-agent-add-plus{display:grid;place-items:center;width:21px;height:21px;border:1px solid rgba(255,255,255,.24);border-radius:7px;font-size:17px;line-height:1;font-weight:500}
+.rms-agent-add-label{font-size:11px;white-space:nowrap}
+.rms-agent-add-loading{font-size:10px;white-space:nowrap}
+.rms-provider-block-agent .rms-agent-login-bridge>.rms-agent-save-button{
+ display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:44px;padding:0 18px;
+ border:1px solid #18181b;border-radius:11px;background:#18181b;color:#fff;font-size:10px;font-weight:800;
+ box-shadow:0 5px 13px rgba(24,24,27,.12);transition:background .18s ease,box-shadow .18s ease,transform .18s ease;
+}
+.rms-provider-block-agent .rms-agent-login-bridge>.rms-agent-save-button:hover:not(:disabled){background:#09090b;box-shadow:0 8px 18px rgba(24,24,27,.18);transform:translateY(-1px)}
+.rms-provider-block-agent .rms-agent-login-bridge>.rms-agent-save-button:active:not(:disabled){transform:scale(.98)}
+.rms-provider-block-agent .rms-agent-credential-actions{align-items:center;gap:9px}
+.rms-provider-block-agent .rms-agent-credential-actions button{
+ min-height:39px;min-width:108px;padding:0 15px;border:1px solid transparent;border-radius:10px;
+ display:inline-flex;align-items:center;justify-content:center;gap:7px;font-size:10px;font-weight:800;
+ letter-spacing:-.01em;cursor:pointer;transition:transform .17s ease,box-shadow .17s ease,background .17s ease,border-color .17s ease;
+}
+.rms-provider-block-agent .rms-agent-test-button{background:#f5f3ff;border-color:#ddd6fe;color:#6d28d9;box-shadow:0 2px 4px rgba(109,40,217,.04)}
+.rms-provider-block-agent .rms-agent-test-button:hover:not(:disabled){background:#ede9fe;border-color:#c4b5fd;box-shadow:0 5px 12px rgba(109,40,217,.10);transform:translateY(-1px)}
+.rms-provider-block-agent .rms-agent-toggle-button.is-enabled{background:#ecfdf3;border-color:#bbf7d0;color:#15803d}
+.rms-provider-block-agent .rms-agent-toggle-button.is-enabled:hover:not(:disabled){background:#dcfce7;border-color:#86efac;box-shadow:0 5px 12px rgba(22,163,74,.09);transform:translateY(-1px)}
+.rms-provider-block-agent .rms-agent-toggle-button.is-disabled{background:#16834a;border-color:#16834a;color:#fff}
+.rms-provider-block-agent .rms-agent-toggle-button.is-disabled:hover:not(:disabled){background:#116b3c;border-color:#116b3c;box-shadow:0 5px 12px rgba(22,131,74,.15);transform:translateY(-1px)}
+.rms-provider-block-agent .rms-agent-delete-button{flex:0 0 39px!important;width:39px;min-width:39px!important;padding:0!important;background:#fff5f5;border-color:#fecaca!important;color:#dc2626;font-size:18px!important;box-shadow:none}
+.rms-provider-block-agent .rms-agent-delete-button:hover:not(:disabled){background:#fee2e2;border-color:#fca5a5!important;box-shadow:0 5px 12px rgba(220,38,38,.09);transform:translateY(-1px)}
+.rms-provider-block-agent .rms-agent-credential-actions button:active:not(:disabled){transform:translateY(0) scale(.98)}
+.rms-provider-block-agent .rms-agent-credential-actions button:disabled{opacity:.55;cursor:wait;box-shadow:none;transform:none}
+.rms-provider-block-agent .rms-agent-credential-card{box-shadow:0 2px 7px rgba(24,24,27,.025)}
+.rms-provider-block-agent .rms-agent-credential-card:hover{box-shadow:0 9px 24px rgba(24,24,27,.055)}
+.rms-provider-block-agent .rms-agent-status{padding:5px 8px;border-radius:999px;font-size:8px;letter-spacing:.01em}
+.rms-provider-block-agent .rms-agent-cooldown{border:1px solid #fde7a8;background:#fffbeb;color:#a16207}
+.rms-provider-block-agent .rms-agent-login-bridge-status>span{font-size:9px}
+@media(max-width:760px){
+ .rms-provider-block-agent .rms-agent-credential-toolbar{align-items:stretch;flex-direction:column;padding:14px 15px;gap:12px}
+ .rms-provider-block-agent .rms-agent-add-button{width:100%!important;min-height:44px}
+ .rms-provider-block-agent .rms-agent-credential-actions{display:flex;flex-wrap:wrap;justify-content:stretch;gap:8px}
+ .rms-provider-block-agent .rms-agent-credential-actions button{flex:1 1 100px;min-width:0;min-height:42px;padding:0 10px}
+ .rms-provider-block-agent .rms-agent-credential-actions .rms-agent-delete-button{flex:0 0 42px!important;width:42px;min-width:42px!important}
+ .rms-provider-block-agent .rms-agent-login-bridge>.rms-agent-save-button{min-height:44px}
+}
+@media(max-width:390px){
+ .rms-provider-block-agent .rms-agent-credential-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 42px}
+ .rms-provider-block-agent .rms-agent-credential-actions button{width:100%;min-width:0;padding:0 7px;font-size:9px}
+ .rms-provider-block-agent .rms-agent-credential-actions .rms-agent-delete-button{grid-column:auto}
+ .rms-agent-add-loading{font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){
+ .rms-provider-block-agent .rms-agent-add-button,.rms-provider-block-agent .rms-agent-login-bridge>.rms-agent-save-button,.rms-provider-block-agent .rms-agent-credential-actions button{transition:none}
 }
 </style>
