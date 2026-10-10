@@ -84,7 +84,8 @@ if (-not (Test-Path $envFile)) {
 
 $envLines = @(Get-Content $envFile)
 $settings = [ordered]@{
-    "AGENT_AI_PYTHON_BINARY" = '"' + $pythonExe.Replace('"', '\"') + '"'
+    # Dotenv treats backslashes as escape sequences; forward slashes are valid on Windows.
+    "AGENT_AI_PYTHON_BINARY" = $pythonExe.Replace('\', '/')
     "AGENT_AI_MODULE" = "gpt_image25_agent"
     "AGENT_AI_WORKER_DRIVER" = "local"
     "AGENT_AI_QUEUE" = "agentkit"
