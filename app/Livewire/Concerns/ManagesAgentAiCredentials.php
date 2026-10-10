@@ -264,7 +264,7 @@ trait ManagesAgentAiCredentials
 
         if ($statusPath !== '' && is_file($statusPath) && is_readable($statusPath)) {
             $rawStatus = @file_get_contents($statusPath);
-            $fileStatus = is_string($rawStatus) ? json_decode($rawStatus, true) : null;
+            $fileStatus = is_string($rawStatus) ? json_decode(ltrim($rawStatus, "\xEF\xBB\xBF\r\n \t"), true) : null;
             if (is_array($fileStatus) && ($fileStatus['session_id'] ?? null) === ($status['session_id'] ?? null)) {
                 $status = array_merge($status, $fileStatus);
                 Cache::put($this->codexLoginCacheKey(), $status, now()->addMinutes(30));
@@ -403,8 +403,8 @@ trait ManagesAgentAiCredentials
             "'cli_auth_credentials_store = \"file\"' | Set-Content -LiteralPath '" . $escape($accountHome . DIRECTORY_SEPARATOR . 'config.toml') . "' -Encoding utf8",
             "\$codex = '" . $escape($binary) . "'",
             "& \$codex login",
-            "\$loginExitCode = \$LASTEXITCODE; if (\$loginExitCode -ne 0) { " . "Set-LoginStatus 'failed' 'Login gagal atau dibatalkan. Credential tidak diimpor.'" . "; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue; Write-Host 'Login gagal atau dibatalkan. Credential tidak diimpor.' -ForegroundColor Red; Read-Host 'Tekan Enter untuk menutup'; exit \$loginExitCode }",
-            "if (-not (Test-Path -LiteralPath '" . $escape($authFile) . "')) { " . "Set-LoginStatus 'failed' 'File auth.json tidak ditemukan; akun tidak diimpor.'" . "; Write-Host 'AUTH.JSON TIDAK DITEMUKAN pada CODEX_HOME terisolasi. CLI mungkin tidak menghormati CODEX_HOME atau tidak memakai file auth store. Akun tidak diimpor.' -ForegroundColor Red; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue; Read-Host 'Tekan Enter untuk menutup'; exit 2 }",
+            "\$loginExitCode = \$LASTEXITCODE; if (\$loginExitCode -ne 0) { " . "Set-LoginStatus 'failed' 'Login gagal atau dibatalkan. Credential tidak diimpor.'" . "; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue; Write-Host 'Login gagal atau dibatalkan. Credential tidak diimpor.' -ForegroundColor Red; exit \$loginExitCode }",
+            "if (-not (Test-Path -LiteralPath '" . $escape($authFile) . "')) { " . "Set-LoginStatus 'failed' 'File auth.json tidak ditemukan; akun tidak diimpor.'" . "; Write-Host 'AUTH.JSON TIDAK DITEMUKAN pada CODEX_HOME terisolasi. CLI mungkin tidak menghormati CODEX_HOME atau tidak memakai file auth store. Akun tidak diimpor.' -ForegroundColor Red; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue; exit 2 }",
             "Set-LoginStatus 'importing' 'Login berhasil. Menyimpan credential terenkripsi...'",
             $importCommand,
             "if (\$LASTEXITCODE -eq 0) { " . "Set-LoginStatus 'completed' 'Login dan import selesai. Jalankan Test Token untuk validasi AgentKit.'" . "; Write-Host 'Import selesai. Buka Settings dan jalankan Test Token.' -ForegroundColor Green; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue } else { " . "Set-LoginStatus 'failed' 'Import credential gagal. Sesi lokal sementara dihapus demi keamanan.'" . "; Write-Host 'Import gagal. Sesi lokal sementara dihapus demi keamanan; lihat pesan error di atas.' -ForegroundColor Red; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue }",
