@@ -112,13 +112,31 @@ trait ManagesAgentAiCredentials
     }
 
     /**
-     * Codex CLI owns the official OAuth flow. Do not claim login succeeded or
-     * import an undocumented auth.json format from the Laravel web process.
+     * Start the official Codex CLI browser login in a separate local PowerShell
+     * window, then import the resulting file-based ChatGPT session.
+     *
+     * This bridge is intentionally limited to local Windows development. A
+     * remote web server cannot safely open a browser on the user's workstation.
      */
     public function beginCodexLogin(): void
     {
+        if (PHP_OS_FAMILY !== 'Windows') {
+            $this->dispatch(
+                'toast',
+                type: 'warning',
+                title: 'Login perlu dilakukan di host AgentKit',
+                message: 'Login browser otomatis saat ini hanya didukung pada development lokal Windows. Jalankan codex login pada host AgentKit, lalu import sesi melalui prosedur host tersebut.'
+            );
+            return;
+        }
+
         if (! $this->codexCliIsAvailable()) {
-            $this->dispatch('toast', type: 'warning', title: 'Codex CLI belum tersedia', message: 'Install Codex CLI pada host AgentKit, lalu jalankan codex login. Akun belum ditambahkan.');
+            $this->dispatch(
+                'toast',
+                type: 'error',
+                title: 'Codex CLI tidak terdeteksi',
+                message: 'Atur SERVICES_AGENT_AI_CODEX_CLI_BINARY ke path codex.cmd yang valid, lalu muat ulang Settings.'
+            );
             return;
         }
 
@@ -126,19 +144,74 @@ trait ManagesAgentAiCredentials
         $accountName = trim($this->newAgentCredentialName) !== ''
             ? mb_substr(trim($this->newAgentCredentialName), 0, 120)
             : 'Codex Account';
-        $safeName = str_replace('"', '', $accountName);
-        $command = sprintf(
-            'php artisan agent-ai:codex-import --user-id=%d --name="%s"',
+
+        $binary = trim((string) config('services.agent_ai.codex_cli_binary', ''), " \\t\\n\\r\\0\\x0B\\\"'");
+        if ($binary === '') {
+            $binary = 'codex.cmd';
+        }
+
+        $escape = static fn (string $value): string => str_replace("'", "''", $value);
+        $scriptPath = storage_path('framework/agentkit-login-' . $userId . '-' . bin2hex(random_bytes(5)) . '.ps1');
+        $phpBinary = PHP_BINARY;
+        $basePath = base_path();
+        $importCommand = sprintf(
+            "& '%s' artisan agent-ai:codex-import --user-id=%d --name '%s'",
+            $escape($phpBinary),
             $userId,
-            $safeName
+            $escape($accountName)
         );
 
-        $this->dispatch(
-            'toast',
-            type: 'info',
-            title: 'Sesi Codex siap diimpor',
-            message: 'Login resmi tetap dilakukan di terminal host ini: jalankan codex login, lalu jalankan perintah berikut: ' . $command . '. Akun akan Pending Validation sampai Test Token berhasil. Bridge file-based ini eksperimental.'
-        );
+        $script = implode("\r\n", [
+            "$ErrorActionPreference = 'Stop'",
+            "Set-Location '" . $escape($basePath) . "'",
+            "Write-Host 'Rizky Moto AI - ChatGPT / Codex login' -ForegroundColor Cyan",
+            "Write-Host 'Selesaikan login pada browser yang dibuka Codex CLI.'",
+            "$codex = '" . $escape($binary) . "'",
+            "& $codex login",
+            "if ($LASTEXITCODE -ne 0) { Write-Host 'Login gagal atau dibatalkan. Credential tidak diimpor.' -ForegroundColor Red; Read-Host 'Tekan Enter untuk menutup'; exit $LASTEXITCODE }",
+            $importCommand,
+            "if ($LASTEXITCODE -eq 0) { Write-Host 'Import selesai. Buka Settings dan jalankan Test Token.' -ForegroundColor Green }",
+            "Read-Host 'Tekan Enter untuk menutup jendela ini'",
+            "",
+        ]);
+
+        if (! is_dir(dirname($scriptPath))) {
+            @mkdir(dirname($scriptPath), 0770, true);
+        }
+
+        if (file_put_contents($scriptPath, $script, LOCK_EX) === false) {
+            $this->dispatch('toast', type: 'error', title: 'Tidak dapat menyiapkan login', message: 'Script login tidak dapat ditulis ke storage/framework.');
+            return;
+        }
+
+        try {
+            $result = Process::timeout(5)->run([
+                'powershell.exe',
+                '-NoProfile',
+                '-NonInteractive',
+                '-ExecutionPolicy',
+                'Bypass',
+                '-Command',
+                "Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File','" . str_replace("'", "''", $scriptPath) . "')",
+            ]);
+
+            if ($result->failed()) {
+                @unlink($scriptPath);
+                report(new \\RuntimeException(trim($result->errorOutput() ?: $result->output())));
+                $this->dispatch('toast', type: 'error', title: 'Jendela login gagal dibuka', message: 'PowerShell tidak dapat membuka jendela login Codex. Jalankan codex login secara manual pada terminal host lokal.');
+                return;
+            }
+
+            $this->dispatch(
+                'toast',
+                type: 'success',
+                title: 'Jendela login Codex dibuka',
+                message: 'Selesaikan login ChatGPT pada jendela PowerShell yang baru. Setelah login berhasil, sesi akan diimpor sebagai Pending Validation; jalankan Test Token sebelum mengaktifkannya.'
+            );
+        } catch (\\Throwable $e) {
+            report($e);
+            $this->dispatch('toast', type: 'error', title: 'Login Codex gagal dimulai', message: 'Periksa log aplikasi dan pastikan aplikasi berjalan pada sesi Windows interaktif yang sama.');
+        }
     }
 
     private function codexCliIsAvailable(): bool
