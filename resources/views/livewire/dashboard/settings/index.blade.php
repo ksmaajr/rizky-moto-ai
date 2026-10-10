@@ -521,6 +521,10 @@
                                             @endif
 
                                             <div class="rms-agent-credential-actions">
+                                                <button type="button" class="rms-agent-monitor-button" wire:click="openAgentCredentialMonitoring({{ (int) $credential['id'] }})" wire:loading.attr="disabled" wire:target="openAgentCredentialMonitoring({{ (int) $credential['id'] }})">
+                                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12s3.3-6 9.5-6 9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.7"/></svg>
+                                                    <span>Monitoring</span>
+                                                </button>
                                                 <button type="button" class="rms-agent-test-button" wire:click="testAgentAiCredential({{ (int) $credential['id'] }})" wire:loading.attr="disabled" wire:target="testAgentAiCredential({{ (int) $credential['id'] }})">
                                                     <span class="rms-agent-action-icon" aria-hidden="true">↗</span>
                                                     <span wire:loading.remove wire:target="testAgentAiCredential({{ (int) $credential['id'] }})">Test token</span>
@@ -595,6 +599,77 @@
                                         </div>
                                     </div>
                                 </template>
+
+                                @if ($agentCredentialMonitoringOpen && !empty($selectedAgentCredentialMonitoring))
+                                    <div class="rms-agent-monitor-overlay" wire:key="agent-monitor-{{ $selectedAgentCredentialMonitoring['id'] }}" role="dialog" aria-modal="true" aria-label="AgentKit account monitoring">
+                                        <button type="button" class="rms-agent-monitor-backdrop" wire:click="closeAgentCredentialMonitoring" aria-label="Close monitoring"></button>
+                                        <section class="rms-agent-monitor-drawer">
+                                            <header class="rms-agent-monitor-header">
+                                                <div class="rms-agent-monitor-heading">
+                                                    <span class="rms-agent-monitor-eyebrow">ACCOUNT MONITORING</span>
+                                                    <h2>{{ $selectedAgentCredentialMonitoring['name'] }}</h2>
+                                                    <p>Health, request metrics, authentication signals, and recent activity for this account.</p>
+                                                </div>
+                                                <button type="button" class="rms-agent-monitor-close" wire:click="closeAgentCredentialMonitoring" aria-label="Close drawer">×</button>
+                                            </header>
+                                            @php
+                                                $monitorStatus = (string) ($selectedAgentCredentialMonitoring['status'] ?? 'unknown');
+                                                $monitorStatusLabel = match ($monitorStatus) {
+                                                    'cooldown' => 'Cooldown',
+                                                    'invalid' => 'Invalid authentication',
+                                                    'exhausted' => 'Limit / exhausted',
+                                                    'error' => 'Error',
+                                                    'disabled' => 'Disabled',
+                                                    'pending_validation' => 'Pending validation',
+                                                    default => !empty($selectedAgentCredentialMonitoring['is_active']) ? 'Healthy / enabled' : 'Disabled',
+                                                };
+                                                $monitorSuccessRate = (int) ($selectedAgentCredentialMonitoring['request_count'] ?? 0) > 0
+                                                    ? round(((int) ($selectedAgentCredentialMonitoring['success_count'] ?? 0) / (int) $selectedAgentCredentialMonitoring['request_count']) * 100)
+                                                    : null;
+                                            @endphp
+                                            <div class="rms-agent-monitor-scroll">
+                                                <div class="rms-agent-monitor-status-row">
+                                                    <span class="rms-agent-monitor-status-dot {{ $monitorStatus === 'active' && !empty($selectedAgentCredentialMonitoring['is_active']) ? 'is-healthy' : (in_array($monitorStatus, ['cooldown','pending_validation'], true) ? 'is-warning' : 'is-problem') }}"></span>
+                                                    <div><strong>{{ $monitorStatusLabel }}</strong><small>Current stored credential state</small></div>
+                                                    <button type="button" wire:click="refreshAgentCredentialMonitoring({{ (int) $selectedAgentCredentialMonitoring['id'] }})" wire:loading.attr="disabled" wire:target="refreshAgentCredentialMonitoring" class="rms-agent-monitor-refresh"><span wire:loading.remove wire:target="refreshAgentCredentialMonitoring">↻ Refresh</span><span wire:loading wire:target="refreshAgentCredentialMonitoring">Refreshing…</span></button>
+                                                </div>
+                                                <div class="rms-agent-monitor-metrics">
+                                                    <article><span>Total requests</span><strong>{{ number_format((int) ($selectedAgentCredentialMonitoring['request_count'] ?? 0)) }}</strong><small>Recorded invocations</small></article>
+                                                    <article><span>Success rate</span><strong>{{ $monitorSuccessRate === null ? '—' : $monitorSuccessRate . '%' }}</strong><small>{{ number_format((int) ($selectedAgentCredentialMonitoring['success_count'] ?? 0)) }} successful</small></article>
+                                                    <article><span>Failed requests</span><strong>{{ number_format((int) ($selectedAgentCredentialMonitoring['failure_count'] ?? 0)) }}</strong><small>Recorded failures</small></article>
+                                                    <article><span>Cooldown</span><strong>{{ !empty($selectedAgentCredentialMonitoring['cooldown_until']) ? \\Illuminate\\Support\\Carbon::parse($selectedAgentCredentialMonitoring['cooldown_until'])->format('H:i:s') : '—' }}</strong><small>{{ !empty($selectedAgentCredentialMonitoring['cooldown_until']) ? 'Until local server time' : 'No active cooldown recorded' }}</small></article>
+                                                </div>
+                                                <section class="rms-agent-monitor-section">
+                                                    <div class="rms-agent-monitor-section-head"><div><span>01 / HEALTH &amp; AUTH</span><h3>Account health</h3></div></div>
+                                                    <div class="rms-agent-monitor-details">
+                                                        <div><span>Last activity</span><strong>{{ !empty($selectedAgentCredentialMonitoring['last_used_at']) ? \\Illuminate\\Support\\Carbon::parse($selectedAgentCredentialMonitoring['last_used_at'])->format('d M Y, H:i:s') : 'Never' }}</strong></div>
+                                                        <div><span>Last success</span><strong>{{ !empty($selectedAgentCredentialMonitoring['last_success_at']) ? \\Illuminate\\Support\\Carbon::parse($selectedAgentCredentialMonitoring['last_success_at'])->format('d M Y, H:i:s') : 'Never' }}</strong></div>
+                                                        <div><span>Last failure</span><strong>{{ !empty($selectedAgentCredentialMonitoring['last_failure_at']) ? \\Illuminate\\Support\\Carbon::parse($selectedAgentCredentialMonitoring['last_failure_at'])->format('d M Y, H:i:s') : 'Never' }}</strong></div>
+                                                        <div><span>Last error type</span><strong>{{ $selectedAgentCredentialMonitoring['last_error_type'] ?: 'None recorded' }}</strong></div>
+                                                        <div><span>Last exit code</span><strong>{{ $selectedAgentCredentialMonitoring['last_exit_code'] ?? '—' }}</strong></div>
+                                                        <div><span>Account added</span><strong>{{ !empty($selectedAgentCredentialMonitoring['created_at']) ? \\Illuminate\\Support\\Carbon::parse($selectedAgentCredentialMonitoring['created_at'])->format('d M Y, H:i') : '—' }}</strong></div>
+                                                    </div>
+                                                    @if (!empty($selectedAgentCredentialMonitoring['last_error']))
+                                                        <div class="rms-agent-monitor-error"><strong>Latest error detail</strong><p>{{ $selectedAgentCredentialMonitoring['last_error'] }}</p></div>
+                                                    @endif
+                                                    <p class="rms-agent-monitor-footnote">Quota and reset time are not shown unless AgentKit exposes verified provider data. Status reflects recorded telemetry, not a guaranteed live quota check.</p>
+                                                </section>
+                                                <section class="rms-agent-monitor-section">
+                                                    <div class="rms-agent-monitor-section-head"><div><span>02 / REQUEST TELEMETRY</span><h3>Recent activity</h3></div><small>Latest 25 events</small></div>
+                                                    @forelse ($agentCredentialMonitoringLogs as $monitorLog)
+                                                        <article class="rms-agent-monitor-log">
+                                                            <span class="rms-agent-monitor-log-mark {{ in_array($monitorLog['status'], ['success','ok'], true) ? 'is-success' : (in_array($monitorLog['status'], ['error','failed'], true) ? 'is-error' : 'is-info') }}"><i></i></span>
+                                                            <div class="rms-agent-monitor-log-copy"><strong>{{ $monitorLog['title'] }}</strong><p>{{ $monitorLog['description'] ?: $monitorLog['action'] }}</p><small>{{ !empty($monitorLog['created_at']) ? \\Illuminate\\Support\\Carbon::parse($monitorLog['created_at'])->format('d M Y, H:i:s') : 'Timestamp unavailable' }}@if (!empty($monitorLog['http_status'])) · HTTP {{ $monitorLog['http_status'] }}@endif @if (!empty($monitorLog['duration_ms'])) · {{ $monitorLog['duration_ms'] }} ms @endif @if (!is_null($monitorLog['exit_code'])) · Exit {{ $monitorLog['exit_code'] }}@endif</small></div>
+                                                        </article>
+                                                    @empty
+                                                        <div class="rms-agent-monitor-empty"><span>◷</span><strong>No account activity yet</strong><p>Events will appear here when this credential is tested or used by a generation request.</p></div>
+                                                    @endforelse
+                                                </section>
+                                            </div>
+                                            <footer class="rms-agent-monitor-footer"><span><i></i> Account-specific telemetry</span><button type="button" wire:click="closeAgentCredentialMonitoring">Done</button></footer>
+                                        </section>
+                                    </div>
+                                @endif
 
                                 <div class="rms-agent-test-note">
                                     <span>!</span>
