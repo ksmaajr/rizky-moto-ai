@@ -122,7 +122,23 @@ trait ManagesAgentAiCredentials
             return;
         }
 
-        $this->dispatch('toast', type: 'info', title: 'Satu langkah lagi: import sesi Codex', message: 'Jalankan codex login pada terminal mesin yang sama dengan Laravel, lalu jalankan php artisan agent-ai:codex-import --user-id=ID_USER --name="Nama Akun". Akun masuk sebagai Pending Validation dan baru aktif setelah Test Token berhasil. Bridge file-based ini eksperimental.');
+        $userId = (int) Auth::id();
+        $accountName = trim($this->newAgentCredentialName) !== ''
+            ? mb_substr(trim($this->newAgentCredentialName), 0, 120)
+            : 'Codex Account';
+        $safeName = str_replace('"', '', $accountName);
+        $command = sprintf(
+            'php artisan agent-ai:codex-import --user-id=%d --name="%s"',
+            $userId,
+            $safeName
+        );
+
+        $this->dispatch(
+            'toast',
+            type: 'info',
+            title: 'Sesi Codex siap diimpor',
+            message: 'Login resmi tetap dilakukan di terminal host ini: jalankan codex login, lalu jalankan perintah berikut: ' . $command . '. Akun akan Pending Validation sampai Test Token berhasil. Bridge file-based ini eksperimental.'
+        );
     }
 
     private function codexCliIsAvailable(): bool
