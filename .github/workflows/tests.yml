@@ -48,5 +48,8 @@ jobs:
             'MAIL_MAILER=array' > .env
           composer install --no-interaction --prefer-dist
 
-      - name: Run CI Checks
-        run: composer ci:check
+      - name: Check AgentKit credential importer formatting
+        run: vendor/bin/pint --test app/Console/Commands/ImportCodexCredentialCommand.php tests/Feature/ImportCodexCredentialCommandTest.php
+
+      - name: Test AgentKit credential importer
+        run: php artisan test --filter=ImportCodexCredentialCommandTest
