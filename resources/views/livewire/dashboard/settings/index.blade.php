@@ -532,18 +532,16 @@
                                                         <strong>{{ $credential['name'] }}</strong>
                                                         <span class="rms-agent-status {{ $credentialStatusClass }}"><i></i>{{ $credentialStatusLabel }}</span>
                                                     </div>
-                                                    @if (!empty($credential['username']) || !empty($credential['email']))
-                                                        <div class="rms-agent-identity">
-                                                            @if (!empty($credential['username']))
-                                                                <span><b>Username</b><em>{{ $credential['username'] }}</em></span>
-                                                            @endif
-                                                            @if (!empty($credential['email']))
-                                                                <span><b>Email</b><em>{{ $credential['email'] }}</em></span>
-                                                            @endif
-                                                        </div>
-                                                    @endif
-                                                    <code>••••••••••••••••••••</code>
-                                                    <small>{{ $credential['request_count'] }} requests · {{ $credential['success_count'] }} success · {{ $credential['failure_count'] }} failed</small>
+                                                    <div class="rms-agent-identity">
+                                                        @if (!empty($credential['username']))
+                                                            <span><b>Username</b><em>{{ $credential['username'] }}</em></span>
+                                                        @endif
+                                                        @if (!empty($credential['email']))
+                                                            <span><b>Email</b><em>{{ $credential['email'] }}</em></span>
+                                                        @endif
+                                                        <span class="rms-agent-token-meta"><b>Token</b><code>••••••••••••••••</code></span>
+                                                    </div>
+                                                    <small class="rms-agent-credential-stats">{{ $credential['request_count'] }} requests · {{ $credential['success_count'] }} success · {{ $credential['failure_count'] }} failed</small>
                                                 </div>
                                             </div>
 
@@ -5981,13 +5979,30 @@
 
 <style>
 /* Optional Codex identity metadata on credential cards and monitoring drawer. */
-.rms-agent-identity{display:flex;flex-wrap:wrap;align-items:center;gap:6px 13px;margin:7px 0 8px;min-width:0}
-.rms-agent-identity>span{display:inline-flex;align-items:baseline;gap:5px;min-width:0;max-width:100%;font-size:9px;line-height:1.45}
+.rms-provider-block-agent .rms-agent-credential-copy{gap:5px!important}
+.rms-agent-identity{display:flex;flex-wrap:wrap;align-items:center;gap:5px 12px;margin:2px 0 0;min-width:0}
+.rms-agent-identity>span{display:inline-flex;align-items:baseline;gap:5px;min-width:0;max-width:100%;font-size:9px;line-height:1.35}
 .rms-agent-identity b{flex:0 0 auto;color:#a8a29e;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
 .rms-agent-identity em{color:#57534e;font-style:normal;font-weight:650;overflow-wrap:anywhere;word-break:break-word}
+.rms-agent-identity .rms-agent-token-meta{gap:6px}
+.rms-agent-identity .rms-agent-token-meta code{display:inline-flex;align-items:center;padding:2px 6px;border:1px solid #f0eeeb;border-radius:6px;background:#fafaf9;color:#a1a1aa;font-size:8px;letter-spacing:.09em}
+.rms-agent-credential-stats{display:block;margin-top:1px;font-size:9px!important;line-height:1.35!important;color:#85858f!important}
 .rms-agent-monitor-identity{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}
 .rms-agent-monitor-identity>span{display:grid;gap:5px;min-width:0;max-width:100%;padding:10px 12px;border:1px solid rgba(231,229,228,.9);border-radius:11px;background:rgba(255,255,255,.72)}
 .rms-agent-monitor-identity small{font-size:8px;font-weight:850;letter-spacing:.1em;color:#a8a29e}
 .rms-agent-monitor-identity strong{font-size:11px;font-weight:750;color:#44403c;overflow-wrap:anywhere;word-break:break-word}
 @media(max-width:520px){.rms-agent-identity{display:grid;gap:4px}.rms-agent-monitor-identity{display:grid;grid-template-columns:minmax(0,1fr)}}
+</style>
+
+<style>
+/* Keep identity and masked token in one compact metadata row. */
+.rms-provider-block-agent .rms-agent-credential-copy{row-gap:4px!important}
+.rms-provider-block-agent .rms-agent-identity{column-gap:11px;row-gap:4px;margin-top:1px}
+.rms-provider-block-agent .rms-agent-identity>span{min-height:16px}
+.rms-provider-block-agent .rms-agent-identity .rms-agent-token-meta code{max-width:none;letter-spacing:.08em!important;padding:2px 6px!important;font-size:8px!important}
+.rms-provider-block-agent .rms-agent-credential-stats{margin-top:0!important}
+@media(max-width:520px){
+ .rms-provider-block-agent .rms-agent-identity{gap:5px 10px}
+ .rms-provider-block-agent .rms-agent-identity>span{max-width:100%;overflow-wrap:anywhere}
+}
 </style>
