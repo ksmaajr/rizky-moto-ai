@@ -135,7 +135,7 @@ trait ManagesAgentAiCredentials
                 'toast',
                 type: 'error',
                 title: 'Codex CLI tidak terdeteksi',
-                message: 'Atur SERVICES_AGENT_AI_CODEX_CLI_BINARY ke path codex.cmd yang valid, lalu muat ulang Settings.'
+                message: 'Atur CODEX_CLI_BINARY ke path codex.cmd yang valid, lalu muat ulang Settings.'
             );
             return;
         }
@@ -223,7 +223,7 @@ trait ManagesAgentAiCredentials
             $binary = PHP_OS_FAMILY === 'Windows' ? 'codex.cmd' : 'codex';
         }
 
-        if (str_contains($binary, '/') || str_contains($binary, '\\\\')) {
+        if (str_contains($binary, '/') || str_contains($binary, '\\')) {
             return is_file($binary);
         }
 
