@@ -1,28 +1,27 @@
-# AgentKit upstream package path
-
-This directory is only a Python package-path bridge for the installed upstream
-`gpt-image-2-5-agent-kit` distribution.
+# AgentKit Codex transport override
 
 The Laravel AgentKit provider prepends this directory to `PYTHONPATH`.
-`gpt_image25_agent/__init__.py` uses `pkgutil.extend_path` so Python can find
-the installed upstream package modules. There is intentionally **no local
-`client.py` override**: payload construction, Codex Responses requests,
-stream parsing, reference handling, output validation and error behavior are
-provided by upstream AgentKit 0.3.1.
+`gpt_image25_agent/__init__.py` extends the installed upstream package path,
+while this local `client.py` overrides only the upstream network transport.
 
-## Why the native Images override was removed
+## Native Codex Images endpoints
 
-The previous local transport replaced the upstream Responses flow with
-`/backend-api/codex/images/generations` and `/backend-api/codex/images/edits`.
-That alternate path returned HTTP 403 in the application, while a text-only
-Test Token did not validate image-generation access. The upstream project
-documents and validates its own experimental ChatGPT/Codex Responses workflow,
-including a successful Sunburst generation and Flare reference edit for the
-specific configuration recorded in its release evidence.
+The override avoids the unsupported hosted `image_generation` tool selection
+on the Responses endpoint. It posts text-to-image requests to
+`/backend-api/codex/images/generations` and requests with reference images to
+`/backend-api/codex/images/edits`, then validates and saves
+`data[0].b64_json`. OAuth bearer credentials remain environment-provided;
+the token is never logged. Account ID and residency headers are derived from
+the token's JWT claims when present.
 
-This alignment does not guarantee that every account or optional setting is
-available. The backend is experimental; if generation still fails, use the
-full sanitized upstream error to diagnose the actual response instead of
-switching to undocumented endpoints.
+This route is experimental and must be validated against the application's
+actual credential and account. A previous implementation received HTTP 403;
+this version adds the Codex client identity, account context and image-turn
+header used by current native Codex clients. If it still returns 403, preserve
+the sanitized HTTP response for diagnosis rather than falling back silently
+to the unsupported Responses tool.
 
-The Vercel provider is separate and is not changed by this integration.
+The native endpoint does not currently support AgentKit mask inputs through
+this adapter. Reference images are converted to data URLs and routed to the
+edit endpoint. The Vercel provider is separate and is not changed by this
+integration.
