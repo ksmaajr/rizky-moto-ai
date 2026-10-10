@@ -494,7 +494,7 @@
                                         <span><b>Queue</b><em>{{ config('services.agent_ai.queue', 'agentkit') }}</em></span>
                                         <span><b>Workers</b><em>{{ $agentAiRuntimeStatus['worker_count'] ?? $agentAiRuntimeStatus['target_workers'] ?? config('services.agent_ai.worker_count', 3) }}</em></span>
                                     </div>
-                                    @if (!empty($agentAiRuntimeStatus['message']))
+                                    @if (!empty($agentAiRuntimeStatus['message']) || !empty($agentAiRuntimeStatus['supervisor_error']))
                                         <p class="rms-agent-runtime-message">{{ $agentAiRuntimeStatus['message'] ?? $agentAiRuntimeStatus['supervisor_error'] ?? '' }}</p>
                                     @endif
                                     <div class="rms-agent-runtime-actions">
