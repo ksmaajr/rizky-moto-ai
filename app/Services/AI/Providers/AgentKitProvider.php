@@ -405,6 +405,20 @@ final class AgentKitProvider implements ImageProviderInterface
                         );
 
                         if (! ($classification['retry'] ?? false) || $attempt >= $maxAttempts) {
+                            $normalizedDetail = strtolower($detail);
+                            if (
+                                str_contains($normalizedDetail, "tool choice 'image_generation' not found in 'tools' parameter")
+                                || (
+                                    str_contains($normalizedDetail, 'tool_choice')
+                                    && str_contains($normalizedDetail, 'image_generation')
+                                    && str_contains($normalizedDetail, 'not found in')
+                                )
+                            ) {
+                                throw new RuntimeException(
+                                    'Backend Codex yang digunakan AgentKit saat ini tidak menerima tool image_generation pada endpoint Responses. Ini masalah kompatibilitas/kapabilitas backend, bukan bukti token salah. Generate dihentikan tanpa mencoba token lain. Provider AgentKit memerlukan jalur backend yang mendukung image_generation; Vercel tidak terpengaruh.'
+                                );
+                            }
+
                             throw new RuntimeException($detail);
                         }
 
