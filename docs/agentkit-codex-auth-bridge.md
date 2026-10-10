@@ -97,3 +97,17 @@ These tests do not call the live AgentKit backend and do not spend image quota. 
 This branch is not yet a fully automatic in-dashboard OAuth integration. The official Codex CLI does not provide a documented stable access-token export/refresh API for this bridge, and the AgentKit backend expects a compatible access token rather than owning the official login flow. Do not describe a successful import as a permanent login. If Codex moves its credentials to OS secure storage or changes the internal file schema, the importer fails closed. Token expiry can require re-authentication and re-import.
 
 Before multi-user production, use an officially supported credential lifecycle or isolate a compatibility adapter per OS account and verify refresh/revocation behavior. Do not store raw auth files or refresh tokens in Laravel, and do not enable the AgentKit provider until the credential has passed explicit live validation.
+
+
+## Windows local runtime setup
+
+The repository includes `scripts/setup-agentkit-windows.ps1` for the first local runtime setup. Run it from the Laravel project root in PowerShell after Git, Python 3.10+, and the project's `.env` are present:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\scripts\setup-agentkit-windows.ps1
+```
+
+The script clones the upstream toolkit under `storage/app/agent-ai/agent-kit` (outside source control), creates a local virtual environment, installs the package, verifies `python -m gpt_image25_agent --help`, and configures the local `.env` to use that exact Python executable and the `agentkit` queue. It does not run `git pull` on an existing checkout, does not log into Codex, and does not call the live image backend. Review the script before running it and do not run it as Administrator unless your project setup specifically requires that.
+
+After setup, clear Laravel's cached configuration if the application uses it. Runtime installation is separate from Codex authentication: the script does not create a credential, and a live credential test still consumes one image request.
