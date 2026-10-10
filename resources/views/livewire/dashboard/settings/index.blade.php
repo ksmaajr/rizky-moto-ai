@@ -461,14 +461,14 @@
                                     <div class="rms-agent-login-bridge-icon" aria-hidden="true">↗</div>
                                     <div class="rms-agent-login-bridge-copy">
                                         <strong>Codex Session Bridge · Experimental</strong>
-                                        <p>Runtime worker bisa dikelola dari dashboard. Login browser/device-code dari tombol ini belum tersedia; selesaikan login Codex pada host AgentKit dan gunakan importer eksperimental hanya jika file auth kompatibel. Akun tidak akan aktif sebelum validasi berhasil.</p>
+                                        <p>Di development lokal Windows, tombol Add Account membuka jendela PowerShell untuk login resmi Codex. Setelah login berhasil, sesi file-based diimpor ke encrypted storage sebagai Pending Validation. Jalankan Test Token sebelum akun masuk ke rotasi worker. Pada server remote, login tetap harus dilakukan pada host AgentKit.</p>
                                         <div class="rms-agent-login-bridge-status">
                                             <span class="{{ $codexCliAvailable ? 'is-detected' : 'is-pending' }}"><i></i>{{ $codexCliAvailable ? 'Codex CLI detected' : 'Codex CLI not detected by web process' }}</span>
-                                            <span><i></i>Token bridge: not connected</span>
+                                            <span><i></i>Login bridge: local Windows only</span>
                                         </div>
                                     </div>
                                     <button type="button" class="rms-agent-save-button" wire:click="beginCodexLogin" wire:loading.attr="disabled" wire:target="beginCodexLogin">
-                                        <span wire:loading.remove wire:target="beginCodexLogin">Check Login Setup</span>
+                                        <span wire:loading.remove wire:target="beginCodexLogin">Start ChatGPT Login</span>
                                         <span wire:loading wire:target="beginCodexLogin">Checking...</span>
                                     </button>
                                 </div>
