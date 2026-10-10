@@ -44,19 +44,41 @@ class extends Component
 
     public function mount(): void
     {
-        $settings = \App\Models\OpenAiSetting::query()->first();
+        $startedAt = microtime(true);
+        $stage = 'openai_settings';
 
-        if ($settings) {
-            $this->imageModel = $settings->model ?: 'OpenAI Image Generation';
-            $this->defaultAspectRatio = $settings->default_aspect_ratio ?: '1:1';
-            $this->defaultQuality = $settings->default_quality ?: 'standard';
-            $this->hasOpenAiKey = filled($settings->api_key);
+        try {
+            $settings = \\App\\Models\\OpenAiSetting::query()->first();
+
+            if ($settings) {
+                $this->imageModel = $settings->model ?: 'OpenAI Image Generation';
+                $this->defaultAspectRatio = $settings->default_aspect_ratio ?: '1:1';
+                $this->defaultQuality = $settings->default_quality ?: 'standard';
+                $this->hasOpenAiKey = filled($settings->api_key);
+            }
+
+            // Runtime status checks stay outside the initial dashboard request.
+            $stage = 'ai_provider_settings';
+            $this->loadAiProviderSettings();
+
+            $stage = 'activity_logs';
+            $this->loadActivityLogs();
+
+            \\Illuminate\\Support\\Facades\\Log::debug('Dashboard mount completed', [
+                'user_id' => auth()->id(),
+                'duration_ms' => (int) ((microtime(true) - $startedAt) * 1000),
+            ]);
+        } catch (\\Throwable $exception) {
+            \\Illuminate\\Support\\Facades\\Log::error('Dashboard mount failed', [
+                'stage' => $stage,
+                'user_id' => auth()->id(),
+                'duration_ms' => (int) ((microtime(true) - $startedAt) * 1000),
+                'exception' => $exception::class,
+                'message' => $exception->getMessage(),
+            ]);
+
+            throw $exception;
         }
-
-        // Keep the initial dashboard request lightweight. Runtime status checks
-        // inspect OS processes and are only needed when the AI Provider panel opens.
-        $this->loadAiProviderSettings();
-        $this->loadActivityLogs();
     }
 
     private function loadActivityLogs(): void
