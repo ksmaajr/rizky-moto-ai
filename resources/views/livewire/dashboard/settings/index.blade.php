@@ -649,7 +649,7 @@
                                                     <article><span>Failed requests</span><strong>{{ number_format((int) ($selectedAgentCredentialMonitoring['failure_count'] ?? 0)) }}</strong><small>Recorded failures</small></article>
                                                     <article><span>Cooldown remaining</span>
                                                         @if ($monitorCooldownActive)
-                                                            <strong x-data="{ remaining: {{ max(0, $monitorCooldownUntil->timestamp - now()->timestamp) }} }" x-init="setInterval(() => remaining = Math.max(0, remaining - 1), 1000)" x-text="[Math.floor(remaining / 3600), Math.floor((remaining % 3600) / 60), remaining % 60].map(value => String(value).padStart(2, '0')).join(':')"></strong>
+                                                            <strong x-data="{ remaining: {{ max(0, $monitorCooldownUntil->timestamp - now()->timestamp) }} }" x-init="setInterval(() => remaining = Math.max(0, remaining - 1), 1000)" x-text="(Math.floor(remaining / 86400) > 0 ? Math.floor(remaining / 86400) + 'd ' : '') + [Math.floor((remaining % 86400) / 3600), Math.floor((remaining % 3600) / 60), remaining % 60].map(value => String(value).padStart(2, '0')).join(':')"></strong>
                                                             <small>Countdown to {{ $monitorCooldownUntil->format('H:i:s') }} server time</small>
                                                         @else
                                                             <strong>{{ $monitorRateLimited ? 'Not set' : 'Not active' }}</strong>
@@ -661,10 +661,10 @@
                                                     <div>
                                                         <span class="rms-agent-monitor-control-eyebrow">AUTO COOLDOWN POLICY</span>
                                                         <strong>Atur durasi saat rate limit terdeteksi</strong>
-                                                        <p>Durasi ini diterapkan otomatis saat akun terkena rate limit. Countdown dimulai dari waktu limit terdeteksi, bukan saat pengaturan disimpan.</p>
+                                                        <p>Durasi ini diterapkan otomatis saat akun terkena rate limit. Countdown dimulai dari waktu limit terdeteksi, bukan saat pengaturan disimpan. Maksimal 7 hari.</p>
                                                     </div>
                                                     <div class="rms-agent-monitor-cooldown-form">
-                                                        <label><span>Durasi (menit)</span><input type="number" min="1" max="1440" step="1" wire:model="agentCredentialCooldownMinutes" /></label>
+                                                        <label><span>Durasi (menit)</span><input type="number" min="1" max="10080" step="1" wire:model="agentCredentialCooldownMinutes" /></label>
                                                         <button type="button" wire:click="saveAgentCredentialCooldownPreference" wire:loading.attr="disabled" wire:target="saveAgentCredentialCooldownPreference"><span wire:loading.remove wire:target="saveAgentCredentialCooldownPreference">Simpan durasi</span><span wire:loading wire:target="saveAgentCredentialCooldownPreference">Menyimpan…</span></button>
                                                     </div>
                                                 </section>
