@@ -89,6 +89,20 @@ trait ManagesAgentAiCredentials
             return;
         }
 
+        // Backfill a timer for rate-limit events recorded before the configurable
+        // duration existed. The countdown is anchored to last_failure_at.
+        if ($credential->last_error_type === 'rate_limited' && ! $credential->cooldown_until && $credential->last_failure_at) {
+            $durationMinutes = max(1, min(1440, (int) ($credential->cooldown_duration_minutes ?: 300)));
+            $until = $credential->last_failure_at->copy()->addMinutes($durationMinutes);
+            $credential->forceFill([
+                'status' => $until->isFuture() ? 'cooldown' : 'error',
+                'cooldown_until' => $until,
+            ])->save();
+            $credential->refresh();
+        }
+
+        $this->agentCredentialCooldownMinutes = max(1, min(1440, (int) ($credential->cooldown_duration_minutes ?: 300)));
+
         $this->selectedAgentCredentialMonitoring = [
             'id' => $credential->id,
             'name' => $credential->name,
@@ -101,6 +115,7 @@ trait ManagesAgentAiCredentials
             'last_success_at' => $credential->last_success_at?->toIso8601String(),
             'last_failure_at' => $credential->last_failure_at?->toIso8601String(),
             'cooldown_until' => $credential->cooldown_until?->toIso8601String(),
+            'cooldown_duration_minutes' => (int) ($credential->cooldown_duration_minutes ?: 300),
             'last_error_type' => $credential->last_error_type,
             'last_error' => $credential->last_error,
             'last_exit_code' => $credential->last_exit_code,
@@ -136,7 +151,7 @@ trait ManagesAgentAiCredentials
         $this->agentCredentialMonitoringLogs = [];
     }
 
-    public function applyAgentCredentialCooldown(): void
+    public function saveAgentCredentialCooldownPreference(): void
     {
         $this->validate([
             'agentCredentialCooldownMinutes' => ['required', 'integer', 'min:1', 'max:1440'],
@@ -146,30 +161,30 @@ trait ManagesAgentAiCredentials
         $credential = $credentialId > 0 ? $this->agentCredentialForCurrentUser($credentialId) : null;
 
         if (! $credential) {
-            $this->dispatch('toast', type: 'error', title: 'Account tidak ditemukan', message: 'Pilih credential yang valid sebelum mengatur cooldown.');
+            $this->dispatch('toast', type: 'error', title: 'Account tidak ditemukan', message: 'Pilih credential yang valid sebelum menyimpan durasi cooldown.');
             return;
         }
 
-        if (! $credential->is_active || $credential->status === 'disabled') {
-            $this->dispatch('toast', type: 'warning', title: 'Akun tidak aktif', message: 'Aktifkan credential terlebih dahulu sebelum menetapkan cooldown.');
-            return;
+        $durationMinutes = max(1, min(1440, (int) $this->agentCredentialCooldownMinutes));
+        $updates = ['cooldown_duration_minutes' => $durationMinutes];
+
+        // If this account is already rate-limited, recalculate from the original
+        // detection time; changing the preference must not restart the clock.
+        if ($credential->last_error_type === 'rate_limited' && $credential->last_failure_at) {
+            $until = $credential->last_failure_at->copy()->addMinutes($durationMinutes);
+            $updates['cooldown_until'] = $until;
+            $updates['status'] = $until->isFuture() ? 'cooldown' : 'error';
         }
 
-        $until = now()->addMinutes($this->agentCredentialCooldownMinutes);
-        $credential->forceFill([
-            'status' => 'cooldown',
-            'cooldown_until' => $until,
-            'last_error_type' => $credential->last_error_type ?: 'manual_cooldown',
-        ])->save();
-
+        $credential->forceFill($updates)->save();
         $this->refreshAgentCredentialMonitoring($credential->id);
         $this->loadAgentAiCredentials();
 
         $this->dispatch(
             'toast',
             type: 'success',
-            title: 'Cooldown diterapkan',
-            message: 'Akun ditahan selama ' . $this->agentCredentialCooldownMinutes . ' menit sampai ' . $until->format('H:i:s') . '.'
+            title: 'Durasi cooldown tersimpan',
+            message: 'Durasi ' . $durationMinutes . ' menit akan diterapkan otomatis saat rate limit terdeteksi. Countdown dihitung dari waktu limit terdeteksi.'
         );
     }
 
