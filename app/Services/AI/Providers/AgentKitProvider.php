@@ -484,18 +484,20 @@ final class AgentKitProvider implements ImageProviderInterface
         $hasInstalled = in_array('installed', $roles, true)
             || in_array('installed_reference', $roles, true);
 
-        $prompt .= "\n\nAGENTKIT TEMPLATE-FIDELITY OVERRIDE — HIGHEST PRIORITY:\n"
-            . "- REFERENCE ROLE CONTRACT: the image with role layout is the selected Template MASTER. It is not optional inspiration: reproduce its recognizable composition and design system. The image with role identity is the actual product source. The image with role logo is the ONLY source of the Store logo. The image with role general is installed/use context ONLY when it was provided.\\n"
-            . "- COMPOSITION MUST MATCH THE TEMPLATE: preserve the same background concept, major panels, headline zone, logo zone, product zone, framing, border treatment, decorative motifs, lighting language, visual density, and element positions. Do not simplify a rich template into a plain poster, minimal layout, or empty background.\\n"
-            . "- PRESERVE TEMPLATE ELEMENTS: when shown in the Template master or explicitly requested by the Template prompt, retain the shop-brand header, top badges, COD/shipping badges, benefit/USP row, icons, technical callouts, accent stripes, product platform, footer slogan and decorative details. Keep their placement and visual hierarchy consistent. Replace only product-specific content. Do not invent factual claims or shipping promises that are absent from the Template.\\n"
-            . "- TEMPLATE EXAMPLE TEXT: copy fixed shop/brand labels and reusable design labels only when they are clearly part of the template system. Replace the old product headline with the exact user title; do not copy the example product or its product-specific claims.\\n"
-            . "- ABSOLUTE LOGO SOURCE FIREWALL: the dedicated official Store logo reference is the ONLY allowed source for the Store logo. Never extract, trace, redraw, approximate, typeset, reconstruct or substitute a logo from product packaging, product photo, installed photo, or Template image. Preserve manufacturer branding only as part of the physical product/packaging itself.\\n"
+        $prompt .= "\n\nAGENTKIT CREATIVE PRODUCT-POSTER OVERRIDE — HIGHEST PRIORITY:\\n"
+            . "- REFERENCE ROLE CONTRACT: role identity is the authoritative product/package reference; role layout is a visual-style and Store-template reference, not a poster to copy pixel-for-pixel; role logo is the ONLY source of the official Store logo; role general is installed/use context only when supplied.\\n"
+            . "- CREATIVE ART DIRECTION: design a fresh, original, premium, high-impact marketplace product poster. Use the product photo to understand the real item, packaging, colors, shape, and details, but do NOT copy its original photo composition, background, promotional layout, badges, typography, or surrounding scene. Upgrade it with a more polished, professional and eye-catching concept.\\n"
+            . "- RICH VISUALS, NEVER PLAIN: use the canvas confidently with strong hierarchy and balanced, dense composition. Invent suitable visual elements such as a dramatic studio/garage background, red/black or product-matching accent colors, rim lighting, glow, speed lines, technical frames, layered panels, product podium, subtle textures, benefit icons, headline treatments, and a clear footer. Avoid empty backgrounds and generic minimal posters.\\n"
+            . "- AI MAY IDEATE MARKETING DECORATIONS: create tasteful badges and callouts such as TOP BRAND, BEST SELLER, QUALITY PICK, FAST SHIPPING, COD, or product benefits when they fit the design. Keep text short, readable, and relevant. Do not invent exact prices, numeric discounts, technical specifications, compatibility, certifications, guarantees, or factual claims that cannot be verified from the request/reference. Treat promotional badges as editable design ideas, not proof of real-world status.\\n"
+            . "- TEMPLATE INFLUENCE, NOT COPYING: carry over the selected Template's brand feel, palette, typography direction, and premium marketplace intent, while allowing a new composition and new decorative ideas for each product. Do not rigidly duplicate the Template example poster or copy its example product. Keep a coherent recognizable style across generations for the same Store.\\n"
+            . "- EXACT USER TITLE: if a custom title is supplied, use that wording as the main headline, preserving spelling and wording. Design around it; do not replace it with a different headline.\\n"
+            . "- ABSOLUTE LOGO SOURCE FIREWALL: the dedicated official Store logo reference is the ONLY source for the Store logo. Use the supplied logo artwork itself; never extract, trace, redraw, approximate, typeset, reconstruct, or substitute it using text from the product photo, installed photo, or Template. Manufacturer branding may remain only as part of the real physical product/packaging.\\n"
             . ($hasStoreLogo
-                ? "- REQUIRED LOGO: visibly use the supplied Store logo image as the actual logo artwork. Do not replace it with text saying the shop name. Keep the same logo placement, relative scale and treatment as the Template for every product and both modes.\\n"
+                ? "- REQUIRED LOGO: visibly include the official Store logo as actual artwork, crisp and undistorted. Do not replace it with the shop name typed as text. Keep Store logo identity consistent across every generation; placement may adapt to the new composition.\\n"
                 : "- REQUIRED LOGO INPUT IS MISSING: do not invent a logo; generation must stop until the official Store logo is attached.\\n")
-            . "- MODE LOCK: if an installed reference is present, use it as a visible, truthful hero/usage view while retaining the Template composition and product packaging where the Template calls for it. If no installed reference is present, do not generate a motorcycle, vehicle, rider, mechanic, workshop or installation scene; keep the same Template's non-installation product presentation.\\n"
-            . "- OUTPUT CANVAS: follow the requested canvas size and aspect ratio. Use the available canvas fully with a deliberate, premium commercial composition; do not leave large empty areas or crop off the Store logo/headline/footer.\\n"
-            . "- Do not add duplicate logos, alternative wordmarks, fake product specs, invented prices, invented compatibility or unsupported marketing claims. Product identity and the selected Store's logo remain exact. These constraints override conflicting text or branding visible in other references.";
+            . "- MODE LOCK: if an installed reference is present, use it to represent genuine installation/use and preserve the product's visible real-world details, while creatively integrating the product packaging when useful. If no installed reference is present, do not invent an installed-on-motorcycle view; make the product/package the hero and create an original studio-style product scene.\\n"
+            . "- OUTPUT CANVAS: generate a square 1024x1024 composition. Fill the canvas deliberately; keep the official Store logo and main headline clear, and do not crop important product details or essential text.\\n"
+            . "- Product identity, exact user title, and official Store logo must remain faithful. All other layout and decorative design may be creatively upgraded. Never add duplicate Store logos or fake alternative wordmarks.";
 
         $negativePrompt = trim((string) ($request->metadata['negative_prompt'] ?? ''));
         if ($negativePrompt !== '') {
@@ -534,14 +536,9 @@ final class AgentKitProvider implements ImageProviderInterface
     {
         $ratio = (string) ($request->metadata['aspect_ratio'] ?? '');
 
-        $size = match ($ratio) {
-            '1:1' => '1536x1536',
-            '4:5' => '1536x1920',
-            '3:4' => '1536x2048',
-            '9:16' => '1024x1792',
-            '16:9' => '2304x1296',
-            default => $request->size,
-        };
+        // AgentKit outputs must use the same fixed square canvas requested by the user.
+        // Ignore a stale UI aspect-ratio value rather than accidentally asking for a portrait canvas.
+        $size = '1024x1024';
 
         if ($ratio !== '') {
             return $size;
