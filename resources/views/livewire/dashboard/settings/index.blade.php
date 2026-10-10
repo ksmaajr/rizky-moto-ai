@@ -546,7 +546,7 @@
                                             </div>
 
                                             @if ($credential['cooldown_until'])
-                                                <div class="rms-agent-cooldown">Cooldown until {{ CarbonCarbon::parse($credential['cooldown_until'])->format('H:i:s') }}</div>
+                                                <div class="rms-agent-cooldown">Cooldown until {{ \Illuminate\Support\Carbon::parse($credential['cooldown_until'])->format('H:i:s') }}</div>
                                             @endif
 
                                             <div class="rms-agent-credential-actions">
