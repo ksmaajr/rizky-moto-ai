@@ -532,6 +532,16 @@
                                                         <strong>{{ $credential['name'] }}</strong>
                                                         <span class="rms-agent-status {{ $credentialStatusClass }}"><i></i>{{ $credentialStatusLabel }}</span>
                                                     </div>
+                                                    @if (!empty($credential['username']) || !empty($credential['email']))
+                                                        <div class="rms-agent-identity">
+                                                            @if (!empty($credential['username']))
+                                                                <span><b>Username</b><em>{{ $credential['username'] }}</em></span>
+                                                            @endif
+                                                            @if (!empty($credential['email']))
+                                                                <span><b>Email</b><em>{{ $credential['email'] }}</em></span>
+                                                            @endif
+                                                        </div>
+                                                    @endif
                                                     <code>••••••••••••••••••••</code>
                                                     <small>{{ $credential['request_count'] }} requests · {{ $credential['success_count'] }} success · {{ $credential['failure_count'] }} failed</small>
                                                 </div>
@@ -651,6 +661,16 @@
                                                     <span class="rms-agent-monitor-eyebrow">ACCOUNT MONITORING</span>
                                                     <h2>{{ $selectedAgentCredentialMonitoring['name'] }}</h2>
                                                     <p>Health, request metrics, authentication signals, and recent activity for this account.</p>
+                                                    @if (!empty($selectedAgentCredentialMonitoring['username']) || !empty($selectedAgentCredentialMonitoring['email']))
+                                                        <div class="rms-agent-monitor-identity">
+                                                            @if (!empty($selectedAgentCredentialMonitoring['username']))
+                                                                <span><small>CODEX USERNAME</small><strong>{{ $selectedAgentCredentialMonitoring['username'] }}</strong></span>
+                                                            @endif
+                                                            @if (!empty($selectedAgentCredentialMonitoring['email']))
+                                                                <span><small>ACCOUNT EMAIL</small><strong>{{ $selectedAgentCredentialMonitoring['email'] }}</strong></span>
+                                                            @endif
+                                                        </div>
+                                                    @endif
                                                 </div>
                                                 <button type="button" class="rms-agent-monitor-close" wire:click="closeAgentCredentialMonitoring" aria-label="Close drawer">×</button>
                                             </header>
@@ -5956,4 +5976,18 @@
 @keyframes rmsCodexSpin{to{transform:rotate(360deg)}}@keyframes rmsCodexPulse{50%{box-shadow:0 0 0 7px rgba(217,119,6,.08)}}
 @media(max-width:760px){.rms-agent-login-progress{margin:0 9px 13px;padding:11px}}
 @media(prefers-reduced-motion:reduce){.rms-agent-login-spinner,.rms-agent-login-progress-dot.is-running{animation:none!important}}
+</style>
+
+
+<style>
+/* Optional Codex identity metadata on credential cards and monitoring drawer. */
+.rms-agent-identity{display:flex;flex-wrap:wrap;align-items:center;gap:6px 13px;margin:7px 0 8px;min-width:0}
+.rms-agent-identity>span{display:inline-flex;align-items:baseline;gap:5px;min-width:0;max-width:100%;font-size:9px;line-height:1.45}
+.rms-agent-identity b{flex:0 0 auto;color:#a8a29e;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.rms-agent-identity em{color:#57534e;font-style:normal;font-weight:650;overflow-wrap:anywhere;word-break:break-word}
+.rms-agent-monitor-identity{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}
+.rms-agent-monitor-identity>span{display:grid;gap:5px;min-width:0;max-width:100%;padding:10px 12px;border:1px solid rgba(231,229,228,.9);border-radius:11px;background:rgba(255,255,255,.72)}
+.rms-agent-monitor-identity small{font-size:8px;font-weight:850;letter-spacing:.1em;color:#a8a29e}
+.rms-agent-monitor-identity strong{font-size:11px;font-weight:750;color:#44403c;overflow-wrap:anywhere;word-break:break-word}
+@media(max-width:520px){.rms-agent-identity{display:grid;gap:4px}.rms-agent-monitor-identity{display:grid;grid-template-columns:minmax(0,1fr)}}
 </style>
