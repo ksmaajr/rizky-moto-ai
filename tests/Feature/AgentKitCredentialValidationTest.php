@@ -63,9 +63,8 @@ class AgentKitCredentialValidationTest extends TestCase
         $this->assertSame($token, $selected['key']);
 
         Http::assertSent(fn ($request) =>
-            $request->method() === 'GET'
+            $request->method() === 'POST'
             && str_contains($request->url(), '/backend-api/codex/responses')
-            && $request->method() === 'POST'
             && $request['stream'] === true
             && $request->hasHeader('Authorization', 'Bearer ' . $token)
             && $request->hasHeader('ChatGPT-Account-ID', 'test-account-id')
