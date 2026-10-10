@@ -197,7 +197,7 @@ trait ManagesAgentAiCredentials
 
             if ($result->failed()) {
                 @unlink($scriptPath);
-                report(new \\RuntimeException(trim($result->errorOutput() ?: $result->output())));
+                report(new \RuntimeException(trim($result->errorOutput() ?: $result->output())));
                 $this->dispatch('toast', type: 'error', title: 'Jendela login gagal dibuka', message: 'PowerShell tidak dapat membuka jendela login Codex. Jalankan codex login secara manual pada terminal host lokal.');
                 return;
             }
@@ -208,7 +208,7 @@ trait ManagesAgentAiCredentials
                 title: 'Jendela login Codex dibuka',
                 message: 'Selesaikan login ChatGPT pada jendela PowerShell yang baru. Setelah login berhasil, sesi akan diimpor sebagai Pending Validation; jalankan Test Token sebelum mengaktifkannya.'
             );
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             report($e);
             $this->dispatch('toast', type: 'error', title: 'Login Codex gagal dimulai', message: 'Periksa log aplikasi dan pastikan aplikasi berjalan pada sesi Windows interaktif yang sama.');
         }
