@@ -90,10 +90,31 @@ $codexCommand = Get-Command "codex.cmd" -ErrorAction SilentlyContinue | Select-O
 if (-not $codexCommand) {
     $codexCommand = Get-Command "codex" -ErrorAction SilentlyContinue | Select-Object -First 1
 }
+
+# npm global installs commonly live in %APPDATA%\npm even when the PHP process
+# has a different PATH from the interactive terminal.
+if (-not $codexCommand) {
+    $candidatePaths = @()
+    if ($env:APPDATA) {
+        $candidatePaths += (Join-Path $env:APPDATA "npm\codex.cmd")
+    }
+    $npmPrefix = (& npm prefix -g 2>$null | Select-Object -First 1)
+    if ($LASTEXITCODE -eq 0 -and $npmPrefix) {
+        $candidatePaths += (Join-Path $npmPrefix "codex.cmd")
+    }
+    foreach ($candidatePath in $candidatePaths) {
+        if (Test-Path $candidatePath -PathType Leaf) {
+            $codexCommand = Get-Item $candidatePath
+            break
+        }
+    }
+}
 $codexBinary = if ($codexCommand -and $codexCommand.Source) {
-    $codexCommand.Source.Replace('\', '/')
+    '"' + $codexCommand.Source.Replace('\', '/') + '"'
+} elseif ($codexCommand -and $codexCommand.FullName) {
+    '"' + $codexCommand.FullName.Replace('\', '/') + '"'
 } else {
-    "codex.cmd"
+    'codex.cmd'
 }
 if ($codexCommand) {
     Write-Step "Codex CLI ditemukan: $($codexCommand.Source)"
@@ -103,8 +124,8 @@ if ($codexCommand) {
 
 $settings = [ordered]@{
     "CODEX_CLI_BINARY" = $codexBinary
-    # Dotenv treats backslashes as escape sequences; forward slashes are valid on Windows.
-    "AGENT_AI_PYTHON_BINARY" = $pythonExe.Replace('\', '/')
+    # Dotenv requires quotes for values containing whitespace.
+    "AGENT_AI_PYTHON_BINARY" = '"' + $pythonExe.Replace('\', '/') + '"'
     "AGENT_AI_MODULE" = "gpt_image25_agent"
     "AGENT_AI_WORKER_DRIVER" = "local"
     "AGENT_AI_QUEUE" = "agentkit"
