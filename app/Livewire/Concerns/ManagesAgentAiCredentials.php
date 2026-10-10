@@ -61,7 +61,7 @@ trait ManagesAgentAiCredentials
     {
         try {
             $this->agentAiRuntimeStatus = app(AgentKitWorkerManager::class)->status();
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             report($e);
             $this->agentAiRuntimeStatus = [
                 'success' => false,
@@ -102,7 +102,7 @@ trait ManagesAgentAiCredentials
                 title: $success ? 'Agent AI runtime diperbarui' : 'Kontrol runtime gagal',
                 message: (string) ($result['message'] ?? 'Perintah runtime selesai.')
             );
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             report($e);
             $this->refreshAgentAiRuntimeStatus();
             $this->dispatch('toast', type: 'error', title: 'Kontrol runtime gagal', message: 'Runtime tidak dapat dikendalikan. Periksa konfigurasi driver dan log worker.');
