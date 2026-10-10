@@ -601,7 +601,7 @@
                                 </template>
 
                                 @if ($agentCredentialMonitoringOpen && !empty($selectedAgentCredentialMonitoring))
-                                    <div class="rms-agent-monitor-overlay" wire:key="agent-monitor-{{ $selectedAgentCredentialMonitoring['id'] }}" role="dialog" aria-modal="true" aria-label="AgentKit account monitoring">
+                                    <div class="rms-agent-monitor-overlay" wire:key="agent-monitor-{{ $selectedAgentCredentialMonitoring['id'] }}" wire:poll.15s="refreshAgentCredentialMonitoring" role="dialog" aria-modal="true" aria-label="AgentKit account monitoring">
                                         <button type="button" class="rms-agent-monitor-backdrop" wire:click="closeAgentCredentialMonitoring" aria-label="Close monitoring"></button>
                                         <section class="rms-agent-monitor-drawer">
                                             <header class="rms-agent-monitor-header">
