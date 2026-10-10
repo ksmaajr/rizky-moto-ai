@@ -36,7 +36,12 @@ class AgentKitCredentialValidationTest extends TestCase
 
         Http::fake([
             'https://chatgpt.com/backend-api/codex/responses' => Http::response(
-                "event: response.completed\\ndata: {\\\"type\\\":\\\"response.completed\\\",\\\"response\\\":{\\\"status\\\":\\\"completed\\\",\\\"output\\\":[]}}\\n\\n",
+                implode("\\n", [
+                    'event: response.completed',
+                    'data: {"type":"response.completed","response":{"status":"completed","output":[]}}',
+                    '',
+                    '',
+                ]),
                 200,
                 ['Content-Type' => 'text/event-stream'],
             ),
