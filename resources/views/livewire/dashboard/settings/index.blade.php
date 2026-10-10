@@ -621,7 +621,7 @@
                                                     : null;
                                                 $monitorCooldownActive = $monitorCooldownUntil !== null && $monitorCooldownUntil->isFuture();
                                                 $monitorRateLimited = in_array($monitorErrorType, ['rate_limited', 'rate_limit', 'quota_exceeded'], true)
-                                                    || ($monitorStatus === 'cooldown' && $monitorErrorType !== '');
+                                                    || ($monitorStatus === 'cooldown' && $monitorErrorType === 'rate_limited');
                                                 $monitorStatusLabel = $monitorRateLimited
                                                     ? ($monitorCooldownActive ? 'Rate limited · cooldown active' : ($monitorCooldownUntil ? 'Rate limit · cooldown elapsed' : 'Rate limit detected'))
                                                     : match ($monitorStatus) {
@@ -647,8 +647,27 @@
                                                     <article><span>Total requests</span><strong>{{ number_format((int) ($selectedAgentCredentialMonitoring['request_count'] ?? 0)) }}</strong><small>Recorded invocations</small></article>
                                                     <article><span>Success rate</span><strong>{{ $monitorSuccessRate === null ? '—' : $monitorSuccessRate . '%' }}</strong><small>{{ number_format((int) ($selectedAgentCredentialMonitoring['success_count'] ?? 0)) }} successful</small></article>
                                                     <article><span>Failed requests</span><strong>{{ number_format((int) ($selectedAgentCredentialMonitoring['failure_count'] ?? 0)) }}</strong><small>Recorded failures</small></article>
-                                                    <article><span>Cooldown</span><strong>{{ $monitorCooldownActive ? $monitorCooldownUntil->format('H:i:s') : ($monitorRateLimited ? 'Not active' : '—') }}</strong><small>{{ $monitorCooldownActive ? 'Until local server time' : ($monitorRateLimited ? ($monitorCooldownUntil ? 'Recorded cooldown has elapsed' : 'Rate limit recorded, but no cooldown timestamp is stored') : 'No active cooldown recorded') }}</small></article>
+                                                    <article><span>Cooldown remaining</span>
+                                                        @if ($monitorCooldownActive)
+                                                            <strong x-data="{ remaining: {{ max(0, $monitorCooldownUntil->timestamp - now()->timestamp) }} }" x-init="setInterval(() => remaining = Math.max(0, remaining - 1), 1000)" x-text="[Math.floor(remaining / 3600), Math.floor((remaining % 3600) / 60), remaining % 60].map(value => String(value).padStart(2, '0')).join(':')"></strong>
+                                                            <small>Countdown to {{ $monitorCooldownUntil->format('H:i:s') }} server time</small>
+                                                        @else
+                                                            <strong>{{ $monitorRateLimited ? 'Not set' : 'Not active' }}</strong>
+                                                            <small>{{ $monitorRateLimited ? 'Rate limit recorded; set a cooldown below' : 'No active cooldown' }}</small>
+                                                        @endif
+                                                    </article>
                                                 </div>
+                                                <section class="rms-agent-monitor-cooldown-control">
+                                                    <div>
+                                                        <span class="rms-agent-monitor-control-eyebrow">MANUAL COOLDOWN</span>
+                                                        <strong>Atur durasi cooldown akun ini</strong>
+                                                        <p>Credential tidak akan dipilih oleh worker sampai timer selesai. Pilih durasi 1 menit sampai 24 jam.</p>
+                                                    </div>
+                                                    <div class="rms-agent-monitor-cooldown-form">
+                                                        <label><span>Durasi (menit)</span><input type="number" min="1" max="1440" step="1" wire:model="agentCredentialCooldownMinutes" /></label>
+                                                        <button type="button" wire:click="applyAgentCredentialCooldown" wire:loading.attr="disabled" wire:target="applyAgentCredentialCooldown"><span wire:loading.remove wire:target="applyAgentCredentialCooldown">Terapkan cooldown</span><span wire:loading wire:target="applyAgentCredentialCooldown">Menerapkan…</span></button>
+                                                    </div>
+                                                </section>
                                                 <section class="rms-agent-monitor-section">
                                                     <div class="rms-agent-monitor-section-head"><div><span>01 / HEALTH &amp; AUTH</span><h3>Account health</h3></div></div>
                                                     <div class="rms-agent-monitor-details">
@@ -5830,6 +5849,18 @@
 </style>
 
 <style>
+/* Configurable account cooldown controls */
+.rms-agent-monitor-cooldown-control{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:18px;margin:16px 0 24px;padding:18px;border:1px solid #eadfce;border-radius:16px;background:linear-gradient(135deg,#fffaf2,#fff)}
+.rms-agent-monitor-control-eyebrow{display:block;margin-bottom:7px;color:#a96509;font-size:9px;font-weight:800;letter-spacing:.16em}
+.rms-agent-monitor-cooldown-control>div:first-child>strong{display:block;color:#292524;font-size:14px;font-weight:800}
+.rms-agent-monitor-cooldown-control p{margin:6px 0 0;color:#78716c;font-size:11px;line-height:1.55}
+.rms-agent-monitor-cooldown-form{display:flex;align-items:flex-end;gap:9px}
+.rms-agent-monitor-cooldown-form label{display:grid;gap:6px;color:#78716c;font-size:10px;font-weight:700}
+.rms-agent-monitor-cooldown-form input{width:100px;min-height:40px;padding:0 10px;border:1px solid #e7ddd0;border-radius:10px;background:#fff;color:#292524;font:inherit;font-size:13px}
+.rms-agent-monitor-cooldown-form button{min-height:40px;padding:0 14px;border:0;border-radius:10px;background:#292524;color:#fff;font-size:11px;font-weight:800;white-space:nowrap}
+.rms-agent-monitor-cooldown-form button:disabled{opacity:.55}
+@media(max-width:760px){.rms-agent-monitor-cooldown-control{grid-template-columns:1fr;gap:14px;padding:15px;margin:14px 0 20px}.rms-agent-monitor-cooldown-form{display:grid;grid-template-columns:92px minmax(0,1fr);align-items:end}.rms-agent-monitor-cooldown-form input{width:100%}.rms-agent-monitor-cooldown-form button{white-space:normal;padding:0 10px}}
+
 /* Responsive per-account AgentKit monitoring drawer */
 .rms-agent-monitor-overlay{position:fixed;inset:0;z-index:10050;display:flex;justify-content:flex-end;background:rgba(24,24,27,.42);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);animation:rmsAgentMonitorFade .18s ease-out}
 .rms-agent-monitor-backdrop{position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent}
