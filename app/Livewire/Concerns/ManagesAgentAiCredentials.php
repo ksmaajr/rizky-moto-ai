@@ -44,6 +44,11 @@ trait ManagesAgentAiCredentials
 
         $rows = $query->get();
 
+        // Older credentials may already have an email but no username/display
+        // label. Recover optional public profile claims from the encrypted access
+        // token when possible; never log or persist the raw token.
+        $rows->each(fn (AgentAiCredential $credential) => $this->backfillCodexCredentialIdentity($credential));
+
         $this->agentAiCredentials = $rows->map(fn (AgentAiCredential $credential): array => [
             'id' => $credential->id,
             'name' => $credential->name,
@@ -66,6 +71,90 @@ trait ManagesAgentAiCredentials
             ->where('is_active', true)
             ->whereNotIn('status', ['disabled', 'invalid', 'exhausted'])
             ->count();
+    }
+
+
+    private function backfillCodexCredentialIdentity(AgentAiCredential $credential): void
+    {
+        if ($credential->username && $credential->email) {
+            return;
+        }
+
+        $token = $credential->access_token;
+        if (! is_string($token)) {
+            return;
+        }
+
+        $parts = explode('.', $token);
+        if (count($parts) < 2 || $parts[1] === '') {
+            return;
+        }
+
+        $payload = strtr($parts[1], '-_', '+/');
+        $payload .= str_repeat('=', (4 - strlen($payload) % 4) % 4);
+        $decoded = base64_decode($payload, true);
+        if (! is_string($decoded)) {
+            return;
+        }
+
+        try {
+            $claims = json_decode($decoded, true, 32, JSON_THROW_ON_ERROR);
+        } catch (\\Throwable) {
+            return;
+        }
+
+        if (! is_array($claims)) {
+            return;
+        }
+
+        $sources = [];
+        foreach ([
+            $claims['profile'] ?? null,
+            $claims['https://api.openai.com/profile'] ?? null,
+            $claims['https://api.openai.com/auth'] ?? null,
+            $claims,
+        ] as $source) {
+            if (is_array($source)) {
+                $sources[] = $source;
+            }
+        }
+
+        $username = $credential->username;
+        if (! $username) {
+            foreach (['preferred_username', 'username', 'user_name', 'display_name', 'nickname', 'handle', 'name', 'given_name'] as $key) {
+                foreach ($sources as $source) {
+                    $value = $source[$key] ?? null;
+                    if (! is_string($value) || trim($value) === '' || filter_var(trim($value), FILTER_VALIDATE_EMAIL)) {
+                        continue;
+                    }
+                    $username = mb_substr(trim($value), 0, 190);
+                    break 2;
+                }
+            }
+        }
+
+        $email = $credential->email;
+        if (! $email) {
+            foreach ($sources as $source) {
+                $value = $source['email'] ?? null;
+                if (is_string($value) && filter_var(trim($value), FILTER_VALIDATE_EMAIL)) {
+                    $email = mb_substr(mb_strtolower(trim($value)), 0, 254);
+                    break;
+                }
+            }
+        }
+
+        $updates = [];
+        if (! $credential->username && $username) {
+            $updates['username'] = $username;
+        }
+        if (! $credential->email && $email) {
+            $updates['email'] = $email;
+        }
+
+        if ($updates !== []) {
+            $credential->forceFill($updates)->save();
+        }
     }
 
     public function openAgentCredentialMonitoring(int $credentialId): void
