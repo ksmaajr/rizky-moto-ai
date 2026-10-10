@@ -83,7 +83,26 @@ if (-not (Test-Path $envFile)) {
 }
 
 $envLines = @(Get-Content $envFile)
+
+# Resolve the CLI from the same Windows environment used to run this setup.
+# Laravel's PHP process may not resolve npm's codex.cmd shim by the bare name.
+$codexCommand = Get-Command "codex.cmd" -ErrorAction SilentlyContinue | Select-Object -First 1
+if (-not $codexCommand) {
+    $codexCommand = Get-Command "codex" -ErrorAction SilentlyContinue | Select-Object -First 1
+}
+$codexBinary = if ($codexCommand -and $codexCommand.Source) {
+    $codexCommand.Source.Replace('\', '/')
+} else {
+    "codex.cmd"
+}
+if ($codexCommand) {
+    Write-Step "Codex CLI ditemukan: $($codexCommand.Source)"
+} else {
+    Write-Warning "Codex CLI belum ditemukan pada PATH PowerShell ini. Install/login Codex CLI, lalu jalankan setup kembali."
+}
+
 $settings = [ordered]@{
+    "CODEX_CLI_BINARY" = $codexBinary
     # Dotenv treats backslashes as escape sequences; forward slashes are valid on Windows.
     "AGENT_AI_PYTHON_BINARY" = $pythonExe.Replace('\', '/')
     "AGENT_AI_MODULE" = "gpt_image25_agent"
