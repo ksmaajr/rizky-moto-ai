@@ -260,13 +260,53 @@ trait ManagesAgentAiCredentials
     public function refreshCodexLoginStatus(): void
     {
         $status = Cache::get($this->codexLoginCacheKey(), []);
-        $this->codexLoginState = (string) ($status['state'] ?? 'idle');
+        $statusPath = (string) ($status['status_path'] ?? '');
+
+        if ($statusPath !== '' && is_file($statusPath) && is_readable($statusPath)) {
+            $rawStatus = @file_get_contents($statusPath);
+            $fileStatus = is_string($rawStatus) ? json_decode($rawStatus, true) : null;
+            if (is_array($fileStatus) && ($fileStatus['session_id'] ?? null) === ($status['session_id'] ?? null)) {
+                $status = array_merge($status, $fileStatus);
+                Cache::put($this->codexLoginCacheKey(), $status, now()->addMinutes(30));
+            }
+        }
+
+        $state = (string) ($status['state'] ?? 'idle');
+        $pid = (int) ($status['pid'] ?? 0);
+        if (in_array($state, ['starting', 'waiting_for_login', 'importing'], true) && $pid > 0 && ! $this->isCodexLoginProcessRunning($pid)) {
+            $state = 'failed';
+            $status['state'] = $state;
+            $status['message'] = 'Jendela PowerShell ditutup atau proses login berhenti sebelum selesai.';
+            $status['updated_at'] = now()->toIso8601String();
+            Cache::put($this->codexLoginCacheKey(), $status, now()->addMinutes(30));
+            if ($statusPath !== '') {
+                @file_put_contents($statusPath, json_encode($status, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), LOCK_EX);
+            }
+        }
+
+        $this->codexLoginState = $state;
         $this->codexLoginMessage = (string) ($status['message'] ?? '');
-        $this->codexLoginInProgress = in_array($this->codexLoginState, [
-            'starting',
-            'waiting_for_login',
-            'importing',
-        ], true);
+        $this->codexLoginInProgress = in_array($state, ['starting', 'waiting_for_login', 'importing'], true);
+    }
+
+    private function isCodexLoginProcessRunning(int $pid): bool
+    {
+        if (PHP_OS_FAMILY !== 'Windows' || $pid < 1) {
+            return false;
+        }
+
+        try {
+            $result = Process::timeout(2)->run([
+                'powershell.exe',
+                '-NoProfile',
+                '-Command',
+                "if (Get-Process -Id {$pid} -ErrorAction SilentlyContinue) { exit 0 } else { exit 1 }",
+            ]);
+
+            return $result->successful();
+        } catch (\\Throwable) {
+            return false;
+        }
     }
 
     private function codexLoginCacheKey(): string
@@ -311,8 +351,11 @@ trait ManagesAgentAiCredentials
 
         $userId = (int) Auth::id();
         $loginSessionId = bin2hex(random_bytes(16));
+        $statusPath = storage_path('framework/agentkit-login-status-' . $userId . '-' . $loginSessionId . '.json');
         Cache::put($this->codexLoginCacheKey(), [
             'session_id' => $loginSessionId,
+            'status_path' => $statusPath,
+            'pid' => null,
             'state' => 'starting',
             'message' => 'Menyiapkan sesi Codex terisolasi...',
             'updated_at' => now()->toIso8601String(),
@@ -335,16 +378,8 @@ trait ManagesAgentAiCredentials
         $authFile = $accountHome . DIRECTORY_SEPARATOR . 'auth.json';
         $phpBinary = PHP_BINARY;
         $basePath = base_path();
-        $statusCommand = static function (string $state, string $message) use ($escape, $phpBinary, $userId, $loginSessionId): string {
-            return sprintf(
-                "& '%s' artisan agent-ai:codex-login-status --user-id=%d --session-id '%s' --state '%s' --message '%s'",
-                $escape($phpBinary),
-                $userId,
-                $loginSessionId,
-                $state,
-                $escape($message)
-            );
-        };
+        $statusPathEscaped = $escape($statusPath);
+        $statusFunction = "\$loginStatusPath = '" . $statusPathEscaped . "'; \$loginSessionId = '" . $loginSessionId . "'; function Set-LoginStatus([string]\$state, [string]\$message) { \$status = @{ session_id = \$script:loginSessionId; pid = \$PID; state = \$state; message = \$message; updated_at = (Get-Date).ToString('o') }; \$status | ConvertTo-Json -Compress | Set-Content -LiteralPath \$script:loginStatusPath -Encoding utf8 }";
         $importCommand = sprintf(
             "& '%s' artisan agent-ai:codex-import --user-id=%d --name '%s' --auth-file '%s'",
             $escape($phpBinary),
@@ -359,7 +394,8 @@ trait ManagesAgentAiCredentials
             "Write-Host 'Rizky Moto AI - ChatGPT / Codex login' -ForegroundColor Cyan",
             "Write-Host 'Login ini menggunakan sesi terpisah khusus untuk akun baru.' -ForegroundColor Yellow",
             "Write-Host 'Selesaikan login pada browser yang dibuka Codex CLI.'",
-            $statusCommand('waiting_for_login', 'Menunggu login selesai pada browser Codex.'),
+            $statusFunction,
+            "Set-LoginStatus 'waiting_for_login' 'Menunggu autentikasi pada browser Codex.'",
             "New-Item -ItemType Directory -Force -Path '" . $escape($accountHome) . "' | Out-Null",
             "\$env:CODEX_HOME = '" . $escape($accountHome) . "'",
             // Force file-based auth storage; keyring/auto storage may otherwise
@@ -367,12 +403,11 @@ trait ManagesAgentAiCredentials
             "'cli_auth_credentials_store = \"file\"' | Set-Content -LiteralPath '" . $escape($accountHome . DIRECTORY_SEPARATOR . 'config.toml') . "' -Encoding utf8",
             "\$codex = '" . $escape($binary) . "'",
             "& \$codex login",
-            "\$loginExitCode = \$LASTEXITCODE; if (\$loginExitCode -ne 0) { " . $statusCommand('failed', 'Login gagal atau dibatalkan. Credential tidak diimpor.') . "; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue; Write-Host 'Login gagal atau dibatalkan. Credential tidak diimpor.' -ForegroundColor Red; Read-Host 'Tekan Enter untuk menutup'; exit \$loginExitCode }",
-            "if (-not (Test-Path -LiteralPath '" . $escape($authFile) . "')) { " . $statusCommand('failed', 'File auth.json tidak ditemukan pada CODEX_HOME terisolasi; akun tidak diimpor.') . "; Write-Host 'AUTH.JSON TIDAK DITEMUKAN pada CODEX_HOME terisolasi. CLI mungkin tidak menghormati CODEX_HOME atau tidak memakai file auth store. Akun tidak diimpor.' -ForegroundColor Red; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue; Read-Host 'Tekan Enter untuk menutup'; exit 2 }",
-            $statusCommand('importing', 'Login berhasil. Mengimpor access token terenkripsi ke credential pool...'),
+            "\$loginExitCode = \$LASTEXITCODE; if (\$loginExitCode -ne 0) { " . "Set-LoginStatus 'failed' 'Login gagal atau dibatalkan. Credential tidak diimpor.'" . "; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue; Write-Host 'Login gagal atau dibatalkan. Credential tidak diimpor.' -ForegroundColor Red; Read-Host 'Tekan Enter untuk menutup'; exit \$loginExitCode }",
+            "if (-not (Test-Path -LiteralPath '" . $escape($authFile) . "')) { " . "Set-LoginStatus 'failed' 'File auth.json tidak ditemukan; akun tidak diimpor.'" . "; Write-Host 'AUTH.JSON TIDAK DITEMUKAN pada CODEX_HOME terisolasi. CLI mungkin tidak menghormati CODEX_HOME atau tidak memakai file auth store. Akun tidak diimpor.' -ForegroundColor Red; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue; Read-Host 'Tekan Enter untuk menutup'; exit 2 }",
+            "Set-LoginStatus 'importing' 'Login berhasil. Menyimpan credential terenkripsi...'",
             $importCommand,
-            "if (\$LASTEXITCODE -eq 0) { " . $statusCommand('completed', 'Login dan import selesai. Jalankan Test Token untuk validasi AgentKit.') . "; Write-Host 'Import selesai. Buka Settings dan jalankan Test Token.' -ForegroundColor Green; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue } else { " . $statusCommand('failed', 'Import credential gagal. Sesi lokal sementara dihapus demi keamanan.') . "; Write-Host 'Import gagal. Sesi lokal sementara dihapus demi keamanan; lihat pesan error di atas.' -ForegroundColor Red; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue }",
-            "Read-Host 'Tekan Enter untuk menutup jendela ini'",
+            "if (\$LASTEXITCODE -eq 0) { " . "Set-LoginStatus 'completed' 'Login dan import selesai. Jalankan Test Token untuk validasi AgentKit.'" . "; Write-Host 'Import selesai. Buka Settings dan jalankan Test Token.' -ForegroundColor Green; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue } else { " . "Set-LoginStatus 'failed' 'Import credential gagal. Sesi lokal sementara dihapus demi keamanan.'" . "; Write-Host 'Import gagal. Sesi lokal sementara dihapus demi keamanan; lihat pesan error di atas.' -ForegroundColor Red; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue }",
             "",
         ]);
 
@@ -397,7 +432,7 @@ trait ManagesAgentAiCredentials
                 '-Command',
                 // -NoExit keeps errors visible; quote the script path because the project
                 // directory commonly contains spaces on Windows.
-                "Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-NoExit','-File','\"" . str_replace('"', '\"', $scriptPath) . "\"')",
+                "Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File','\"" . str_replace('"', '\"', $scriptPath) . "\"')",
             ]);
 
             if ($result->failed()) {
@@ -413,7 +448,7 @@ trait ManagesAgentAiCredentials
                 'toast',
                 type: 'success',
                 title: 'Jendela login Codex dibuka',
-                message: 'Selesaikan login pada jendela PowerShell. Jendela akan tetap terbuka agar pesan error dapat dibaca jika login atau import gagal.'
+                message: 'Selesaikan login pada browser Codex. Status akan mengikuti proses PowerShell dan jendelanya menutup otomatis setelah selesai.'
             );
         } catch (\Throwable $e) {
             Cache::put($this->codexLoginCacheKey(), ['session_id' => $loginSessionId, 'state' => 'failed', 'message' => 'Login Codex gagal dimulai. Periksa log aplikasi.', 'updated_at' => now()->toIso8601String()], now()->addMinutes(30));
