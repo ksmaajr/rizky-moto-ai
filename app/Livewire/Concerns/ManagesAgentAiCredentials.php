@@ -162,15 +162,15 @@ trait ManagesAgentAiCredentials
         );
 
         $script = implode("\r\n", [
-            "$ErrorActionPreference = 'Stop'",
+            "\\$ErrorActionPreference = 'Stop'",
             "Set-Location '" . $escape($basePath) . "'",
             "Write-Host 'Rizky Moto AI - ChatGPT / Codex login' -ForegroundColor Cyan",
             "Write-Host 'Selesaikan login pada browser yang dibuka Codex CLI.'",
-            "$codex = '" . $escape($binary) . "'",
+            "\\$codex = '" . $escape($binary) . "'",
             "& $codex login",
-            "if ($LASTEXITCODE -ne 0) { Write-Host 'Login gagal atau dibatalkan. Credential tidak diimpor.' -ForegroundColor Red; Read-Host 'Tekan Enter untuk menutup'; exit $LASTEXITCODE }",
+            "if (\\$LASTEXITCODE -ne 0) { Write-Host 'Login gagal atau dibatalkan. Credential tidak diimpor.' -ForegroundColor Red; Read-Host 'Tekan Enter untuk menutup'; exit \\$LASTEXITCODE }",
             $importCommand,
-            "if ($LASTEXITCODE -eq 0) { Write-Host 'Import selesai. Buka Settings dan jalankan Test Token.' -ForegroundColor Green }",
+            "if (\\$LASTEXITCODE -eq 0) { Write-Host 'Import selesai. Buka Settings dan jalankan Test Token.' -ForegroundColor Green }",
             "Read-Host 'Tekan Enter untuk menutup jendela ini'",
             "",
         ]);
