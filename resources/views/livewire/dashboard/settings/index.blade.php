@@ -482,7 +482,9 @@
                                         </div>
                                         @php
                                             $agentRuntimeRunning = (bool) ($agentAiRuntimeStatus['running'] ?? false);
-                                            $agentRuntimeStatus = (string) ($agentAiRuntimeStatus['status'] ?? 'unknown');
+                                            $agentRuntimeStatus = $agentRuntimeRunning
+                                                ? ((bool) ($agentAiRuntimeStatus['healthy'] ?? false) ? 'Healthy' : 'Partial')
+                                                : (!empty($agentAiRuntimeStatus['supervisor_error']) ? 'Unavailable' : 'Stopped');
                                         @endphp
                                         <span class="rms-agent-runtime-state {{ $agentRuntimeRunning ? 'is-running' : 'is-stopped' }}"><i></i>{{ $agentRuntimeRunning ? 'Running' : ucfirst($agentRuntimeStatus) }}</span>
                                     </div>
@@ -493,7 +495,7 @@
                                         <span><b>Workers</b><em>{{ $agentAiRuntimeStatus['worker_count'] ?? $agentAiRuntimeStatus['target_workers'] ?? config('services.agent_ai.worker_count', 3) }}</em></span>
                                     </div>
                                     @if (!empty($agentAiRuntimeStatus['message']))
-                                        <p class="rms-agent-runtime-message">{{ $agentAiRuntimeStatus['message'] }}</p>
+                                        <p class="rms-agent-runtime-message">{{ $agentAiRuntimeStatus['message'] ?? $agentAiRuntimeStatus['supervisor_error'] ?? '' }}</p>
                                     @endif
                                     <div class="rms-agent-runtime-actions">
                                         <button type="button" wire:click="controlAgentAiRuntime('start')" wire:loading.attr="disabled" wire:target="controlAgentAiRuntime" @disabled($agentRuntimeRunning || $agentAiRuntimeBusy)><span>▶</span> Start</button>
