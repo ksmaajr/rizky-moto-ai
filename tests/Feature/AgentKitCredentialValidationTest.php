@@ -35,11 +35,11 @@ class AgentKitCredentialValidationTest extends TestCase
         ]);
 
         Http::fake([
-            'https://chatgpt.com/backend-api/codex/models*' => Http::response([
-                'models' => [
-                    ['slug' => 'gpt-5.5-codex'],
-                ],
-            ], 200),
+            'https://chatgpt.com/backend-api/codex/responses' => Http::response(
+                "event: response.completed\\ndata: {\\\"type\\\":\\\"response.completed\\\",\\\"response\\\":{\\\"status\\\":\\\"completed\\\",\\\"output\\\":[]}}\\n\\n",
+                200,
+                ['Content-Type' => 'text/event-stream'],
+            ),
         ]);
 
         $result = app(AgentKitProvider::class)->testCredential($credential);
@@ -59,7 +59,9 @@ class AgentKitCredentialValidationTest extends TestCase
 
         Http::assertSent(fn ($request) =>
             $request->method() === 'GET'
-            && str_contains($request->url(), '/backend-api/codex/models')
+            && str_contains($request->url(), '/backend-api/codex/responses')
+            && $request->method() === 'POST'
+            && $request['stream'] === true
             && $request->hasHeader('Authorization', 'Bearer ' . $token)
             && $request->hasHeader('ChatGPT-Account-ID', 'test-account-id')
             && ! str_contains($request->url(), '/images/')
