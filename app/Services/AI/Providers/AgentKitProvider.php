@@ -84,6 +84,39 @@ final class AgentKitProvider implements ImageProviderInterface
             $detail = trim($stderr) !== '' ? trim($stderr) : trim($stdout);
             $detail = $detail !== '' ? mb_substr($detail, -2000) : null;
 
+            // This specific HTTP 400 is a Codex Responses API/tool-routing
+            // incompatibility in the AgentKit client, not evidence of a bad token.
+            // Keep a newly imported account pending so it can be retried after the
+            // upstream client/backend compatibility is resolved.
+            if (
+                $exitCode !== 0
+                && $detail !== null
+                && str_contains(strtolower($detail), "tool choice 'image_generation' not found in 'tools' parameter")
+            ) {
+                $message = 'Token belum dapat divalidasi: endpoint Codex menolak tool image_generation (HTTP 400). Ini masalah kompatibilitas AgentKit/Codex, bukan bukti token salah. Credential tetap Pending Validation dan tidak dimasukkan ke pool aktif.';
+
+                $this->activity->error(
+                    action: 'agent_credential_test',
+                    category: 'api',
+                    title: 'Agent credential test terhambat kompatibilitas Codex.',
+                    description: $message,
+                    metadata: [
+                        'provider' => $this->name(),
+                        'credential_id' => $credential->id,
+                        'credential_name' => $credential->name,
+                        'classification' => 'codex_image_tool_unsupported',
+                        'exit_code' => $exitCode,
+                    ],
+                );
+
+                return [
+                    'success' => false,
+                    'status' => 'provider_incompatible',
+                    'message' => $message,
+                    'exit_code' => $exitCode,
+                ];
+            }
+
             if ($exitCode !== 0 || ! is_file($output) || filesize($output) === 0) {
                 $classification = app(AgentAiCredentialPool::class)->reportFailure(
                     $credential->id,
