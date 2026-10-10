@@ -24,8 +24,13 @@ class ImportCodexCredentialCommand extends Command
             return self::FAILURE;
         }
 
+        if (! User::query()->whereKey($userId)->exists()) {
+            $this->error('User Laravel pemilik credential tidak ditemukan. Tidak ada credential yang diimpor.');
+            return self::FAILURE;
+        }
+
         $path = $this->resolveAuthPath();
-        if ($path === '' || ! is_file($path) || ! is_readable($path)) {
+        if ($path === '' || is_link($path) || ! is_file($path) || ! is_readable($path) || (filesize($path) ?: 0) > 1048576) {
             $this->error('File auth Codex tidak ditemukan atau tidak dapat dibaca. Jalankan "codex login" pada mesin ini terlebih dahulu dan pastikan Codex menggunakan file credential store.');
             return self::FAILURE;
         }
@@ -51,6 +56,29 @@ class ImportCodexCredentialCommand extends Command
             return self::FAILURE;
         }
 
+        $token = trim($token);
+        if (strlen($token) > 65535) {
+            unset($token, $auth);
+            $this->error('Access token memiliki ukuran tidak wajar. Import dibatalkan.');
+            return self::FAILURE;
+        }
+
+        // Avoid silently creating duplicate accounts when the same Codex session
+        // is imported repeatedly. Compare decrypted tokens only in memory.
+        $existing = AgentAiCredential::query()
+            ->where('user_id', $userId)
+            ->get(['id', 'access_token']);
+
+        foreach ($existing as $storedCredential) {
+            if (is_string($storedCredential->access_token) && hash_equals($storedCredential->access_token, $token)) {
+                unset($token, $auth, $existing, $storedCredential);
+                $this->error('Sesi Codex ini sudah terdaftar untuk user tersebut. Tidak ada duplikat yang dibuat.');
+                return self::FAILURE;
+            }
+        }
+
+        unset($existing, $storedCredential);
+
         $name = trim((string) $this->option('name'));
         if ($name === '') {
             $this->error('Nama akun tidak boleh kosong.');
@@ -62,7 +90,7 @@ class ImportCodexCredentialCommand extends Command
         $credential = AgentAiCredential::create([
             'user_id' => $userId,
             'name' => mb_substr($name, 0, 120),
-            'access_token' => trim($token),
+            'access_token' => $token,
             'is_active' => false,
             'status' => 'pending_validation',
         ]);
