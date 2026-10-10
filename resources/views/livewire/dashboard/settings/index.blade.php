@@ -5222,3 +5222,34 @@
 .rms-agent-runtime-actions button:disabled{opacity:.45;cursor:not-allowed}
 @media(max-width:640px){.rms-agent-runtime-panel{padding:13px}.rms-agent-runtime-head{flex-direction:column}.rms-agent-runtime-meta{grid-template-columns:repeat(2,minmax(0,1fr))}.rms-agent-runtime-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.rms-agent-runtime-actions button{width:100%;padding:0 7px}}
 </style>
+
+
+<style>
+/* Agent AI provider configuration polish */
+.rms-provider-block-agent .rms-agent-login-bridge{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:14px;margin:14px;padding:17px;border:1px solid #e4e4e7;border-radius:15px;background:linear-gradient(125deg,#fff,#fafafa 65%,#fff7ed);box-shadow:0 8px 24px rgba(24,24,27,.035);position:relative;overflow:hidden}
+.rms-provider-block-agent .rms-agent-login-bridge:before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:linear-gradient(#f59e0b,#fb923c)}
+.rms-agent-login-bridge-icon{display:grid;place-items:center;width:44px;height:44px;border:1px solid #fed7aa;border-radius:12px;background:#fff7ed;color:#c2410c;font-size:20px;font-weight:800}
+.rms-agent-login-bridge-copy{display:grid;gap:7px;min-width:0}
+.rms-agent-login-bridge-copy>strong{font-size:12px;line-height:1.35;font-weight:850;color:#18181b}
+.rms-agent-login-bridge-copy>p{margin:0;max-width:760px;font-size:10px;line-height:1.7;color:#71717a}
+.rms-agent-login-bridge-status{display:flex;flex-wrap:wrap;gap:7px}
+.rms-agent-login-bridge-status>span{display:inline-flex;align-items:center;gap:6px;min-height:25px;padding:0 9px;border:1px solid #e4e4e7;border-radius:999px;background:#fff;color:#71717a;font-size:8px;font-weight:750}
+.rms-agent-login-bridge-status>span i{width:6px;height:6px;border-radius:50%;background:#a1a1aa;flex:0 0 6px}
+.rms-agent-login-bridge-status>span.is-detected{border-color:#bbf7d0;background:#f0fdf4;color:#15803d}
+.rms-agent-login-bridge-status>span.is-detected i{background:#22c55e}
+.rms-agent-login-bridge-status>span.is-pending{border-color:#fde68a;background:#fffbeb;color:#a16207}
+.rms-agent-login-bridge-status>span.is-pending i{background:#f59e0b}
+.rms-agent-login-bridge>.rms-agent-save-button{min-height:40px;padding:0 15px;border-radius:10px;background:#18181b;color:#fff;font-size:9px;font-weight:850;white-space:nowrap;box-shadow:0 6px 14px rgba(24,24,27,.12)}
+.rms-agent-runtime-panel{margin:0 14px 16px;padding:18px;border-color:#e4e4e7;border-radius:15px;background:linear-gradient(180deg,#fff,#fcfcfd);box-shadow:0 7px 22px rgba(24,24,27,.025)}
+.rms-agent-runtime-head{align-items:center}
+.rms-agent-runtime-meta span{padding:12px;border-radius:11px;background:#fff}
+.rms-agent-runtime-meta b{font-size:8px;letter-spacing:.02em}
+.rms-agent-runtime-meta em{font-size:10px;font-weight:650}
+.rms-agent-runtime-actions button{min-height:38px;border-radius:10px;transition:transform .18s ease,box-shadow .18s ease}
+.rms-agent-runtime-actions button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px rgba(24,24,27,.06)}
+.rms-agent-credential-list{gap:10px;padding:12px 14px 16px}
+.rms-agent-credential-card{border-color:#e4e4e7;border-radius:13px;padding:13px;box-shadow:0 3px 12px rgba(24,24,27,.018)}
+.rms-agent-credential-copy small{font-size:7px;color:#71717a}
+@media(max-width:760px){.rms-provider-block-agent .rms-agent-login-bridge{grid-template-columns:38px minmax(0,1fr);gap:11px;margin:12px 9px;padding:13px}.rms-agent-login-bridge-icon{width:38px;height:38px}.rms-agent-login-bridge-copy>strong{font-size:11px}.rms-agent-login-bridge-copy>p{font-size:9px}.rms-agent-login-bridge>.rms-agent-save-button{grid-column:1/-1;width:100%;min-height:42px}.rms-agent-runtime-panel{margin:0 9px 13px;padding:13px}.rms-agent-runtime-meta{gap:7px}.rms-agent-runtime-meta span{padding:10px}.rms-agent-credential-list{padding:10px 9px 13px}}
+@media(max-width:390px){.rms-agent-runtime-meta{grid-template-columns:1fr 1fr}.rms-agent-runtime-actions{grid-template-columns:1fr}}
+</style>
