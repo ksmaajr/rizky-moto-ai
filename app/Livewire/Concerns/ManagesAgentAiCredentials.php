@@ -6,6 +6,7 @@ use App\Models\AgentAiCredential;
 use App\Services\AI\Providers\AgentKitProvider;
 use App\Services\AgentKitWorkerManager;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Process;
 
 trait ManagesAgentAiCredentials
@@ -13,6 +14,9 @@ trait ManagesAgentAiCredentials
     public string $newAgentCredentialName = '';
     public string $newAgentCredentialToken = '';
     public bool $codexCliAvailable = false;
+    public bool $codexLoginInProgress = false;
+    public string $codexLoginState = 'idle';
+    public string $codexLoginMessage = '';
     public bool $showAgentCredentialForm = false;
     public array $agentAiCredentials = [];
     public int $agentAiCredentialCount = 0;
@@ -26,6 +30,7 @@ trait ManagesAgentAiCredentials
 
     public function loadAgentAiCredentials(): void
     {
+        $this->refreshCodexLoginStatus();
         $this->codexCliAvailable = $this->codexCliIsAvailable();
         $this->refreshAgentAiRuntimeStatus();
 
@@ -243,6 +248,28 @@ trait ManagesAgentAiCredentials
         }
     }
 
+
+    /**
+     * Reflect the PowerShell login process in persistent shared cache, rather
+     * than relying on the short-lived Livewire request spinner.
+     */
+    public function refreshCodexLoginStatus(): void
+    {
+        $status = Cache::get($this->codexLoginCacheKey(), []);
+        $this->codexLoginState = (string) ($status['state'] ?? 'idle');
+        $this->codexLoginMessage = (string) ($status['message'] ?? '');
+        $this->codexLoginInProgress = in_array($this->codexLoginState, [
+            'starting',
+            'waiting_for_login',
+            'importing',
+        ], true);
+    }
+
+    private function codexLoginCacheKey(): string
+    {
+        return 'agentkit:codex-login:' . (int) Auth::id();
+    }
+
     /**
      * Start the official Codex CLI browser login in a separate local PowerShell
      * window, then import the resulting file-based ChatGPT session.
@@ -272,7 +299,22 @@ trait ManagesAgentAiCredentials
             return;
         }
 
+        $this->refreshCodexLoginStatus();
+        if ($this->codexLoginInProgress) {
+            $this->dispatch('toast', type: 'info', title: 'Login masih berjalan', message: 'Selesaikan login pada jendela PowerShell yang sudah terbuka sebelum menambahkan akun berikutnya.');
+            return;
+        }
+
         $userId = (int) Auth::id();
+        $loginSessionId = bin2hex(random_bytes(16));
+        Cache::put($this->codexLoginCacheKey(), [
+            'session_id' => $loginSessionId,
+            'state' => 'starting',
+            'message' => 'Menyiapkan sesi Codex terisolasi...',
+            'updated_at' => now()->toIso8601String(),
+        ], now()->addMinutes(30));
+        $this->refreshCodexLoginStatus();
+
         $accountName = $this->uniqueAgentCredentialName($this->newAgentCredentialName);
 
         $binary = trim((string) config('services.agent_ai.codex_cli_binary', ''), " \\t\\n\\r\\0\\x0B\\\"'");
@@ -289,6 +331,16 @@ trait ManagesAgentAiCredentials
         $authFile = $accountHome . DIRECTORY_SEPARATOR . 'auth.json';
         $phpBinary = PHP_BINARY;
         $basePath = base_path();
+        $statusCommand = static function (string $state, string $message) use ($escape, $phpBinary, $userId, $loginSessionId): string {
+            return sprintf(
+                "& '%s' artisan agent-ai:codex-login-status --user-id=%d --session-id '%s' --state '%s' --message '%s'",
+                $escape($phpBinary),
+                $userId,
+                $loginSessionId,
+                $state,
+                $escape($message)
+            );
+        };
         $importCommand = sprintf(
             "& '%s' artisan agent-ai:codex-import --user-id=%d --name '%s' --auth-file '%s'",
             $escape($phpBinary),
@@ -303,6 +355,7 @@ trait ManagesAgentAiCredentials
             "Write-Host 'Rizky Moto AI - ChatGPT / Codex login' -ForegroundColor Cyan",
             "Write-Host 'Login ini menggunakan sesi terpisah khusus untuk akun baru.' -ForegroundColor Yellow",
             "Write-Host 'Selesaikan login pada browser yang dibuka Codex CLI.'",
+            $statusCommand('waiting_for_login', 'Menunggu login selesai pada browser Codex.'),
             "New-Item -ItemType Directory -Force -Path '" . $escape($accountHome) . "' | Out-Null",
             "\$env:CODEX_HOME = '" . $escape($accountHome) . "'",
             // Force file-based auth storage; keyring/auto storage may otherwise
@@ -310,10 +363,11 @@ trait ManagesAgentAiCredentials
             "'cli_auth_credentials_store = \"file\"' | Set-Content -LiteralPath '" . $escape($accountHome . DIRECTORY_SEPARATOR . 'config.toml') . "' -Encoding utf8",
             "\$codex = '" . $escape($binary) . "'",
             "& \$codex login",
-            "if (\$LASTEXITCODE -ne 0) { Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue; Write-Host 'Login gagal atau dibatalkan. Credential tidak diimpor.' -ForegroundColor Red; Read-Host 'Tekan Enter untuk menutup'; exit \$LASTEXITCODE }",
-            "if (-not (Test-Path -LiteralPath '" . $escape($authFile) . "')) { Write-Host 'AUTH.JSON TIDAK DITEMUKAN pada CODEX_HOME terisolasi. CLI mungkin tidak menghormati CODEX_HOME atau tidak memakai file auth store. Akun tidak diimpor.' -ForegroundColor Red; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue; Read-Host 'Tekan Enter untuk menutup'; exit 2 }",
+            "if (\$LASTEXITCODE -ne 0) { " . $statusCommand('failed', 'Login gagal atau dibatalkan. Credential tidak diimpor.') . "; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue; Write-Host 'Login gagal atau dibatalkan. Credential tidak diimpor.' -ForegroundColor Red; Read-Host 'Tekan Enter untuk menutup'; exit \$LASTEXITCODE }",
+            "if (-not (Test-Path -LiteralPath '" . $escape($authFile) . "')) { " . $statusCommand('failed', 'File auth.json tidak ditemukan pada CODEX_HOME terisolasi; akun tidak diimpor.') . "; Write-Host 'AUTH.JSON TIDAK DITEMUKAN pada CODEX_HOME terisolasi. CLI mungkin tidak menghormati CODEX_HOME atau tidak memakai file auth store. Akun tidak diimpor.' -ForegroundColor Red; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue; Read-Host 'Tekan Enter untuk menutup'; exit 2 }",
+            $statusCommand('importing', 'Login berhasil. Mengimpor access token terenkripsi ke credential pool...'),
             $importCommand,
-            "if (\$LASTEXITCODE -eq 0) { Write-Host 'Import selesai. Buka Settings dan jalankan Test Token.' -ForegroundColor Green; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue } else { Write-Host 'Import gagal. Sesi sementara dipertahankan di ' + '" . $escape($accountHome) . "' + ' untuk diagnosis; hapus folder ini setelah diperiksa.' -ForegroundColor Red }",
+            "if (\$LASTEXITCODE -eq 0) { " . $statusCommand('completed', 'Login dan import selesai. Jalankan Test Token untuk validasi AgentKit.') . "; Write-Host 'Import selesai. Buka Settings dan jalankan Test Token.' -ForegroundColor Green; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue } else { " . $statusCommand('failed', 'Import credential gagal. Periksa pesan pada jendela PowerShell.') . "; Write-Host 'Import gagal. Sesi sementara dipertahankan di ' + '" . $escape($accountHome) . "' + ' untuk diagnosis; hapus folder ini setelah diperiksa.' -ForegroundColor Red }",
             "Read-Host 'Tekan Enter untuk menutup jendela ini'",
             "",
         ]);
@@ -323,6 +377,8 @@ trait ManagesAgentAiCredentials
         }
 
         if (file_put_contents($scriptPath, $script, LOCK_EX) === false) {
+            Cache::put($this->codexLoginCacheKey(), ['session_id' => $loginSessionId, 'state' => 'failed', 'message' => 'Script login tidak dapat ditulis ke storage/framework.', 'updated_at' => now()->toIso8601String()], now()->addMinutes(30));
+            $this->refreshCodexLoginStatus();
             $this->dispatch('toast', type: 'error', title: 'Tidak dapat menyiapkan login', message: 'Script login tidak dapat ditulis ke storage/framework.');
             return;
         }
