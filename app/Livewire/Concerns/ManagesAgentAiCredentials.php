@@ -553,10 +553,13 @@ trait ManagesAgentAiCredentials
             $result = app(AgentKitProvider::class)->testCredential($credential);
             $this->loadAgentAiCredentials();
 
+            $providerIncompatible = ($result['status'] ?? null) === 'provider_incompatible';
             $this->dispatch(
                 'toast',
-                type: ($result['success'] ?? false) ? 'success' : 'error',
-                title: ($result['success'] ?? false) ? 'Agent credential valid' : 'Agent credential test gagal',
+                type: ($result['success'] ?? false) ? 'success' : ($providerIncompatible ? 'warning' : 'error'),
+                title: ($result['success'] ?? false)
+                    ? 'Agent credential valid'
+                    : ($providerIncompatible ? 'Kompatibilitas AgentKit/Codex' : 'Agent credential test gagal'),
                 message: (string) ($result['message'] ?? 'Test selesai.'),
             );
         } catch (\Throwable $e) {
