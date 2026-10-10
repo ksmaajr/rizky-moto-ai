@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import base64
 import json
-import uuid
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
@@ -26,13 +25,10 @@ def build_payload(
     output_format: str = "png", output_compression: int | None = None,
     mask: Path | None = None,
 ) -> dict[str, Any]:
-    """Build the native Codex Images JSON body (not a Responses hosted-tool payload)."""
     resolved_size = resolve_size(aspect, size)
-    validate_image_options(
-        image_model=image_model, quality=quality, size=resolved_size,
-        background=background, output_format=output_format,
-        output_compression=output_compression,
-    )
+    validate_image_options(image_model=image_model, quality=quality, size=resolved_size,
+                           background=background, output_format=output_format,
+                           output_compression=output_compression)
     if action not in {"auto", "generate", "edit"}:
         raise ValueError("Action must be auto, generate, or edit.")
     if action == "edit" and not refs:
@@ -40,23 +36,30 @@ def build_payload(
     if mask is not None and action != "edit":
         raise ValueError("A mask requires action='edit' and a base image as the first input.")
     if mask is not None:
-        if not refs:
-            raise ValueError("A mask requires an input image.")
         mask = validate_mask(mask, refs[0])
-
-    payload: dict[str, Any] = {
-        "model": image_model,
-        "prompt": prompt,
-        "n": 1,
-        "size": resolved_size,
-        "quality": quality,
-        "background": background,
+    content: list[dict[str, Any]] = [{"type": "input_text", "text": prompt}]
+    for ref in refs:
+        content.append({"type": "input_image", "image_url": ref_to_data_url(ref), "detail": "auto"})
+    tool: dict[str, Any] = {
+        "type": "image_generation", "model": image_model, "size": resolved_size,
+        "quality": quality, "output_format": output_format, "background": background,
+        # The CLI publishes only the final validated image. Asking for partial
+        # previews would add output-token cost without exposing any benefit.
+        "action": action, "partial_images": 0,
     }
-    if refs:
-        payload["images"] = [{"image_url": ref_to_data_url(ref)} for ref in refs]
+    if output_compression is not None:
+        tool["output_compression"] = output_compression
     if mask is not None:
-        payload["mask"] = {"image_url": ref_to_data_url(mask)}
-    return payload
+        tool["input_image_mask"] = {"image_url": ref_to_data_url(mask)}
+    return {
+        "model": host_model,
+        "store": False,
+        "instructions": "Use the image_generation tool. Follow the requested medium, composition, exact text, and numbered reference roles. Preserve supplied identity, style, and edit details only as requested by the prompt.",
+        "input": [{"type": "message", "role": "user", "content": content}],
+        "tools": [tool],
+        "tool_choice": {"type": "allowed_tools", "mode": "required", "tools": [{"type": "image_generation"}]},
+        "stream": True,
+    }
 
 
 def iter_sse_json(response: Any) -> Iterable[dict[str, Any]]:
@@ -202,175 +205,41 @@ class _ImageStreamState:
         return results.pop()
 
 
-def _codex_native_headers(token: str) -> dict[str, str]:
-    """Build the identity/account headers used by the native Codex Images endpoints."""
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "User-Agent": "codex_cli_rs/0.0.0",
-        "originator": "codex_cli_rs",
-        "x-codex-image-turn-id": str(uuid.uuid4()),
-    }
-    try:
-        parts = token.split(".")
-        if len(parts) >= 2:
-            payload = parts[1] + "=" * (-len(parts[1]) % 4)
-            claims = json.loads(base64.urlsafe_b64decode(payload))
-            auth = claims.get("https://api.openai.com/auth", {})
-            account_id = auth.get("chatgpt_account_id")
-            if isinstance(account_id, str) and account_id:
-                headers["ChatGPT-Account-ID"] = account_id
-            residency = auth.get("chatgpt_data_residency") or auth.get("chatgpt_compute_residency")
-            if isinstance(residency, str) and residency.strip():
-                headers["x-openai-internal-codex-residency"] = residency.strip()
-    except Exception:
-        # Keep malformed tokens on the normal authenticated request path so the
-        # backend returns the real auth error instead of crashing locally.
-        pass
-    return headers
-
-
-def _post_native_image_request(
-    *, token: str, prompt: str, image_model: str, size: str, quality: str,
-    refs: list[Path], background: str, output_format: str, timeout: float,
-    mask: Path | None = None,
-) -> dict[str, Any]:
-    """Call the dedicated Codex Images API instead of the stale Responses hosted tool."""
-    import httpx
-
-    base_url = CODEX_BASE_URL.rstrip("/")
-    path = "/images/edits" if refs else "/images/generations"
-    payload: dict[str, Any] = {
-        "model": image_model,
-        "prompt": prompt,
-        "n": 1,
-        "size": size,
-        "quality": quality,
-        "background": background,
-    }
-    if refs:
-        payload["images"] = [{"image_url": ref_to_data_url(ref)} for ref in refs]
-    if mask is not None:
-        # Keep mask behavior explicit; native endpoint implementations vary in
-        # their mask schema, so never silently drop a caller-supplied mask.
-        payload["mask"] = {"image_url": ref_to_data_url(mask)}
-
-    timeout_cfg = httpx.Timeout(timeout, connect=30.0, read=timeout, write=60.0, pool=30.0)
-    try:
-        with httpx.Client(timeout=timeout_cfg, headers=_codex_native_headers(token)) as client_http:
-            response = client_http.post(f"{base_url}{path}", json=payload)
-        if response.status_code >= 400:
-            try:
-                body = response.json()
-                error = body.get("error", {}) if isinstance(body, dict) else {}
-                detail = error.get("message") if isinstance(error, dict) else None
-            except Exception:
-                detail = None
-            detail = str(detail or response.text or "no error detail")
-            # Keep only non-secret correlation/routing headers. These distinguish
-            # edge/WAF denials from application-level authorization errors without
-            # exposing cookies, bearer tokens, or request image data.
-            diagnostic_headers = {}
-            for header_name in ("cf-ray", "x-request-id", "x-openai-request-id",
-                                "x-codex-imagegen-request-id", "server", "content-type"):
-                header_value = response.headers.get(header_name)
-                if header_value:
-                    diagnostic_headers[header_name] = str(header_value)[:160]
-            header_summary = (
-                " (response headers: " +
-                json.dumps(diagnostic_headers, separators=(",", ":")) + ")"
-                if diagnostic_headers else ""
-            )
-            raise ClientError(
-                f"Codex Images API HTTP {response.status_code}: "
-                f"{sanitize_error_text(detail[:1200])}{header_summary}"
-            )
-        try:
-            result = response.json()
-        except Exception as exc:
-            raise ClientError("Codex Images API returned invalid JSON") from exc
-        if not isinstance(result, dict):
-            raise ClientError("Codex Images API returned a non-object response")
-        return result
-    except ClientError:
-        raise
-    except Exception as exc:
-        raise ClientError(
-            sanitize_error_text(f"Codex Images API request failed: {type(exc).__name__}: {exc}")
-        ) from exc
-
-
 def generate_image(
-    *,
-    prompt: str, refs: list[Path], out: Path, token: str, host_model: str,
+    *, prompt: str, refs: list[Path], out: Path, token: str, host_model: str,
     quality: str, aspect: str, timeout: float, overwrite: bool,
     image_model: str = DEFAULT_IMAGE_MODEL, size: str | None = None,
     background: str = "opaque", action: str = "auto",
     output_format: str = "png", output_compression: int | None = None,
     mask: Path | None = None,
 ) -> Path:
-    """Generate or edit through Codex's native Images endpoints.
-
-    Codex's Responses endpoint rejects the hosted image_generation tool_choice.
-    Use /images/generations for text-only requests and /images/edits whenever
-    references are attached, preserving the caller's selected image model.
-    """
-    resolved_size = resolve_size(aspect, size)
-    validate_image_options(
-        image_model=image_model, quality=quality, size=resolved_size,
-        background=background, output_format=output_format,
-        output_compression=output_compression,
-    )
-    if action not in {"auto", "generate", "edit"}:
-        raise ClientError("Action must be auto, generate, or edit.")
-    if action == "edit" and not refs:
-        raise ClientError("The edit action requires at least one input image.")
-    if mask is not None and not refs:
-        raise ClientError("A mask requires at least one input image.")
-
-    response = _post_native_image_request(
-        token=token,
-        prompt=prompt,
-        image_model=image_model,
-        size=resolved_size,
-        quality=quality,
-        refs=refs,
-        background=background,
-        output_format=output_format,
-        timeout=timeout,
-        mask=mask,
-    )
-    data = response.get("data")
-    image_b64 = (
-        data[0].get("b64_json")
-        if isinstance(data, list) and data and isinstance(data[0], dict)
-        else None
-    )
-    if not isinstance(image_b64, str) or not image_b64:
-        raise ClientError("Codex Images API response contained no image data.")
+    import httpx
+    headers = {"Accept": "text/event-stream", "Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    payload = build_payload(prompt, host_model=host_model, quality=quality, aspect=aspect, refs=refs,
+                            image_model=image_model, size=size, background=background, action=action,
+                            output_format=output_format, output_compression=output_compression, mask=mask)
+    state = _ImageStreamState()
+    timeout_cfg = httpx.Timeout(timeout, connect=30.0, read=timeout, write=30.0, pool=30.0)
     try:
-        decoded = base64.b64decode(image_b64, validate=True)
+        with (
+            httpx.Client(timeout=timeout_cfg, headers=headers) as client_http,
+            client_http.stream("POST", f"{CODEX_BASE_URL}/responses", json=payload) as response,
+        ):
+            try:
+                response.raise_for_status()
+            except httpx.HTTPStatusError as exc:
+                exc.response.read()
+                raise ClientError(f"backend HTTP {exc.response.status_code}: {sanitize_error_text(exc.response.text)}") from exc
+            for event in iter_sse_json(response):
+                state.consume(event)
+    except ClientError:
+        raise
     except Exception as exc:
-        raise ClientError("Codex Images API returned invalid base64 image data.") from exc
-
-    # The CLI contract promises a validated image file. If the server returns
-    # a different container than requested, convert only supported raster data.
-    if output_format in {"jpeg", "webp"}:
-        try:
-            from PIL import Image
-            import io
-            with Image.open(io.BytesIO(decoded)) as source:
-                source.load()
-                converted = source.convert("RGB") if output_format == "jpeg" else source.convert("RGBA")
-                buffer = io.BytesIO()
-                converted.save(
-                    buffer,
-                    format="JPEG" if output_format == "jpeg" else "WEBP",
-                    **({"quality": output_compression} if output_compression is not None else {}),
-                )
-                decoded = buffer.getvalue()
-        except Exception as exc:
-            raise ClientError(f"Could not convert returned image to {output_format}: {exc}") from exc
-    atomic_write_image(out, decoded, output_format=output_format, overwrite=overwrite)
+        raise ClientError(sanitize_error_text(f"backend request failed: {type(exc).__name__}: {exc}")) from exc
+    image_b64 = state.final_result()
+    try:
+        data = base64.b64decode(image_b64, validate=True)
+    except Exception as exc:
+        raise ClientError("backend returned invalid base64 image data") from exc
+    atomic_write_image(out, data, output_format=output_format, overwrite=overwrite)
     return out
