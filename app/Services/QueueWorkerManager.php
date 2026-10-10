@@ -424,7 +424,7 @@ PS1;
                     continue;
                 }
 
-                @unlink($this->pidFile($worker));
+                @unlink(storage_path($this->pidFile($worker)));
             }
 
             $workers[] = [
@@ -459,7 +459,7 @@ PS1;
                     'command' => $found['command'],
                 ];
                 file_put_contents(
-                    $this->pidFile($workers[$emptyIndex]['id']),
+                    storage_path($this->pidFile($workers[$emptyIndex]['id'])),
                     (string) $found['pid'],
                     LOCK_EX
                 );
