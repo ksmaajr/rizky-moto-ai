@@ -20,18 +20,18 @@ class ImportCodexCredentialCommand extends Command
     public function handle(): int
     {
         $userId = filter_var($this->option('user-id'), FILTER_VALIDATE_INT);
-        if (! $userId || $userId < 1) {
+        if (!$userId || $userId < 1) {
             $this->error('Tentukan --user-id dengan ID user Laravel pemilik credential.');
             return self::FAILURE;
         }
 
-        if (! User::query()->whereKey($userId)->exists()) {
+        if (!User::query()->whereKey($userId)->exists()) {
             $this->error('User Laravel pemilik credential tidak ditemukan. Tidak ada credential yang diimpor.');
             return self::FAILURE;
         }
 
         $path = $this->resolveAuthPath();
-        if ($path === '' || is_link($path) || ! is_file($path) || ! is_readable($path) || (filesize($path) ?: 0) > 1048576) {
+        if ($path === '' || is_link($path) || !is_file($path) || !is_readable($path) || (filesize($path) ?: 0) > 1048576) {
             $this->error('File auth Codex tidak ditemukan atau tidak dapat dibaca. Jalankan "codex login" pada mesin ini terlebih dahulu dan pastikan Codex menggunakan file credential store.');
             return self::FAILURE;
         }
@@ -46,13 +46,13 @@ class ImportCodexCredentialCommand extends Command
             unset($raw);
         }
 
-        if (! is_array($auth) || ($auth['auth_mode'] ?? null) !== 'chatgpt') {
+        if (!is_array($auth) || ($auth['auth_mode'] ?? null) !== 'chatgpt') {
             $this->error('Sesi Codex tidak terdeteksi sebagai login ChatGPT. API-key login tidak diimpor.');
             return self::FAILURE;
         }
 
         $token = $auth['tokens']['access_token'] ?? null;
-        if (! is_string($token) || strlen(trim($token)) < 20) {
+        if (!is_string($token) || strlen(trim($token)) < 20) {
             $this->error('Access token tidak tersedia pada struktur file auth ini. Format Codex berubah atau credential store bukan file-based; import dibatalkan.');
             return self::FAILURE;
         }
