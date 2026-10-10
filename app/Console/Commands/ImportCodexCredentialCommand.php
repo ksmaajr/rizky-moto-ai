@@ -15,7 +15,7 @@ class ImportCodexCredentialCommand extends Command
                             {--user-id= : Laravel user ID that owns this account}
                             {--auth-file= : Explicit Codex auth.json path (file-store mode only)}';
 
-    protected $description = 'Import the access token from a locally authenticated Codex CLI session into the encrypted AgentKit credential pool for explicit live validation.';
+    protected $description = 'Import the access token from a locally authenticated Codex CLI session into the encrypted AgentKit credential pool for non-generative session validation.';
 
     public function handle(): int
     {
@@ -125,7 +125,7 @@ class ImportCodexCredentialCommand extends Command
         $this->line('Credential ID: '.$credential->id);
         $this->line('Codex username: '.($credential->username ?: 'Tidak tersedia dari Codex'));
         $this->line('Codex email: '.($credential->email ?: 'Tidak tersedia dari Codex'));
-        $this->warn('Credential belum aktif. Gunakan tombol Test Token di Settings untuk menjalankan satu live image request yang dapat memakai kuota.');
+        $this->warn('Credential belum aktif. Gunakan tombol Test Token di Settings untuk memvalidasi sesi Codex tanpa menjalankan generate gambar.');
         $this->line('Catatan: adapter ini membaca struktur auth.json Codex yang bersifat internal dan dapat berubah. Jangan gunakan pada server multi-user tanpa isolasi CODEX_HOME per akun.');
 
         return self::SUCCESS;
