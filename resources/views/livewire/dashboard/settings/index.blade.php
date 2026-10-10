@@ -600,6 +600,7 @@
                                     </div>
                                 </template>
 
+                                @teleport('body')
                                 @if ($agentCredentialMonitoringOpen && !empty($selectedAgentCredentialMonitoring))
                                     <div class="rms-agent-monitor-overlay" wire:key="agent-monitor-{{ $selectedAgentCredentialMonitoring['id'] }}" wire:poll.15s="refreshAgentCredentialMonitoring" role="dialog" aria-modal="true" aria-label="AgentKit account monitoring">
                                         <button type="button" class="rms-agent-monitor-backdrop" wire:click="closeAgentCredentialMonitoring" aria-label="Close monitoring"></button>
@@ -670,6 +671,7 @@
                                         </section>
                                     </div>
                                 @endif
+                                @endteleport
 
                                 <div class="rms-agent-test-note">
                                     <span>!</span>
