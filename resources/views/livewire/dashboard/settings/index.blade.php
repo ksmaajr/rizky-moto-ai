@@ -665,7 +665,7 @@
                                                     <article><span>Cooldown remaining</span>
                                                         @if ($monitorCooldownActive)
                                                             <strong x-data="{ remaining: {{ max(0, $monitorCooldownUntil->timestamp - now()->timestamp) }} }" x-init="setInterval(() => remaining = Math.max(0, remaining - 1), 1000)" x-text="(Math.floor(remaining / 86400) > 0 ? Math.floor(remaining / 86400) + 'd ' : '') + [Math.floor((remaining % 86400) / 3600), Math.floor((remaining % 3600) / 60), remaining % 60].map(value => String(value).padStart(2, '0')).join(':')"></strong>
-                                                            <small>Countdown to {{ $monitorCooldownUntil->format('H:i:s') }} server time</small>
+                                                            <small>Deadline {{ $monitorCooldownUntil->format('d M Y, H:i:s') }} server time</small>
                                                         @else
                                                             <strong>{{ $monitorRateLimited ? 'Not set' : 'Not active' }}</strong>
                                                             <small>{{ $monitorRateLimited ? 'Rate limit recorded; set a cooldown below' : 'No active cooldown' }}</small>
@@ -4993,14 +4993,13 @@
 .rms-agent-credential-meta b{font-size:5.7px;letter-spacing:.08em;text-transform:uppercase;color:#a1a1aa}
 .rms-agent-credential-meta em{font-size:6.5px;color:#52525b;font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rms-agent-cooldown{
-    grid-column:1/-1;
-    margin-top:-2px;
-    padding:6px 8px;
-    border-radius:7px;
-    background:#fffbeb;
-    color:#a16207;
-    font-size:6.3px;
+    grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;
+    margin-top:-2px;padding:7px 9px;border:1px solid #fde68a;border-radius:8px;
+    background:#fffbeb;color:#a16207;font-size:7px;line-height:1.45;
 }
+.rms-agent-cooldown strong{font-family:"SFMono-Regular",Consolas,monospace;font-size:8px;font-weight:850;white-space:nowrap}
+.rms-agent-cooldown.is-expired{border-color:#e7e5e4;background:#fafaf9;color:#78716c}
+.rms-agent-cooldown.is-expired strong{font-weight:700}
 .rms-agent-credential-actions{
     display:flex;
     align-items:center;
