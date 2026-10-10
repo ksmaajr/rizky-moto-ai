@@ -457,20 +457,13 @@
                                     </button>
                                 </div>
 
-                                <div class="rms-agent-login-bridge" id="agent-codex-login-bridge">
-                                    <div class="rms-agent-login-bridge-icon" aria-hidden="true">↗</div>
-                                    <div class="rms-agent-login-bridge-copy">
-                                        <strong>Codex Session Bridge · Experimental</strong>
-                                        <p>Di development lokal Windows, tombol Add Account membuka jendela PowerShell untuk login resmi Codex. Setelah login berhasil, sesi file-based diimpor ke encrypted storage sebagai Pending Validation. Jalankan Test Token sebelum akun masuk ke rotasi worker. Pada server remote, login tetap harus dilakukan pada host AgentKit.</p>
-                                        <div class="rms-agent-login-bridge-status">
-                                            <span class="{{ $codexCliAvailable ? 'is-detected' : 'is-pending' }}"><i></i>{{ $codexCliAvailable ? 'Codex CLI detected' : 'Codex CLI not detected by web process' }}</span>
-                                            <span><i></i>Login bridge: local Windows only</span>
-                                        </div>
+                                <div class="rms-agent-login-hint">
+                                    <span class="rms-agent-login-hint-icon" aria-hidden="true">i</span>
+                                    <div class="rms-agent-login-hint-copy">
+                                        <strong>Login Codex melalui Add Account</strong>
+                                        <span>{{ $codexCliAvailable ? 'Codex CLI terdeteksi. Login akan dibuka melalui PowerShell di development Windows.' : 'Codex CLI belum terdeteksi oleh proses web. Pastikan CLI tersedia di host AgentKit.' }}</span>
                                     </div>
-                                    <button type="button" class="rms-agent-save-button" wire:click="beginCodexLogin" wire:loading.attr="disabled" wire:target="beginCodexLogin">
-                                        <span wire:loading.remove wire:target="beginCodexLogin">Start ChatGPT Login</span>
-                                        <span wire:loading wire:target="beginCodexLogin">Checking...</span>
-                                    </button>
+                                    <span class="rms-agent-login-hint-state {{ $codexCliAvailable ? 'is-ready' : 'is-pending' }}"><i></i>{{ $codexCliAvailable ? 'CLI detected' : 'CLI not detected' }}</span>
                                 </div>
 
                                 {{-- Worker controls live in the dedicated sidebar page. Keep this panel focused on credentials. --}}
@@ -521,14 +514,18 @@
 
                                             <div class="rms-agent-credential-actions">
                                                 <button type="button" class="rms-agent-test-button" wire:click="testAgentAiCredential({{ (int) $credential['id'] }})" wire:loading.attr="disabled" wire:target="testAgentAiCredential({{ (int) $credential['id'] }})">
-                                                    <span wire:loading.remove wire:target="testAgentAiCredential({{ (int) $credential['id'] }})">Test Token</span>
-                                                    <span wire:loading wire:target="testAgentAiCredential({{ (int) $credential['id'] }})">Testing...</span>
+                                                    <span class="rms-agent-action-icon" aria-hidden="true">↗</span>
+                                                    <span wire:loading.remove wire:target="testAgentAiCredential({{ (int) $credential['id'] }})">Test token</span>
+                                                    <span wire:loading wire:target="testAgentAiCredential({{ (int) $credential['id'] }})">Testing…</span>
                                                 </button>
                                                 <button type="button" class="rms-agent-toggle-button {{ $credentialActive ? 'is-enabled' : 'is-disabled' }}" wire:click="toggleAgentAiCredential({{ (int) $credential['id'] }})" wire:loading.attr="disabled" wire:target="toggleAgentAiCredential({{ (int) $credential['id'] }})">
+                                                    <span class="rms-agent-action-icon" aria-hidden="true">{{ $credentialActive ? 'Ⅱ' : '▶' }}</span>
                                                     <span wire:loading.remove wire:target="toggleAgentAiCredential({{ (int) $credential['id'] }})">{{ $credentialActive ? 'Disable' : 'Enable' }}</span>
-                                                    <span wire:loading wire:target="toggleAgentAiCredential({{ (int) $credential['id'] }})">Updating...</span>
+                                                    <span wire:loading wire:target="toggleAgentAiCredential({{ (int) $credential['id'] }})">Updating…</span>
                                                 </button>
-                                                <button type="button" class="rms-agent-delete-button" @click.stop="confirmCredentialDelete({{ (int) $credential['id'] }}, @js($credential['name']))" title="Remove credential">×</button>
+                                                <button type="button" class="rms-agent-delete-button" @click.stop="confirmCredentialDelete({{ (int) $credential['id'] }}, @js($credential['name']))" title="Remove credential" aria-label="Remove credential">
+                                                    <span aria-hidden="true">×</span>
+                                                </button>
                                             </div>
                                         </article>
                                     @empty
@@ -5366,5 +5363,101 @@
 }
 @media(prefers-reduced-motion:reduce){
  .rms-provider-block-agent .rms-agent-add-button,.rms-provider-block-agent .rms-agent-login-bridge>.rms-agent-save-button,.rms-provider-block-agent .rms-agent-credential-actions button{transition:none}
+}
+</style>
+
+
+<style>
+/* Agent AI: one canonical account-entry action and a cleaner credential action bar. */
+.rms-provider-block-agent .rms-agent-add-button{
+ position:relative;min-width:174px!important;min-height:48px!important;padding:0 18px!important;
+ justify-content:flex-start!important;gap:11px!important;border-radius:13px!important;
+ background:linear-gradient(135deg,#27272a,#18181b)!important;border-color:#27272a!important;
+ box-shadow:0 7px 17px rgba(24,24,27,.15),inset 0 1px 0 rgba(255,255,255,.09)!important;
+}
+.rms-provider-block-agent .rms-agent-add-button:before{
+ content:"";position:absolute;inset:0 auto 0 0;width:3px;border-radius:13px 0 0 13px;
+ background:linear-gradient(180deg,#fbbf24,#f97316);
+}
+.rms-provider-block-agent .rms-agent-add-plus{
+ width:27px;height:27px;border:1px solid rgba(255,255,255,.2);border-radius:9px;
+ background:rgba(255,255,255,.08);font-size:19px;font-weight:400;
+}
+.rms-provider-block-agent .rms-agent-add-label{font-size:12px;font-weight:850;letter-spacing:-.015em}
+.rms-provider-block-agent .rms-agent-add-button:hover:not(:disabled){
+ background:linear-gradient(135deg,#18181b,#09090b)!important;
+ box-shadow:0 10px 23px rgba(24,24,27,.2),0 0 0 3px rgba(245,158,11,.09)!important;
+}
+.rms-agent-login-hint{
+ margin:0 18px 16px;padding:12px 14px;display:flex;align-items:center;gap:11px;
+ border:1px solid #e8e8ec;border-radius:12px;background:#fafafa;min-width:0;
+}
+.rms-agent-login-hint-icon{
+ width:27px;height:27px;flex:0 0 27px;display:grid;place-items:center;border-radius:9px;
+ background:#fff7ed;border:1px solid #fed7aa;color:#c2410c;font-size:12px;font-weight:900;
+}
+.rms-agent-login-hint-copy{display:grid;gap:3px;min-width:0;flex:1}
+.rms-agent-login-hint-copy strong{font-size:10px;font-weight:850;color:#3f3f46}
+.rms-agent-login-hint-copy span{font-size:9px;line-height:1.5;color:#71717a}
+.rms-agent-login-hint-state{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:8px;font-weight:800;color:#71717a}
+.rms-agent-login-hint-state i{width:6px;height:6px;border-radius:50%;background:#a1a1aa}
+.rms-agent-login-hint-state.is-ready{color:#15803d}
+.rms-agent-login-hint-state.is-ready i{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.1)}
+.rms-agent-login-hint-state.is-pending{color:#a16207}
+.rms-agent-login-hint-state.is-pending i{background:#f59e0b}
+.rms-provider-block-agent .rms-agent-credential-actions{
+ display:flex;align-items:center;gap:10px;padding-top:14px;
+}
+.rms-provider-block-agent .rms-agent-credential-actions button{
+ min-height:43px;padding:0 16px;min-width:124px;border-radius:11px;
+ display:inline-flex;align-items:center;justify-content:center;gap:8px;
+ font-size:10px;font-weight:850;letter-spacing:0;box-shadow:0 2px 5px rgba(24,24,27,.035);
+}
+.rms-agent-action-icon{font-size:13px;line-height:1;font-weight:900}
+.rms-provider-block-agent .rms-agent-test-button{
+ background:#f5f3ff;border:1px solid #ddd6fe;color:#6d28d9;
+}
+.rms-provider-block-agent .rms-agent-test-button:hover:not(:disabled){
+ background:#ede9fe;border-color:#c4b5fd;box-shadow:0 5px 13px rgba(109,40,217,.11);transform:translateY(-1px)
+}
+.rms-provider-block-agent .rms-agent-toggle-button.is-enabled{
+ background:#fff;border:1px solid #d4d4d8;color:#52525b;
+}
+.rms-provider-block-agent .rms-agent-toggle-button.is-enabled:hover:not(:disabled){
+ background:#f4f4f5;border-color:#a1a1aa;box-shadow:0 5px 13px rgba(24,24,27,.07);transform:translateY(-1px)
+}
+.rms-provider-block-agent .rms-agent-toggle-button.is-disabled{
+ background:#15803d;border:1px solid #15803d;color:#fff;
+}
+.rms-provider-block-agent .rms-agent-toggle-button.is-disabled:hover:not(:disabled){
+ background:#166534;border-color:#166534;box-shadow:0 5px 13px rgba(21,128,61,.16);transform:translateY(-1px)
+}
+.rms-provider-block-agent .rms-agent-delete-button{
+ flex:0 0 43px!important;width:43px;min-width:43px!important;padding:0!important;
+ background:#fff;border:1px solid #fecaca!important;color:#dc2626;font-size:20px!important;
+}
+.rms-provider-block-agent .rms-agent-delete-button:hover:not(:disabled){
+ background:#fef2f2;border-color:#f87171!important;box-shadow:0 5px 13px rgba(220,38,38,.10);transform:translateY(-1px)
+}
+.rms-provider-block-agent .rms-agent-credential-actions button:active:not(:disabled){transform:scale(.98)}
+.rms-provider-block-agent .rms-agent-credential-actions button:disabled{opacity:.5;cursor:wait;box-shadow:none;transform:none}
+@media(max-width:760px){
+ .rms-provider-block-agent .rms-agent-add-button{width:100%!important;min-width:0!important;justify-content:center!important}
+ .rms-agent-login-hint{margin:0 9px 13px;align-items:flex-start;padding:11px}
+ .rms-agent-login-hint-state{white-space:normal;align-self:center}
+ .rms-provider-block-agent .rms-agent-credential-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 43px;gap:8px}
+ .rms-provider-block-agent .rms-agent-credential-actions button{width:100%;min-width:0;padding:0 8px;font-size:9px}
+ .rms-provider-block-agent .rms-agent-credential-actions .rms-agent-delete-button{grid-column:auto;flex:0 0 43px!important}
+}
+@media(max-width:420px){
+ .rms-agent-login-hint{flex-wrap:wrap}
+ .rms-agent-login-hint-copy{flex-basis:calc(100% - 42px)}
+ .rms-agent-login-hint-state{margin-left:38px}
+ .rms-provider-block-agent .rms-agent-credential-actions{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 40px;gap:6px}
+ .rms-provider-block-agent .rms-agent-credential-actions button{font-size:8px;gap:5px;padding:0 5px}
+ .rms-provider-block-agent .rms-agent-credential-actions .rms-agent-delete-button{width:40px;min-width:40px!important;flex-basis:40px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .rms-provider-block-agent .rms-agent-add-button,.rms-provider-block-agent .rms-agent-credential-actions button{transition:none}
 }
 </style>
