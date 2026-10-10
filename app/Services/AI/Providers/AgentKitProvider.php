@@ -40,9 +40,9 @@ final class AgentKitProvider implements ImageProviderInterface
      * auth-only endpoint, so this intentionally consumes one live image request.
      */
     /**
-     * Validate the Codex session without invoking image generation or consuming
-     * image-generation quota. The model catalog is a read-only auth/session
-     * probe; it does not claim that every image model or image endpoint is available.
+     * Validate the Codex session with a minimal text-only request. This verifies
+     * real server-side token acceptance without invoking image generation or
+     * consuming image-generation quota.
      */
     public function testCredential(\App\Models\AgentAiCredential $credential): array
     {
@@ -205,7 +205,9 @@ final class AgentKitProvider implements ImageProviderInterface
         }
 
         $httpStatus = $response->status();
-        $errorType = match ($httpStatus) {
+        $errorType = $response->successful()
+            ? 'codex_validation_incomplete'
+            : match ($httpStatus) {
             401 => 'invalid_credential',
             403 => 'provider_access_denied',
             429 => 'rate_limited',
@@ -239,7 +241,9 @@ final class AgentKitProvider implements ImageProviderInterface
             401 => 'Codex menolak autentikasi token. Login ulang diperlukan.',
             403 => 'Endpoint validasi Codex menolak akses (HTTP 403). Token tidak otomatis dianggap invalid; akun baru tetap Pending Validation.',
             429 => 'Endpoint validasi Codex membatasi request. Coba lagi nanti; token tidak otomatis dianggap invalid.',
-            default => 'Validasi sesi Codex gagal (HTTP ' . $httpStatus . '). Akun tidak diaktifkan oleh tes ini.',
+            default => $response->successful()
+                ? 'Codex menerima HTTP request tetapi validasi stream belum selesai. Akun tidak diaktifkan; coba Test Token lagi.'
+                : 'Validasi sesi Codex gagal (HTTP ' . $httpStatus . '). Akun tidak diaktifkan oleh tes ini.',
         };
 
         $this->activity->error(
