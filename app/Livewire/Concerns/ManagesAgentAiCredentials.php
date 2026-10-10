@@ -143,23 +143,31 @@ trait ManagesAgentAiCredentials
 
     private function codexCliIsAvailable(): bool
     {
-        try {
-            $binary = trim((string) config('services.agent_ai.codex_cli_binary', ''));
-            if ($binary === '') {
-                $binary = PHP_OS_FAMILY === 'Windows' ? 'codex.cmd' : 'codex';
-            }
-
-            // npm installs the Windows CLI as a .cmd shim; invoke it through cmd.exe
-            // so detection works in the same PHP/Laravel process environment.
-            $command = PHP_OS_FAMILY === 'Windows'
-                ? ['cmd.exe', '/d', '/s', '/c', '"' . str_replace('"', '', $binary) . '" --version']
-                : [$binary, '--version'];
-
-            return Process::timeout(8)->run($command)->successful();
-        } catch (\Throwable) {
-            return false;
+        // Avoid spawning a subprocess on every Livewire render: process startup
+        // can block the settings page, especially on Windows.
+        $binary = trim((string) config('services.agent_ai.codex_cli_binary', ''), " \\t\\n\\r\\0\\x0B\\\"'");
+        if ($binary === '') {
+            $binary = PHP_OS_FAMILY === 'Windows' ? 'codex.cmd' : 'codex';
         }
+
+        if (str_contains($binary, '/') || str_contains($binary, '\\\\')) {
+            return is_file($binary);
+        }
+
+        if (PHP_OS_FAMILY === 'Windows') {
+            $appData = (string) getenv('APPDATA');
+            return $appData !== '' && is_file(rtrim($appData, '\\\\/') . DIRECTORY_SEPARATOR . 'npm' . DIRECTORY_SEPARATOR . $binary);
+        }
+
+        foreach (explode(PATH_SEPARATOR, (string) getenv('PATH')) as $directory) {
+            if (is_file(rtrim($directory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $binary)) {
+                return true;
+            }
+        }
+
+        return false;
     }
+
     /**
      * Raw token entry is intentionally disabled. New accounts must pass through
      * the guarded Codex importer and explicit compatibility validation.
