@@ -198,7 +198,9 @@ PS1;
         if ($pid <= 0) return ['running' => false, 'command' => null];
 
         if (PHP_OS_FAMILY === 'Windows') {
-            $result = Process::run([
+            // CIM can stall on Windows when WMI is busy; never let a status
+            // probe block the Livewire request indefinitely.
+            $result = Process::timeout(2)->run([
                 'powershell', '-NoProfile', '-NonInteractive', '-Command',
                 "(Get-CimInstance Win32_Process -Filter \"ProcessId = {$pid}\") | Select-Object Name,ProcessId,CommandLine | ConvertTo-Json -Compress",
             ]);
