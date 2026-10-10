@@ -51,10 +51,7 @@ def build_payload(
         "size": resolved_size,
         "quality": quality,
         "background": background,
-        "output_format": output_format,
     }
-    if output_compression is not None:
-        payload["output_compression"] = output_compression
     if refs:
         payload["images"] = [{"image_url": ref_to_data_url(ref)} for ref in refs]
     if mask is not None:
@@ -251,7 +248,6 @@ def _post_native_image_request(
         "size": size,
         "quality": quality,
         "background": background,
-        "output_format": output_format,
     }
     if refs:
         payload["images"] = [{"image_url": ref_to_data_url(ref)} for ref in refs]
@@ -357,7 +353,7 @@ def generate_image(
                 converted.save(
                     buffer,
                     format="JPEG" if output_format == "jpeg" else "WEBP",
-                    **({"quality": output_compression} if output_compression is not None and output_format == "jpeg" else {}),
+                    **({"quality": output_compression} if output_compression is not None else {}),
                 )
                 decoded = buffer.getvalue()
         except Exception as exc:
