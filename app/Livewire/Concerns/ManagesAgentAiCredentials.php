@@ -284,25 +284,35 @@ trait ManagesAgentAiCredentials
 
         $escape = static fn (string $value): string => str_replace("'", "''", $value);
         $scriptPath = storage_path('framework/agentkit-login-' . $userId . '-' . bin2hex(random_bytes(5)) . '.ps1');
+
+        // Each Add Account flow gets a fresh Codex home so the CLI cannot reuse
+        // the developer's default ~/.codex session or another account's session.
+        $accountHome = storage_path('framework/agentkit-codex-home-' . $userId . '-' . bin2hex(random_bytes(8)));
+        $authFile = $accountHome . DIRECTORY_SEPARATOR . 'auth.json';
         $phpBinary = PHP_BINARY;
         $basePath = base_path();
         $importCommand = sprintf(
-            "& '%s' artisan agent-ai:codex-import --user-id=%d --name '%s'",
+            "& '%s' artisan agent-ai:codex-import --user-id=%d --name '%s' --auth-file '%s'",
             $escape($phpBinary),
             $userId,
-            $escape($accountName)
+            $escape($accountName),
+            $escape($authFile)
         );
 
         $script = implode("\r\n", [
             "\$ErrorActionPreference = 'Stop'",
             "Set-Location '" . $escape($basePath) . "'",
             "Write-Host 'Rizky Moto AI - ChatGPT / Codex login' -ForegroundColor Cyan",
+            "Write-Host 'Login ini menggunakan sesi terpisah khusus untuk akun baru.' -ForegroundColor Yellow",
             "Write-Host 'Selesaikan login pada browser yang dibuka Codex CLI.'",
+            "New-Item -ItemType Directory -Force -Path '" . $escape($accountHome) . "' | Out-Null",
+            "\$env:CODEX_HOME = '" . $escape($accountHome) . "'",
             "\$codex = '" . $escape($binary) . "'",
             "& \$codex login",
-            "if (\$LASTEXITCODE -ne 0) { Write-Host 'Login gagal atau dibatalkan. Credential tidak diimpor.' -ForegroundColor Red; Read-Host 'Tekan Enter untuk menutup'; exit \$LASTEXITCODE }",
+            "if (\$LASTEXITCODE -ne 0) { Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue; Write-Host 'Login gagal atau dibatalkan. Credential tidak diimpor.' -ForegroundColor Red; Read-Host 'Tekan Enter untuk menutup'; exit \$LASTEXITCODE }",
             $importCommand,
-            "if (\$LASTEXITCODE -eq 0) { Write-Host 'Import selesai. Buka Settings dan jalankan Test Token.' -ForegroundColor Green }",
+            "if (\$LASTEXITCODE -eq 0) { Write-Host 'Import selesai. Buka Settings dan jalankan Test Token.' -ForegroundColor Green } else { Write-Host 'Import gagal. Periksa pesan error di atas.' -ForegroundColor Red }",
+            "Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue",
             "Read-Host 'Tekan Enter untuk menutup jendela ini'",
             "",
         ]);
