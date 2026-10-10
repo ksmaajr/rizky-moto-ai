@@ -26,10 +26,13 @@ def build_payload(
     output_format: str = "png", output_compression: int | None = None,
     mask: Path | None = None,
 ) -> dict[str, Any]:
+    """Build the native Codex Images JSON body (not a Responses hosted-tool payload)."""
     resolved_size = resolve_size(aspect, size)
-    validate_image_options(image_model=image_model, quality=quality, size=resolved_size,
-                           background=background, output_format=output_format,
-                           output_compression=output_compression)
+    validate_image_options(
+        image_model=image_model, quality=quality, size=resolved_size,
+        background=background, output_format=output_format,
+        output_compression=output_compression,
+    )
     if action not in {"auto", "generate", "edit"}:
         raise ValueError("Action must be auto, generate, or edit.")
     if action == "edit" and not refs:
@@ -37,30 +40,26 @@ def build_payload(
     if mask is not None and action != "edit":
         raise ValueError("A mask requires action='edit' and a base image as the first input.")
     if mask is not None:
+        if not refs:
+            raise ValueError("A mask requires an input image.")
         mask = validate_mask(mask, refs[0])
-    content: list[dict[str, Any]] = [{"type": "input_text", "text": prompt}]
-    for ref in refs:
-        content.append({"type": "input_image", "image_url": ref_to_data_url(ref), "detail": "auto"})
-    tool: dict[str, Any] = {
-        "type": "image_generation", "model": image_model, "size": resolved_size,
-        "quality": quality, "output_format": output_format, "background": background,
-        # The CLI publishes only the final validated image. Asking for partial
-        # previews would add output-token cost without exposing any benefit.
-        "action": action, "partial_images": 0,
+
+    payload: dict[str, Any] = {
+        "model": image_model,
+        "prompt": prompt,
+        "n": 1,
+        "size": resolved_size,
+        "quality": quality,
+        "background": background,
+        "output_format": output_format,
     }
     if output_compression is not None:
-        tool["output_compression"] = output_compression
+        payload["output_compression"] = output_compression
+    if refs:
+        payload["images"] = [{"image_url": ref_to_data_url(ref)} for ref in refs]
     if mask is not None:
-        tool["input_image_mask"] = {"image_url": ref_to_data_url(mask)}
-    return {
-        "model": host_model,
-        "store": False,
-        "instructions": "Use the image_generation tool. Follow the requested medium, composition, exact text, and numbered reference roles. Preserve supplied identity, style, and edit details only as requested by the prompt.",
-        "input": [{"type": "message", "role": "user", "content": content}],
-        "tools": [tool],
-        "tool_choice": {"type": "allowed_tools", "mode": "required", "tools": [{"type": "image_generation"}]},
-        "stream": True,
-    }
+        payload["mask"] = {"image_url": ref_to_data_url(mask)}
+    return payload
 
 
 def iter_sse_json(response: Any) -> Iterable[dict[str, Any]]:
