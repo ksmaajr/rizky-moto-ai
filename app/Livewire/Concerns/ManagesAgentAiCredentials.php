@@ -106,12 +106,12 @@ trait ManagesAgentAiCredentials
             'created_at' => $credential->created_at?->toIso8601String(),
         ];
 
-        $this->agentCredentialMonitoringLogs = \\App\\Models\\ActivityLog::query()
+        $this->agentCredentialMonitoringLogs = \App\Models\ActivityLog::query()
             ->where('metadata->credential_id', $credentialId)
             ->latest('id')
             ->limit(25)
             ->get()
-            ->map(function (\\App\\Models\\ActivityLog $log): array {
+            ->map(function (\App\Models\ActivityLog $log): array {
                 return [
                     'id' => $log->id,
                     'title' => $log->title ?: ($log->action ?: 'AgentKit activity'),
