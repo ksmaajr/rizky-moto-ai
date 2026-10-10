@@ -36,6 +36,31 @@ class AgentAiCredentialPoolTest extends TestCase
         $this->assertSame('provider_access_denied', $result['reason']);
     }
 
+    public function test_image_endpoint_403_does_not_deactivate_a_validated_account(): void
+    {
+        $user = User::factory()->create();
+        $credential = AgentAiCredential::query()->create([
+            'user_id' => $user->id,
+            'name' => 'Validated account',
+            'access_token' => 'secret-validated-token',
+            'is_active' => true,
+            'status' => 'active',
+        ]);
+
+        app(AgentAiCredentialPool::class)->reportFailure(
+            $credential->id,
+            $user->id,
+            'Codex Images API HTTP 403: Forbidden',
+            1,
+        );
+
+        $credential->refresh();
+        $this->assertTrue($credential->is_active);
+        $this->assertSame('active', $credential->status);
+        $this->assertSame('provider_access_denied', $credential->last_error_type);
+        $this->assertNull($credential->cooldown_until);
+    }
+
     public function test_rate_limit_errors_enter_a_bounded_cooldown(): void
     {
         $result = app(AgentAiCredentialPool::class)->classifyFailure(
