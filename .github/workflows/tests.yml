@@ -52,6 +52,7 @@ jobs:
         run: |
           php -l app/Console/Commands/ImportCodexCredentialCommand.php
           php -l tests/Feature/ImportCodexCredentialCommandTest.php
+          php -l app/Livewire/Concerns/ManagesAgentAiCredentials.php
 
       - name: Test AgentKit credential importer
         run: php artisan test --filter=ImportCodexCredentialCommandTest
