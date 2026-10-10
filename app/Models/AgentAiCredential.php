@@ -10,6 +10,8 @@ class AgentAiCredential extends Model
     protected $fillable = [
         'user_id',
         'name',
+        'username',
+        'email',
         'access_token',
         'is_active',
         'status',
