@@ -22,7 +22,7 @@ trait ManagesAgentAiCredentials
     public bool $agentCredentialMonitoringOpen = false;
     public array $selectedAgentCredentialMonitoring = [];
     public array $agentCredentialMonitoringLogs = [];
-    public int $agentCredentialCooldownMinutes = 15;
+    public int $agentCredentialCooldownMinutes = 1440;
 
     public function loadAgentAiCredentials(): void
     {
@@ -92,7 +92,7 @@ trait ManagesAgentAiCredentials
         // Backfill a timer for rate-limit events recorded before the configurable
         // duration existed. The countdown is anchored to last_failure_at.
         if ($credential->last_error_type === 'rate_limited' && ! $credential->cooldown_until && $credential->last_failure_at) {
-            $durationMinutes = max(1, min(10080, (int) ($credential->cooldown_duration_minutes ?: 300)));
+            $durationMinutes = max(1, min(10080, (int) ($credential->cooldown_duration_minutes ?: 1440)));
             $until = $credential->last_failure_at->copy()->addMinutes($durationMinutes);
             $credential->forceFill([
                 'status' => $until->isFuture() ? 'cooldown' : 'error',
