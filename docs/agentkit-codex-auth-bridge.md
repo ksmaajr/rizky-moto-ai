@@ -50,3 +50,19 @@ This is experimental because Codex's local auth-file schema is an implementation
 - Multiple accounts remain isolated and three workers can share the encrypted pool safely.
 - A failed login or unsupported token format leaves existing accounts and workers unaffected.
 - The user explicitly confirms any live image smoke test that can consume quota.
+
+
+## Agent AI runtime control center
+
+The AI Provider settings page now exposes Start, Stop, Restart, and Refresh Status controls for the existing AgentKit worker manager. These controls manage the dedicated `agentkit` queue workers, not Laravel's default queue workers or the Vercel provider.
+
+- Windows development uses the local worker driver and process/PID state under Laravel storage.
+- Linux deployment is expected to use the configured Supervisor driver.
+- The UI reads live driver status and shows running/healthy state, driver, platform, queue, and worker count.
+- The worker manager is an existing queue-worker lifecycle controller. It is not yet an interactive browser OAuth controller and does not itself create or refresh ChatGPT sessions.
+
+## Credential contract and remaining authentication gate
+
+The currently implemented AgentKit invocation passes the encrypted `AgentAiCredential.access_token` as `CHATGPT_CODEX_ACCESS_TOKEN`. The generation worker retrieves that token through the credential pool for each invocation. This is the only credential material the current adapter explicitly passes to AgentKit.
+
+Do not assume this access token is a durable full session or that it can be refreshed by AgentKit. The current experimental importer reads a file-based Codex `auth.json` shape; Codex may instead use OS secure storage, and its local format is not a stable public token-export API. A proper in-dashboard authentication worker still requires a supported login/token acquisition path that AgentKit can consume. Until that contract is proven, do not present the Add Account button as a completed browser-based login flow and do not activate an account before compatibility validation.
