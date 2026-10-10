@@ -73,3 +73,27 @@ Do not assume this access token is a durable full session or that it can be refr
 The runtime control center can be tested independently from authentication. The `Add Account` action is intentionally labeled as an experimental session bridge and does not claim to launch browser/device login yet. Do not interpret the presence of Codex CLI or a successful `codex login status` on a Windows developer laptop as proof that Laravel's web process or the Ubuntu VPS can access that same session.
 
 Before production use, a dedicated authentication onboarding worker still needs to launch and supervise a supported login flow, report device/browser instructions and completion status without exposing secrets, and provide AgentKit with a credential lifecycle it can actually refresh. The current AgentKit interface only documents a compatible access-token input; the experimental backend and subscription access can change. See the upstream project documentation and review the applicable product terms before exposing this as a multi-user service.
+
+
+## Importer hardening and automated checks
+
+The importer now rejects unknown Laravel user IDs, symbolic links, unreadable files, and auth files larger than 1 MiB. It checks for an already-imported access token for the same Laravel user before creating a row. The token remains encrypted at rest and every new credential remains inactive until an explicit compatibility test succeeds.
+
+The feature tests in `tests/Feature/ImportCodexCredentialCommandTest.php` cover:
+- refusing a credential import for a non-existent Laravel user;
+- encrypted persistence and the `pending_validation` state;
+- rejecting duplicate imports for the same user.
+
+Run the focused tests from the project root after dependencies and the testing database configuration are available:
+
+```powershell
+php artisan test --filter=ImportCodexCredentialCommandTest
+```
+
+These tests do not call the live AgentKit backend and do not spend image quota. They validate only the local importer contract. A live `Test Token` action is separate and can consume a real image request.
+
+## Production readiness gate
+
+This branch is not yet a fully automatic in-dashboard OAuth integration. The official Codex CLI does not provide a documented stable access-token export/refresh API for this bridge, and the AgentKit backend expects a compatible access token rather than owning the official login flow. Do not describe a successful import as a permanent login. If Codex moves its credentials to OS secure storage or changes the internal file schema, the importer fails closed. Token expiry can require re-authentication and re-import.
+
+Before multi-user production, use an officially supported credential lifecycle or isolate a compatibility adapter per OS account and verify refresh/revocation behavior. Do not store raw auth files or refresh tokens in Laravel, and do not enable the AgentKit provider until the credential has passed explicit live validation.
