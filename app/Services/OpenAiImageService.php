@@ -425,6 +425,7 @@ class OpenAiImageService
                     metadata: [
                         'attachments' => $attachments,
                         'negative_prompt' => $negativePrompt,
+                        'aspect_ratio' => $aspectRatio,
                         'source' => 'openai_image_service',
                     ],
                 ),
@@ -694,10 +695,6 @@ class OpenAiImageService
 
         if ($provider->name() === 'agentkit' && ! app(\App\Services\AgentAiCredentialPool::class)->hasAvailableCredential($user->id)) {
             throw new RuntimeException('Belum ada Agent AI credential aktif. Buka Settings → AI Provider → Agent AI.');
-        }
-
-        if ($provider->name() === 'agentkit' && $imageCount > 1) {
-            throw new RuntimeException('Agent AI saat ini memproses satu live invocation untuk satu image. Gunakan Image Count = 1; dukungan multi-image Agent AI akan menggunakan fan-out invocation terpisah.');
         }
 
         $sourceOne = $imageOne->store('generations/source', 'public');
@@ -1028,6 +1025,7 @@ class OpenAiImageService
                     metadata: [
                         'attachments' => $attachments,
                         'negative_prompt' => (string) $generation->negative_prompt,
+                        'aspect_ratio' => (string) $generation->aspect_ratio,
                         'source' => 'openai_image_queue',
                     ],
                 ),
