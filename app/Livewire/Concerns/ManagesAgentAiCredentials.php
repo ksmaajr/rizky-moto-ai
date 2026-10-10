@@ -22,6 +22,7 @@ trait ManagesAgentAiCredentials
     public bool $agentCredentialMonitoringOpen = false;
     public array $selectedAgentCredentialMonitoring = [];
     public array $agentCredentialMonitoringLogs = [];
+    public int $agentCredentialCooldownMinutes = 15;
 
     public function loadAgentAiCredentials(): void
     {
@@ -134,6 +135,44 @@ trait ManagesAgentAiCredentials
         $this->selectedAgentCredentialMonitoring = [];
         $this->agentCredentialMonitoringLogs = [];
     }
+
+    public function applyAgentCredentialCooldown(): void
+    {
+        $this->validate([
+            'agentCredentialCooldownMinutes' => ['required', 'integer', 'min:1', 'max:1440'],
+        ]);
+
+        $credentialId = (int) ($this->selectedAgentCredentialMonitoring['id'] ?? 0);
+        $credential = $credentialId > 0 ? $this->agentCredentialForCurrentUser($credentialId) : null;
+
+        if (! $credential) {
+            $this->dispatch('toast', type: 'error', title: 'Account tidak ditemukan', message: 'Pilih credential yang valid sebelum mengatur cooldown.');
+            return;
+        }
+
+        if (! $credential->is_active || $credential->status === 'disabled') {
+            $this->dispatch('toast', type: 'warning', title: 'Akun tidak aktif', message: 'Aktifkan credential terlebih dahulu sebelum menetapkan cooldown.');
+            return;
+        }
+
+        $until = now()->addMinutes($this->agentCredentialCooldownMinutes);
+        $credential->forceFill([
+            'status' => 'cooldown',
+            'cooldown_until' => $until,
+            'last_error_type' => $credential->last_error_type ?: 'manual_cooldown',
+        ])->save();
+
+        $this->refreshAgentCredentialMonitoring($credential->id);
+        $this->loadAgentAiCredentials();
+
+        $this->dispatch(
+            'toast',
+            type: 'success',
+            title: 'Cooldown diterapkan',
+            message: 'Akun ditahan selama ' . $this->agentCredentialCooldownMinutes . ' menit sampai ' . $until->format('H:i:s') . '.'
+        );
+    }
+
 
     public function refreshAgentAiRuntimeStatus(): void
     {
