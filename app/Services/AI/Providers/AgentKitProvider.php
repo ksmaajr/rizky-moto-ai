@@ -49,7 +49,7 @@ final class AgentKitProvider implements ImageProviderInterface
         $token = (string) $credential->access_token;
         $headers = [
             'Authorization' => 'Bearer ' . $token,
-            'Accept' => 'application/json',
+            'Accept' => 'text/event-stream',
             'User-Agent' => 'codex_cli_rs/0.0.0',
             'originator' => 'codex_cli_rs',
         ];
@@ -103,12 +103,25 @@ final class AgentKitProvider implements ImageProviderInterface
         }
 
         try {
+            // A tiny text-only Responses request verifies that the OAuth token is
+            // accepted by Codex without invoking the image-generation endpoint.
             $response = Http::withHeaders($headers)
-                ->timeout(20)
-                ->get('https://chatgpt.com/backend-api/codex/models', [
-                    'client_version' => '99.0.0',
+                ->timeout(25)
+                ->post('https://chatgpt.com/backend-api/codex/responses', [
+                    'model' => 'gpt-5.5',
+                    'instructions' => 'Reply with OK.',
+                    'input' => [[
+                        'type' => 'message',
+                        'role' => 'user',
+                        'content' => [[
+                            'type' => 'input_text',
+                            'text' => 'hi',
+                        ]],
+                    ]],
+                    'stream' => true,
+                    'store' => false,
                 ]);
-        } catch (\Throwable $e) {
+        } catch (\\Throwable $e) {
             $message = 'Tidak dapat menghubungi endpoint validasi Codex. Periksa koneksi host AgentKit, lalu coba lagi.';
             $this->activity->error(
                 action: 'agent_credential_test',
@@ -129,10 +142,31 @@ final class AgentKitProvider implements ImageProviderInterface
             ];
         }
 
-        $body = $response->json();
-        $models = is_array($body) ? ($body['models'] ?? null) : null;
+        $streamCompleted = false;
+        $streamFailed = false;
+        if ($response->successful()) {
+            foreach (preg_split('/\\r?\\n\\r?\\n/', trim($response->body())) ?: [] as $eventBlock) {
+                foreach (preg_split('/\\r?\\n/', $eventBlock) ?: [] as $line) {
+                    if (! str_starts_with($line, 'data:')) {
+                        continue;
+                    }
 
-        if ($response->successful() && is_array($models) && count($models) > 0) {
+                    $event = json_decode(trim(substr($line, 5)), true);
+                    if (! is_array($event)) {
+                        continue;
+                    }
+
+                    $type = (string) ($event['type'] ?? '');
+                    if ($type === 'response.completed') {
+                        $streamCompleted = data_get($event, 'response.status') === 'completed';
+                    } elseif (in_array($type, ['response.failed', 'response.incomplete', 'error'], true)) {
+                        $streamFailed = true;
+                    }
+                }
+            }
+        }
+
+        if ($response->successful() && $streamCompleted && ! $streamFailed) {
             app(AgentAiCredentialPool::class)->reportSuccess($credential->id, auth()->id());
 
             $credential->forceFill([
@@ -144,7 +178,7 @@ final class AgentKitProvider implements ImageProviderInterface
                 'last_exit_code' => null,
             ])->save();
 
-            $message = 'Sesi Codex tervalidasi. Akun aktif dan siap dipilih oleh worker AgentKit. Tes ini tidak menjalankan generate gambar.';
+            $message = 'Autentikasi Codex tervalidasi lewat request teks ringan. Akun aktif dan siap dipilih worker AgentKit; generate gambar tidak dijalankan.';
             $this->activity->success(
                 action: 'agent_credential_test',
                 category: 'api',
@@ -154,17 +188,18 @@ final class AgentKitProvider implements ImageProviderInterface
                     'provider' => $this->name(),
                     'credential_id' => $credential->id,
                     'credential_name' => $credential->name,
-                    'validation' => 'codex_models_catalog',
+                    'validation' => 'codex_responses_text_probe',
                     'image_generation_tested' => false,
-                    'model_count' => count($models),
+                    'http_status' => $response->status(),
                 ],
+                httpStatus: $response->status(),
             );
 
             return [
                 'success' => true,
                 'status' => 'active',
                 'message' => $message,
-                'validation' => 'codex_models_catalog',
+                'validation' => 'codex_responses_text_probe',
                 'image_generation_tested' => false,
             ];
         }
@@ -218,7 +253,7 @@ final class AgentKitProvider implements ImageProviderInterface
                 'credential_name' => $credential->name,
                 'http_status' => $httpStatus,
                 'classification' => $errorType,
-                'validation' => 'codex_models_catalog',
+                'validation' => 'codex_responses_text_probe',
                 'image_generation_tested' => false,
             ],
         );
