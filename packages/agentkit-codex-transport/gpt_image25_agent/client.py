@@ -268,9 +268,23 @@ def _post_native_image_request(
             except Exception:
                 detail = None
             detail = str(detail or response.text or "no error detail")
+            # Keep only non-secret correlation/routing headers. These distinguish
+            # edge/WAF denials from application-level authorization errors without
+            # exposing cookies, bearer tokens, or request image data.
+            diagnostic_headers = {}
+            for header_name in ("cf-ray", "x-request-id", "x-openai-request-id",
+                                "x-codex-imagegen-request-id", "server", "content-type"):
+                header_value = response.headers.get(header_name)
+                if header_value:
+                    diagnostic_headers[header_name] = str(header_value)[:160]
+            header_summary = (
+                " (response headers: " +
+                json.dumps(diagnostic_headers, separators=(",", ":")) + ")"
+                if diagnostic_headers else ""
+            )
             raise ClientError(
                 f"Codex Images API HTTP {response.status_code}: "
-                f"{sanitize_error_text(detail[:1200])}"
+                f"{sanitize_error_text(detail[:1200])}{header_summary}"
             )
         try:
             result = response.json()
