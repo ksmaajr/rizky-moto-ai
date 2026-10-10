@@ -473,6 +473,36 @@
                                     </button>
                                 </div>
 
+                                <section class="rms-agent-runtime-panel" aria-labelledby="rms-agent-runtime-title">
+                                    <div class="rms-agent-runtime-head">
+                                        <div>
+                                            <span class="rms-agent-runtime-kicker">AGENTKIT RUNTIME</span>
+                                            <strong id="rms-agent-runtime-title">Worker Control Center</strong>
+                                            <small>Kelola worker AgentKit secara terpisah dari Laravel queue worker dan Vercel provider.</small>
+                                        </div>
+                                        @php
+                                            $agentRuntimeRunning = (bool) ($agentAiRuntimeStatus['running'] ?? false);
+                                            $agentRuntimeStatus = (string) ($agentAiRuntimeStatus['status'] ?? 'unknown');
+                                        @endphp
+                                        <span class="rms-agent-runtime-state {{ $agentRuntimeRunning ? 'is-running' : 'is-stopped' }}"><i></i>{{ $agentRuntimeRunning ? 'Running' : ucfirst($agentRuntimeStatus) }}</span>
+                                    </div>
+                                    <div class="rms-agent-runtime-meta">
+                                        <span><b>Driver</b><em>{{ $agentAiRuntimeStatus['driver'] ?? 'not configured' }}</em></span>
+                                        <span><b>Platform</b><em>{{ $agentAiRuntimeStatus['platform'] ?? PHP_OS_FAMILY }}</em></span>
+                                        <span><b>Queue</b><em>{{ config('services.agent_ai.queue', 'agentkit') }}</em></span>
+                                        <span><b>Workers</b><em>{{ $agentAiRuntimeStatus['worker_count'] ?? $agentAiRuntimeStatus['target_workers'] ?? config('services.agent_ai.worker_count', 3) }}</em></span>
+                                    </div>
+                                    @if (!empty($agentAiRuntimeStatus['message']))
+                                        <p class="rms-agent-runtime-message">{{ $agentAiRuntimeStatus['message'] }}</p>
+                                    @endif
+                                    <div class="rms-agent-runtime-actions">
+                                        <button type="button" wire:click="controlAgentAiRuntime('start')" wire:loading.attr="disabled" wire:target="controlAgentAiRuntime" @disabled($agentRuntimeRunning || $agentAiRuntimeBusy)><span>▶</span> Start</button>
+                                        <button type="button" wire:click="controlAgentAiRuntime('restart')" wire:loading.attr="disabled" wire:target="controlAgentAiRuntime" @disabled($agentAiRuntimeBusy)><span>↻</span> Restart</button>
+                                        <button type="button" wire:click="controlAgentAiRuntime('stop')" wire:loading.attr="disabled" wire:target="controlAgentAiRuntime" @disabled(!$agentRuntimeRunning || $agentAiRuntimeBusy)><span>■</span> Stop</button>
+                                        <button type="button" wire:click="refreshAgentAiRuntimeStatus" wire:loading.attr="disabled" wire:target="refreshAgentAiRuntimeStatus"><span>↻</span> Refresh status</button>
+                                    </div>
+                                </section>
+
                                 <div class="rms-agent-credential-list">
                                     @forelse ($agentAiCredentials as $credential)
                                         @php
@@ -5166,4 +5196,27 @@
 @media(prefers-reduced-motion:reduce){
     .rms-agent-credential-card,.rms-agent-test-button,.rms-agent-toggle-button{transition:none!important}
 }
+</style>
+
+<style>
+/* AgentKit runtime control center */
+.rms-agent-runtime-panel{margin:0 0 16px;padding:17px;border:1px solid var(--rms-border,#e5e7eb);border-radius:14px;background:var(--rms-surface,#fff);display:grid;gap:14px;min-width:0}
+.rms-agent-runtime-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.rms-agent-runtime-head>div{display:grid;gap:4px;min-width:0}
+.rms-agent-runtime-kicker{font-size:9px;letter-spacing:.13em;font-weight:800;color:var(--rms-muted,#6b7280)}
+.rms-agent-runtime-head strong{font-size:14px;font-weight:750;color:var(--rms-text,#111827)}
+.rms-agent-runtime-head small,.rms-agent-runtime-message{font-size:11px;line-height:1.5;color:var(--rms-muted,#6b7280)}
+.rms-agent-runtime-state{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;padding:6px 9px;border-radius:999px;font-size:10px;font-weight:750;background:#f3f4f6;color:#6b7280}
+.rms-agent-runtime-state i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.rms-agent-runtime-state.is-running{background:#ecfdf3;color:#16834a}
+.rms-agent-runtime-meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.rms-agent-runtime-meta span{display:grid;gap:5px;min-width:0;padding:10px;border:1px solid var(--rms-border,#e5e7eb);border-radius:10px}
+.rms-agent-runtime-meta b{font-size:9px;color:var(--rms-muted,#6b7280);font-weight:650}
+.rms-agent-runtime-meta em{font-size:11px;color:var(--rms-text,#111827);font-style:normal;overflow-wrap:anywhere}
+.rms-agent-runtime-message{margin:0}
+.rms-agent-runtime-actions{display:flex;flex-wrap:wrap;gap:8px}
+.rms-agent-runtime-actions button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:36px;padding:0 12px;border:1px solid var(--rms-border,#e5e7eb);border-radius:9px;background:var(--rms-surface,#fff);color:var(--rms-text,#111827);font-size:11px;font-weight:700;cursor:pointer}
+.rms-agent-runtime-actions button:first-child{background:#16834a;border-color:#16834a;color:#fff}
+.rms-agent-runtime-actions button:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:640px){.rms-agent-runtime-panel{padding:13px}.rms-agent-runtime-head{flex-direction:column}.rms-agent-runtime-meta{grid-template-columns:repeat(2,minmax(0,1fr))}.rms-agent-runtime-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.rms-agent-runtime-actions button{width:100%;padding:0 7px}}
 </style>
