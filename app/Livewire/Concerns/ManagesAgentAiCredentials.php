@@ -307,12 +307,15 @@ trait ManagesAgentAiCredentials
             "Write-Host 'Selesaikan login pada browser yang dibuka Codex CLI.'",
             "New-Item -ItemType Directory -Force -Path '" . $escape($accountHome) . "' | Out-Null",
             "\$env:CODEX_HOME = '" . $escape($accountHome) . "'",
+            // Force file-based auth storage; keyring/auto storage may otherwise
+            // reuse an OS-level login that is shared between Codex homes.
+            "'cli_auth_credentials_store = \"file\"' | Set-Content -LiteralPath '" . $escape($accountHome . DIRECTORY_SEPARATOR . 'config.toml') . "' -Encoding utf8",
             "\$codex = '" . $escape($binary) . "'",
             "& \$codex login",
             "if (\$LASTEXITCODE -ne 0) { Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue; Write-Host 'Login gagal atau dibatalkan. Credential tidak diimpor.' -ForegroundColor Red; Read-Host 'Tekan Enter untuk menutup'; exit \$LASTEXITCODE }",
+            "if (-not (Test-Path -LiteralPath '" . $escape($authFile) . "')) { Write-Host 'AUTH.JSON TIDAK DITEMUKAN pada CODEX_HOME terisolasi. CLI mungkin tidak menghormati CODEX_HOME atau tidak memakai file auth store. Akun tidak diimpor.' -ForegroundColor Red; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue; Read-Host 'Tekan Enter untuk menutup'; exit 2 }",
             $importCommand,
-            "if (\$LASTEXITCODE -eq 0) { Write-Host 'Import selesai. Buka Settings dan jalankan Test Token.' -ForegroundColor Green } else { Write-Host 'Import gagal. Periksa pesan error di atas.' -ForegroundColor Red }",
-            "Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue",
+            "if (\$LASTEXITCODE -eq 0) { Write-Host 'Import selesai. Buka Settings dan jalankan Test Token.' -ForegroundColor Green; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue } else { Write-Host 'Import gagal. Sesi sementara dipertahankan di ' + '" . $escape($accountHome) . "' + ' untuk diagnosis; hapus folder ini setelah diperiksa.' -ForegroundColor Red }",
             "Read-Host 'Tekan Enter untuk menutup jendela ini'",
             "",
         ]);
