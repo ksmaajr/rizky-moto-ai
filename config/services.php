@@ -30,6 +30,7 @@ return [
 
     'agent_ai' => [
         'python_binary' => env('AGENT_AI_PYTHON_BINARY', PHP_OS_FAMILY === 'Windows' ? 'python' : 'python3'),
+        'codex_cli_binary' => env('CODEX_CLI_BINARY', PHP_OS_FAMILY === 'Windows' ? 'codex.cmd' : 'codex'),
         'module' => env('AGENT_AI_MODULE', 'gpt_image25_agent'),
         'timeout' => (int) env('AGENT_AI_TIMEOUT', 300),
         // Maximum credential-pool attempts for a single generation (provider clamps to 1..5).
