@@ -453,11 +453,12 @@
                                     >
                                         <span class="rms-agent-add-icon" aria-hidden="true">
                                             <svg viewBox="0 0 24 24" fill="none" focusable="false">
-                                                <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                                <circle cx="9" cy="8" r="3.25" stroke="currentColor" stroke-width="1.7"/>
+                                                <path d="M3.8 19c.45-3.05 2.3-4.7 5.2-4.7 2.1 0 3.65.9 4.55 2.55" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                                                <path d="M17.5 11.5v7M14 15h7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
                                             </svg>
                                         </span>
-                                        <span class="rms-agent-add-label" wire:loading.remove wire:target="beginCodexLogin">Add Account</span>
-                                        <span class="rms-agent-add-label" wire:loading wire:target="beginCodexLogin">Opening login…</span>
+                                        <span class="rms-agent-add-label">Add Account</span>
                                         <svg class="rms-agent-add-chevron" wire:loading.remove wire:target="beginCodexLogin" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                                             <path d="m7.5 4.5 5.5 5.5-5.5 5.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
                                         </svg>
@@ -5727,4 +5728,17 @@
 @media(prefers-reduced-motion:reduce){
  .rms-provider-block-agent .rms-agent-add-button,.rms-provider-block-agent .rms-agent-add-chevron{transition:none!important}
 }
+</style>
+
+
+<style>
+/* Final fix: use a person-plus icon and keep the label stable during Livewire requests. */
+.rms-provider-block-agent .rms-agent-add-icon svg{width:19px!important;height:19px!important;overflow:visible}
+.rms-provider-block-agent .rms-agent-add-icon{width:32px;height:32px;flex-basis:32px}
+.rms-provider-block-agent .rms-agent-add-label{
+ display:inline-flex!important;flex:1 1 auto!important;align-items:center;justify-content:flex-start;
+ white-space:nowrap;font-size:11px!important;font-weight:800!important;line-height:1.2;
+}
+.rms-provider-block-agent .rms-agent-add-button:disabled .rms-agent-add-label{opacity:.86}
+.rms-provider-block-agent .rms-agent-add-button:disabled .rms-agent-add-chevron{opacity:.35}
 </style>
