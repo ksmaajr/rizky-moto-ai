@@ -19,6 +19,9 @@ trait ManagesAgentAiCredentials
     public int $agentAiActiveCredentialCount = 0;
     public array $agentAiRuntimeStatus = [];
     public bool $agentAiRuntimeBusy = false;
+    public bool $agentCredentialMonitoringOpen = false;
+    public array $selectedAgentCredentialMonitoring = [];
+    public array $agentCredentialMonitoringLogs = [];
 
     public function loadAgentAiCredentials(): void
     {
@@ -55,6 +58,81 @@ trait ManagesAgentAiCredentials
             ->where('is_active', true)
             ->whereNotIn('status', ['disabled', 'invalid', 'exhausted'])
             ->count();
+    }
+
+    public function openAgentCredentialMonitoring(int $credentialId): void
+    {
+        $credential = $this->agentCredentialForCurrentUser($credentialId);
+
+        if (! $credential) {
+            $this->dispatch('toast', type: 'error', title: 'Account tidak ditemukan', message: 'Credential tidak tersedia atau aksesnya tidak diizinkan.');
+            return;
+        }
+
+        $this->agentCredentialMonitoringOpen = true;
+        $this->refreshAgentCredentialMonitoring($credentialId);
+    }
+
+    public function refreshAgentCredentialMonitoring(?int $credentialId = null): void
+    {
+        $credentialId ??= (int) ($this->selectedAgentCredentialMonitoring['id'] ?? 0);
+
+        if ($credentialId <= 0 || ! $this->agentCredentialMonitoringOpen) {
+            return;
+        }
+
+        $credential = $this->agentCredentialForCurrentUser($credentialId);
+
+        if (! $credential) {
+            $this->closeAgentCredentialMonitoring();
+            return;
+        }
+
+        $this->selectedAgentCredentialMonitoring = [
+            'id' => $credential->id,
+            'name' => $credential->name,
+            'status' => $credential->status,
+            'is_active' => (bool) $credential->is_active,
+            'request_count' => (int) $credential->request_count,
+            'success_count' => (int) $credential->success_count,
+            'failure_count' => (int) $credential->failure_count,
+            'last_used_at' => $credential->last_used_at?->toIso8601String(),
+            'last_success_at' => $credential->last_success_at?->toIso8601String(),
+            'last_failure_at' => $credential->last_failure_at?->toIso8601String(),
+            'cooldown_until' => $credential->cooldown_until?->toIso8601String(),
+            'last_error_type' => $credential->last_error_type,
+            'last_error' => $credential->last_error,
+            'last_exit_code' => $credential->last_exit_code,
+            'created_at' => $credential->created_at?->toIso8601String(),
+        ];
+
+        $this->agentCredentialMonitoringLogs = \\App\\Models\\ActivityLog::query()
+            ->where('metadata->credential_id', $credentialId)
+            ->latest('id')
+            ->limit(25)
+            ->get()
+            ->map(function (\\App\\Models\\ActivityLog $log): array {
+                return [
+                    'id' => $log->id,
+                    'title' => $log->title ?: ($log->action ?: 'AgentKit activity'),
+                    'description' => $log->description ?: '',
+                    'status' => $log->status ?: 'info',
+                    'action' => $log->action ?: 'activity',
+                    'created_at' => $log->created_at?->toIso8601String(),
+                    'http_status' => data_get($log->metadata, 'http_status'),
+                    'duration_ms' => data_get($log->metadata, 'duration_ms'),
+                    'exit_code' => data_get($log->metadata, 'exit_code'),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    public function closeAgentCredentialMonitoring(): void
+    {
+        $this->agentCredentialMonitoringOpen = false;
+        $this->selectedAgentCredentialMonitoring = [];
+        $this->agentCredentialMonitoringLogs = [];
     }
 
     public function refreshAgentAiRuntimeStatus(): void
