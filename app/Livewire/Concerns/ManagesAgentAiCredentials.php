@@ -363,7 +363,7 @@ trait ManagesAgentAiCredentials
             "'cli_auth_credentials_store = \"file\"' | Set-Content -LiteralPath '" . $escape($accountHome . DIRECTORY_SEPARATOR . 'config.toml') . "' -Encoding utf8",
             "\$codex = '" . $escape($binary) . "'",
             "& \$codex login",
-            "if (\$LASTEXITCODE -ne 0) { " . $statusCommand('failed', 'Login gagal atau dibatalkan. Credential tidak diimpor.') . "; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue; Write-Host 'Login gagal atau dibatalkan. Credential tidak diimpor.' -ForegroundColor Red; Read-Host 'Tekan Enter untuk menutup'; exit \$LASTEXITCODE }",
+            "\$loginExitCode = \$LASTEXITCODE; if (\$loginExitCode -ne 0) { " . $statusCommand('failed', 'Login gagal atau dibatalkan. Credential tidak diimpor.') . "; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue; Write-Host 'Login gagal atau dibatalkan. Credential tidak diimpor.' -ForegroundColor Red; Read-Host 'Tekan Enter untuk menutup'; exit \$loginExitCode }",
             "if (-not (Test-Path -LiteralPath '" . $escape($authFile) . "')) { " . $statusCommand('failed', 'File auth.json tidak ditemukan pada CODEX_HOME terisolasi; akun tidak diimpor.') . "; Write-Host 'AUTH.JSON TIDAK DITEMUKAN pada CODEX_HOME terisolasi. CLI mungkin tidak menghormati CODEX_HOME atau tidak memakai file auth store. Akun tidak diimpor.' -ForegroundColor Red; Remove-Item -LiteralPath '" . $escape($accountHome) . "' -Recurse -Force -ErrorAction SilentlyContinue; Read-Host 'Tekan Enter untuk menutup'; exit 2 }",
             $statusCommand('importing', 'Login berhasil. Mengimpor access token terenkripsi ke credential pool...'),
             $importCommand,
@@ -398,6 +398,8 @@ trait ManagesAgentAiCredentials
 
             if ($result->failed()) {
                 @unlink($scriptPath);
+                Cache::put($this->codexLoginCacheKey(), ['session_id' => $loginSessionId, 'state' => 'failed', 'message' => 'PowerShell tidak dapat membuka jendela login Codex.', 'updated_at' => now()->toIso8601String()], now()->addMinutes(30));
+                $this->refreshCodexLoginStatus();
                 report(new \RuntimeException(trim($result->errorOutput() ?: $result->output())));
                 $this->dispatch('toast', type: 'error', title: 'Jendela login gagal dibuka', message: 'PowerShell tidak dapat membuka jendela login Codex. Jalankan codex login secara manual pada terminal host lokal.');
                 return;
@@ -410,6 +412,8 @@ trait ManagesAgentAiCredentials
                 message: 'Selesaikan login pada jendela PowerShell. Jendela akan tetap terbuka agar pesan error dapat dibaca jika login atau import gagal.'
             );
         } catch (\Throwable $e) {
+            Cache::put($this->codexLoginCacheKey(), ['session_id' => $loginSessionId, 'state' => 'failed', 'message' => 'Login Codex gagal dimulai. Periksa log aplikasi.', 'updated_at' => now()->toIso8601String()], now()->addMinutes(30));
+            $this->refreshCodexLoginStatus();
             report($e);
             $this->dispatch('toast', type: 'error', title: 'Login Codex gagal dimulai', message: 'Periksa log aplikasi dan pastikan aplikasi berjalan pada sesi Windows interaktif yang sama.');
         }
