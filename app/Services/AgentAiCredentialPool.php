@@ -168,6 +168,11 @@ final class AgentAiCredentialPool
         } elseif ($classification['status'] === 'exhausted') {
             $updates['status'] = 'exhausted';
             $updates['cooldown_until'] = null;
+        } elseif (($classification['reason'] ?? null) === 'provider_access_denied') {
+            // Keep a previously validated credential active. Endpoint/model
+            // permission failures are diagnostic, not proof of invalid auth.
+            $updates['status'] = $credential->is_active ? 'active' : 'pending_validation';
+            $updates['cooldown_until'] = null;
         } else {
             $updates['status'] = 'error';
             $updates['cooldown_until'] = null;
