@@ -117,7 +117,7 @@ final class AgentKitProvider implements ImageProviderInterface
                     'stream' => true,
                     'store' => false,
                 ]);
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             $message = 'Tidak dapat menghubungi endpoint validasi Codex. Periksa koneksi host AgentKit, lalu coba lagi.';
             $this->activity->error(
                 action: 'agent_credential_test',
