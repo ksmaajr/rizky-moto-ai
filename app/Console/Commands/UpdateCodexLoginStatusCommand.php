@@ -33,7 +33,7 @@ class UpdateCodexLoginStatusCommand extends Command
             return self::FAILURE;
         }
 
-        if (! in_array($state, ['waiting_for_login', 'importing', 'completed', 'failed'], true)) {
+        if (! in_array($state, ['starting', 'waiting_for_login', 'importing', 'completed', 'failed'], true)) {
             $this->error('State login tidak valid.');
             return self::FAILURE;
         }
