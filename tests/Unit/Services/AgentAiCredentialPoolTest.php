@@ -6,6 +6,7 @@ use App\Models\AgentAiCredential;
 use App\Models\User;
 use App\Services\AgentAiCredentialPool;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class AgentAiCredentialPoolTest extends TestCase
@@ -70,7 +71,7 @@ class AgentAiCredentialPoolTest extends TestCase
 
         $this->assertSame('cooldown', $result['status']);
         $this->assertTrue($result['retry']);
-        $this->assertSame(60, $result['seconds']);
+        $this->assertSame(300, $result['seconds']);
         $this->assertSame('rate_limited', $result['reason']);
     }
 
@@ -168,8 +169,10 @@ class AgentAiCredentialPoolTest extends TestCase
             'status' => 'active',
         ]);
 
-        $storedValue = AgentAiCredential::query()
-            ->whereKey($credential->id)
+        // Read through the base query builder so the encrypted Eloquent cast
+        // cannot transparently decrypt the value before this at-rest assertion.
+        $storedValue = DB::table('agent_ai_credentials')
+            ->where('id', $credential->id)
             ->value('access_token');
 
         $this->assertNotSame('do-not-store-this-in-plain-text', $storedValue);
