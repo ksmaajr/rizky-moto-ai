@@ -449,17 +449,29 @@
                                         wire:click="beginCodexLogin"
                                         wire:loading.attr="disabled"
                                         wire:target="beginCodexLogin"
+                                        @disabled($codexLoginInProgress)
+                                        aria-busy="{{ $codexLoginInProgress ? 'true' : 'false' }}"
                                         aria-controls="agent-codex-login-bridge"
                                     >
                                         <span class="rms-agent-add-icon" aria-hidden="true">
-                                            <svg viewBox="0 0 24 24" fill="none" focusable="false">
-                                                <circle cx="9" cy="8" r="3.25" stroke="currentColor" stroke-width="1.7"/>
-                                                <path d="M3.8 19c.45-3.05 2.3-4.7 5.2-4.7 2.1 0 3.65.9 4.55 2.55" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-                                                <path d="M17.5 11.5v7M14 15h7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-                                            </svg>
+                                            @if ($codexLoginInProgress)
+                                                <span class="rms-agent-login-spinner"></span>
+                                            @else
+                                                <svg viewBox="0 0 24 24" fill="none" focusable="false">
+                                                    <circle cx="9" cy="8" r="3.25" stroke="currentColor" stroke-width="1.7"/>
+                                                    <path d="M3.8 19c.45-3.05 2.3-4.7 5.2-4.7 2.1 0 3.65.9 4.55 2.55" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                                                    <path d="M17.5 11.5v7M14 15h7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                                                </svg>
+                                            @endif
                                         </span>
-                                        <span class="rms-agent-add-label">Add Account</span>
-                                        <svg class="rms-agent-add-chevron" wire:loading.remove wire:target="beginCodexLogin" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                        <span class="rms-agent-add-label">
+                                            @if ($codexLoginInProgress)
+                                                {{ $codexLoginState === 'importing' ? 'Menyimpan akun...' : 'Menunggu login...' }}
+                                            @else
+                                                Add Account
+                                            @endif
+                                        </span>
+                                        <svg class="rms-agent-add-chevron" wire:loading.remove wire:target="beginCodexLogin" viewBox="0 0 20 20" fill="none" aria-hidden="true" @if($codexLoginInProgress) style="display:none" @endif>
                                             <path d="m7.5 4.5 5.5 5.5-5.5 5.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
                                         </svg>
                                     </button>
@@ -472,6 +484,18 @@
                                         <span>{{ $codexCliAvailable ? 'Codex CLI terdeteksi. Login akan dibuka melalui PowerShell di development Windows.' : 'Codex CLI belum terdeteksi oleh proses web. Pastikan CLI tersedia di host AgentKit.' }}</span>
                                     </div>
                                     <span class="rms-agent-login-hint-state {{ $codexCliAvailable ? 'is-ready' : 'is-pending' }}"><i></i>{{ $codexCliAvailable ? 'CLI detected' : 'CLI not detected' }}</span>
+                                </div>
+                                <div wire:poll.3s="refreshCodexLoginStatus" class="rms-agent-login-progress" role="status" aria-live="polite">
+                                    @if ($codexLoginInProgress)
+                                        <span class="rms-agent-login-progress-dot is-running"></span>
+                                        <div><strong>{{ $codexLoginState === 'importing' ? 'Menyimpan credential' : 'Menunggu autentikasi Codex' }}</strong><small>{{ $codexLoginMessage ?: 'Selesaikan login pada jendela PowerShell yang terbuka.' }}</small></div>
+                                    @elseif ($codexLoginState === 'completed')
+                                        <span class="rms-agent-login-progress-dot is-success"></span>
+                                        <div><strong>Login selesai</strong><small>{{ $codexLoginMessage ?: 'Credential diimpor dan menunggu validasi AgentKit.' }}</small></div>
+                                    @elseif ($codexLoginState === 'failed')
+                                        <span class="rms-agent-login-progress-dot is-failed"></span>
+                                        <div><strong>Login gagal</strong><small>{{ $codexLoginMessage ?: 'Periksa pesan pada jendela PowerShell.' }}</small></div>
+                                    @endif
                                 </div>
 
                                 {{-- Worker controls live in the dedicated sidebar page. Keep this panel focused on credentials. --}}
@@ -5912,4 +5936,22 @@
 @media(max-width:760px){.rms-agent-monitor-overlay{background:rgba(24,24,27,.45)}.rms-agent-monitor-drawer{width:100%;border-left:0;animation:rmsAgentMonitorMobile .22s ease-out}.rms-agent-monitor-header{padding:22px 18px 18px;gap:12px}.rms-agent-monitor-heading h2{font-size:21px}.rms-agent-monitor-heading p{font-size:10px}.rms-agent-monitor-scroll{padding:16px 16px 24px}.rms-agent-monitor-metrics{gap:8px}.rms-agent-monitor-metrics article{padding:14px}.rms-agent-monitor-metrics article strong{font-size:22px}.rms-agent-monitor-details{grid-template-columns:minmax(0,1fr)}.rms-agent-monitor-footer{padding:12px 16px}.rms-agent-monitor-button{grid-column:1/-1;width:100%;min-height:40px}}
 @keyframes rmsAgentMonitorMobile{from{transform:translateY(18px);opacity:.7}to{transform:translateY(0);opacity:1}}
 @media(prefers-reduced-motion:reduce){.rms-agent-monitor-overlay,.rms-agent-monitor-drawer{animation:none!important}.rms-agent-monitor-close,.rms-agent-monitor-button{transition:none!important}}
+</style>
+
+
+<style>
+/* Real, cache-backed Codex login progress: the state follows PowerShell/import, not the Livewire request. */
+.rms-agent-login-spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.32);border-top-color:#fbbf24;border-radius:50%;animation:rmsCodexSpin .7s linear infinite}
+.rms-agent-login-progress{display:flex;align-items:flex-start;gap:10px;margin:0 18px 14px;padding:12px 14px;border:1px solid #e7e5e4;border-radius:12px;background:#fff}
+.rms-agent-login-progress:empty{display:none}
+.rms-agent-login-progress>div{display:grid;gap:4px;min-width:0}
+.rms-agent-login-progress strong{font-size:10px;font-weight:850;color:#44403c}
+.rms-agent-login-progress small{font-size:9px;line-height:1.6;color:#78716c;overflow-wrap:anywhere}
+.rms-agent-login-progress-dot{width:8px;height:8px;flex:0 0 8px;margin-top:3px;border-radius:50%;background:#d97706;box-shadow:0 0 0 4px #fef3c7}
+.rms-agent-login-progress-dot.is-running{animation:rmsCodexPulse 1.5s ease-in-out infinite}
+.rms-agent-login-progress-dot.is-success{background:#16a34a;box-shadow:0 0 0 4px #dcfce7}
+.rms-agent-login-progress-dot.is-failed{background:#dc2626;box-shadow:0 0 0 4px #fee2e2}
+@keyframes rmsCodexSpin{to{transform:rotate(360deg)}}@keyframes rmsCodexPulse{50%{box-shadow:0 0 0 7px rgba(217,119,6,.08)}}
+@media(max-width:760px){.rms-agent-login-progress{margin:0 9px 13px;padding:11px}}
+@media(prefers-reduced-motion:reduce){.rms-agent-login-spinner,.rms-agent-login-progress-dot.is-running{animation:none!important}}
 </style>
