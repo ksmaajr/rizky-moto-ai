@@ -47,6 +47,8 @@ trait ManagesAgentAiCredentials
         $this->agentAiCredentials = $rows->map(fn (AgentAiCredential $credential): array => [
             'id' => $credential->id,
             'name' => $credential->name,
+            'username' => $credential->username,
+            'email' => $credential->email,
             'status' => $credential->status,
             'is_active' => (bool) $credential->is_active,
             'request_count' => (int) $credential->request_count,
@@ -111,6 +113,8 @@ trait ManagesAgentAiCredentials
         $this->selectedAgentCredentialMonitoring = [
             'id' => $credential->id,
             'name' => $credential->name,
+            'username' => $credential->username,
+            'email' => $credential->email,
             'status' => $credential->status,
             'is_active' => (bool) $credential->is_active,
             'request_count' => (int) $credential->request_count,
