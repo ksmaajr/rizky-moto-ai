@@ -146,7 +146,7 @@ final class AgentAiCredentialPool
         // A detected provider rate limit starts this credential's configured
         // cooldown from the detection timestamp, not from when the drawer opens.
         if (($classification['reason'] ?? null) === 'rate_limited') {
-            $minutes = max(1, min(10080, (int) ($credential->cooldown_duration_minutes ?: 300)));
+            $minutes = max(1, min(10080, (int) ($credential->cooldown_duration_minutes ?: 1440)));
             $classification['seconds'] = $minutes * 60;
         }
 
