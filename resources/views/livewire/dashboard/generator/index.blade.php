@@ -463,7 +463,7 @@ new class extends Component
         // OpenAiImageService's legacy Vercel-only default.
         $availableModels = app(\App\Services\AI\ProviderManager::class)->availableModels(auth()->id());
         $this->model = (string) ($availableModels[0]['id'] ?? $imageService->defaultImageModel());
-        $this->aspectRatio = $settings?->default_aspect_ratio ?: '1:1';
+        $this->aspectRatio = '1:1';
         $this->quality = 'low';
 
         $latest = Generation::query()
@@ -506,7 +506,7 @@ new class extends Component
         $this->selectedTemplateId = $templateId;
 
         // Template adalah source of truth untuk default generator settings.
-        $this->aspectRatio = $template->aspect_ratio ?: '1:1';
+        $this->aspectRatio = '1:1';
         $this->quality = 'low';
     }
 
@@ -539,7 +539,7 @@ new class extends Component
                         $fail('Model tersebut tidak tersedia untuk provider aktif ' . $this->activeGenerationProviderLabel . '.');
                     }
                 }],
-                'aspectRatio' => ['required', 'in:1:1,4:5,3:4,16:9,9:16'],
+                'aspectRatio' => ['required', 'in:1:1'],
                 'quality' => ['required', 'in:low'],
                 'imageCount' => ['required', 'integer', 'min:1', 'max:4'],
             ], [
@@ -559,7 +559,7 @@ new class extends Component
                 ->where('is_active', true)
                 ->firstOrFail();
 
-            $this->aspectRatio = $template->aspect_ratio ?: $this->aspectRatio;
+            $this->aspectRatio = '1:1';
             $this->quality = 'low';
 
             $generation = app(\App\Services\OpenAiImageService::class)->queueGeneration(
@@ -1259,29 +1259,14 @@ new class extends Component
                                     @endforelse
                                 </div>
                             </div>
-                            <div class="rms-custom-select rms-custom-select-enhanced" x-data="{ open:false }" x-on:click.outside="open=false">
+                            <div class="rms-custom-select rms-custom-select-enhanced">
                                 <span class="rms-custom-select-label">Aspect Ratio</span>
-                                <button type="button" class="rms-custom-select-trigger" :class="{ 'is-open': open }" x-on:click="open=!open">
+                                <div class="rms-custom-select-trigger" aria-label="Aspect ratio 1:1 Square">
                                     <span>
-                                        <b x-text="aspectRatioLabel('{{ $aspectRatio }}')"></b>
-                                        <small>Canvas output</small>
+                                        <b>1:1 (Square)</b>
+                                        <small>Canvas output wajib persegi · 1024 × 1024</small>
                                     </span>
-                                    <i><svg viewBox="0 0 24 24"><path d="m7 9 5 5 5-5"/></svg></i>
-                                </button>
-                                <div class="rms-custom-select-menu" x-show="open" x-transition.opacity.scale.origin.top style="display:none">
-                                    @foreach([
-                                        '1:1' => ['1:1 (Square)', 'Perfect for marketplace & catalog'],
-                                        '4:5' => ['4:5 (Portrait)', 'Social & product feed'],
-                                        '3:4' => ['3:4 (Portrait)', 'Portrait product visual'],
-                                        '16:9' => ['16:9 (Landscape)', 'Banner & marketplace hero'],
-                                        '9:16' => ['9:16 (Story)', 'Story & vertical content'],
-                                    ] as $value => $meta)
-                                        <button type="button" class="{{ $aspectRatio === $value ? 'selected' : '' }}" x-on:click="setLivewireValue('aspectRatio','{{ $value }}'); open=false">
-                                            <span class="rms-option-ratio">{{ $value }}</span>
-                                            <span><strong>{{ $meta[0] }}</strong><small>{{ $meta[1] }}</small></span>
-                                            <i>{{ $aspectRatio === $value ? '✓' : '' }}</i>
-                                        </button>
-                                    @endforeach
+                                    <span class="rms-option-ratio">1:1</span>
                                 </div>
                             </div>
 
