@@ -527,6 +527,7 @@ class OpenAiImageService
 
                 Storage::disk('public')->put($path, $binary);
                 [$width, $height] = $this->imageDimensions(Storage::disk('public')->path($path));
+                $thumbnailPath = $this->createHistoryThumbnail($path, $binary);
 
                 GeneratedImage::query()->create([
                     'generation_id' => $generation->id,
@@ -537,6 +538,7 @@ class OpenAiImageService
                     'width' => $width,
                     'height' => $height,
                     'metadata' => [
+                        'thumbnail_path' => $thumbnailPath,
                         'openai_index' => $index,
                         'title_source' => $titleSource,
                         'final_title' => $customTitle,
@@ -1910,6 +1912,65 @@ PROMPT;
         }
 
         return null;
+    }
+
+    /**
+     * Create a small WebP thumbnail for the generation history grid.
+     * Original PNG remains untouched for full-size preview and download.
+     * If GD/WebP is unavailable on a host, history safely falls back to original.
+     */
+    private function createHistoryThumbnail(string $originalPath, string $binary): ?string
+    {
+        if (! function_exists('imagecreatefromstring') || ! function_exists('imagewebp')) {
+            return null;
+        }
+
+        $source = @imagecreatefromstring($binary);
+        if (! $source) {
+            return null;
+        }
+
+        $sourceWidth = imagesx($source);
+        $sourceHeight = imagesy($source);
+        if ($sourceWidth < 1 || $sourceHeight < 1) {
+            imagedestroy($source);
+            return null;
+        }
+
+        $maxEdge = 480;
+        $scale = min(1, $maxEdge / max($sourceWidth, $sourceHeight));
+        $width = max(1, (int) round($sourceWidth * $scale));
+        $height = max(1, (int) round($sourceHeight * $scale));
+        $thumbnail = imagecreatetruecolor($width, $height);
+
+        if (! $thumbnail) {
+            imagedestroy($source);
+            return null;
+        }
+
+        imagealphablending($thumbnail, false);
+        imagesavealpha($thumbnail, true);
+        $transparent = imagecolorallocatealpha($thumbnail, 0, 0, 0, 127);
+        imagefilledrectangle($thumbnail, 0, 0, $width, $height, $transparent);
+        imagecopyresampled($thumbnail, $source, 0, 0, 0, 0, $width, $height, $sourceWidth, $sourceHeight);
+
+        ob_start();
+        $encoded = imagewebp($thumbnail, null, 78);
+        $webp = ob_get_clean();
+
+        imagedestroy($thumbnail);
+        imagedestroy($source);
+
+        if (! $encoded || ! is_string($webp) || $webp === '') {
+            return null;
+        }
+
+        $thumbnailPath = preg_replace('/\\.png$/i', '.webp', $originalPath);
+        if (! is_string($thumbnailPath) || $thumbnailPath === $originalPath) {
+            $thumbnailPath = $originalPath . '.webp';
+        }
+
+        return Storage::disk('public')->put($thumbnailPath, $webp) ? $thumbnailPath : null;
     }
 
     private function imageDimensions(string $path): array
