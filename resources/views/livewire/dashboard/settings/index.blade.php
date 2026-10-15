@@ -90,7 +90,7 @@
 
         <section class="rms-settings-content">
             @if ($activeTab === 'server')
-                @php $m = $serverMetrics; @endphp
+                @php $m = $this->serverMetrics ?? []; @endphp
                 <div class="rms-settings-panel rms-settings-panel-enter" wire:key="server-monitoring-standalone">
                     <div class="rms-server-monitor" wire:poll.3s="refreshServerMetrics">
                         <div class="rms-server-hero">
@@ -1288,7 +1288,7 @@
                             <strong>All users · All providers · Auto refresh</strong>
                         </div>
                     @elseif ($activeTab === 'server')
-                        @php $m = $serverMetrics; @endphp
+                        @php $m = $this->serverMetrics ?? []; @endphp
                         <div class="rms-server-monitor" wire:poll.3s="refreshServerMetrics">
                             <div class="rms-server-hero">
                                 <div><span class="rms-server-kicker">INFRASTRUCTURE / LIVE TELEMETRY</span><h2>Server Monitoring</h2><p>Realtime health overview untuk VPS Rizky Moto Shop AI.</p></div>
