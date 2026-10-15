@@ -64,17 +64,29 @@ Route::middleware('auth')->group(function () {
         foreach (preg_split('/\\n/', $read('/proc/diskstats')) as $line) {
             $v=preg_split('/\\s+/', trim($line)); if (count($v)>13 && preg_match('/^(nvme|xvd|vd|sd)/', $v[2])) { $diskIo['read_sectors']+=(int)$v[5]; $diskIo['write_sectors']+=(int)$v[9]; }
         }
-        $history = \Illuminate\Support\Facades\DB::table('server_metric_snapshots')
-            ->where('collected_at', '>=', now()->subHours(24))
+        $historyRange = request()->query('range', '24h');
+        if (!in_array($historyRange, ['1h', '24h', '7d'], true)) $historyRange = '24h';
+        $historySince = now()->subSeconds(match ($historyRange) { '1h' => 3600, '7d' => 604800, default => 86400 });
+        $historyRows = \Illuminate\Support\Facades\DB::table('server_metric_snapshots')
+            ->where('collected_at', '>=', $historySince)
             ->orderBy('collected_at')
-            ->limit(720)
-            ->get(['collected_at', 'metrics'])
-            ->map(static function ($row) {
-                $m = json_decode($row->metrics, true) ?: [];
-                return ['time' => $row->collected_at, 'cpu' => (float) ($m['cpu_percent'] ?? 0), 'ram' => ($m['memory_total'] ?? 0) > 0 ? (($m['memory_used'] ?? 0) / $m['memory_total'] * 100) : 0, 'disk' => ($m['disk_total'] ?? 0) > 0 ? (($m['disk_used'] ?? 0) / $m['disk_total'] * 100) : 0, 'load' => (float) ($m['load'][0] ?? 0)];
-            })->values();
+            ->limit(match ($historyRange) { '1h' => 120, '7d' => 2000, default => 1000 })
+            ->get(['collected_at', 'metrics']);
+        $history = $historyRows->map(static function ($row) {
+            $m = json_decode($row->metrics, true) ?: [];
+            return ['time' => $row->collected_at, 'cpu' => (float) ($m['cpu_percent'] ?? 0), 'ram' => ($m['memory_total'] ?? 0) > 0 ? (($m['memory_used'] ?? 0) / $m['memory_total'] * 100) : 0, 'disk' => ($m['disk_total'] ?? 0) > 0 ? (($m['disk_used'] ?? 0) / $m['disk_total'] * 100) : 0, 'load' => (float) ($m['load'][0] ?? 0)];
+        })->values();
+        $analytics = [];
+        foreach (['cpu', 'ram', 'disk', 'load'] as $metric) {
+            $values = $history->pluck($metric)->map(static fn ($v) => (float) $v);
+            $analytics[$metric] = ['avg' => round((float) $values->avg(), 2), 'max' => round((float) $values->max(), 2), 'min' => round((float) $values->min(), 2)];
+        }
+        $alerts = \Illuminate\Support\Facades\DB::table('server_monitor_alerts')
+            ->orderByRaw('resolved_at IS NULL DESC')->orderByDesc('started_at')->limit(12)
+            ->get(['id', 'metric_key', 'severity', 'title', 'message', 'observed_value', 'threshold_value', 'started_at', 'resolved_at'])
+            ->map(static fn ($a) => (array) $a)->values();
         return response()->json([
-            'ok'=>true,'time'=>now()->toIso8601String(),'history'=>$history,'hostname'=>gethostname()?:'Server','os'=>php_uname('s').' '.php_uname('r'),
+            'ok'=>true,'time'=>now()->toIso8601String(),'history_range'=>$historyRange,'history'=>$history,'analytics'=>$analytics,'alerts'=>$alerts,'hostname'=>gethostname()?:'Server','os'=>php_uname('s').' '.php_uname('r'),
             'php'=>PHP_VERSION,'laravel'=>app()->version(),'environment'=>app()->environment(),'uptime_seconds'=>(int)($up[0]??0),
             'load'=>array_map(static fn($v)=>round((float)$v,2),$load),'cpu_cores'=>$cores,'cpu_ticks'=>array_map('intval',$cpuLine),
             'memory_total'=>$total,'memory_available'=>$available,'memory_used'=>max(0,$total-$available),
