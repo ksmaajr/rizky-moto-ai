@@ -8,14 +8,15 @@ use Illuminate\Support\Facades\Route;
 
 Route::livewire('/login', 'pages::auth.login')->name('login');
 
-Route::get('/', function () {
-    return auth()->check()
-        ? redirect()->route('dashboard')
-        : redirect()->route('login');
-})->name('home');
+// Use the domain root as the dashboard URL after authentication.
+Route::livewire('/', 'pages::dashboard')
+    ->middleware('auth')
+    ->name('dashboard');
+
+// Keep old dashboard links working, but normalize the visible URL to "/".
+Route::redirect('/dashboard', '/')->name('dashboard.legacy');
 
 Route::middleware('auth')->group(function () {
-    Route::livewire('/dashboard', 'pages::dashboard')->name('dashboard');
 
     // Account settings pages.
     Route::middleware('verified')->group(function () {
