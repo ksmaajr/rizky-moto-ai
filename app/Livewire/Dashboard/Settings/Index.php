@@ -58,7 +58,9 @@ class Index extends Component
         $this->loadAgentAiCredentials();
         $this->refreshVercelGatewayKeys();
         $this->refreshActivityLogs();
-        $this->refreshServerMetrics();
+        if ($this->activeTab === 'server') {
+            $this->refreshServerMetrics();
+        }
     }
 
     public function selectTab(string $tab): void
