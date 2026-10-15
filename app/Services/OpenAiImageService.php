@@ -134,8 +134,9 @@ class OpenAiImageService
         set_time_limit(300);
         ini_set('max_execution_time', '300');
 
-        // Enforce Low server-side; ignore UI/template quality overrides.
+        // Enforce Low quality and square output server-side; ignore UI/Template overrides.
         $quality = 'low';
+        $aspectRatio = '1:1';
         $startedAt = microtime(true);
         $httpErrorLogged = false;
         $store = $this->resolveStoreForTemplate($store, $template);
@@ -678,8 +679,9 @@ class OpenAiImageService
         int $imageCount = 1,
         ?string $customTitle = null,
     ): Generation {
-        // Persist Low regardless of legacy Template/client-submitted quality values.
+        // Persist Low quality and 1:1 regardless of legacy Template/client values.
         $quality = 'low';
+        $aspectRatio = '1:1';
         $startedAt = microtime(true);
         $store = $this->resolveStoreForTemplate($store, $template);
 
@@ -1874,11 +1876,8 @@ PROMPT;
 
     private function mapSize(string $aspectRatio): string
     {
-        return match ($aspectRatio) {
-            '16:9' => '1536x1024',
-            '4:5', '3:4', '9:16' => '1024x1536',
-            default => '1024x1024',
-        };
+        // Marketplace generator is locked to a square canvas for every Vercel request.
+        return '1024x1024';
     }
 
     private function mapQuality(string $quality): string
