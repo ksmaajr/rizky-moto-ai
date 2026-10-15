@@ -92,23 +92,37 @@
             @if ($activeTab === 'server')
                 <div class="rms-settings-panel rms-settings-panel-enter" wire:key="server-monitoring-standalone">
                     <div class="rms-server-monitor" x-data="{
-                        metrics: null, loading: true, error: '', updatedAt: null, timer: null,
+                        metrics: null, loading: true, error: '', updatedAt: null, timer: null, cpuPercent: 0, rxRate: 0, txRate: 0, readRate: 0, writeRate: 0, previous: null, samples: [],
                         async refresh() {
                             try {
                                 const response = await fetch('{{ route('dashboard.server-monitoring.metrics') }}', {headers: {'Accept':'application/json'}, credentials:'same-origin', cache:'no-store'});
                                 if (!response.ok) throw new Error('HTTP ' + response.status + ' — endpoint metrics tidak merespons');
                                 const payload = await response.json();
                                 if (!payload.ok) throw new Error('Server tidak mengembalikan data metrics');
+                                const now = Date.now(), prev = this.previous, elapsed = prev ? Math.max(.1,(now-prev.at)/1000) : 0;
+                                if (prev && elapsed > 0) {
+                                    const a = prev.cpu || [], c = payload.cpu_ticks || [], total = c.reduce((sum,v)=>sum+v,0)-a.reduce((sum,v)=>sum+v,0), idle = (c[3]||0)+(c[4]||0)-(a[3]||0)-(a[4]||0);
+                                    this.cpuPercent = total > 0 ? Math.max(0,Math.min(100,(total-idle)/total*100)) : 0;
+                                    this.rxRate = Math.max(0,(payload.network?.rx_bytes||0)-(prev.rx||0))/elapsed;
+                                    this.txRate = Math.max(0,(payload.network?.tx_bytes||0)-(prev.tx||0))/elapsed;
+                                    this.readRate = Math.max(0,((payload.disk_io?.read_sectors||0)-(prev.read||0))*512)/elapsed;
+                                    this.writeRate = Math.max(0,((payload.disk_io?.write_sectors||0)-(prev.write||0))*512)/elapsed;
+                                }
+                                this.previous = {at:now,cpu:payload.cpu_ticks||[],rx:payload.network?.rx_bytes||0,tx:payload.network?.tx_bytes||0,read:payload.disk_io?.read_sectors||0,write:payload.disk_io?.write_sectors||0};
                                 this.metrics = payload; this.error = ''; this.updatedAt = new Date();
+                                this.samples.push({time:this.updatedAt.toLocaleTimeString(),cpu:this.cpuPercent,ram:this.pct(payload.memory_used,payload.memory_total),disk:this.pct(payload.disk_used,payload.disk_total),load:payload.load?.[0]||0});
+                                if (this.samples.length > 60) this.samples.shift();
                             } catch (e) { this.error = e.message || 'Gagal mengambil metrics'; }
                             finally { this.loading = false; }
                         },
-                        init() { this.refresh(); this.timer = setInterval(() => { if (!document.hidden) this.refresh(); }, 10000); },
+                        init() { this.refresh(); this.timer = setInterval(() => { if (!document.hidden) this.refresh(); }, 5000); },
                         destroy() { if (this.timer) clearInterval(this.timer); },
                         fmt(bytes, digits=2) { return bytes == null ? '—' : (bytes / 1073741824).toFixed(digits); },
+                        rate(bytes) { if (bytes == null) return '—'; return bytes >= 1048576 ? (bytes/1048576).toFixed(2)+' MiB/s' : (bytes/1024).toFixed(1)+' KiB/s'; },
                         pct(used,total) { return total > 0 ? Math.min(100,Math.max(0,used/total*100)) : 0; },
                         duration(seconds) { if (seconds == null) return '—'; const d=Math.floor(seconds/86400),h=Math.floor(seconds%86400/3600),m=Math.floor(seconds%3600/60); return (d?d+'d ':'')+h+'h '+m+'m'; },
-                        serviceLabel(value) { return value === 'active' ? 'RUNNING' : (value === 'inactive' || value === 'failed' ? value.toUpperCase() : 'UNKNOWN'); }
+                        serviceLabel(value) { return value === 'active' ? 'RUNNING' : (value === 'inactive' || value === 'failed' ? value.toUpperCase() : 'UNKNOWN'); },
+                        chartPoints(key) { const arr=this.samples.map(s=>Number(s[key])||0); if(arr.length<2)return '0,54 100,54'; const max=Math.max(1,...arr); return arr.map((v,i)=>(i/(arr.length-1))*100+','+(54-(v/max)*48)).join(' '); }
                     }">
                         <div class="rms-server-hero rms-server-hero-pro">
                             <div class="rms-server-hero-copy"><span class="rms-server-kicker">INFRASTRUCTURE / LIVE TELEMETRY</span><h2>Server Intelligence</h2><p>Realtime visibility untuk performa dan kesehatan VPS Rizky Moto Shop AI.</p>
@@ -122,6 +136,26 @@
                             <article class="rms-server-stat"><div class="rms-server-stat-top"><span class="rms-server-stat-icon memory"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="2"/><path d="M7 7V4m5 3V4m5 3V4M7 17v3m5-3v3m5-3v3M7 10h2v4H7zm5 0h2v4h-2zm5 0h1v4h-1z"/></svg></span><span class="rms-server-stat-label">MEMORY</span><span class="rms-server-stat-live">RAM</span></div><strong><span x-text="metrics?.memory_total ? Math.round(pct(metrics.memory_used,metrics.memory_total)) : '—'"></span><em>%</em></strong><small><span x-text="fmt(metrics?.memory_used)"></span> / <span x-text="fmt(metrics?.memory_total)"></span> GiB used</small><div class="rms-server-meter"><i class="memory-bar" :style="'width:'+pct(metrics?.memory_used||0,metrics?.memory_total||0)+'%'"></i></div><div class="rms-server-stat-bottom"><span>Available <b x-text="fmt(metrics?.memory_available)+' GiB'"></b></span></div></article>
                             <article class="rms-server-stat"><div class="rms-server-stat-top"><span class="rms-server-stat-icon disk"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></span><span class="rms-server-stat-label">DISK STORAGE</span><span class="rms-server-stat-live">ROOT FS</span></div><strong><span x-text="metrics?.disk_total ? Math.round(pct(metrics.disk_used,metrics.disk_total)) : '—'"></span><em>%</em></strong><small><span x-text="fmt(metrics?.disk_used,1)"></span> GiB used · <span x-text="fmt(metrics?.disk_free,1)"></span> GiB free</small><div class="rms-server-meter"><i class="disk-bar" :style="'width:'+pct(metrics?.disk_used||0,metrics?.disk_total||0)+'%'"></i></div><div class="rms-server-stat-bottom"><span>Total capacity <b x-text="fmt(metrics?.disk_total,1)+' GiB'"></b></span></div></article>
                             <article class="rms-server-stat"><div class="rms-server-stat-top"><span class="rms-server-stat-icon swap"><svg viewBox="0 0 24 24"><path d="M7 7h13l-3-3m3 3-3 3M17 17H4l3 3m-3-3 3-3"/></svg></span><span class="rms-server-stat-label">SWAP MEMORY</span><span class="rms-server-stat-live">VIRTUAL</span></div><strong><span x-text="metrics?.swap_total ? Math.round(pct(metrics.swap_used,metrics.swap_total)) : 0"></span><em>%</em></strong><small><span x-text="fmt(metrics?.swap_used,2)"></span> / <span x-text="fmt(metrics?.swap_total,2)"></span> GiB used</small><div class="rms-server-meter"><i class="swap-bar" :style="'width:'+pct(metrics?.swap_used||0,metrics?.swap_total||0)+'%'"></i></div><div class="rms-server-stat-bottom"><span>Kernel uptime <b x-text="duration(metrics?.uptime_seconds)"></b></span></div></article>
+                        </div>
+                        <div class="rms-server-analytics-grid">
+                            <section class="rms-server-card rms-server-card-pro rms-server-chart-card"><header><div><span>PERFORMANCE ANALYTICS</span><h3>Resource trends</h3><p>Riwayat sampel sejak halaman monitoring dibuka · hingga 60 sampel.</p></div><span class="rms-server-section-icon"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 6-7"/></svg></span></header>
+                                <div class="rms-server-chart-grid">
+                                    <div class="rms-server-chart"><div><span><i class="chart-dot cpu-dot"></i>CPU actual</span><strong x-text="cpuPercent.toFixed(1)+'%'"></strong></div><svg viewBox="0 0 100 56" preserveAspectRatio="none" role="img" aria-label="CPU history"><polyline :points="chartPoints('cpu')"/></svg></div>
+                                    <div class="rms-server-chart"><div><span><i class="chart-dot ram-dot"></i>RAM usage</span><strong x-text="metrics?.memory_total ? Math.round(pct(metrics.memory_used,metrics.memory_total))+'%' : '—'"></strong></div><svg viewBox="0 0 100 56" preserveAspectRatio="none" role="img" aria-label="RAM history"><polyline class="ram-line" :points="chartPoints('ram')"/></svg></div>
+                                    <div class="rms-server-chart"><div><span><i class="chart-dot disk-dot"></i>Disk usage</span><strong x-text="metrics?.disk_total ? Math.round(pct(metrics.disk_used,metrics.disk_total))+'%' : '—'"></strong></div><svg viewBox="0 0 100 56" preserveAspectRatio="none" role="img" aria-label="Disk history"><polyline class="disk-line" :points="chartPoints('disk')"/></svg></div>
+                                </div><div class="rms-server-chart-foot"><span x-text="samples.length+' samples captured'"></span><span>Refresh setiap 5 detik</span></div>
+                            </section>
+                            <section class="rms-server-card rms-server-card-pro rms-server-chart-card"><header><div><span>THROUGHPUT / I/O</span><h3>Network &amp; disk activity</h3><p>Kecepatan trafik dan aktivitas storage saat ini.</p></div><span class="rms-server-section-icon"><svg viewBox="0 0 24 24"><path d="M12 3v18m-7-7 7 7 7-7M5 7l7-4 7 4"/></svg></span></header>
+                                <div class="rms-server-throughput">
+                                    <div><span class="rms-server-throughput-icon rx">↓</span><span><small>Network received</small><strong x-text="rate(rxRate)"></strong></span></div>
+                                    <div><span class="rms-server-throughput-icon tx">↑</span><span><small>Network sent</small><strong x-text="rate(txRate)"></strong></span></div>
+                                    <div><span class="rms-server-throughput-icon io">R</span><span><small>Disk read</small><strong x-text="rate(readRate)"></strong></span></div>
+                                    <div><span class="rms-server-throughput-icon io">W</span><span><small>Disk write</small><strong x-text="rate(writeRate)"></strong></span></div>
+                                </div>
+                                <div class="rms-server-process-summary"><span>Processes detected</span><strong x-text="metrics?.process_count ?? 'Restricted'"></strong></div>
+                                <div class="rms-server-process-summary"><span>Memory cache + buffers</span><strong x-text="fmt((metrics?.buffers_bytes||0)+(metrics?.cached_bytes||0))+' GiB'"></strong></div>
+                                <div class="rms-server-chart-foot"><span>Rates calculated between successful samples</span></div>
+                            </section>
                         </div>
                         <div class="rms-server-lower-grid rms-server-lower-grid-pro">
                             <section class="rms-server-card rms-server-card-pro"><header><div><span>HOST INTELLIGENCE</span><h3>System overview</h3><p>Runtime dan identitas mesin yang menjalankan aplikasi.</p></div><span class="rms-server-section-icon">⌘</span></header><dl>
@@ -6092,6 +6126,12 @@
 <style>
 /* Server monitoring panel styles */
 /* Premium server intelligence dashboard */
+/* Live metrics and analytical panels: update values without motion */
+.rms-server-meter i,.rms-server-stat,.rms-server-stat:hover{transition:none!important;animation:none!important}
+.rms-server-analytics-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;min-width:0}.rms-server-chart-card{min-width:0;overflow:hidden}.rms-server-chart-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:20px}.rms-server-chart{min-width:0;padding:12px;border:1px solid #eeeeF2;border-radius:12px;background:#fcfcfd}.rms-server-chart>div{display:flex;align-items:center;justify-content:space-between;gap:5px;margin-bottom:12px}.rms-server-chart>div span{display:flex;align-items:center;gap:5px;color:#777783;font-size:9px;font-weight:750}.rms-server-chart>div strong{font-size:12px;font-variant-numeric:tabular-nums}.rms-server-chart svg{display:block;width:100%;height:66px;overflow:visible}.rms-server-chart polyline{fill:none;stroke:#ef4444;stroke-width:1.7;vector-effect:non-scaling-stroke}.rms-server-chart polyline.ram-line{stroke:#06a6c5}.rms-server-chart polyline.disk-line{stroke:#0d9488}.chart-dot{width:6px;height:6px;border-radius:50%;background:#ef4444}.chart-dot.ram-dot{background:#06a6c5}.chart-dot.disk-dot{background:#0d9488}.rms-server-chart-foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:14px;color:#9898a2;font-size:9px}.rms-server-throughput{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:20px}.rms-server-throughput>div{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #eeeeF2;border-radius:12px;min-width:0}.rms-server-throughput-icon{display:grid;place-items:center;width:30px;height:30px;flex:0 0 30px;border-radius:9px;background:#ecfdf5;color:#059669;font-size:14px;font-weight:850}.rms-server-throughput-icon.tx{background:#eff6ff;color:#2563eb}.rms-server-throughput-icon.io{background:#f5f3ff;color:#7c3aed;font-size:10px}.rms-server-throughput small{display:block;color:#92929c;font-size:9px}.rms-server-throughput strong{display:block;margin-top:4px;font-size:12px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}.rms-server-process-summary{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid #f0f0f3;color:#858590;font-size:10px}.rms-server-process-summary strong{color:#333;font-variant-numeric:tabular-nums}
+@media(max-width:1100px){.rms-server-analytics-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:680px){.rms-server-chart-grid{grid-template-columns:minmax(0,1fr)}.rms-server-chart svg{height:75px}.rms-server-throughput{grid-template-columns:repeat(2,minmax(0,1fr))}.rms-server-chart-foot{font-size:8px}}
+
 .rms-server-monitor{display:grid;gap:18px;padding:2px 0 8px;color:#18181b;min-width:0}
 .rms-server-hero-pro{position:relative;overflow:hidden;min-height:190px;padding:30px!important;border:1px solid #34343a;background:radial-gradient(ellipse at 82% 0%,rgba(99,102,241,.24),transparent 35%),radial-gradient(ellipse at 100% 100%,rgba(239,48,48,.16),transparent 34%),linear-gradient(125deg,#111114 0%,#202026 62%,#292126 100%)!important}
 .rms-server-hero-pro:after{content:"";position:absolute;width:230px;height:230px;border:1px solid #ffffff12;border-radius:50%;right:8%;top:-100px;box-shadow:0 0 0 22px #ffffff05,0 0 0 44px #ffffff03;pointer-events:none}
