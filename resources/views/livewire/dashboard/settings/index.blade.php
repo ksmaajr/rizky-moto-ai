@@ -68,6 +68,20 @@
                 <i class="rms-settings-tab-status"></i>
             </button>
 
+            <button
+                type="button"
+                class="rms-settings-tab"
+                :class="{ 'is-active': $wire.activeTab === 'server' }"
+                wire:click="selectTab('server')"
+            >
+                <span class="rms-settings-tab-icon">⌁</span>
+                <span>
+                    <strong>Server Monitoring</strong>
+                    <small>Live system metrics</small>
+                </span>
+                <i class="rms-settings-tab-status"></i>
+            </button>
+
             <div class="rms-settings-tabs-footer">
                 <span><i></i> Internal workspace</span>
                 <span>BUILD 01.00</span>
@@ -75,7 +89,7 @@
         </aside>
 
         <section class="rms-settings-content">
-            @if (in_array($activeTab, ['provider', 'activity'], true))
+            @if (in_array($activeTab, ['provider', 'activity', 'server'], true))
                 <div
                     class="rms-settings-panel rms-settings-panel-enter"
                     wire:key="settings-openai-panel"
@@ -1246,6 +1260,33 @@
                             <span><i></i> Activity stream is live and server-managed</span>
                             <strong>All users · All providers · Auto refresh</strong>
                         </div>
+                    @elseif ($activeTab === 'server')
+                        @php $m = $serverMetrics; @endphp
+                        <div class="rms-server-monitor" wire:poll.3s="refreshServerMetrics">
+                            <div class="rms-server-hero">
+                                <div><span class="rms-server-kicker">INFRASTRUCTURE / LIVE TELEMETRY</span><h2>Server Monitoring</h2><p>Realtime health overview untuk VPS Rizky Moto Shop AI.</p></div>
+                                <div class="rms-server-live"><i></i><span>LIVE</span><small>{{ isset($m['time']) ? \Carbon\Carbon::parse($m['time'])->format('H:i:s') : 'Connecting…' }}</small></div>
+                            </div>
+                            <div class="rms-server-metric-grid">
+                                <article><span>CPU LOAD</span><strong>{{ $m['load'][0] ?? '—' }}</strong><small>{{ $m['cpu_cores'] ?? '—' }} logical cores · 1 min average</small><div class="rms-server-meter"><i style="width:{{ min(100, (float)($m['load'][0] ?? 0) / max(1,(int)($m['cpu_cores'] ?? 1))*100) }}%"></i></div></article>
+                                <article><span>MEMORY USAGE</span><strong>{{ isset($m['memory_total']) && $m['memory_total'] ? round(($m['memory_used']/$m['memory_total'])*100) : '—' }}<em>%</em></strong><small>{{ number_format(($m['memory_used'] ?? 0)/1073741824,2) }} / {{ number_format(($m['memory_total'] ?? 0)/1073741824,2) }} GiB used</small><div class="rms-server-meter"><i style="width:{{ isset($m['memory_total']) && $m['memory_total'] ? min(100,$m['memory_used']/$m['memory_total']*100) : 0 }}%"></i></div></article>
+                                <article><span>DISK USAGE</span><strong>{{ isset($m['disk_total']) && $m['disk_total'] ? round(($m['disk_used']/$m['disk_total'])*100) : '—' }}<em>%</em></strong><small>{{ number_format(($m['disk_free'] ?? 0)/1073741824,1) }} GiB free</small><div class="rms-server-meter"><i style="width:{{ isset($m['disk_total']) && $m['disk_total'] ? min(100,$m['disk_used']/$m['disk_total']*100) : 0 }}%"></i></div></article>
+                                <article><span>SWAP USED</span><strong>{{ isset($m['swap_total']) && $m['swap_total'] ? round(($m['swap_used']/$m['swap_total'])*100) : 0 }}<em>%</em></strong><small>{{ number_format(($m['swap_used'] ?? 0)/1048576,0) }} / {{ number_format(($m['swap_total'] ?? 0)/1048576,0) }} MiB</small><div class="rms-server-meter"><i style="width:{{ isset($m['swap_total']) && $m['swap_total'] ? min(100,$m['swap_used']/$m['swap_total']*100) : 0 }}%"></i></div></article>
+                            </div>
+                            <div class="rms-server-lower-grid">
+                                <section class="rms-server-card"><header><div><span>SYSTEM OVERVIEW</span><h3>Runtime &amp; host</h3></div><b>HOST</b></header><dl>
+                                    <div><dt>Hostname</dt><dd>{{ $m['hostname'] ?? '—' }}</dd></div><div><dt>Operating system</dt><dd>{{ $m['os'] ?? '—' }}</dd></div><div><dt>PHP runtime</dt><dd>{{ $m['php'] ?? PHP_VERSION }}</dd></div><div><dt>Laravel</dt><dd>{{ $m['laravel'] ?? app()->version() }}</dd></div><div><dt>Environment</dt><dd>{{ strtoupper($m['environment'] ?? app()->environment()) }}</dd></div><div><dt>Uptime</dt><dd>{{ isset($m['uptime_seconds']) ? floor($m['uptime_seconds']/86400).'d '.floor(($m['uptime_seconds']%86400)/3600).'h '.floor(($m['uptime_seconds']%3600)/60).'m' : '—' }}</dd></div>
+                                </dl></section>
+                                <section class="rms-server-card"><header><div><span>SERVICE HEALTH</span><h3>Core services</h3></div><b>STATUS</b></header><div class="rms-server-services">
+                                    @foreach (($m['services'] ?? []) as $service => $active)<div><span><i class="{{ $active === true ? 'is-up' : ($active === false ? 'is-down' : 'is-unknown') }}"></i>{{ $service }}</span><strong>{{ $active === true ? 'RUNNING' : ($active === false ? 'STOPPED' : 'UNKNOWN') }}</strong></div>@endforeach
+                                    <div><span><i class="{{ ($m['queue_workers'] ?? 0) > 0 ? 'is-up' : 'is-unknown' }}"></i>Laravel queue workers</span><strong>{{ $m['queue_workers'] ?? 'N/A' }} detected</strong></div>
+                                </div></section>
+                            </div>
+                            <div class="rms-server-foot"><span><i></i> Metrics refresh automatically every 3 seconds while this tab is open.</span><button type="button" wire:click="refreshServerMetrics" wire:loading.attr="disabled">↻ Refresh now</button></div>
+                        </div>
+                        <style>
+                        .rms-server-monitor{display:grid;gap:20px;padding:2px 0 8px;color:#18181b}.rms-server-hero{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:30px;border-radius:20px;background:radial-gradient(circle at 90% 0%,rgba(239,48,48,.2),transparent 32%),linear-gradient(125deg,#18181b,#27272a);color:#fff}.rms-server-kicker{font-size:9px;font-weight:850;letter-spacing:.16em;color:#ff7777}.rms-server-hero h2{margin:9px 0 5px;font-size:clamp(24px,3vw,34px);letter-spacing:-.045em}.rms-server-hero p{margin:0;color:#b7b7c0;font-size:12px}.rms-server-live{display:grid;grid-template-columns:8px auto;align-items:center;gap:5px 8px;padding:12px 15px;border:1px solid #45454c;border-radius:13px;background:#202024}.rms-server-live i,.rms-server-foot>span i{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px #22c55e22}.rms-server-live span{font-size:10px;font-weight:900;letter-spacing:.1em}.rms-server-live small{grid-column:2;color:#aaaab5;font-size:10px}.rms-server-metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.rms-server-metric-grid article,.rms-server-card{min-width:0;border:1px solid #e7e7eb;border-radius:16px;background:#fff;box-shadow:0 4px 18px #18181b05}.rms-server-metric-grid article{padding:19px}.rms-server-metric-grid article>span,.rms-server-card header>div>span{display:block;color:#8b8b95;font-size:9px;font-weight:850;letter-spacing:.12em}.rms-server-metric-grid article>strong{display:block;margin:13px 0 4px;font-size:31px;letter-spacing:-.06em}.rms-server-metric-grid article>strong em{font-size:15px;font-style:normal;color:#888894}.rms-server-metric-grid article>small{display:block;min-height:30px;color:#8b8b95;font-size:10px;line-height:1.5}.rms-server-meter{height:5px;margin-top:13px;overflow:hidden;border-radius:99px;background:#f0f0f3}.rms-server-meter i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#ef3030,#fb7185);transition:width .5s ease}.rms-server-lower-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.rms-server-card{padding:22px}.rms-server-card header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:16px;border-bottom:1px solid #f0f0f2}.rms-server-card header h3{margin:5px 0 0;font-size:16px;letter-spacing:-.03em}.rms-server-card header>b{padding:6px 8px;border-radius:7px;background:#f5f5f7;color:#777782;font-size:8px;letter-spacing:.1em}.rms-server-card dl{margin:0}.rms-server-card dl>div,.rms-server-services>div{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f4f4f6}.rms-server-card dl>div:last-child,.rms-server-services>div:last-child{border-bottom:0}.rms-server-card dt{color:#858590;font-size:11px}.rms-server-card dd{margin:0;text-align:right;overflow-wrap:anywhere;font-size:11px;font-weight:750}.rms-server-services>div>span{display:flex;align-items:center;gap:9px;font-size:11px;font-weight:650}.rms-server-services i{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#a1a1aa}.rms-server-services i.is-up{background:#22c55e;box-shadow:0 0 0 4px #22c55e1c}.rms-server-services i.is-down{background:#ef4444;box-shadow:0 0 0 4px #ef44441c}.rms-server-services strong{font-size:9px;letter-spacing:.04em;color:#71717a}.rms-server-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 2px;color:#858590;font-size:10px}.rms-server-foot>span{display:flex;align-items:center;gap:9px}.rms-server-foot button{padding:10px 13px;border:1px solid #e4e4e7;border-radius:10px;background:#fff;font-size:10px;font-weight:800;cursor:pointer}@media(max-width:1000px){.rms-server-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:650px){.rms-server-hero{align-items:flex-start;flex-direction:column;padding:22px}.rms-server-live{align-self:flex-start}.rms-server-metric-grid,.rms-server-lower-grid{grid-template-columns:minmax(0,1fr)}.rms-server-metric-grid article{padding:17px}.rms-server-foot{align-items:flex-start;flex-direction:column}.rms-server-foot button{width:100%}}
+                        </style>
                     @else
                         {{-- FOOTER --}}
                         <div class="rms-settings-panel-footer rms-openai-footer-upgraded rms-vg-footer">
