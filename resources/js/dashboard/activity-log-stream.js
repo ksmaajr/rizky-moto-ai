@@ -80,18 +80,35 @@ window.activityLogStreamV44 = () => ({
 
         this.refresh();
 
+        // Poll less aggressively and pause network work while this tab is hidden.
         this.timer = window.setInterval(() => {
-            this.refresh();
-        }, 2500);
+            if (document.visibilityState === 'visible') {
+                this.refresh();
+            }
+        }, 10000);
 
-        window.addEventListener('activity-log-refresh', () => {
-            this.refresh();
-        });
+        this.visibilityHandler = () => {
+            if (document.visibilityState === 'visible') {
+                this.refresh();
+            }
+        };
+
+        this.refreshHandler = () => {
+            if (document.visibilityState === 'visible') {
+                this.refresh();
+            }
+        };
+
+        document.addEventListener('visibilitychange', this.visibilityHandler);
+        window.addEventListener('activity-log-refresh', this.refreshHandler);
 
         window.addEventListener('beforeunload', () => {
             if (this.timer) {
                 window.clearInterval(this.timer);
             }
+
+            document.removeEventListener('visibilitychange', this.visibilityHandler);
+            window.removeEventListener('activity-log-refresh', this.refreshHandler);
         }, { once: true });
     },
 
