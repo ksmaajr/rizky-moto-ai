@@ -34,7 +34,7 @@ new class extends Component
 
     public string $model = '';
     public string $aspectRatio = '1:1';
-    public string $quality = 'high';
+    public string $quality = 'low';
     public int $imageCount = 1;
     public bool $isGenerating = false;
     public ?int $latestGenerationId = null;
@@ -464,7 +464,7 @@ new class extends Component
         $availableModels = app(\App\Services\AI\ProviderManager::class)->availableModels(auth()->id());
         $this->model = (string) ($availableModels[0]['id'] ?? $imageService->defaultImageModel());
         $this->aspectRatio = $settings?->default_aspect_ratio ?: '1:1';
-        $this->quality = $settings?->default_quality ?: 'high';
+        $this->quality = 'low';
 
         $latest = Generation::query()
             ->where('user_id', auth()->id())
@@ -507,7 +507,7 @@ new class extends Component
 
         // Template adalah source of truth untuk default generator settings.
         $this->aspectRatio = $template->aspect_ratio ?: '1:1';
-        $this->quality = $template->output_quality ?: 'high';
+        $this->quality = 'low';
     }
 
     public function generate(): void
@@ -540,7 +540,7 @@ new class extends Component
                     }
                 }],
                 'aspectRatio' => ['required', 'in:1:1,4:5,3:4,16:9,9:16'],
-                'quality' => ['required', 'in:standard,high'],
+                'quality' => ['required', 'in:low'],
                 'imageCount' => ['required', 'integer', 'min:1', 'max:4'],
             ], [
                 'selectedStoreId.required' => 'Pilih Store terlebih dahulu.',
@@ -560,7 +560,7 @@ new class extends Component
                 ->firstOrFail();
 
             $this->aspectRatio = $template->aspect_ratio ?: $this->aspectRatio;
-            $this->quality = $template->output_quality ?: $this->quality;
+            $this->quality = 'low';
 
             $generation = app(\App\Services\OpenAiImageService::class)->queueGeneration(
                 user: auth()->user(),
@@ -1285,26 +1285,14 @@ new class extends Component
                                 </div>
                             </div>
 
-                            <div class="rms-custom-select rms-custom-select-enhanced" x-data="{ open:false }" x-on:click.outside="open=false">
+                            <div class="rms-custom-select rms-custom-select-enhanced">
                                 <span class="rms-custom-select-label">Quality</span>
-                                <button type="button" class="rms-custom-select-trigger" :class="{ 'is-open': open }" x-on:click="open=!open">
+                                <div class="rms-custom-select-trigger" aria-label="Kualitas gambar Low">
                                     <span>
-                                        <b x-text="qualityLabel('{{ $quality }}')"></b>
-                                        <small>Output quality</small>
+                                        <b>Low · Hemat Biaya</b>
+                                        <small>Kualitas generasi dikunci ke Low</small>
                                     </span>
-                                    <i><svg viewBox="0 0 24 24"><path d="m7 9 5 5 5-5"/></svg></i>
-                                </button>
-                                <div class="rms-custom-select-menu" x-show="open" x-transition.opacity.scale.origin.top style="display:none">
-                                    <button type="button" class="{{ $quality === 'standard' ? 'selected' : '' }}" x-on:click="setLivewireValue('quality','standard'); open=false">
-                                        <span class="rms-option-quality standard">S</span>
-                                        <span><strong>Standard</strong><small>Balanced speed & quality</small></span>
-                                        <i>{{ $quality === 'standard' ? '✓' : '' }}</i>
-                                    </button>
-                                    <button type="button" class="{{ $quality === 'high' ? 'selected' : '' }}" x-on:click="setLivewireValue('quality','high'); open=false">
-                                        <span class="rms-option-quality high">H</span>
-                                        <span><strong>High Quality</strong><small>Maximum visual detail</small></span>
-                                        <i>{{ $quality === 'high' ? '✓' : '' }}</i>
-                                    </button>
+                                    <span class="rms-option-quality standard">L</span>
                                 </div>
                             </div>
 
