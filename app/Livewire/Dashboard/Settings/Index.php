@@ -50,7 +50,7 @@ class Index extends Component
 
     public function mount(string $initialTab = 'general'): void
     {
-        $this->activeTab = in_array($initialTab, ['provider', 'openai', 'activity'], true)
+        $this->activeTab = in_array($initialTab, ['provider', 'openai', 'activity', 'server'], true)
             ? ($initialTab === 'openai' ? 'provider' : $initialTab)
             : 'general';
 
