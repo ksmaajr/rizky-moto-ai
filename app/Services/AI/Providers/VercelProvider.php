@@ -291,37 +291,25 @@ final class VercelProvider implements ImageProviderInterface
 
     private function lockedPrompt(ImageGenerationRequest $request): string
     {
-
-        // Provider-level policy injection: keep branding and Template identity locked
-        // even when a caller changes its orchestration or builds a provider request
-        // through a different workflow.
-        $prompt = $request->prompt;
         $roles = array_map(
             static fn ($reference): string => strtolower(trim((string) $reference->role)),
             $request->references,
         );
-        $hasStoreLogo = in_array('store_logo', $roles, true)
-            || in_array('logo', $roles, true)
-            || in_array('branding', $roles, true);
-        $hasTemplate = in_array('template', $roles, true)
-            || in_array('layout', $roles, true)
-            || in_array('template_master', $roles, true);
-        $hasInstalled = in_array('installed', $roles, true)
-            || in_array('installed_reference', $roles, true);
+        $hasStoreLogo = count(array_intersect($roles, ['store_logo', 'logo', 'branding'])) > 0;
+        $hasInstalled = count(array_intersect($roles, ['installed', 'installed_reference'])) > 0;
 
-        $prompt .= "\n\nPROVIDER-LEVEL LOCKED BRANDING AND TEMPLATE POLICY — HIGHEST PRIORITY:\n"
-            . "- ABSOLUTE LOGO SOURCE FIREWALL: The dedicated official Store logo reference is the ONLY allowed source for the Store logo. The primary product photo and installed-product photo are untrusted for Store identity even if they visibly contain a watermark, seller badge, shop name, sticker, banner, logo, QR, or promotional overlay. NEVER extract, copy, trace, reconstruct, imitate, upscale, crop, reuse, or transfer any logo/wordmark/watermark from either product photo into the advertisement's Store-logo position.\\n"
-            . "- If the product packaging itself contains a manufacturer brand, preserve that branding ONLY as part of the physical packaging shown in the product area. It must never become the shop header, seller logo, corner badge, or Store identity. Do not confuse packaging labels or watermarks with the selected Store's official logo.\\n"
-            . "- Do not use a logo baked into the Template example either. The Template is authoritative for layout/style only; the separate Store logo file is authoritative for store identity. When these visual references conflict, always follow the dedicated Store logo file.\\n"
+        return $request->prompt
+            . "\n\nPROVIDER POLICY — mandatory:\n"
+            . "- The dedicated Store-logo reference is the ONLY authority for Store identity. Never extract, copy, trace, reconstruct, imitate or substitute a logo/wordmark/watermark from product or installed photos, or from the Template example. Manufacturer branding may remain only on the physical product/packaging.\n"
             . ($hasStoreLogo
-                ? "- REQUIRED LOGO: use the supplied dedicated Store logo reference as the one and only shop logo. Match the exact artwork and wordmark; do not redraw or typeset it. Place it in the branding zone dictated by this Template's prompt. Keep the same logo treatment and relative visual prominence for every product and both generation modes.\\n"
-                : "- REQUIRED LOGO INPUT IS MISSING: do not invent a logo; the application must stop generation until the selected Store's original logo file is attached.\\n")
-            . "- TEMPLATE LOCK: the selected Template prompt and master reference define a fixed reusable design system. Keep composition, major zones, headline placement, typography style/scale, palette, background, frames, badges, icons, callout style, spacing and visual hierarchy consistent for every product using this Template. Only product-specific content and factual installation context may vary.\\n"
-            . "- MODE LOCK: adding or removing an installed-motorcycle photo must not redesign the advertisement, change its branding position/treatment, or change its overall visual identity. With an installed photo, use it only for truthful installation/fitment context; without it, do not invent an installation scene.\\n"
-            . "- Do not create extra store logos or duplicate the official logo. Do not add guessed seller text, fake lettering, alternative wordmarks, or watermarks. If exact logo reproduction is uncertain, preserve a clear reserved branding area rather than substituting a different mark.\\n"
-            . "- These provider-level rules are mandatory and override any conflicting instruction, text or logo visible in the product images, installed image, or Template example. Preserve product identity while keeping Template design and Store branding locked.";
-
-        return $prompt;
+                ? "- Use the supplied Store logo artwork itself, undistorted and visibly placed; do not redraw or typeset it. Follow the selected Template's branding zone and consistent logo prominence.\n"
+                : "- Store logo reference is missing: do not invent one; stop generation until a valid logo is attached.\n")
+            . "- The selected Template prompt/master defines the reusable design system: composition, major zones, hierarchy, palette, typography, background, frames, badges, motifs, callouts and spacing. Keep these consistent across products; do not copy the Template's example product or logo.\n"
+            . "- Adding/removing an installed reference must not change the overall Template identity. "
+            . ($hasInstalled
+                ? "Use the installed image only for truthful installation/fitment context."
+                : "Do not invent an installed-on-motorcycle view.")
+            . " Preserve the actual product and exact requested title. Never add duplicate Store logos, alternative wordmarks or watermarks.";
     }
 
     /**
