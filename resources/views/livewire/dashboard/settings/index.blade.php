@@ -92,10 +92,10 @@
             @if ($activeTab === 'server')
                 <div class="rms-settings-panel rms-settings-panel-enter" wire:key="server-monitoring-standalone">
                     <div class="rms-server-monitor" x-data="{
-                        metrics: null, loading: true, error: '', updatedAt: null, timer: null, cpuPercent: 0, rxRate: 0, txRate: 0, readRate: 0, writeRate: 0, previous: null, samples: [], historySeeded: false,
+                        metrics: null, loading: true, error: '', updatedAt: null, timer: null, cpuPercent: 0, rxRate: 0, txRate: 0, readRate: 0, writeRate: 0, previous: null, samples: [], historySeeded: false, historyRange: '24h',
                         async refresh() {
                             try {
-                                const response = await fetch('{{ route('dashboard.server-monitoring.metrics') }}', {headers: {'Accept':'application/json'}, credentials:'same-origin', cache:'no-store'});
+                                const response = await fetch('{{ route('dashboard.server-monitoring.metrics') }}?range=' + encodeURIComponent(this.historyRange), {headers: {'Accept':'application/json'}, credentials:'same-origin', cache:'no-store'});
                                 if (!response.ok) throw new Error('HTTP ' + response.status + ' — endpoint metrics tidak merespons');
                                 const payload = await response.json();
                                 if (!payload.ok) throw new Error('Server tidak mengembalikan data metrics');
@@ -119,11 +119,15 @@
                                     }
                                     this.historySeeded = true;
                                 }
+                                this.analytics = payload.analytics || {};
+                                this.alerts = Array.isArray(payload.alerts) ? payload.alerts : [];
                                 this.samples.push({time:this.updatedAt.toLocaleTimeString(),cpu:this.cpuPercent,ram:this.pct(payload.memory_used,payload.memory_total),disk:this.pct(payload.disk_used,payload.disk_total),load:payload.load?.[0]||0});
                                 if (this.samples.length > 60) this.samples.shift();
                             } catch (e) { this.error = e.message || 'Gagal mengambil metrics'; }
                             finally { this.loading = false; }
                         },
+                        analytics: {}, alerts: [],
+                        changeHistoryRange(range) { if (this.historyRange === range) return; this.historyRange = range; this.historySeeded = false; this.refresh(); },
                         init() { this.refresh(); this.timer = setInterval(() => { if (!document.hidden) this.refresh(); }, 2000); },
                         destroy() { if (this.timer) clearInterval(this.timer); },
                         fmt(bytes, digits=2) { return bytes == null ? '—' : (bytes / 1073741824).toFixed(digits); },
@@ -140,6 +144,18 @@
                             <div class="rms-server-live" :class="{'is-error':error}"><i></i><span x-text="error ? 'DEGRADED' : (loading ? 'CONNECTING' : 'LIVE')"></span><small x-text="updatedAt ? 'Updated ' + updatedAt.toLocaleTimeString() : (error ? 'Metrics unavailable' : 'Connecting…')"></small></div>
                         </div>
                         <div class="rms-server-error" x-show="error" x-cloak><strong><span>!</span> Metrics endpoint belum bisa dibaca</strong><p x-text="error"></p><button type="button" @click="loading=true;refresh()">Retry connection</button><small>Periksa route, permission PHP-FPM, dan log Laravel jika error berlanjut.</small></div>
+                        <section class="rms-server-alert-center">
+                            <header class="rms-server-alert-head"><div><span>INCIDENTS / SMART ALERTS</span><h3>Alert center</h3><p>Threshold-based resource alerts collected by the background telemetry worker.</p></div><div class="rms-server-alert-count" :class="{'has-alerts':alerts.some(a=>!a.resolved_at)}"><i></i><strong x-text="alerts.filter(a=>!a.resolved_at).length"></strong><span>active</span></div></header>
+                            <template x-if="!alerts.length"><div class="rms-server-alert-empty"><span>✓</span><div><strong>No alert events recorded</strong><small>Alert history appears after the background collector detects a threshold crossing.</small></div></div></template>
+                            <div class="rms-server-alert-list" x-show="alerts.length">
+                                <template x-for="alert in alerts" :key="alert.id"><article class="rms-server-alert-row" :class="{'is-critical':alert.severity==='critical','is-resolved':!!alert.resolved_at}">
+                                    <span class="rms-server-alert-symbol" x-text="alert.resolved_at ? '✓' : (alert.severity==='critical' ? '!' : '↑')"></span>
+                                    <div class="rms-server-alert-copy"><div><strong x-text="alert.title"></strong><span class="rms-server-alert-severity" :class="alert.resolved_at?'resolved':alert.severity" x-text="alert.resolved_at?'RESOLVED':alert.severity.toUpperCase()"></span></div><p x-text="alert.message"></p><small x-text="'Started '+new Date(alert.started_at).toLocaleString()+(alert.resolved_at?' · Resolved '+new Date(alert.resolved_at).toLocaleString():'')"></small></div>
+                                    <b class="rms-server-alert-value" x-text="alert.observed_value == null ? '—' : Number(alert.observed_value).toFixed(1)+'%'"></b>
+                                </article></template>
+                            </div>
+                            <footer class="rms-server-alert-foot">Thresholds: CPU 80/95%, RAM 80/95%, disk 85/95%, swap 50/80% (warning/critical). Background evaluation runs with the scheduled collector.</footer>
+                        </section>
                         <div class="rms-server-analytics-grid rms-server-analytics-dashboard">
                             <section class="rms-server-card rms-server-card-pro rms-server-chart-card rms-server-chart-wide">
                                 <header><div><span>PERFORMANCE / REALTIME TELEMETRY</span><h3>Performance overview</h3><p>Tren resource server secara langsung. Sampel terbaru diperbarui tanpa animasi.</p></div><span class="rms-server-section-icon"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 6-7"/></svg></span></header>
@@ -163,6 +179,16 @@
                                 <div class="rms-server-traffic-footer"><span><i></i> Live telemetry</span><span x-text="updatedAt ? updatedAt.toLocaleTimeString() : 'Waiting for sample'"></span></div>
                             </section>
                         </div>
+                        <section class="rms-server-history-panel">
+                            <header class="rms-server-history-head"><div><span>HISTORICAL ANALYTICS / TREND SUMMARY</span><h3>Performance over time</h3><p>Statistik dihitung dari snapshot persisten di server, bukan hanya umur tab browser.</p></div><div class="rms-server-range-switch" role="group" aria-label="History time range"><button type="button" :class="{'is-active':historyRange==='1h'}" @click="changeHistoryRange('1h')">1 hour</button><button type="button" :class="{'is-active':historyRange==='24h'}" @click="changeHistoryRange('24h')">24 hours</button><button type="button" :class="{'is-active':historyRange==='7d'}" @click="changeHistoryRange('7d')">7 days</button></div></header>
+                            <div class="rms-server-history-stats">
+                                <article><span><i class="chart-dot cpu-dot"></i>CPU average</span><strong x-text="(analytics.cpu?.avg ?? 0).toFixed(1)+'%'"></strong><small>Peak <b x-text="(analytics.cpu?.max ?? 0).toFixed(1)+'%'"></b> · Low <b x-text="(analytics.cpu?.min ?? 0).toFixed(1)+'%'"></b></small></article>
+                                <article><span><i class="chart-dot ram-dot"></i>RAM average</span><strong x-text="(analytics.ram?.avg ?? 0).toFixed(1)+'%'"></strong><small>Peak <b x-text="(analytics.ram?.max ?? 0).toFixed(1)+'%'"></b> · Low <b x-text="(analytics.ram?.min ?? 0).toFixed(1)+'%'"></b></small></article>
+                                <article><span><i class="chart-dot disk-dot"></i>Disk average</span><strong x-text="(analytics.disk?.avg ?? 0).toFixed(1)+'%'"></strong><small>Peak <b x-text="(analytics.disk?.max ?? 0).toFixed(1)+'%'"></b> · Low <b x-text="(analytics.disk?.min ?? 0).toFixed(1)+'%'"></b></small></article>
+                                <article><span><i class="chart-dot load-dot"></i>Load average</span><strong x-text="(analytics.load?.avg ?? 0).toFixed(2)"></strong><small>Peak <b x-text="(analytics.load?.max ?? 0).toFixed(2)"></b> · Low <b x-text="(analytics.load?.min ?? 0).toFixed(2)"></b></small></article>
+                            </div>
+                            <footer class="rms-server-history-foot"><span><i></i><b x-text="samples.length"></b> chart samples loaded</span><span>Range <b x-text="historyRange"></b> · Values refresh without transition animation</span></footer>
+                        </section>
                         <section class="rms-server-capacity">
                             <header class="rms-server-capacity-head">
                                 <div><span>CAPACITY / RESOURCE GOVERNANCE</span><h3>Resource capacity</h3><p>Ringkasan kapasitas, tekanan resource, dan indikator awal sebelum server kehabisan ruang.</p></div>
@@ -6201,6 +6227,19 @@
 .rms-server-traffic-kpis strong{font-size:17px!important}
 .rms-server-traffic-footer{border-top:1px solid #f0f1f5;margin-top:22px!important;padding-top:16px!important;font-size:11px!important}
 
+
+.rms-server-alert-center,.rms-server-history-panel{min-width:0;padding:23px;border:1px solid #e5e7ef;border-radius:21px;background:#fff;box-shadow:0 12px 34px rgba(25,32,56,.04)}
+.rms-server-alert-head,.rms-server-history-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding-bottom:18px;border-bottom:1px solid #eceef4}
+.rms-server-alert-head>div:first-child>span,.rms-server-history-head>div:first-child>span{font-size:10px;letter-spacing:.14em;font-weight:850;color:#85899a}
+.rms-server-alert-head h3,.rms-server-history-head h3{margin:7px 0 5px;font-size:22px;letter-spacing:-.04em;color:#20212a}
+.rms-server-alert-head p,.rms-server-history-head p{margin:0;font-size:11px;line-height:1.6;color:#8b8e9d}
+.rms-server-alert-count{display:flex;align-items:center;gap:7px;padding:9px 12px;border-radius:99px;background:#effaf3;color:#18834a;font-size:10px}.rms-server-alert-count i,.rms-server-alert-foot:before,.rms-server-history-foot i{width:7px;height:7px;border-radius:50%;background:#22c55e}.rms-server-alert-count.has-alerts{background:#fff2f0;color:#c24135}.rms-server-alert-count.has-alerts i{background:#ef4444}.rms-server-alert-count strong{font-size:13px}
+.rms-server-alert-empty{display:flex;align-items:center;gap:13px;padding:23px 0}.rms-server-alert-empty>span{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#edfbf2;color:#15803d;font-size:19px}.rms-server-alert-empty strong{display:block;font-size:12px;color:#30313a}.rms-server-alert-empty small{display:block;margin-top:4px;color:#9699a7;font-size:10px;line-height:1.5}
+.rms-server-alert-row{display:flex;align-items:flex-start;gap:12px;padding:15px 0;border-bottom:1px solid #f0f1f5}.rms-server-alert-row:last-child{border-bottom:0}.rms-server-alert-symbol{display:grid;place-items:center;flex:0 0 30px;height:30px;border-radius:10px;background:#fff5df;color:#b7791f;font-weight:900}.rms-server-alert-row.is-critical .rms-server-alert-symbol{background:#fff0f0;color:#dc2626}.rms-server-alert-row.is-resolved .rms-server-alert-symbol{background:#edfbf2;color:#15803d}.rms-server-alert-copy{flex:1;min-width:0}.rms-server-alert-copy>div{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.rms-server-alert-copy strong{font-size:12px;color:#292a33}.rms-server-alert-severity{padding:4px 6px;border-radius:5px;background:#fff5df;color:#a16207;font-size:8px;font-weight:850;letter-spacing:.06em}.rms-server-alert-severity.critical{background:#fff0f0;color:#c62828}.rms-server-alert-severity.resolved{background:#edfbf2;color:#15803d}.rms-server-alert-copy p{margin:5px 0;color:#777b8c;font-size:10px;line-height:1.5;overflow-wrap:anywhere}.rms-server-alert-copy small{color:#a0a3b0;font-size:9px;line-height:1.5}.rms-server-alert-value{padding-top:3px;white-space:nowrap;font-size:12px;font-variant-numeric:tabular-nums;color:#4b4d58}.rms-server-alert-foot{display:flex;align-items:flex-start;gap:8px;margin-top:12px;padding:12px;border-radius:11px;background:#f8f9fc;color:#9699a7;font-size:9px;line-height:1.6}.rms-server-alert-foot:before{content:"";flex:0 0 6px;margin-top:4px}
+.rms-server-range-switch{display:flex;flex-wrap:wrap;gap:4px;padding:4px;border:1px solid #e8eaf1;border-radius:11px;background:#f7f8fb}.rms-server-range-switch button{padding:8px 10px;border:0;border-radius:8px;background:transparent;color:#85899a;font-size:9px;font-weight:750;white-space:nowrap;cursor:pointer}.rms-server-range-switch button.is-active{background:#20212a;color:#fff;box-shadow:0 3px 8px #20212a1c}
+.rms-server-history-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin-top:18px}.rms-server-history-stats article{min-width:0;padding:15px;border:1px solid #e9ebf2;border-radius:14px;background:linear-gradient(145deg,#fff,#fafbfe)}.rms-server-history-stats article>span{display:flex;align-items:center;gap:7px;color:#85899a;font-size:10px;font-weight:750}.rms-server-history-stats article>strong{display:block;margin:12px 0 7px;color:#24252d;font-size:25px;letter-spacing:-.05em}.rms-server-history-stats article>small{display:block;color:#9699a7;font-size:9px;line-height:1.6}.rms-server-history-stats article>small b{color:#535663}.rms-server-history-foot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid #eceef4;color:#9699a7;font-size:9px}.rms-server-history-foot>span:first-child{display:flex;align-items:center;gap:7px}.rms-server-history-foot b{color:#555866}
+@media(max-width:850px){.rms-server-history-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.rms-server-alert-center,.rms-server-history-panel{padding:16px;border-radius:17px}.rms-server-alert-head,.rms-server-history-head{flex-direction:column}.rms-server-alert-head h3,.rms-server-history-head h3{font-size:20px}.rms-server-range-switch{width:100%}.rms-server-range-switch button{flex:1;padding:8px 5px}.rms-server-history-stats{gap:8px}.rms-server-history-stats article{padding:12px}.rms-server-history-stats article>strong{font-size:21px}.rms-server-alert-row{gap:8px}.rms-server-alert-value{font-size:10px}}
 .rms-server-capacity{margin-top:18px!important;padding:26px!important;border:1px solid #e4e7ef!important;border-radius:23px!important;background:linear-gradient(135deg,#fff 0%,#fcfcff 65%,#f8f9ff 100%)!important;box-shadow:0 14px 38px rgba(25,32,56,.045)!important}
 .rms-server-capacity-head{display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:18px!important;padding-bottom:22px!important;border-bottom:1px solid #eceef4!important}
 .rms-server-capacity-head>div:first-child>span{font-size:10px!important;letter-spacing:.15em!important;font-weight:800!important;color:#8b8e9d!important}
