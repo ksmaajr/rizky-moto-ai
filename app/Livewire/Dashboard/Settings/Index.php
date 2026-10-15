@@ -66,6 +66,10 @@ class Index extends Component
         $this->activeTab = in_array($tab, ['general', 'provider', 'openai', 'activity', 'server'], true)
             ? ($tab === 'openai' ? 'provider' : $tab)
             : 'general';
+
+        if ($this->activeTab === 'server') {
+            $this->refreshServerMetrics();
+        }
     }
 
     #[On('settings-tab-changed')]
