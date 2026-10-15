@@ -92,7 +92,7 @@
             @if ($activeTab === 'server')
                 <div class="rms-settings-panel rms-settings-panel-enter" wire:key="server-monitoring-standalone">
                     <div class="rms-server-monitor" x-data="{
-                        metrics: null, loading: true, error: '', updatedAt: null, timer: null, cpuPercent: 0, rxRate: 0, txRate: 0, readRate: 0, writeRate: 0, previous: null, samples: [],
+                        metrics: null, loading: true, error: '', updatedAt: null, timer: null, cpuPercent: 0, rxRate: 0, txRate: 0, readRate: 0, writeRate: 0, previous: null, samples: [], historySeeded: false,
                         async refresh() {
                             try {
                                 const response = await fetch('{{ route('dashboard.server-monitoring.metrics') }}', {headers: {'Accept':'application/json'}, credentials:'same-origin', cache:'no-store'});
@@ -110,12 +110,17 @@
                                 }
                                 this.previous = {at:now,cpu:payload.cpu_ticks||[],rx:payload.network?.rx_bytes||0,tx:payload.network?.tx_bytes||0,read:payload.disk_io?.read_sectors||0,write:payload.disk_io?.write_sectors||0};
                                 this.metrics = payload; this.error = ''; this.updatedAt = new Date();
-                                if (Array.isArray(payload.history) && payload.history.length) {
-                                    this.samples = payload.history.map(s => ({time:s.time,cpu:Number(s.cpu)||0,ram:Number(s.ram)||0,disk:Number(s.disk)||0,load:Number(s.load)||0})).slice(-60);
-                                } else {
-                                    this.samples.push({time:this.updatedAt.toLocaleTimeString(),cpu:this.cpuPercent,ram:this.pct(payload.memory_used,payload.memory_total),disk:this.pct(payload.disk_used,payload.disk_total),load:payload.load?.[0]||0});
-                                    if (this.samples.length > 60) this.samples.shift();
+                                // Seed persisted history once, then append fresh browser telemetry each poll.
+                                // Replacing samples with the same DB history on every poll freezes the chart
+                                // between background collector runs.
+                                if (!this.historySeeded) {
+                                    if (Array.isArray(payload.history) && payload.history.length) {
+                                        this.samples = payload.history.map(s => ({time:s.time,cpu:Number(s.cpu)||0,ram:Number(s.ram)||0,disk:Number(s.disk)||0,load:Number(s.load)||0})).slice(-59);
+                                    }
+                                    this.historySeeded = true;
                                 }
+                                this.samples.push({time:this.updatedAt.toLocaleTimeString(),cpu:this.cpuPercent,ram:this.pct(payload.memory_used,payload.memory_total),disk:this.pct(payload.disk_used,payload.disk_total),load:payload.load?.[0]||0});
+                                if (this.samples.length > 60) this.samples.shift();
                             } catch (e) { this.error = e.message || 'Gagal mengambil metrics'; }
                             finally { this.loading = false; }
                         },
