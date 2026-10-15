@@ -816,7 +816,9 @@ new class extends Component
             ]);
         } else {
             foreach ($generation->generatedImages as $image) {
-                if ($image->image_path) \Illuminate\Support\Facades\Storage::disk('public')->delete($image->image_path);
+                foreach ([$image->image_path, data_get($image->metadata, 'thumbnail_path')] as $filePath) {
+                    if ($filePath) \Illuminate\Support\Facades\Storage::disk('public')->delete($filePath);
+                }
             }
             foreach ([$generation->product_image_1_path, $generation->product_image_2_path] as $path) {
                 if ($path) \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
@@ -860,7 +862,6 @@ new class extends Component
                         ->values()
                         ->all();
 
-                    $failedPaths = [];
                     foreach ($paths as $filePath) {
                         try {
                             if (\Illuminate\Support\Facades\Storage::disk('public')->exists($filePath)
