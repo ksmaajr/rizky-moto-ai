@@ -58,11 +58,12 @@ class Index extends Component
         $this->loadAgentAiCredentials();
         $this->refreshVercelGatewayKeys();
         $this->refreshActivityLogs();
+        $this->refreshServerMetrics();
     }
 
     public function selectTab(string $tab): void
     {
-        $this->activeTab = in_array($tab, ['general', 'provider', 'openai', 'activity'], true)
+        $this->activeTab = in_array($tab, ['general', 'provider', 'openai', 'activity', 'server'], true)
             ? ($tab === 'openai' ? 'provider' : $tab)
             : 'general';
     }
@@ -257,6 +258,59 @@ class Index extends Component
         );
 
         $this->testingConnection = false;
+    }
+
+    public array $serverMetrics = [];
+
+    public function refreshServerMetrics(): void
+    {
+        $read = static function (string $path): string {
+            return is_readable($path) ? (string) file_get_contents($path) : '';
+        };
+        $mem = [];
+        foreach (preg_split('/\n/', $read('/proc/meminfo')) as $line) {
+            if (preg_match('/^(MemTotal|MemAvailable|MemFree|Buffers|Cached|SwapTotal|SwapFree):\s+(\d+)/', $line, $m)) {
+                $mem[$m[1]] = (int) $m[2] * 1024;
+            }
+        }
+        $total = $mem['MemTotal'] ?? 0;
+        $available = $mem['MemAvailable'] ?? ($mem['MemFree'] ?? 0);
+        $diskTotal = @disk_total_space(base_path());
+        $diskFree = @disk_free_space(base_path());
+        $load = function_exists('sys_getloadavg') ? sys_getloadavg() : [0, 0, 0];
+        $uptimeText = $read('/proc/uptime');
+        $uptimeSeconds = (int) (explode(' ', trim($uptimeText))[0] ?? 0);
+        $services = [];
+        foreach (['nginx', 'php8.5-fpm', 'mysql', 'redis-server', 'supervisor'] as $service) {
+            $services[$service] = null;
+            if (function_exists('shell_exec')) {
+                $output = @shell_exec('systemctl is-active ' . escapeshellarg($service) . ' 2>/dev/null');
+                if (is_string($output) && trim($output) !== '') {
+                    $services[$service] = trim($output) === 'active';
+                }
+            }
+        }
+        $this->serverMetrics = [
+            'hostname' => gethostname() ?: 'Server',
+            'os' => php_uname('s') . ' ' . php_uname('r'),
+            'php' => PHP_VERSION,
+            'laravel' => app()->version(),
+            'environment' => app()->environment(),
+            'time' => now()->toIso8601String(),
+            'uptime_seconds' => $uptimeSeconds,
+            'load' => array_map(static fn ($v) => round((float) $v, 2), $load),
+            'cpu_cores' => function_exists('shell_exec') ? (int) trim((string) @shell_exec('nproc 2>/dev/null')) ?: 1 : 1,
+            'memory_total' => $total,
+            'memory_available' => $available,
+            'memory_used' => max(0, $total - $available),
+            'swap_total' => $mem['SwapTotal'] ?? 0,
+            'swap_used' => max(0, ($mem['SwapTotal'] ?? 0) - ($mem['SwapFree'] ?? 0)),
+            'disk_total' => $diskTotal ?: 0,
+            'disk_free' => $diskFree ?: 0,
+            'disk_used' => max(0, ($diskTotal ?: 0) - ($diskFree ?: 0)),
+            'services' => $services,
+            'queue_workers' => function_exists('shell_exec') ? count(preg_split('/\n/', trim((string) @shell_exec("pgrep -af 'artisan queue:work' 2>/dev/null")) , -1, PREG_SPLIT_NO_EMPTY)) : null,
+        ];
     }
 
     public function render()
