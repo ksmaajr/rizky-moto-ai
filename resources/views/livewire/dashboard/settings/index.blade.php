@@ -72,7 +72,7 @@
                 type="button"
                 class="rms-settings-tab"
                 :class="{ 'is-active': $wire.activeTab === 'server' }"
-                wire:click="selectTab('server')"
+                wire:click="$set('activeTab', 'server')"
             >
                 <span class="rms-settings-tab-icon rms-settings-server-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/><path d="M7 7h.01M7 17h.01M11 7h6M11 17h6"/></svg></span>
                 <span>
@@ -1380,6 +1380,11 @@
     </div>
 
 <style>
+/* Ensure server monitoring tab content occupies the same full panel container as General/Activity. */
+.rms-settings-content{min-width:0;width:100%}
+.rms-settings-content>.rms-settings-panel{width:100%;min-width:0}
+.rms-server-monitor{width:100%;min-width:0;box-sizing:border-box}
+.rms-server-monitor *{box-sizing:border-box}
 .rms-settings-tab-icon{display:grid;place-items:center;transition:background .22s ease,color .22s ease,transform .22s ease,box-shadow .22s ease}.rms-settings-tab-icon svg{display:block;width:19px;height:19px;flex:0 0 19px}.rms-settings-tab:hover .rms-settings-tab-icon{transform:translateY(-1px)}.rms-settings-tab.is-active .rms-settings-tab-icon{box-shadow:0 7px 16px rgba(239,48,48,.12)}.rms-settings-ai svg{width:21px;height:21px}.rms-settings-server-tab-icon{background:linear-gradient(145deg,#eff6ff,#e0e7ff)!important;color:#4f46e5!important}.rms-settings-tab.is-active .rms-settings-server-tab-icon{background:linear-gradient(145deg,#4f46e5,#6366f1)!important;color:#fff!important}.rms-settings-tab.is-active .rms-settings-activity-tab-icon{background:linear-gradient(145deg,#dcfce7,#bbf7d0)!important;color:#15803d!important}.rms-settings-tab.is-active .rms-settings-ai{background:linear-gradient(145deg,#27272a,#09090b)!important;color:#fff!important}.rms-settings-tab.is-active .rms-settings-general-tab-icon{background:linear-gradient(145deg,#fee2e2,#fecaca)!important;color:#dc2626!important}
 .rms-openai-head-upgraded{min-height:104px}
 .rms-openai-mark{display:grid;place-items:center;width:50px;height:50px;flex:0 0 50px;border-radius:15px;background:#18181b;color:#ef3030;box-shadow:0 10px 22px rgba(24,24,27,.12);font-size:11px;font-weight:850;letter-spacing:.04em}
