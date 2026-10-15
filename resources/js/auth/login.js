@@ -6,20 +6,19 @@ window.loginForm = () => ({
     submitting: false,
 
     async startLogin() {
-        if (this.submitting) {
-            return;
-        }
+        if (this.submitting) return;
 
         this.submitting = true;
 
-        // Beri waktu agar toast "Memproses login" terlihat
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
         try {
+            // Send immediately; do not add an artificial delay before auth.
             await this.$wire.login();
         } catch (error) {
+            // Livewire validation failures are expected; allow retry immediately.
             this.submitting = false;
-            console.error('Login request failed:', error);
+            if (!(error instanceof Error) || !/validation|422/i.test(error.message)) {
+                console.error('Login request failed:', error);
+            }
         }
     },
 
