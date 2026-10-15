@@ -134,6 +134,8 @@ class OpenAiImageService
         set_time_limit(300);
         ini_set('max_execution_time', '300');
 
+        // Enforce Low server-side; ignore UI/template quality overrides.
+        $quality = 'low';
         $startedAt = microtime(true);
         $httpErrorLogged = false;
         $store = $this->resolveStoreForTemplate($store, $template);
@@ -676,6 +678,8 @@ class OpenAiImageService
         int $imageCount = 1,
         ?string $customTitle = null,
     ): Generation {
+        // Persist Low regardless of legacy Template/client-submitted quality values.
+        $quality = 'low';
         $startedAt = microtime(true);
         $store = $this->resolveStoreForTemplate($store, $template);
 
@@ -2071,7 +2075,7 @@ PROMPT;
 
     private function mapQuality(string $quality): string
     {
-        return $quality === 'high' ? 'high' : 'medium';
+        return 'low';
     }
 
     private function resolveImageBinary(array $item): ?string
