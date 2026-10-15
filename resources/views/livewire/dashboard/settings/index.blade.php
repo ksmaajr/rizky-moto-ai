@@ -163,6 +163,41 @@
                                 <div class="rms-server-traffic-footer"><span><i></i> Live telemetry</span><span x-text="updatedAt ? updatedAt.toLocaleTimeString() : 'Waiting for sample'"></span></div>
                             </section>
                         </div>
+                        <section class="rms-server-capacity">
+                            <header class="rms-server-capacity-head">
+                                <div><span>CAPACITY / RESOURCE GOVERNANCE</span><h3>Resource capacity</h3><p>Ringkasan kapasitas, tekanan resource, dan indikator awal sebelum server kehabisan ruang.</p></div>
+                                <div class="rms-server-health-pill" :class="{'is-warn':pct(metrics?.memory_used,metrics?.memory_total)>=80 || pct(metrics?.disk_used,metrics?.disk_total)>=85 || cpuPercent>=80,'is-critical':pct(metrics?.memory_used,metrics?.memory_total)>=95 || pct(metrics?.disk_used,metrics?.disk_total)>=95 || cpuPercent>=95}"><i></i><span x-text="!metrics ? 'CHECKING' : ((pct(metrics.memory_used,metrics.memory_total)>=95 || pct(metrics.disk_used,metrics.disk_total)>=95 || cpuPercent>=95) ? 'CRITICAL' : ((pct(metrics.memory_used,metrics.memory_total)>=80 || pct(metrics.disk_used,metrics.disk_total)>=85 || cpuPercent>=80) ? 'NEEDS ATTENTION' : 'RESOURCES HEALTHY'))"></span></div>
+                            </header>
+                            <div class="rms-server-capacity-grid">
+                                <article class="rms-server-capacity-item">
+                                    <div class="rms-server-capacity-title"><span><i class="chart-dot cpu-dot"></i>CPU utilization</span><strong x-text="cpuPercent.toFixed(1)+'%'"></strong></div>
+                                    <div class="rms-server-capacity-track"><i class="cpu-capacity-fill" :style="'width:'+Math.min(100,cpuPercent)+'%'"></i></div>
+                                    <div class="rms-server-capacity-meta"><span x-text="(metrics?.cpu_cores ?? '—')+' logical cores'"></span><b :class="cpuPercent>=80?'capacity-warning':''" x-text="cpuPercent>=80?'High utilization':(cpuPercent>=60?'Elevated':'Normal')"></b></div>
+                                </article>
+                                <article class="rms-server-capacity-item">
+                                    <div class="rms-server-capacity-title"><span><i class="chart-dot ram-dot"></i>Memory pressure</span><strong x-text="metrics?.memory_total ? Math.round(pct(metrics.memory_used,metrics.memory_total))+'%' : '—'"></strong></div>
+                                    <div class="rms-server-capacity-track"><i class="ram-capacity-fill" :style="'width:'+pct(metrics?.memory_used,metrics?.memory_total)+'%'"></i></div>
+                                    <div class="rms-server-capacity-meta"><span x-text="fmt(metrics?.memory_used)+' / '+fmt(metrics?.memory_total)+' GiB'"></span><b :class="pct(metrics?.memory_used,metrics?.memory_total)>=80?'capacity-warning':''" x-text="pct(metrics?.memory_used,metrics?.memory_total)>=80?'Low headroom':'Healthy headroom'"></b></div>
+                                </article>
+                                <article class="rms-server-capacity-item">
+                                    <div class="rms-server-capacity-title"><span><i class="chart-dot disk-dot"></i>Root filesystem</span><strong x-text="metrics?.disk_total ? Math.round(pct(metrics.disk_used,metrics.disk_total))+'%' : '—'"></strong></div>
+                                    <div class="rms-server-capacity-track"><i class="disk-capacity-fill" :style="'width:'+pct(metrics?.disk_used,metrics?.disk_total)+'%'"></i></div>
+                                    <div class="rms-server-capacity-meta"><span x-text="fmt(metrics?.disk_used,1)+' / '+fmt(metrics?.disk_total,1)+' GiB used'"></span><b :class="pct(metrics?.disk_used,metrics?.disk_total)>=85?'capacity-warning':''" x-text="pct(metrics?.disk_used,metrics?.disk_total)>=85?'Disk pressure':'Space available'"></b></div>
+                                </article>
+                                <article class="rms-server-capacity-item">
+                                    <div class="rms-server-capacity-title"><span><i class="chart-dot load-dot"></i>Swap consumption</span><strong x-text="metrics?.swap_total ? Math.round(pct(metrics.swap_used,metrics.swap_total))+'%' : 'N/A'"></strong></div>
+                                    <div class="rms-server-capacity-track"><i class="swap-capacity-fill" :style="'width:'+pct(metrics?.swap_used,metrics?.swap_total)+'%'"></i></div>
+                                    <div class="rms-server-capacity-meta"><span x-text="fmt(metrics?.swap_used)+' / '+fmt(metrics?.swap_total)+' GiB'"></span><b :class="pct(metrics?.swap_used,metrics?.swap_total)>=50?'capacity-warning':''" x-text="!metrics?.swap_total?'No swap configured':(pct(metrics.swap_used,metrics.swap_total)>=50?'Swap pressure':'Within range')"></b></div>
+                                </article>
+                            </div>
+                            <div class="rms-server-diagnostic-strip">
+                                <div><span class="rms-server-diagnostic-icon">↗</span><span><small>System load · 1 min</small><strong x-text="metrics?.load?.[0] ?? '—'"></strong><em x-text="metrics?.cpu_cores ? ((metrics.load?.[0]||0)/metrics.cpu_cores*100).toFixed(0)+'% of core capacity' : 'Waiting for telemetry'"></em></span></div>
+                                <div><span class="rms-server-diagnostic-icon">▤</span><span><small>Process inventory</small><strong x-text="metrics?.process_count ?? '—'"></strong><em>Processes currently detected</em></span></div>
+                                <div><span class="rms-server-diagnostic-icon">⇄</span><span><small>Network throughput</small><strong x-text="rate(rxRate+txRate)"></strong><em>Combined receive + transmit</em></span></div>
+                                <div><span class="rms-server-diagnostic-icon">◷</span><span><small>Host uptime</small><strong x-text="duration(metrics?.uptime_seconds)"></strong><em>Since last system boot</em></span></div>
+                            </div>
+                            <p class="rms-server-capacity-disclaimer">Indicators use current host telemetry and informational thresholds; they are not predictive alerts and do not automatically restart services.</p>
+                        </section>
                         <div class="rms-server-lower-grid rms-server-lower-grid-pro">
                             <section class="rms-server-card rms-server-card-pro"><header><div><span>HOST INTELLIGENCE</span><h3>System overview</h3><p>Runtime dan identitas mesin yang menjalankan aplikasi.</p></div><span class="rms-server-section-icon">⌘</span></header><dl>
                                 <div><dt>Hostname</dt><dd x-text="metrics?.hostname ?? 'Waiting…'"></dd></div><div><dt>Operating system</dt><dd x-text="metrics?.os ?? 'Waiting…'"></dd></div><div><dt>PHP runtime</dt><dd x-text="metrics?.php ?? '—'"></dd></div><div><dt>Laravel framework</dt><dd x-text="metrics?.laravel ?? '—'"></dd></div><div><dt>Environment</dt><dd x-text="(metrics?.environment || '—').toUpperCase()"></dd></div><div><dt>Server uptime</dt><dd x-text="duration(metrics?.uptime_seconds)"></dd></div><div><dt>Last telemetry</dt><dd x-text="updatedAt ? updatedAt.toLocaleString() : 'Waiting for first sample'"></dd></div>
@@ -6165,6 +6200,36 @@
 .rms-server-traffic-kpis span{font-size:11px!important}
 .rms-server-traffic-kpis strong{font-size:17px!important}
 .rms-server-traffic-footer{border-top:1px solid #f0f1f5;margin-top:22px!important;padding-top:16px!important;font-size:11px!important}
+
+.rms-server-capacity{margin-top:18px!important;padding:26px!important;border:1px solid #e4e7ef!important;border-radius:23px!important;background:linear-gradient(135deg,#fff 0%,#fcfcff 65%,#f8f9ff 100%)!important;box-shadow:0 14px 38px rgba(25,32,56,.045)!important}
+.rms-server-capacity-head{display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:18px!important;padding-bottom:22px!important;border-bottom:1px solid #eceef4!important}
+.rms-server-capacity-head>div:first-child>span{font-size:10px!important;letter-spacing:.15em!important;font-weight:800!important;color:#8b8e9d!important}
+.rms-server-capacity-head h3{font-size:23px!important;letter-spacing:-.04em!important;margin:7px 0 5px!important;color:#20212a!important}
+.rms-server-capacity-head p{font-size:12px!important;line-height:1.65!important;color:#8b8e9d!important;margin:0!important}
+.rms-server-health-pill{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;padding:10px 13px;border-radius:999px;background:#edfbf2;color:#138347;font-size:10px;font-weight:800;letter-spacing:.05em}
+.rms-server-health-pill i{width:7px;height:7px;border-radius:50%;background:#22c55e}
+.rms-server-health-pill.is-warn{background:#fff7e8;color:#a16207}.rms-server-health-pill.is-warn i{background:#f59e0b}
+.rms-server-health-pill.is-critical{background:#fff0f0;color:#c62828}.rms-server-health-pill.is-critical i{background:#ef4444}
+.rms-server-capacity-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin-top:22px}
+.rms-server-capacity-item{min-width:0;border:1px solid #e9ebf2;border-radius:16px;background:#fff;padding:17px 18px}
+.rms-server-capacity-title,.rms-server-capacity-meta{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.rms-server-capacity-title>span{display:flex;align-items:center;gap:8px;color:#777b8c;font-size:12px;font-weight:700}
+.rms-server-capacity-title strong{font-size:21px;letter-spacing:-.04em;color:#22232b}
+.rms-server-capacity-track{height:7px;border-radius:99px;background:#eef0f5;overflow:hidden;margin:16px 0 12px}
+.rms-server-capacity-track i{display:block;height:100%;border-radius:inherit}
+.rms-server-capacity-track .cpu-capacity-fill{background:#ff4c57}.rms-server-capacity-track .ram-capacity-fill{background:#06b6d4}.rms-server-capacity-track .disk-capacity-fill{background:#0d9f91}.rms-server-capacity-track .swap-capacity-fill{background:#8b5cf6}
+.rms-server-capacity-meta{font-size:10px;color:#8c8f9e;flex-wrap:wrap}.rms-server-capacity-meta b{font-weight:700;color:#16834a}.rms-server-capacity-meta b.capacity-warning{color:#c17a10}
+.rms-server-diagnostic-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:16px}
+.rms-server-diagnostic-strip>div{display:flex;align-items:flex-start;gap:11px;min-width:0;padding:15px 13px;border:1px solid #e9ebf2;border-radius:15px;background:linear-gradient(145deg,#fff,#fafbff)}
+.rms-server-diagnostic-icon{display:flex;align-items:center;justify-content:center;flex:0 0 34px;height:34px;border-radius:11px;background:#f1f2ff;color:#5b5fe9;font-size:18px}
+.rms-server-diagnostic-strip>div>span:last-child{display:flex;flex-direction:column;gap:4px;min-width:0}
+.rms-server-diagnostic-strip small{font-size:10px;color:#85899a;line-height:1.4}
+.rms-server-diagnostic-strip strong{font-size:17px;letter-spacing:-.03em;color:#24252d;overflow-wrap:anywhere}
+.rms-server-diagnostic-strip em{font-style:normal;font-size:9px;line-height:1.4;color:#9a9dac}
+.rms-server-capacity-disclaimer{margin:17px 0 0!important;padding-top:13px;border-top:1px solid #eceef4;color:#999cab;font-size:10px;line-height:1.6}
+@media(max-width:1050px){.rms-server-diagnostic-strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.rms-server-capacity{padding:17px!important;border-radius:18px!important}.rms-server-capacity-head{flex-direction:column!important}.rms-server-capacity-head h3{font-size:21px!important}.rms-server-capacity-grid{grid-template-columns:minmax(0,1fr)}.rms-server-capacity-item{padding:15px}.rms-server-diagnostic-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.rms-server-diagnostic-strip>div{padding:12px 10px;gap:8px}.rms-server-diagnostic-icon{flex-basis:29px;height:29px}.rms-server-diagnostic-strip strong{font-size:15px}.rms-server-capacity-title strong{font-size:19px}}
+
 @media(max-width:1100px){.rms-server-analytics-dashboard{grid-template-columns:minmax(0,1fr)!important}.rms-server-chart-grid-wide{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:600px){.rms-server-chart-wide,.rms-server-traffic-card{padding:16px!important;border-radius:17px!important}.rms-server-chart-grid-wide{grid-template-columns:minmax(0,1fr)!important}.rms-server-chart-tall{min-height:132px!important}.rms-server-chart-tall svg{height:70px!important}.rms-server-traffic-kpis>div{padding:12px!important}.rms-server-traffic-kpis strong{font-size:15px!important}}
 
