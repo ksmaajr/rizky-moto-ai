@@ -43,8 +43,9 @@ final class VercelProvider implements ImageProviderInterface
             'model' => $request->model,
             'prompt' => $this->lockedPrompt($request),
             'n' => $request->normalizedImageCount(),
-            'size' => $request->size,
-            'quality' => $request->quality,
+            // Enforce the Vercel output contract even for legacy queued requests.
+            'size' => '1024x1024',
+            'quality' => 'low',
             'output_format' => $request->outputFormat,
         ];
 
@@ -299,7 +300,8 @@ final class VercelProvider implements ImageProviderInterface
         $hasInstalled = count(array_intersect($roles, ['installed', 'installed_reference'])) > 0;
 
         return $request->prompt
-            . "\n\nPROVIDER POLICY — mandatory:\n"
+            . "\n\nOUTPUT CONTRACT — mandatory: generate a square 1:1 image (1024x1024). Use Low generation quality while keeping the composition, typography, product details and Store branding professionally designed.\n"
+            . "\nPROVIDER POLICY — mandatory:\n"
             . "- The dedicated Store-logo reference is the ONLY authority for Store identity. Never extract, copy, trace, reconstruct, imitate or substitute a logo/wordmark/watermark from product or installed photos, or from the Template example. Manufacturer branding may remain only on the physical product/packaging.\n"
             . ($hasStoreLogo
                 ? "- Use the supplied Store logo artwork itself, undistorted and visibly placed; do not redraw or typeset it. Follow the selected Template's branding zone and consistent logo prominence.\n"
