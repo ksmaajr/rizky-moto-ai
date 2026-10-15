@@ -64,9 +64,25 @@ class GeneratedImageDownloadController
 
         imagedestroy($image);
 
-        $filenameBase = pathinfo($sourcePath, PATHINFO_FILENAME);
+        // Always derive the downloaded filename from the title saved with the
+        // generation. Prefer the user's requested title over any AI-generated title.
+        $metadata = is_array($generation->metadata) ? $generation->metadata : [];
+        $title = trim((string) (
+            data_get($metadata, 'requested_custom_title')
+            ?: data_get($metadata, 'custom_title')
+            ?: data_get($metadata, 'final_title')
+            ?: data_get($generatedImage->metadata, 'title')
+            ?: ''
+        ));
+
+        // Use a filesystem-safe, portable filename; never trust user text as a path.
+        $filenameBase = \Illuminate\Support\Str::slug($title);
+        if ($filenameBase === '') {
+            $filenameBase = 'generated-product-' . $generation->id;
+        }
+
         $extension = $format === 'webp' ? 'webp' : 'jpg';
-        $downloadName = $filenameBase . '-download.' . $extension;
+        $downloadName = $filenameBase . '.' . $extension;
 
         return response($result['binary'], 200, [
             'Content-Type' => $result['mime'],
