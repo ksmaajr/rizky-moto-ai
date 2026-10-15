@@ -838,17 +838,21 @@ new class extends Component
         $userId = auth()->id();
         $deleted = 0;
         $cancelled = 0;
+        $failedPaths = [];
 
         Generation::query()
             ->where('user_id', $userId)
             ->with('generatedImages')
             ->orderBy('id')
-            ->chunkById(50, function ($generations) use (&$deleted, &$cancelled): void {
+            ->chunkById(50, function ($generations) use (&$deleted, &$cancelled, &$failedPaths): void {
                 foreach ($generations as $generation) {
                     $isActive = in_array($generation->status, ['queued', 'processing'], true);
 
                     $paths = $generation->generatedImages
-                        ->pluck('image_path')
+                        ->flatMap(fn ($image) => [
+                            $image->image_path,
+                            data_get($image->metadata, 'thumbnail_path'),
+                        ])
                         ->push($generation->product_image_1_path)
                         ->push($generation->product_image_2_path)
                         ->filter(fn ($path) => is_string($path) && trim($path) !== '')
@@ -856,8 +860,17 @@ new class extends Component
                         ->values()
                         ->all();
 
-                    if ($paths !== []) {
-                        Illuminate\Support\Facades\Storage::disk('public')->delete($paths);
+                    $failedPaths = [];
+                    foreach ($paths as $filePath) {
+                        try {
+                            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($filePath)
+                                && ! \Illuminate\Support\Facades\Storage::disk('public')->delete($filePath)) {
+                                $failedPaths[] = $filePath;
+                            }
+                        } catch (\Throwable $exception) {
+                            report($exception);
+                            $failedPaths[] = $filePath;
+                        }
                     }
 
                     // Remove image records for both active and finished generations.
@@ -890,9 +903,11 @@ new class extends Component
 
         $this->dispatch(
             'toast',
-            type: 'success',
-            title: 'History berhasil dibersihkan',
-            message: number_format($deleted + $cancelled) . ' generation diproses; foto input dan hasil terkait sudah dihapus.'
+            type: $failedPaths === [] ? 'success' : 'warning',
+            title: $failedPaths === [] ? 'History berhasil dibersihkan' : 'Penghapusan belum tuntas',
+            message: $failedPaths === []
+                ? number_format($deleted + $cancelled) . ' generation diproses; file yang ditemukan berhasil dihapus.'
+                : number_format(count(array_unique($failedPaths))) . ' file gagal dihapus. Periksa permission storage dan log aplikasi.'
         );
     }
 
@@ -2305,7 +2320,7 @@ new class extends Component
                                 ];
                             @endphp
                             <button type="button" class="rms-generation-image" style="aspect-ratio: {{ $ratio }}" x-on:click="openPreview({{ \Illuminate\Support\Js::from($heroPreview) }})">
-                                <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($hero->image_path) }}" alt="Generated image" loading="lazy">
+                                <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url(data_get($hero->metadata, 'thumbnail_path') ?: $hero->image_path) }}" alt="Generated image" loading="lazy" decoding="async" fetchpriority="low" width="480" height="480">
                                 <span class="rms-generation-image-overlay"><b>⌕</b> Lihat preview</span>
                             </button>
                         @elseif(in_array($status, ['queued','processing']))
