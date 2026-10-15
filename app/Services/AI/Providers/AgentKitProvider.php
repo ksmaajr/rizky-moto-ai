@@ -591,26 +591,45 @@ final class AgentKitProvider implements ImageProviderInterface
 
     private function lockedPrompt(ImageGenerationRequest $request): string
     {
+
+        // Provider-level policy injection: keep branding and Template identity locked
+        // even when a caller changes its orchestration or builds a provider request
+        // through a different workflow.
+        $prompt = $request->prompt;
         $roles = array_map(
             static fn ($reference): string => strtolower(trim((string) $reference->role)),
             $request->references,
         );
-        $hasStoreLogo = count(array_intersect($roles, ['store_logo', 'logo', 'branding'])) > 0;
-        $hasInstalled = count(array_intersect($roles, ['installed', 'installed_reference'])) > 0;
+        $hasStoreLogo = in_array('store_logo', $roles, true)
+            || in_array('logo', $roles, true)
+            || in_array('branding', $roles, true);
+        $hasTemplate = in_array('template', $roles, true)
+            || in_array('layout', $roles, true)
+            || in_array('template_master', $roles, true);
+        $hasInstalled = in_array('installed', $roles, true)
+            || in_array('installed_reference', $roles, true);
 
-        return $request->prompt
-            . "\n\nAGENTKIT CREATIVE POLICY — mandatory:\n"
-            . "- Create a fresh, premium, high-impact marketplace poster with a rich, deliberate composition—not a plain background. Use suitable lighting, depth, textures, graphic accents, frames, badges or concise callouts when compatible with the selected Template. Keep claims factual; never invent prices, discounts, specifications, compatibility, certifications, guarantees or unsupported benefits.\n"
-            . "- Use the primary product reference as the sole authority for product identity and visible details. Preserve its real shape, proportions, materials, colors, packaging and branding. Never invent unseen geometry or replace it with another product.\n"
-            . "- The Template reference controls brand feel, palette, typography direction and visual hierarchy, but its example product/text must not replace the current product/title. Keep a recognizable Store design system while adapting composition to the actual product.\n"
+        $prompt .= "\n\nAGENTKIT CREATIVE PRODUCT-POSTER OVERRIDE — HIGHEST PRIORITY:\n"
+            . "- REFERENCE ROLE CONTRACT: role identity is the authoritative product/package reference; role layout is a visual-style and Store-template reference, not a poster to copy pixel-for-pixel; role logo is the ONLY source of the official Store logo; role general is installed/use context only when supplied.\n"
+            . "- CREATIVE ART DIRECTION: design a fresh, original, premium, high-impact marketplace product poster. Use the product photo to understand the real item, packaging, colors, shape, and details, but do NOT copy its original photo composition, background, promotional layout, badges, typography, or surrounding scene. Upgrade it with a more polished, professional and eye-catching concept.\n"
+            . "- RICH VISUALS, NEVER PLAIN: use the canvas confidently with strong hierarchy and balanced, dense composition. Invent suitable visual elements such as a dramatic studio/garage background, red/black or product-matching accent colors, rim lighting, glow, speed lines, technical frames, layered panels, product podium, subtle textures, benefit icons, headline treatments, and a clear footer. Avoid empty backgrounds and generic minimal posters.\n"
+            . "- AI MAY IDEATE MARKETING DECORATIONS: create tasteful badges and callouts such as TOP BRAND, BEST SELLER, QUALITY PICK, FAST SHIPPING, COD, or product benefits when they fit the design. Keep text short, readable, and relevant. Do not invent exact prices, numeric discounts, technical specifications, compatibility, certifications, guarantees, or factual claims that cannot be verified from the request/reference. Treat promotional badges as editable design ideas, not proof of real-world status.\n"
+            . "- TEMPLATE INFLUENCE, NOT COPYING: carry over the selected Template's brand feel, palette, typography direction, and premium marketplace intent, while allowing a new composition and new decorative ideas for each product. Do not rigidly duplicate the Template example poster or copy its example product. Keep a coherent recognizable style across generations for the same Store.\n"
+            . "- EXACT USER TITLE: if a custom title is supplied, use that wording as the main headline, preserving spelling and wording. Design around it; do not replace it with a different headline.\n"
+            . "- ABSOLUTE LOGO SOURCE FIREWALL: the dedicated official Store logo reference is the ONLY source for the Store logo. Use the supplied logo artwork itself; never extract, trace, redraw, approximate, typeset, reconstruct, or substitute it using text from the product photo, installed photo, or Template. Manufacturer branding may remain only as part of the real physical product/packaging.\n"
             . ($hasStoreLogo
-                ? "- The dedicated Store-logo image is the ONLY source for the Store logo. Use the supplied artwork visibly and without distortion; never redraw, typeset, extract or substitute logos from product/installed photos or the Template. Manufacturer branding stays only on the physical product/packaging.\n"
-                : "- Store logo reference is missing: do not invent one; generation must stop until the official logo is attached.\n")
-            . "- Exact custom title: use the provided wording as the main headline without rewriting, translating, shortening or replacing it.\n"
-            . ($hasInstalled
-                ? "- An installed reference exists: use it only for truthful installation/use context and visibly include the installed product. Include the supplied product/packaging as a supporting visual when present.\n"
-                : "- No installed reference exists: do not invent a motorcycle, vehicle, mounting or usage scene. Make the supplied product/package the hero; only use details visible in the source image.\n")
-            . "- Use one cohesive advertisement, not a literal collage. Keep product identity, exact title, official Store branding and Template direction faithful; decorative layout may be creatively improved.";
+                ? "- REQUIRED LOGO: visibly include the official Store logo as actual artwork, crisp and undistorted. Do not replace it with the shop name typed as text. Keep Store logo identity consistent across every generation; placement may adapt to the new composition.\n"
+                : "- REQUIRED LOGO INPUT IS MISSING: do not invent a logo; generation must stop until the official Store logo is attached.\n")
+            . "- MODE LOCK: if an installed reference is present, use it to represent genuine installation/use and preserve the product's visible real-world details, while creatively integrating the product packaging when useful. If no installed reference is present, do not invent an installed-on-motorcycle view; make the product/package the hero and create an original studio-style product scene.\n"
+            . "- OUTPUT CANVAS: generate a square 1024x1024 composition. Fill the canvas deliberately; keep the official Store logo and main headline clear, and do not crop important product details or essential text.\n"
+            . "- Product identity, exact user title, and official Store logo must remain faithful. All other layout and decorative design may be creatively upgraded. Never add duplicate Store logos or fake alternative wordmarks.";
+
+        $negativePrompt = trim((string) ($request->metadata['negative_prompt'] ?? ''));
+        if ($negativePrompt !== '') {
+            $prompt .= "\n\nAvoid: " . $negativePrompt;
+        }
+
+        return $prompt;
     }
 
     private function promptFile(ImageGenerationRequest $request): string
