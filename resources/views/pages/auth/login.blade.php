@@ -17,6 +17,12 @@ class extends Component
 
     public bool $remember = false;
 
+    public function mount(): void
+    {
+        if (Auth::check()) {
+            $this->redirectRoute('dashboard', navigate: true);
+        }
+    }
 
     /*
     |--------------------------------------------------------------------------
