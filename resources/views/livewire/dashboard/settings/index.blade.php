@@ -92,7 +92,7 @@
             @if ($activeTab === 'server')
                 @php $m = $this->serverMetrics ?? []; @endphp
                 <div class="rms-settings-panel rms-settings-panel-enter" wire:key="server-monitoring-standalone">
-                    <div class="rms-server-monitor" wire:poll.3s="refreshServerMetrics">
+                    <div class="rms-server-monitor" wire:poll.visible.10s="refreshServerMetrics">
                         <div class="rms-server-hero">
                             <div><span class="rms-server-kicker">INFRASTRUCTURE / LIVE TELEMETRY</span><h2>Server Monitoring</h2><p>Realtime health overview untuk VPS Rizky Moto Shop AI.</p></div>
                             <div class="rms-server-live"><i></i><span>LIVE</span><small>{{ isset($m['time']) ? \Carbon\Carbon::parse($m['time'])->format('H:i:s') : 'Connecting…' }}</small></div>
