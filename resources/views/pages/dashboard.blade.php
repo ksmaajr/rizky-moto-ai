@@ -157,7 +157,7 @@ class extends Component
         $this->loadAiProviderSettings();
         $this->loadAgentAiCredentials();
 
-        $settings = \\App\\Models\\OpenAiSetting::query()->first();
+        $settings = \App\Models\OpenAiSetting::query()->first();
 
         if ($settings) {
             $this->imageModel = $settings->model ?: 'OpenAI Image Generation';
