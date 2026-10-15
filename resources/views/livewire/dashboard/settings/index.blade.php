@@ -6130,6 +6130,35 @@
 @media(max-width:600px){.rms-server-chart-grid-wide{grid-template-columns:minmax(0,1fr)}.rms-server-chart-tall svg{height:80px}.rms-server-traffic-kpis{gap:8px}.rms-server-traffic-kpis>div{padding:10px}.rms-server-traffic-label span{font-size:10px}.rms-server-traffic-label strong{font-size:11px}}
 
 .rms-server-meter i,.rms-server-stat,.rms-server-stat:hover{transition:none!important;animation:none!important}
+
+/* Final polish: override legacy analytics grid rules loaded later in the stylesheet */
+.rms-server-analytics-dashboard{grid-template-columns:minmax(0,1.18fr) minmax(320px,.82fr)!important;gap:16px!important;align-items:stretch}
+.rms-server-chart-grid-wide{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;margin-top:22px!important}
+.rms-server-chart-wide,.rms-server-traffic-card{border:1px solid #e5e7ef!important;border-radius:22px!important;box-shadow:0 12px 36px rgba(25,32,56,.045)!important;padding:24px!important}
+.rms-server-chart-wide>header,.rms-server-traffic-card>header{align-items:flex-start!important}
+.rms-server-chart-wide>header>div>span,.rms-server-traffic-card>header>div>span{letter-spacing:.14em!important;color:#8a8d9d!important}
+.rms-server-chart-wide>header h3,.rms-server-traffic-card>header h3{font-size:21px!important;letter-spacing:-.035em!important}
+.rms-server-chart-wide>header p,.rms-server-traffic-card>header p{max-width:420px;line-height:1.65!important}
+.rms-server-chart-tall{min-height:145px!important;border-radius:15px!important;padding:14px!important;background:radial-gradient(ellipse at top right,rgba(99,102,241,.045),transparent 65%),#fafbfe!important}
+.rms-server-chart-tall svg{height:76px!important;margin-top:4px;overflow:hidden!important}
+.rms-server-chart-tall>div{min-height:26px}
+.rms-server-chart-tall>div span{font-size:10px!important}
+.rms-server-chart-tall>div strong{font-size:16px!important}
+.rms-server-chart-tall>small{font-size:10px!important}
+.rms-server-chart-foot{padding-top:13px;border-top:1px solid #f0f1f5}
+.rms-server-traffic-visual{gap:24px!important;margin-top:28px!important}
+.rms-server-traffic-line{padding-bottom:1px}
+.rms-server-traffic-label span{font-size:12px!important}
+.rms-server-traffic-label strong{font-size:13px!important}
+.rms-server-traffic-track{height:8px!important;background:#eef0f6!important}
+.rms-server-traffic-kpis{gap:10px!important;margin-top:32px!important}
+.rms-server-traffic-kpis>div{border-radius:14px!important;padding:15px!important;background:linear-gradient(145deg,#fff,#fafbfe)!important}
+.rms-server-traffic-kpis span{font-size:11px!important}
+.rms-server-traffic-kpis strong{font-size:17px!important}
+.rms-server-traffic-footer{border-top:1px solid #f0f1f5;margin-top:22px!important;padding-top:16px!important;font-size:11px!important}
+@media(max-width:1100px){.rms-server-analytics-dashboard{grid-template-columns:minmax(0,1fr)!important}.rms-server-chart-grid-wide{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:600px){.rms-server-chart-wide,.rms-server-traffic-card{padding:16px!important;border-radius:17px!important}.rms-server-chart-grid-wide{grid-template-columns:minmax(0,1fr)!important}.rms-server-chart-tall{min-height:132px!important}.rms-server-chart-tall svg{height:70px!important}.rms-server-traffic-kpis>div{padding:12px!important}.rms-server-traffic-kpis strong{font-size:15px!important}}
+
 .rms-server-analytics-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;min-width:0}.rms-server-chart-card{min-width:0;overflow:hidden}.rms-server-chart-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:20px}.rms-server-chart{min-width:0;padding:12px;border:1px solid #eeeeF2;border-radius:12px;background:#fcfcfd}.rms-server-chart>div{display:flex;align-items:center;justify-content:space-between;gap:5px;margin-bottom:12px}.rms-server-chart>div span{display:flex;align-items:center;gap:5px;color:#777783;font-size:9px;font-weight:750}.rms-server-chart>div strong{font-size:12px;font-variant-numeric:tabular-nums}.rms-server-chart svg{display:block;width:100%;height:66px;overflow:visible}.rms-server-chart polyline{fill:none;stroke:#ef4444;stroke-width:1.7;vector-effect:non-scaling-stroke}.rms-server-chart polyline.ram-line{stroke:#06a6c5}.rms-server-chart polyline.disk-line{stroke:#0d9488}.chart-dot{width:6px;height:6px;border-radius:50%;background:#ef4444}.chart-dot.ram-dot{background:#06a6c5}.chart-dot.disk-dot{background:#0d9488}.rms-server-chart-foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:14px;color:#9898a2;font-size:9px}.rms-server-throughput{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:20px}.rms-server-throughput>div{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #eeeeF2;border-radius:12px;min-width:0}.rms-server-throughput-icon{display:grid;place-items:center;width:30px;height:30px;flex:0 0 30px;border-radius:9px;background:#ecfdf5;color:#059669;font-size:14px;font-weight:850}.rms-server-throughput-icon.tx{background:#eff6ff;color:#2563eb}.rms-server-throughput-icon.io{background:#f5f3ff;color:#7c3aed;font-size:10px}.rms-server-throughput small{display:block;color:#92929c;font-size:9px}.rms-server-throughput strong{display:block;margin-top:4px;font-size:12px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}.rms-server-process-summary{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid #f0f0f3;color:#858590;font-size:10px}.rms-server-process-summary strong{color:#333;font-variant-numeric:tabular-nums}
 @media(max-width:1100px){.rms-server-analytics-grid{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:680px){.rms-server-chart-grid{grid-template-columns:minmax(0,1fr)}.rms-server-chart svg{height:75px}.rms-server-throughput{grid-template-columns:repeat(2,minmax(0,1fr))}.rms-server-chart-foot{font-size:8px}}
