@@ -72,7 +72,7 @@
                 type="button"
                 class="rms-settings-tab"
                 :class="{ 'is-active': $wire.activeTab === 'server' }"
-                wire:click="$set('activeTab', 'server')"
+                wire:click="selectTab('server')"
             >
                 <span class="rms-settings-tab-icon rms-settings-server-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/><path d="M7 7h.01M7 17h.01M11 7h6M11 17h6"/></svg></span>
                 <span>
