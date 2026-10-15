@@ -84,6 +84,39 @@ class CollectServerTelemetry extends Command
                 'process_count' => is_string($processes) && trim($processes) !== '' ? count(preg_split('/\n/', trim($processes), -1, PREG_SPLIT_NO_EMPTY)) : null,
                 'process_access' => $shellAvailable,
             ];
+            // Persist alert state transitions in the background collector; no browser session is required.
+            $ramPct = $total > 0 ? (($metrics['memory_used'] / $total) * 100) : 0;
+            $diskPct = $diskTotal > 0 ? (($metrics['disk_used'] / $diskTotal) * 100) : 0;
+            $swapPct = ($metrics['swap_total'] ?? 0) > 0 ? (($metrics['swap_used'] / $metrics['swap_total']) * 100) : 0;
+            $checks = [
+                ['key' => 'cpu', 'value' => $cpuPercent, 'warning' => 80, 'critical' => 95, 'title' => 'CPU utilization', 'unit' => '%'],
+                ['key' => 'memory', 'value' => $ramPct, 'warning' => 80, 'critical' => 95, 'title' => 'Memory pressure', 'unit' => '%'],
+                ['key' => 'disk', 'value' => $diskPct, 'warning' => 85, 'critical' => 95, 'title' => 'Root filesystem usage', 'unit' => '%'],
+                ['key' => 'swap', 'value' => $swapPct, 'warning' => 50, 'critical' => 80, 'title' => 'Swap consumption', 'unit' => '%'],
+            ];
+            foreach ($checks as $check) {
+                $severity = $check['value'] >= $check['critical'] ? 'critical' : ($check['value'] >= $check['warning'] ? 'warning' : null);
+                $active = DB::table('server_monitor_alerts')->where('metric_key', $check['key'])->whereNull('resolved_at')->orderByDesc('id')->first();
+                if ($severity !== null) {
+                    $message = $check['title'].' reached '.round($check['value'], 1).$check['unit'].' (threshold '.$check[$severity].$check['unit'].').';
+                    if ($active) {
+                        DB::table('server_monitor_alerts')->where('id', $active->id)->update([
+                            'severity' => $severity, 'message' => $message, 'observed_value' => round($check['value'], 2),
+                            'threshold_value' => $check[$severity], 'updated_at' => $now,
+                        ]);
+                    } else {
+                        DB::table('server_monitor_alerts')->insert([
+                            'metric_key' => $check['key'], 'severity' => $severity, 'title' => $check['title'],
+                            'message' => $message, 'observed_value' => round($check['value'], 2),
+                            'threshold_value' => $check[$severity], 'started_at' => $now,
+                            'resolved_at' => null, 'created_at' => $now, 'updated_at' => $now,
+                        ]);
+                    }
+                } elseif ($active) {
+                    DB::table('server_monitor_alerts')->where('id', $active->id)->update(['resolved_at' => $now, 'updated_at' => $now]);
+                }
+            }
+
             DB::table('server_metric_snapshots')->insert([
                 'collected_at' => $now,
                 'metrics' => json_encode($metrics, JSON_THROW_ON_ERROR),
