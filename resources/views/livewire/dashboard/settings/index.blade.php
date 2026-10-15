@@ -89,7 +89,34 @@
         </aside>
 
         <section class="rms-settings-content">
-            @if (in_array($activeTab, ['provider', 'activity', 'server'], true))
+            @if ($activeTab === 'server')
+                @php $m = $serverMetrics; @endphp
+                <div class="rms-settings-panel rms-settings-panel-enter" wire:key="server-monitoring-standalone">
+                    <div class="rms-server-monitor" wire:poll.3s="refreshServerMetrics">
+                        <div class="rms-server-hero">
+                            <div><span class="rms-server-kicker">INFRASTRUCTURE / LIVE TELEMETRY</span><h2>Server Monitoring</h2><p>Realtime health overview untuk VPS Rizky Moto Shop AI.</p></div>
+                            <div class="rms-server-live"><i></i><span>LIVE</span><small>{{ isset($m['time']) ? \Carbon\Carbon::parse($m['time'])->format('H:i:s') : 'Connecting…' }}</small></div>
+                        </div>
+                        <div class="rms-server-metric-grid">
+                            <article><span>CPU LOAD</span><strong>{{ $m['load'][0] ?? '—' }}</strong><small>{{ $m['cpu_cores'] ?? '—' }} logical cores · 1 min average</small><div class="rms-server-meter"><i style="width:{{ min(100, (float)($m['load'][0] ?? 0) / max(1,(int)($m['cpu_cores'] ?? 1))*100) }}%"></i></div></article>
+                            <article><span>MEMORY USAGE</span><strong>{{ isset($m['memory_total']) && $m['memory_total'] ? round(($m['memory_used']/$m['memory_total'])*100) : '—' }}<em>%</em></strong><small>{{ number_format(($m['memory_used'] ?? 0)/1073741824,2) }} / {{ number_format(($m['memory_total'] ?? 0)/1073741824,2) }} GiB used</small><div class="rms-server-meter"><i style="width:{{ isset($m['memory_total']) && $m['memory_total'] ? min(100,$m['memory_used']/$m['memory_total']*100) : 0 }}%"></i></div></article>
+                            <article><span>DISK USAGE</span><strong>{{ isset($m['disk_total']) && $m['disk_total'] ? round(($m['disk_used']/$m['disk_total'])*100) : '—' }}<em>%</em></strong><small>{{ number_format(($m['disk_free'] ?? 0)/1073741824,1) }} GiB free</small><div class="rms-server-meter"><i style="width:{{ isset($m['disk_total']) && $m['disk_total'] ? min(100,$m['disk_used']/$m['disk_total']*100) : 0 }}%"></i></div></article>
+                            <article><span>SWAP USED</span><strong>{{ isset($m['swap_total']) && $m['swap_total'] ? round(($m['swap_used']/$m['swap_total'])*100) : 0 }}<em>%</em></strong><small>{{ number_format(($m['swap_used'] ?? 0)/1048576,0) }} / {{ number_format(($m['swap_total'] ?? 0)/1048576,0) }} MiB</small><div class="rms-server-meter"><i style="width:{{ isset($m['swap_total']) && $m['swap_total'] ? min(100,$m['swap_used']/$m['swap_total']*100) : 0 }}%"></i></div></article>
+                        </div>
+                        <div class="rms-server-lower-grid">
+                            <section class="rms-server-card"><header><div><span>SYSTEM OVERVIEW</span><h3>Runtime &amp; host</h3></div><b>HOST</b></header><dl>
+                                <div><dt>Hostname</dt><dd>{{ $m['hostname'] ?? '—' }}</dd></div><div><dt>Operating system</dt><dd>{{ $m['os'] ?? '—' }}</dd></div><div><dt>PHP runtime</dt><dd>{{ $m['php'] ?? PHP_VERSION }}</dd></div><div><dt>Laravel</dt><dd>{{ $m['laravel'] ?? app()->version() }}</dd></div><div><dt>Environment</dt><dd>{{ strtoupper($m['environment'] ?? app()->environment()) }}</dd></div><div><dt>Uptime</dt><dd>{{ isset($m['uptime_seconds']) ? floor($m['uptime_seconds']/86400).'d '.floor(($m['uptime_seconds']%86400)/3600).'h '.floor(($m['uptime_seconds']%3600)/60).'m' : '—' }}</dd></div>
+                            </dl></section>
+                            <section class="rms-server-card"><header><div><span>SERVICE HEALTH</span><h3>Core services</h3></div><b>STATUS</b></header><div class="rms-server-services">
+                                @foreach (($m['services'] ?? []) as $service => $active)<div><span><i class="{{ $active === true ? 'is-up' : ($active === false ? 'is-down' : 'is-unknown') }}"></i>{{ $service }}</span><strong>{{ $active === true ? 'RUNNING' : ($active === false ? 'STOPPED' : 'UNKNOWN') }}</strong></div>@endforeach
+                                <div><span><i class="{{ ($m['queue_workers'] ?? 0) > 0 ? 'is-up' : 'is-unknown' }}"></i>Laravel queue workers</span><strong>{{ $m['queue_workers'] ?? 'N/A' }} detected</strong></div>
+                            </div></section>
+                        </div>
+                        <div class="rms-server-foot"><span><i></i> Metrics refresh automatically every 3 seconds while this tab is open.</span><button type="button" wire:click="refreshServerMetrics" wire:loading.attr="disabled">↻ Refresh now</button></div>
+                    </div>
+                </div>
+            @else
+                @if (in_array($activeTab, ['provider', 'activity'], true))
                 <div
                     class="rms-settings-panel rms-settings-panel-enter"
                     wire:key="settings-openai-panel"
@@ -1347,6 +1374,7 @@
                         </button>
                     </div>
                 </div>
+                @endif
             @endif
         </section>
     </div>
