@@ -135,42 +135,40 @@ class extends Component
 
 
 
-    public function mount(): void
+    public bool $dashboardInitialized = false;
 
+    /**
+     * Keep the first HTML response lightweight. Database aggregates, provider
+     * credentials and process inspection run after the dashboard shell renders.
+     */
+    public function mount(): void
     {
+        $this->notificationReadAt = session('dashboard_notifications_read_at');
+    }
+
+    public function initializeDashboard(): void
+    {
+        if ($this->dashboardInitialized) {
+            return;
+        }
+
+        $this->dashboardInitialized = true;
 
         $this->loadAiProviderSettings();
         $this->loadAgentAiCredentials();
 
-        $settings = \App\Models\OpenAiSetting::query()->first();
-
-
+        $settings = \\App\\Models\\OpenAiSetting::query()->first();
 
         if ($settings) {
-
             $this->imageModel = $settings->model ?: 'OpenAI Image Generation';
-
             $this->defaultAspectRatio = $settings->default_aspect_ratio ?: '1:1';
-
             $this->defaultQuality = $settings->default_quality ?: 'standard';
-
             $this->hasOpenAiKey = filled($settings->api_key);
-
         }
 
-
-
-        $this->notificationReadAt = session('dashboard_notifications_read_at');
         $this->loadDashboardData();
-
-        // Worker state is server-side. Resolve it on every dashboard mount so a
-        // new tab/device reflects the real process state instead of Livewire's
-        // initial default values.
         $this->refreshWorkerStatus();
-
     }
-
-
 
     private function loadOpenAiLogs(): void
 
@@ -1997,7 +1995,7 @@ public function getUserInitialsProperty(): string
 
 
 
-<div class="min-h-screen bg-[#f4f4f5] text-zinc-950" x-data="{ sidebarCollapsed:false, sidebarGroups:{workspace:true,management:true,activity:true,system:true}, init(){ try{this.sidebarCollapsed=localStorage.getItem('rms-sidebar-collapsed')==='1'; Object.assign(this.sidebarGroups,JSON.parse(localStorage.getItem('rms-sidebar-groups')||'{}'));}catch(e){} this.$watch('sidebarCollapsed',v=>{try{localStorage.setItem('rms-sidebar-collapsed',v?'1':'0')}catch(e){}}); this.$watch('sidebarGroups',v=>{try{localStorage.setItem('rms-sidebar-groups',JSON.stringify(v))}catch(e){}})}, toggleGroup(g){this.sidebarGroups[g]=!this.sidebarGroups[g]} }" :class="{ 'sidebar-is-collapsed': sidebarCollapsed }">
+<div wire:init="initializeDashboard" class="min-h-screen bg-[#f4f4f5] text-zinc-950" x-data="{ sidebarCollapsed:false, sidebarGroups:{workspace:true,management:true,activity:true,system:true}, init(){ try{this.sidebarCollapsed=localStorage.getItem('rms-sidebar-collapsed')==='1'; Object.assign(this.sidebarGroups,JSON.parse(localStorage.getItem('rms-sidebar-groups')||'{}'));}catch(e){} this.$watch('sidebarCollapsed',v=>{try{localStorage.setItem('rms-sidebar-collapsed',v?'1':'0')}catch(e){}}); this.$watch('sidebarGroups',v=>{try{localStorage.setItem('rms-sidebar-groups',JSON.stringify(v))}catch(e){}})}, toggleGroup(g){this.sidebarGroups[g]=!this.sidebarGroups[g]} }" :class="{ 'sidebar-is-collapsed': sidebarCollapsed }">
 
 
 
