@@ -67,9 +67,6 @@ class Index extends Component
             ? ($tab === 'openai' ? 'provider' : $tab)
             : 'general';
 
-        if ($this->activeTab === 'server') {
-            $this->refreshServerMetrics();
-        }
     }
 
     #[On('settings-tab-changed')]
