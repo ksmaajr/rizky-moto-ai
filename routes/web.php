@@ -64,8 +64,17 @@ Route::middleware('auth')->group(function () {
         foreach (preg_split('/\\n/', $read('/proc/diskstats')) as $line) {
             $v=preg_split('/\\s+/', trim($line)); if (count($v)>13 && preg_match('/^(nvme|xvd|vd|sd)/', $v[2])) { $diskIo['read_sectors']+=(int)$v[5]; $diskIo['write_sectors']+=(int)$v[9]; }
         }
+        $history = \Illuminate\Support\Facades\DB::table('server_metric_snapshots')
+            ->where('collected_at', '>=', now()->subHours(24))
+            ->orderBy('collected_at')
+            ->limit(720)
+            ->get(['collected_at', 'metrics'])
+            ->map(static function ($row) {
+                $m = json_decode($row->metrics, true) ?: [];
+                return ['time' => $row->collected_at, 'cpu' => (float) ($m['cpu_percent'] ?? 0), 'ram' => ($m['memory_total'] ?? 0) > 0 ? (($m['memory_used'] ?? 0) / $m['memory_total'] * 100) : 0, 'disk' => ($m['disk_total'] ?? 0) > 0 ? (($m['disk_used'] ?? 0) / $m['disk_total'] * 100) : 0, 'load' => (float) ($m['load'][0] ?? 0)];
+            })->values();
         return response()->json([
-            'ok'=>true,'time'=>now()->toIso8601String(),'hostname'=>gethostname()?:'Server','os'=>php_uname('s').' '.php_uname('r'),
+            'ok'=>true,'time'=>now()->toIso8601String(),'history'=>$history,'hostname'=>gethostname()?:'Server','os'=>php_uname('s').' '.php_uname('r'),
             'php'=>PHP_VERSION,'laravel'=>app()->version(),'environment'=>app()->environment(),'uptime_seconds'=>(int)($up[0]??0),
             'load'=>array_map(static fn($v)=>round((float)$v,2),$load),'cpu_cores'=>$cores,'cpu_ticks'=>array_map('intval',$cpuLine),
             'memory_total'=>$total,'memory_available'=>$available,'memory_used'=>max(0,$total-$available),
