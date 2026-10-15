@@ -50,13 +50,17 @@ Route::middleware('auth')->group(function () {
         $uptimeParts = preg_split('/\\s+/', trim($read('/proc/uptime')));
         $uptime = (int) ($uptimeParts[0] ?? 0);
         $load = function_exists('sys_getloadavg') ? sys_getloadavg() : [0, 0, 0];
-        $cores = max(1, (int) (trim((string) @shell_exec('nproc 2>/dev/null')) ?: 1));
+        $shellAvailable = function_exists('shell_exec')
+            && !in_array('shell_exec', array_map('trim', explode(',', (string) ini_get('disable_functions'))), true);
+        $runCommand = static fn (string $command) => $shellAvailable ? @shell_exec($command) : null;
+        $coresOutput = $runCommand('nproc 2>/dev/null');
+        $cores = max(1, (int) (trim((string) $coresOutput) ?: 1));
         $services = [];
         foreach (['nginx', 'php8.5-fpm', 'mysql', 'redis-server', 'supervisor'] as $service) {
-            $status = @shell_exec('systemctl is-active ' . escapeshellarg($service) . ' 2>/dev/null');
+            $status = $runCommand('systemctl is-active ' . escapeshellarg($service) . ' 2>/dev/null');
             $services[$service] = is_string($status) && trim($status) !== '' ? trim($status) : 'unknown';
         }
-        $workersOutput = @shell_exec("pgrep -af '[a]rtisan queue:work' 2>/dev/null");
+        $workersOutput = $runCommand("pgrep -af '[a]rtisan queue:work' 2>/dev/null");
         $workers = is_string($workersOutput) && trim($workersOutput) !== ''
             ? count(preg_split('/\\n/', trim($workersOutput), -1, PREG_SPLIT_NO_EMPTY))
             : 0;
@@ -81,7 +85,7 @@ Route::middleware('auth')->group(function () {
             'disk_used' => max(0, $diskTotal - $diskFree),
             'services' => $services,
             'queue_workers' => $workers,
-            'process_access' => function_exists('shell_exec') && !in_array('shell_exec', array_map('trim', explode(',', (string) ini_get('disable_functions'))), true),
+            'process_access' => $shellAvailable,
         ]);
     })->name('dashboard.server-monitoring.metrics');
 
