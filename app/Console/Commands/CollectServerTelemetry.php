@@ -117,6 +117,48 @@ class CollectServerTelemetry extends Command
                 }
             }
 
+            // Detect core service failures and a completely stopped Laravel queue pool.
+            $operationalChecks = [];
+            if ($shellAvailable) {
+                foreach ($services as $service => $status) {
+                    if ($status !== 'unknown') {
+                        $operationalChecks[] = [
+                            'key' => 'service_'.$service,
+                            'failed' => $status !== 'active',
+                            'title' => $service.' service',
+                            'message' => $service.' service status is '.strtoupper($status).'.',
+                        ];
+                    }
+                }
+                $operationalChecks[] = [
+                    'key' => 'queue_workers',
+                    'failed' => $metrics['queue_workers'] < 1,
+                    'title' => 'Laravel queue workers',
+                    'message' => $metrics['queue_workers'] < 1
+                        ? 'No Laravel queue:work process was detected; image generation jobs may remain queued.'
+                        : $metrics['queue_workers'].' Laravel queue worker process(es) detected.',
+                ];
+            }
+            foreach ($operationalChecks as $check) {
+                $active = DB::table('server_monitor_alerts')->where('metric_key', $check['key'])->whereNull('resolved_at')->orderByDesc('id')->first();
+                if ($check['failed']) {
+                    if ($active) {
+                        DB::table('server_monitor_alerts')->where('id', $active->id)->update([
+                            'severity' => 'critical', 'message' => $check['message'],
+                            'observed_value' => 0, 'threshold_value' => 1, 'updated_at' => $now,
+                        ]);
+                    } else {
+                        DB::table('server_monitor_alerts')->insert([
+                            'metric_key' => $check['key'], 'severity' => 'critical', 'title' => $check['title'],
+                            'message' => $check['message'], 'observed_value' => 0, 'threshold_value' => 1,
+                            'started_at' => $now, 'resolved_at' => null, 'created_at' => $now, 'updated_at' => $now,
+                        ]);
+                    }
+                } elseif ($active) {
+                    DB::table('server_monitor_alerts')->where('id', $active->id)->update(['resolved_at' => $now, 'updated_at' => $now]);
+                }
+            }
+
             DB::table('server_metric_snapshots')->insert([
                 'collected_at' => $now,
                 'metrics' => json_encode($metrics, JSON_THROW_ON_ERROR),
