@@ -154,7 +154,7 @@
                                     <b class="rms-server-alert-value" x-text="alert.observed_value == null ? '—' : Number(alert.observed_value).toFixed(1)+'%'"></b>
                                 </article></template>
                             </div>
-                            <footer class="rms-server-alert-foot">Thresholds: CPU 80/95%, RAM 80/95%, disk 85/95%, swap 50/80% (warning/critical). Background evaluation runs with the scheduled collector.</footer>
+                            <footer class="rms-server-alert-foot">Thresholds: CPU/RAM 80/95%, disk 85/95%, swap 50/80% (warning/critical). Core service outages and zero queue workers raise critical alerts. Background evaluation runs with the scheduled collector.</footer>
                         </section>
                         <div class="rms-server-analytics-grid rms-server-analytics-dashboard">
                             <section class="rms-server-card rms-server-card-pro rms-server-chart-card rms-server-chart-wide">
