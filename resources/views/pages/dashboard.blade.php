@@ -3197,13 +3197,13 @@ public function getUserInitialsProperty(): string
                     <article class="rms-kpi rms-kpi-primary"><div class="rms-kpi-top"><span class="rms-kpi-icon">✦</span><span class="rms-kpi-live"><i></i> LIVE</span></div><span class="rms-kpi-label">Generations</span><strong>{{ number_format($d['total']??0) }}</strong><small>{{ number_format($d['images']??0) }} visual tersimpan</small></article>
                     <article class="rms-kpi"><div class="rms-kpi-top"><span class="rms-kpi-icon success">✓</span><span class="rms-kpi-tag">SUCCESS</span></div><span class="rms-kpi-label">Completed</span><strong>{{ number_format($d['completed']??0) }}</strong><small>{{ $d['success_rate']??0 }}% success rate</small></article>
                     <article class="rms-kpi"><div class="rms-kpi-top"><span class="rms-kpi-icon amber">◷</span><span class="rms-kpi-tag">QUEUE</span></div><span class="rms-kpi-label">Processing / Queued</span><strong>{{ ($d['processing']??0)+($d['queued']??0) }}</strong><small>{{ $d['processing']??0 }} processing · {{ $d['queued']??0 }} queued</small></article>
-                    <article class="rms-kpi"><div class="rms-kpi-top"><span class="rms-kpi-icon danger">!</span><span class="rms-kpi-tag">ERROR</span></div><span class="rms-kpi-label">Failed</span><strong>{{ number_format($d['failed']??0) }}</strong><small>Avg. {{ $d['avg_duration'] ? $d['avg_duration'].' detik' : '—' }} / generation</small></article>
+                    <article class="rms-kpi"><div class="rms-kpi-top"><span class="rms-kpi-icon danger">!</span><span class="rms-kpi-tag">ERROR</span></div><span class="rms-kpi-label">Failed</span><strong>{{ number_format($d['failed']??0) }}</strong><small>Avg. {{ ($d['avg_duration'] ?? 0) ? $d['avg_duration'].' detik' : '—' }} / generation</small></article>
                 </section>
                 <section class="rms-workspace-health-strip reveal reveal-3">
                     <div><span class="rms-health-mini-icon">▣</span><div><small>ACTIVE STORES</small><strong>{{ $d['stores_active'] ?? 0 }} / {{ $d['stores_total'] ?? 0 }}</strong></div></div>
                     <div><span class="rms-health-mini-icon violet">▦</span><div><small>VISUAL TEMPLATES</small><strong>{{ $d['templates_total'] ?? 0 }}</strong></div></div>
                     <div><span class="rms-health-mini-icon green">◉</span><div><small>OUTPUTS</small><strong>{{ number_format($d['images'] ?? 0) }}</strong></div></div>
-                    <div><span class="rms-health-mini-icon amber">◷</span><div><small>AVG. GENERATION</small><strong>{{ $d['avg_duration'] ? $d['avg_duration'].'s' : '—' }}</strong></div></div>
+                    <div><span class="rms-health-mini-icon amber">◷</span><div><small>AVG. GENERATION</small><strong>{{ ($d['avg_duration'] ?? 0) ? $d['avg_duration'].'s' : '—' }}</strong></div></div>
                 </section>
 
                 @php $engine = $this->dashboardEngine; @endphp
