@@ -1185,237 +1185,46 @@ class OpenAiImageService
         bool $hasInstalledReference = false,
         ?string $customTitle = null,
         ?bool $templateReferenceAttached = null,
-    ): string
-    {
+    ): string {
         $hasTemplateReference = $templateReferenceAttached ?? $this->hasTemplateReference($template);
-        $attachTemplateReference = $hasTemplateReference;
         $hasStoreLogo = $this->hasStoreLogo($store);
 
-        $referenceRoles = [
-            'REFERENCE INPUT TRANSPORT — IMPORTANT:',
-            '- The service may send these references as separate images OR as one labeled UNIVERSAL REFERENCE BOARD when the selected model/provider does not reliably support multiple image inputs.',
-            '- If a UNIVERSAL REFERENCE BOARD is supplied, it contains labeled panels for TEMPLATE, PRODUCT, INSTALLED and STORE LOGO. Treat each labeled panel as its own semantic reference; the board itself is NOT the product and must NEVER be reproduced as a collage.',
-            '- The semantic role always matters more than the physical attachment number.',
-            'REFERENCE IMAGE CONTRACT — FOLLOW THE ATTACHMENT ORDER EXACTLY WHEN REFERENCES ARE SENT SEPARATELY:',
-            $hasTemplateReference
-                ? 'IMAGE 1 — TEMPLATE MASTER REFERENCE: this is the visual master for the selected Template.'
-                : 'NO TEMPLATE MASTER REFERENCE IMAGE IS AVAILABLE: use the Template prompt as the layout/style source of truth.',
-            $hasTemplateReference
-                ? '- Preserve the Template master reference visual system: composition, layout structure, hierarchy, framing, background treatment, decorative elements, graphic motifs, badge/callout placement, typography placement, spacing, proportions and overall visual language.'
-                : '- Build the visual system from the Template prompt, but keep that system stable across generations using the same Template.',
-            $hasTemplateReference
-                ? '- The products, packaging and product-specific content visible inside the Template master are EXAMPLES ONLY. Do not copy those products into the new result.'
-                : '- Do not invent a different visual system between generations of the same Template.',
-            $hasTemplateReference
-                ? '- Replace the master reference product content with the actual product from the next image while preserving the master composition as closely as practical.'
-                : null,
-            $hasTemplateReference
-                ? 'IMAGE 2 — PRIMARY PRODUCT REFERENCE:'
-                : 'IMAGE 1 — PRIMARY PRODUCT REFERENCE:',
-            '- This image is the authoritative source for the actual product identity.',
-            '- Preserve the exact product identity, recognizable shape, proportions, geometry, colors, materials, surface finish, markings, labels, packaging details and important physical features.',
-            '- Never copy the product identity from the Template master reference when it conflicts with the actual product reference.',
-            '- Do not replace the product with another product, redesign it, merge it with a different product, or invent missing product details.',
-            $hasInstalledReference
-                ? ($hasTemplateReference ? 'IMAGE 3 — INSTALLED / IN-USE REFERENCE:' : 'IMAGE 2 — INSTALLED / IN-USE REFERENCE:')
-                : 'NO INSTALLED / IN-USE REFERENCE:',
-            $hasInstalledReference
-                ? '- Use this image only for factual installation, orientation, placement, scale, fitment and real-world usage context.'
-                : '- There is NO installed-product image. Do not infer an installation scene from the product category, Template master, Template prompt, memory or common usage.',
-            $hasInstalledReference
-                ? '- The installed reference must never override the Template master layout or the actual product identity.'
-                : '- Do not fabricate a motorcycle, vehicle, rider, hand, mechanic, workshop, garage, road scene, mounting demonstration, installation scene or fictional usage environment.',
-            $hasStoreLogo
-                ? ($hasTemplateReference
-                    ? ($hasInstalledReference ? 'IMAGE 4 — OFFICIAL STORE LOGO:' : 'IMAGE 3 — OFFICIAL STORE LOGO:')
-                    : ($hasInstalledReference ? 'IMAGE 3 — OFFICIAL STORE LOGO:' : 'IMAGE 2 — OFFICIAL STORE LOGO:'))
-                : 'NO STORE LOGO IMAGE:',
-            $hasStoreLogo
-                ? '- Treat the supplied Store logo image as the single, exclusive authority for the STORE BRAND LOGO. Reproduce that exact supplied mark, including its actual wordmark, icon, letter shapes, colors, proportions and spacing. Do not redraw it from memory or approximate the lettering.'
-                . PHP_EOL . '- NEVER copy, infer, substitute or blend a logo/wordmark from the product packaging, product photo, installed motorcycle photo, Template example, or any other reference into the Store logo position. Those images are NOT Store-brand authorities.'
-                . PHP_EOL . '- If a product/package has its own manufacturer branding, preserve it only on that actual product/package. Do not promote it to the Store header/logo.'
-                . PHP_EOL . '- Keep the official Store logo visually separate from product branding and do not alter the supplied logo artwork.'
-                : '- No Store logo image is supplied. Do not invent a logo or fabricate brand marks.',
-        ];
-
-        $modeRules = $hasInstalledReference
-            ? [
-                'GENERATION MODE: PRODUCT + INSTALLED REFERENCE',
-                '- The Template master reference remains the design/layout authority when available.',
-                '- The actual product reference remains the product-identity authority.',
-                '- Use the installed reference to understand factual real-world installation, orientation, placement, scale, fitment and usage.',
-                '- FINAL OUTPUT REQUIREMENT: when an installed reference is supplied, the installed product MUST be visibly represented in the final advertisement as the primary/hero product view. Do not silently use it only as hidden analysis.',
-                '- FINAL OUTPUT REQUIREMENT: the supplied product/packaging reference MUST also be visibly represented as a secondary supporting visual when packaging is present. Preserve its actual packaging/product identity; do not omit it merely because an installed reference exists.',
-                '- FINAL OUTPUT REQUIREMENT: when a Store logo is supplied, the official Store logo MUST be visibly placed in the final advertisement in a clean, intentional branding position.',
-                '- Integrate the hero installed view, packaging/product visual and Store logo into ONE cohesive commercial composition. Do NOT output a literal 2x2 collage or a side-by-side comparison.',
-                '- Keep the same Template composition, hierarchy, graphic language and visual rhythm even when the installed reference changes.',
-                '- Do not let the installed reference redesign the Template.',
-            ]
-            : [
-                'GENERATION MODE: PRODUCT-ONLY — TEMPLATE DESIGN REFERENCE + ZERO PRODUCT FABRICATION',
-                '- There is NO installed/in-use reference. The actual product image is the ONLY authority for the product identity, geometry, materials and visible details.',
-                '- The selected Template master image IS attached when available and is the visual master for composition, layout, typography placement, graphic hierarchy, background treatment, badges, icons, framing and overall design language.',
-                '- CRITICAL: copy the Template MASTER DESIGN SYSTEM, NOT its example product. Replace the example product/content with the actual supplied product.',
-                '- ALL TEXT visible inside the Template master (old product names, headlines, specifications, badges and labels) is EXAMPLE CONTENT unless explicitly defined as a fixed Template text element. Never copy the old product title when a custom title is supplied.',
-                '- The Template prompt is also mandatory creative direction and must be combined with the Template master image.',
-                '- NEVER inherit a motorcycle, scooter, vehicle body, wheel, road, rider, mechanic, hand, workshop, garage, showroom, engine bay or installation environment from the Template unless such an environment is explicitly required by the Template prompt AND supported by an installed reference.',
-                '- NEVER create an installation scene merely because the Template example contains one.',
-                '- NEVER place the actual product on, inside, attached to, mounted on, held by or being used on a motorcycle or vehicle.',
-                '- NEVER create a contextual product photograph that suggests how the product is installed.',
-                '- The final background must be a non-installation commercial product background consistent with the Template design language.',
-                '- The product may be isolated, enlarged, cropped, arranged or layered only when the arrangement can be created from the actual PRIMARY PRODUCT REFERENCE without inventing unseen geometry.',
-                '- ZERO-FABRICATION RULE: do not create a new physical view, unseen side, imagined mounting point, reconstructed macro, synthetic close-up or fictional product detail.',
-                '',
-                'STRICT DETAIL / CALLOUT RULE — SOURCE-PIXELS ONLY:',
-                '- A detail/callout is allowed ONLY when it can be represented from pixels visibly present in the PRIMARY PRODUCT REFERENCE.',
-                '- The detail must be a literal crop/enlargement of the actual product image, not a newly photographed or newly rendered version of the product.',
-                '- NEVER place a detail crop against a motorcycle, vehicle, road, workshop or installation scene.',
-                '- NEVER create a new perspective, hidden side, reconstructed thread, connector, screw head, engraving, internal structure or other unseen feature.',
-                '- If the source image does not provide enough visible pixels for a trustworthy detail, OMIT the detail/callout instead of generating one.',
-                '',
-                'ABSOLUTE PRODUCT-ONLY NEGATIVE LIST:',
-                '- NO motorcycle.',
-                '- NO scooter.',
-                '- NO vehicle.',
-                '- NO wheel, body panel or vehicle background.',
-                '- NO installed product.',
-                '- NO mounting demonstration.',
-                '- NO rider, mechanic, hand or person using the product.',
-                '- NO garage, workshop, showroom or road.',
-                '- NO fictional usage environment.',
-                '- NO AI-generated macro/detail replacement.',
-                '- NO invented product angle.',
-                '- NO photographic content copied from the Template example.',
-            ];
-
-        $headlineLock = $customTitle !== null
-            ? [
-                'CUSTOM HEADLINE LOCK — ABSOLUTE PRIORITY:',
-                '- The user explicitly supplied the product headline. It is NOT an AI suggestion.',
-                '- EXACT MAIN HEADLINE TO RENDER: "' . $customTitle . '"',
-                '- Render that exact title as the main product headline. Do not paraphrase, translate, shorten, expand, reinterpret, replace or generate another product name.',
-                '- The exact headline string above overrides every title, headline, product name, slogan or text visible inside the Template master reference.',
-                '- Text visible inside the Template master is layout/style reference only. NEVER copy the Template master product title into the final image.',
-                '- If the Template master contains a different product name, treat that text as EXAMPLE CONTENT and ignore it completely.',
-                '- Keep the exact wording of the custom title; only line breaks, font styling, capitalization and placement may change to fit the Template.',
-                '',
-            ]
-            : [
-                'HEADLINE MODE:',
-                '- No custom headline was supplied. If a headline is needed, use only the resolved title supplied by the application or infer it from the primary product reference.',
-                '',
-            ];
-
         $parts = [
-            'ROLE:',
-            'You are a professional commercial product-art director creating a premium marketplace product image.',
+            'ROLE: Create one premium, marketplace-ready commercial product advertisement. Follow the selected Template as a fixed design system.',
             '',
-            ...$headlineLock,
-            'TEMPLATE CONSISTENCY — CRITICAL:',
-            '- Every generation that uses the SAME Template must look like part of the SAME design series.',
-            '- Treat the selected Template as a reusable fixed design system, not as a loose inspiration.',
-            '- When a Template master image exists, use it as the PRIMARY VISUAL STYLE REFERENCE for the composition.',
-            '- Recreate the Template master composition as closely as practical: same hierarchy, major zones, headline placement, product presentation area, decorative motifs, badges/icons, spacing rhythm, framing, background treatment and overall premium advertising feel.',
-            '- Replace only the example product/content with the actual supplied product. Do not copy the Template example product.',
-            '- Do not redesign, reinterpret, randomize or significantly rearrange the Template for a new product.',
-            '- Keep the same composition logic, visual hierarchy, typography placement, graphic motifs, decorative language, border/frame treatment, callout style, badge/icon zones, spacing rhythm, background style and overall art direction.',
-            '- Only the product-specific content, product imagery and factual installation context (when supplied) should change.',
-            '- Changing the product reference must NOT cause a new layout, new background concept, new graphic system, new typography style or new composition.',
+            'REFERENCE ROLES — semantic roles are authoritative; never confuse or substitute them:',
+            $hasTemplateReference
+                ? 'TEMPLATE MASTER: visual authority for layout, composition, hierarchy, palette, typography placement, background, frames, badges, motifs and spacing. Reuse its design system as closely as practical; replace its example product and example text with the current product/content.'
+                : 'No Template master image is attached. Derive the design from the selected Template prompt and keep it consistent across generations.',
+            'PRIMARY PRODUCT: the sole authority for product identity. Preserve its real shape, geometry, proportions, color, material, finish, markings, packaging and visible details. Never replace, redesign, merge, or invent unseen product features.',
+            $hasInstalledReference
+                ? 'INSTALLED REFERENCE: use only for truthful installation, orientation, placement, scale, fitment and real-world context. The installed product must be visibly represented as the hero view, and the supplied product/packaging must also appear as a supporting visual. Keep the Template design system.'
+                : 'NO INSTALLED REFERENCE: do not invent or imply installation. No motorcycle, scooter, vehicle, wheel, rider, person, hand, mechanic, road, garage, workshop, showroom, mounting scene or usage environment. Use only the supplied product image and visible source pixels; omit unsupported details or callouts.',
+            $hasStoreLogo
+                ? 'OFFICIAL STORE LOGO: use the dedicated Store logo reference as the exclusive source for the exact logo artwork, wordmark, shapes, colors, proportions and spacing. Place the actual artwork visibly; never redraw, typeset, approximate, extract, copy or blend a logo from product/installed photos or the Template. Preserve manufacturer branding only on the physical product/packaging.'
+                : 'STORE LOGO MISSING: do not invent a logo; generation must stop until the selected Store has a valid logo.',
             '',
-            'SELECTED TEMPLATE PROMPT INJECTION — HIGH PRIORITY:',
-            '- The following instructions are injected directly from the selected Template record.',
-            '- EXECUTE these Template instructions as the creative design direction for this generation.',
-            '- The Template prompt controls the visual treatment, design language, composition preferences, graphic elements, typography direction and marketing presentation requested by the Template.',
-            '- Do not discard, summarize, weaken or silently replace the Template prompt.',
-            '- Resolve conflicts by preserving product/reference/branding truth first, then execute the Template prompt as fully as possible.',
-            '- If the Template prompt requests attractive graphic elements, badges, callouts, technical lines, panels, textures or other visual details, actually include them when they are compatible with the supplied references.',
-            '- The Template prompt is NOT optional:',
-            '--- BEGIN SELECTED TEMPLATE PROMPT ---',
+            'TEMPLATE PROMPT — mandatory visual direction:',
             trim((string) $template->prompt),
-            '--- END SELECTED TEMPLATE PROMPT ---',
             '',
-            ...$referenceRoles,
+            'TITLE:',
+            $customTitle !== null
+                ? 'Exact required main headline: "' . $customTitle . '". Preserve its wording and spelling; do not translate, paraphrase, shorten, expand or replace it. Ignore conflicting example titles in the Template. Only line breaks and typographic styling may adapt.'
+                : 'If a resolved title is supplied by the application, use it. Otherwise infer a concise accurate title from the primary product image only. Do not invent specifications, model numbers, compatibility, benefits, certifications, prices, discounts or factual claims.',
             '',
-            ...$modeRules,
-            '',
-            'STORE BRANDING CONTEXT:',
+            'BRAND CONTEXT:',
             'Store: ' . ($store->brand_name ?: $store->name),
             'Marketplace: ' . ($store->marketplace ?: 'Marketplace'),
-            'Brand description: ' . ($store->description ?: 'Use the selected store visual identity consistently.'),
-            $hasStoreLogo
-                ? 'The official Store logo is supplied as an image reference. It is the ONLY authoritative store identity. Use that exact logo; the Template logo is layout-only and must never replace it.'
-                : 'No Store logo asset is configured. Do not invent one.',
+            'Brand description: ' . ($store->description ?: 'Follow the selected Store visual identity.'),
             '',
-            'BRANDING PRIORITY — ABSOLUTE:',
-            '- SUPPLIED STORE LOGO is authoritative for store identity.',
-            '- Any logo visible in the Template master is reference-only and must NOT be copied.',
-            '- Never invent, redraw, approximate, merge or substitute a Store logo.',
-            '- Preserve the supplied Store logo identity, proportions and recognizable details.',
+            'COMPOSITION AND CONSISTENCY:',
+            'Keep every generation using this Template recognizable as the same design series: preserve major zones, hierarchy, typography character, palette, graphic language, frames, badge/callout style, background treatment and spacing. Adapt only product-specific content and truthful installation context. Use one cohesive composition, never a collage or side-by-side comparison. Keep the product prominent, clean, realistic and readable at thumbnail size; use decorative details only when compatible with the Template and source.',
             '',
-            'GLOBAL PRODUCT RULES:',
-            '- Product identity and reference fidelity have higher priority than creative embellishment.',
-            '- Never replace the supplied product with a visually similar generic product.',
-            '- Never copy a different product from the Template master reference.',
-            '- Never invent or reconstruct unseen product geometry just to satisfy a composition, callout, label or decorative element.',
-            '- Do not add random text, prices, discounts, specifications, badges, watermarks, logos or unrelated objects unless explicitly requested by the Template.',
-            '- Keep the product visually clean, commercially attractive and suitable for an online marketplace.',
-            '- Follow the Template master/reference and the injected Template prompt for composition, visual hierarchy, typography direction, color direction, graphic elements and aspect ratio.',
-            '- The final design should have deliberate visual richness: use tasteful graphic accents, callout frames, badges, separators, technical motifs and depth elements when requested by the Template and supported by the available space.',
-            '- Never simplify a rich Template into a plain poster merely because the product is different.',
-            '- Use realistic lighting, believable materials and clean edges.',
-            '- Avoid accidental duplicate products, malformed geometry, melted details, distorted logos and invented accessories.',
+            'REFERENCE TRANSPORT:',
+            'References may arrive separately or as one labeled universal reference board. If a board is supplied, treat each labeled panel as its own reference and never reproduce the board/collage. Semantic roles take priority over attachment order.',
             '',
-
-            '',
-            'PRODUCT TITLE / HEADLINE RULES:',
-            $customTitle !== null
-                ? '- CUSTOM TITLE IS AUTHORITATIVE: use this exact user-provided title as the main product headline: "' . $customTitle . '".'
-                : '- NO CUSTOM TITLE IS PRE-RESOLVED: infer the product title strictly from the PRIMARY PRODUCT REFERENCE. When the application has supplied a resolved title later in the workflow, that resolved title becomes authoritative.',
-            $customTitle !== null
-                ? '- Do not replace, paraphrase, translate, expand, shorten, or invent product-name words. You may only adjust line breaks, capitalization or typographic treatment when needed to fit the Template.'
-                : '- The automatic title must describe only what is actually supported by the primary product reference. Do not invent model numbers, specifications, materials, compatibility, features or brand claims that are not visible or clearly supported.',
-            '- Keep the title concise and commercially useful, normally 2–6 words.',
-            '- The title is content, not a new design instruction. Keep the Template master layout, title position, typography hierarchy and visual treatment unchanged.',
-            '- If the Template master has a dedicated headline area, place the final product title there while preserving the master hierarchy.',
-            '- If multiple output images are requested for the same product, keep the same final product title across those variants; do not invent a different product name for the same product.',
-            '',
-            'FINAL PRODUCT-ONLY COMPLIANCE CHECK:',
-            '- Before producing the final image, verify that no motorcycle, scooter, vehicle or installation scene exists anywhere in the composition.',
-            '- If the Template example contains a motorcycle or installed product, IGNORE that photographic content completely.',
-            '- If a detail cannot be sourced from visible product pixels, remove the detail instead of inventing it.',
-            '- The actual product reference must remain the only source of product geometry and identity.',
-            '',
-            'SUNBURST — COMMERCIAL ART DIRECTION:',
-            '- Favor a clean, bold, high-contrast marketplace composition that is immediately readable at thumbnail size.',
-            '- Treat the Template master image as the composition blueprint: preserve its major visual zones and design rhythm before adding creative variation.',
-            '- Make the product large enough to be the obvious hero subject.',
-            '- Use controlled cinematic lighting, realistic reflections, crisp edges, premium dark/automotive tones and restrained accent colors derived from the Template.',
-            '- Use layered depth: background atmosphere behind the product, a strong hero product plane, and restrained foreground graphic accents.',
-            '- Prefer precise reference-image editing over freeform reinterpretation; when the Template shows a specific graphic element, preserve its placement and visual role.',
-            '- Keep typography short, bold and highly legible; never fill the composition with paragraphs.',
-            '- Use 2–4 concise supporting visual callouts only when supported by the product reference or explicitly defined by the Template prompt.',
-            '- Prefer premium automotive aftermarket advertising aesthetics: sporty, technical, clean, aggressive but not cluttered.',
-            '- Do not turn the image into a generic AI poster; it must look like a real professional marketplace creative built directly from the selected Template master and prompt.',
-            '',
-            'OUTPUT REQUIREMENTS:',
-            '- Produce a polished, premium, marketplace-ready commercial image.',
-            '- Preserve Template-to-Template consistency above creative variation.',
-            '- Prioritize clarity of the actual product over decorative effects.',
-            '- Keep the composition intentional and uncluttered.',
-            '- Respect the requested aspect ratio.',
-            '',
-            'FINAL COMPOSITION CHECK:',
-            ...($customTitle !== null ? [
-                '- CUSTOM TITLE FINAL CHECK: the main headline MUST read exactly "' . $customTitle . '". If the Template master shows a different title, ignore the Template title.',
-            ] : []),
-            '- The selected Template design must be recognizable in the final composition.',
-            '- The supplied product must remain the unmistakable hero product.',
-            '- When an installed reference is supplied, the installed product view must be visibly present in the final advertisement.',
-            '- When a packaging/product reference is supplied, the packaging/product visual must be visibly present as a supporting visual in the final advertisement.',
-            '- When a Store logo is supplied, the exact official Store logo must be visibly present in the final advertisement.',
-            '- Integrate all required visual roles into ONE cohesive commercial composition.',
-            '- Do not create a literal collage, contact sheet, or side-by-side comparison of the source references.',
-            '- Produce ONE cohesive final advertisement.',
+            'FINAL CHECK:',
+            'Correct product identity; Template design preserved; exact custom title if supplied; official Store logo used only from its dedicated image; installed view included only when a reference exists; product/packaging visible; no invented physical details or unsupported factual claims; one polished advertisement in the requested aspect ratio.',
         ];
 
         return implode("\n", array_filter(
@@ -1423,7 +1232,6 @@ class OpenAiImageService
             static fn ($part) => $part !== null && trim((string) $part) !== ''
         ));
     }
-
 
     /**
      * Analyze ONLY the primary product image and return a concise catalog title.
