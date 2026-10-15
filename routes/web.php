@@ -8,7 +8,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::livewire('/login', 'pages::auth.login')->name('login');
 
-Route::redirect('/', '/login');
+Route::get('/', function () {
+    return auth()->check()
+        ? redirect()->route('dashboard')
+        : redirect()->route('login');
+})->name('home');
 
 Route::middleware('auth')->group(function () {
     Route::livewire('/dashboard', 'pages::dashboard')->name('dashboard');
