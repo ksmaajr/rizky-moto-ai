@@ -6059,6 +6059,43 @@ body.rms-bulk-delete-lock{overflow:hidden}
     }
 }
 
+/* ---------- Template picker image shape fix ---------- */
+.rms-generator-workspace-animated .rms-generator-template-image{
+    overflow:hidden!important;
+}
+.rms-generator-workspace-animated .rms-generator-template-image img{
+    position:relative!important;
+    inset:auto!important;
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    min-width:0!important;
+    min-height:0!important;
+    max-width:100%!important;
+    max-height:100%!important;
+    margin:0!important;
+    padding:8px!important;
+    border:0!important;
+    border-radius:8px!important;
+    box-shadow:none!important;
+    clip-path:none!important;
+    -webkit-clip-path:none!important;
+    object-fit:contain!important;
+    object-position:center!important;
+    transform:none;
+    filter:none;
+    background:transparent!important;
+}
+.rms-generator-workspace-animated .rms-generator-template-card:hover .rms-generator-template-image img{
+    transform:scale(1.025);
+}
+@media(max-width:600px){
+    .rms-generator-workspace-animated .rms-generator-template-image img{
+        padding:5px!important;
+        border-radius:7px!important;
+    }
+}
+
 /* ---------- Template picker refinement (Oct 2026) ---------- */
 .rms-generator-workspace-animated .rms-generator-selection{
     min-width:0;
