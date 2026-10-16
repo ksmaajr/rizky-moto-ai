@@ -586,9 +586,13 @@ new class extends Component
 
     public function selectStore(int $storeId): void
     {
+        // Store selection is a catalog filter only.
         $this->selectedStoreId = $storeId;
-        $this->selectedTemplateId = null;
-        $this->templateSearch = '';
+    }
+
+    public function clearStoreFilter(): void
+    {
+        $this->selectedStoreId = null;
     }
 
     public function toggleTemplate(int $templateId): void
@@ -1141,72 +1145,59 @@ new class extends Component
                         </div>
                     </div>
 
-                    <label class="rms-generator-field-label">Store <em>*</em></label>
-
-                    <div class="rms-generator-store-select" x-data="{ open:false }" x-on:click.outside="open=false">
-                        <button type="button" class="rms-generator-store-trigger" :class="{ 'is-open': open }" x-on:click="open=!open">
-                            @if($this->selectedStore)
-                                <span class="rms-generator-store-logo">
-                                    @if($this->selectedStore->logo_path)
-                                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($this->selectedStore->logo_path) }}" alt="">
-                                    @else
-                                        <b>{{ strtoupper(substr($this->selectedStore->name, 0, 1)) }}</b>
-                                    @endif
-                                </span>
-                                <span class="rms-generator-store-copy">
-                                    <strong>{{ $this->selectedStore->name }}</strong>
-                                    <small>{{ $this->selectedStore->marketplace ?: 'Marketplace' }}</small>
-                                </span>
-                            @else
-                                <span class="rms-generator-store-placeholder">Pilih Store</span>
-                            @endif
-                            <span class="rms-generator-chevron" :class="{ 'is-open': open }">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 9 5 5 5-5"/></svg>
-                            </span>
-                        </button>
-
-                        <div class="rms-generator-store-menu" x-show="open" x-transition.opacity.scale.origin.top style="display:none">
-                            <div class="rms-generator-menu-head">
-                                <div>
-                                    <span>SELECT STORE</span>
-                                    <small>Template owner</small>
-                                </div>
-                                <b>{{ $this->stores->count() }}</b>
+                    <div class="rms-generator-template-toolbar" style="display:flex;flex-direction:column;gap:12px;margin-bottom:14px">
+                        <div class="rms-generator-template-heading" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+                            <div>
+                                <label class="rms-generator-field-label">Pilih Template <em>*</em></label>
+                                <small style="display:block;color:#8b8f99;font-size:12px;margin-top:4px">Semua template aktif tersedia. Filter Store opsional.</small>
                             </div>
-
-                            @forelse($this->stores as $store)
-                                <button type="button"
-                                    class="{{ (int)$selectedStoreId === (int)$store->id ? 'selected' : '' }}"
-                                    wire:click="selectStore({{ $store->id }})"
-                                    x-on:click="open=false">
-                                    <span class="rms-generator-option-logo">
-                                        @if($store->logo_path)
-                                            <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($store->logo_path) }}" alt="">
-                                        @else
-                                            <b>{{ strtoupper(substr($store->name, 0, 1)) }}</b>
-                                        @endif
-                                    </span>
-                                    <span>
-                                        <strong>{{ $store->name }}</strong>
-                                        <small>{{ $store->marketplace ?: 'Marketplace' }} · {{ $store->templates->count() }} template</small>
-                                    </span>
-                                    <i>{{ (int)$selectedStoreId === (int)$store->id ? '✓' : '' }}</i>
-                                </button>
-                            @empty
-                                <div class="rms-generator-empty-mini">Belum ada Store aktif.</div>
-                            @endforelse
+                            <span style="flex:0 0 auto;color:#777e8b;font-size:11px;font-weight:700">{{ $this->templates->count() }} template</span>
                         </div>
-                    </div>
-
-                    <div class="rms-generator-template-heading">
-                        <label class="rms-generator-field-label">Template <em>*</em></label>
-                        <span>{{ $this->templates->count() }} template tersedia</span>
-                    </div>
-
-                    <div class="rms-generator-search">
-                        <span>⌕</span>
-                        <input type="text" wire:model.live.debounce.250ms="templateSearch"
-                            placeholder="Cari nama atau deskripsi template...">
+                        <div class="rms-generator-filter-row" style="display:flex;flex-wrap:wrap;gap:10px;align-items:stretch">
+                            <div class="rms-generator-search rms-generator-search-enhanced" style="flex:1 1 190px;min-width:0;display:flex;align-items:center;gap:9px">
+                                <span>⌕</span>
+                                <input style="min-width:0;width:100%" type="text" wire:model.live.debounce.250ms="templateSearch" placeholder="Cari nama template...">
+                                @if($templateSearch !== '')
+                                    <button style="border:0;background:transparent;color:#777e8b;font-size:20px;cursor:pointer" type="button" wire:click="$set('templateSearch','')" aria-label="Hapus pencarian">×</button>
+                                @endif
+                            </div>
+                            <div class="rms-generator-store-select rms-generator-store-filter" style="flex:0 1 220px;min-width:170px" x-data="{ open:false }" x-on:click.outside="open=false">
+                                <button type="button" class="rms-generator-store-trigger" style="min-height:46px;height:100%;padding:8px 12px" :class="{ 'is-open': open }" x-on:click="open=!open" aria-label="Filter berdasarkan Store">
+                                    @if($this->selectedStore)
+                                        <span class="rms-generator-option-logo">
+                                            @if($this->selectedStore->logo_path)
+                                                <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($this->selectedStore->logo_path) }}" alt="">
+                                            @else
+                                                <b>{{ strtoupper(substr($this->selectedStore->name, 0, 1)) }}</b>
+                                            @endif
+                                        </span>
+                                        <span class="rms-generator-store-copy"><strong>{{ $this->selectedStore->name }}</strong><small>Filter Store aktif</small></span>
+                                    @else
+                                        <span class="rms-generator-store-placeholder">Semua Store</span>
+                                    @endif
+                                    <span class="rms-generator-chevron" :class="{ 'is-open': open }"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 9 5 5 5-5"/></svg></span>
+                                </button>
+                                <div class="rms-generator-store-menu" x-show="open" x-transition.opacity.scale.origin.top style="display:none">
+                                    <div class="rms-generator-menu-head"><div><span>FILTER STORE</span><small>Menampilkan template dari</small></div><b>{{ $this->stores->count() }}</b></div>
+                                    <button type="button" class="{{ $selectedStoreId === null ? 'selected' : '' }}" wire:click="clearStoreFilter" x-on:click="open=false">
+                                        <span class="rms-generator-option-logo"><b>✦</b></span><span><strong>Semua Store</strong><small>Gabungkan semua template aktif</small></span><i>{{ $selectedStoreId === null ? '✓' : '' }}</i>
+                                    </button>
+                                    @foreach($this->stores as $store)
+                                        <button type="button" class="{{ (int)$selectedStoreId === (int)$store->id ? 'selected' : '' }}" wire:click="selectStore({{ $store->id }})" x-on:click="open=false">
+                                            <span class="rms-generator-option-logo">
+                                                @if($store->logo_path)
+                                                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($store->logo_path) }}" alt="">
+                                                @else
+                                                    <b>{{ strtoupper(substr($store->name, 0, 1)) }}</b>
+                                                @endif
+                                            </span>
+                                            <span><strong>{{ $store->name }}</strong><small>{{ $store->marketplace ?: 'Marketplace' }} · {{ $store->templates->count() }} template</small></span>
+                                            <i>{{ (int)$selectedStoreId === (int)$store->id ? '✓' : '' }}</i>
+                                        </button>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="rms-generator-chips rms-filter-drag">
