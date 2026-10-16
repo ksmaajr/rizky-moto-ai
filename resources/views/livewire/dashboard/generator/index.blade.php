@@ -1440,7 +1440,7 @@ new class extends Component
                         <div class="rms-generator-upload-box rms-upload-primary" :class="{ 'has-image': imageOne }"
                             x-on:dragover.prevent="$el.classList.add('is-dragover')"
                             x-on:dragleave.prevent="$el.classList.remove('is-dragover')"
-                            x-on:drop.prevent.stop="$el.classList.remove('is-dragover'); const file = $event.dataTransfer?.files?.[0]; if (file && ['image/jpeg','image/png','image/webp'].includes(file.type) && file.size <= 10 * 1024 * 1024) { $wire.upload('imageOne', file); }">
+                            x-on:drop.prevent.stop="$el.classList.remove('is-dragover'); if ($event.dataTransfer.files.length && ['image/jpeg','image/png','image/webp'].includes($event.dataTransfer.files[0].type) && $event.dataTransfer.files[0].size <= 10 * 1024 * 1024) $wire.upload('imageOne', $event.dataTransfer.files[0])">
                             <div class="rms-upload-label-row">
                                 <span class="rms-upload-number">01</span>
                                 <div><strong>Foto Produk Utama <em>*</em></strong><small>Packaging / part motor sebagai sumber identitas produk.</small></div>
@@ -1472,7 +1472,7 @@ new class extends Component
                         <div class="rms-generator-upload-box rms-upload-reference" :class="{ 'has-image': imageTwo, 'is-disabled': !useInstalledReference }"
                             x-on:dragover.prevent="if (useInstalledReference) $el.classList.add('is-dragover')"
                             x-on:dragleave.prevent="$el.classList.remove('is-dragover')"
-                            x-on:drop.prevent.stop="$el.classList.remove('is-dragover'); const file = $event.dataTransfer?.files?.[0]; if (useInstalledReference && file && ['image/jpeg','image/png','image/webp'].includes(file.type) && file.size <= 10 * 1024 * 1024) { $wire.upload('imageTwo', file); }">
+                            x-on:drop.prevent.stop="$el.classList.remove('is-dragover'); if (useInstalledReference && $event.dataTransfer.files.length && ['image/jpeg','image/png','image/webp'].includes($event.dataTransfer.files[0].type) && $event.dataTransfer.files[0].size <= 10 * 1024 * 1024) $wire.upload('imageTwo', $event.dataTransfer.files[0])">
                             <div class="rms-upload-label-row">
                                 <span class="rms-upload-number">02</span>
                                 <div><strong>Foto Produk Terpasang</strong><small>Referensi bentuk, posisi, dan penggunaan part pada motor.</small></div>
@@ -8474,6 +8474,7 @@ body > .rms-history-download-modal{position:fixed!important;inset:0!important;z-
 
 
 /* Drag-and-drop upload feedback; browser default file navigation is prevented by the drop-zone handlers. */
+ .rms-generator-upload-box{position:relative}
 .rms-generator-upload-box.is-dragover{
  border-color:#ef233c!important;
  background:linear-gradient(145deg,rgba(239,35,60,.07),rgba(255,255,255,.98))!important;
