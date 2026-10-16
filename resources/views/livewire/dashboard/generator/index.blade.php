@@ -28,6 +28,7 @@ new class extends Component
     public string $historyDateRange = 'all';
     public string $historySort = 'newest';
     public int $recentHistoryLimit = 12;
+    public array $selectedHistoryIds = [];
 
     public $imageOne = null;
     public $imageTwo = null;
@@ -206,6 +207,110 @@ new class extends Component
             ->pluck('model')
             ->values()
             ->all();
+    }
+
+    public function toggleHistorySelection(int $generationId): void
+    {
+        $generation = $this->ownedGeneration($generationId);
+        $ids = collect($this->selectedHistoryIds)->map(fn ($id) => (int) $id)->all();
+
+        $this->selectedHistoryIds = in_array($generation->id, $ids, true)
+            ? array_values(array_diff($ids, [$generation->id]))
+            : array_values(array_unique([...$ids, $generation->id]));
+    }
+
+    public function selectFilteredHistory(): void
+    {
+        $ids = (clone $this->historyQuery())
+            ->whereHas('generatedImages', fn ($query) => $query->whereNotNull('image_path'))
+            ->orderByDesc('created_at')
+            ->limit(500)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $this->selectedHistoryIds = array_values(array_unique([
+            ...array_map('intval', $this->selectedHistoryIds),
+            ...$ids,
+        ]));
+
+        $this->dispatch('toast', type: 'success', title: 'Hasil dipilih', message: count($ids) . ' generation dengan file hasil ditambahkan ke pilihan (maksimal 500).');
+    }
+
+    public function clearHistorySelection(): void
+    {
+        $this->selectedHistoryIds = [];
+    }
+
+    public function downloadSelectedHistory()
+    {
+        $ids = collect($this->selectedHistoryIds)->map(fn ($id) => (int) $id)->filter()->unique()->take(500)->values();
+
+        if ($ids->isEmpty()) {
+            $this->dispatch('toast', type: 'warning', title: 'Belum ada pilihan', message: 'Pilih setidaknya satu generation untuk diunduh.');
+            return null;
+        }
+
+        if (! class_exists(\\ZipArchive::class)) {
+            $this->dispatch('toast', type: 'error', title: 'ZIP tidak tersedia', message: 'Ekstensi PHP ZIP belum aktif di server.');
+            return null;
+        }
+
+        $generations = Generation::query()
+            ->where('user_id', auth()->id())
+            ->whereIn('id', $ids)
+            ->with('generatedImages')
+            ->get();
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'rms-history-');
+        if ($tempPath === false) {
+            $this->dispatch('toast', type: 'error', title: 'Gagal menyiapkan ZIP', message: 'Server tidak dapat membuat file sementara.');
+            return null;
+        }
+
+        $zip = new \\ZipArchive();
+        if ($zip->open($tempPath, \\ZipArchive::OVERWRITE) !== true) {
+            @unlink($tempPath);
+            $this->dispatch('toast', type: 'error', title: 'Gagal menyiapkan ZIP', message: 'File ZIP tidak dapat dibuka.');
+            return null;
+        }
+
+        $disk = \\Illuminate\\Support\\Facades\\Storage::disk('public');
+        $added = 0;
+        foreach ($generations as $generation) {
+            foreach ($generation->generatedImages as $index => $image) {
+                $path = $image->image_path;
+                if (! is_string($path) || $path === '' || ! $disk->exists($path)) {
+                    continue;
+                }
+
+                $absolute = $disk->path($path);
+                if (! is_file($absolute) || ! is_readable($absolute)) {
+                    continue;
+                }
+
+                $extension = strtolower(pathinfo($absolute, PATHINFO_EXTENSION) ?: 'png');
+                $safeStore = \\Illuminate\\Support\\Str::slug($generation->store?->name ?: 'store');
+                $safeTemplate = \\Illuminate\\Support\\Str::slug($generation->template?->name ?: 'template');
+                $filename = sprintf('generation-%d-%s-%s-%02d.%s', $generation->id, $safeStore, $safeTemplate, $index + 1, $extension);
+                $zip->addFile($absolute, $filename);
+                $added++;
+            }
+        }
+
+        if ($added === 0) {
+            $zip->close();
+            @unlink($tempPath);
+            $this->dispatch('toast', type: 'warning', title: 'Tidak ada file untuk diunduh', message: 'Pilihan tidak memiliki gambar hasil yang masih tersedia.');
+            return null;
+        }
+
+        $zip->close();
+        $this->selectedHistoryIds = [];
+
+        return response()->download($tempPath, 'rizky-moto-history-' . now()->format('Ymd-His') . '.zip', [
+            'Content-Type' => 'application/zip',
+        ])->deleteFileAfterSend(true);
     }
 
     public function loadMoreHistory(): void
@@ -2259,6 +2364,15 @@ new class extends Component
                     @endif
                 </div>
 
+                <div class="rms-history-bulk-actions" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:0 2px 10px">
+                    <button type="button" class="rms-history-clear-all" wire:click="selectFilteredHistory">Pilih hasil sesuai filter</button>
+                    <button type="button" class="rms-history-clear-all" wire:click="downloadSelectedHistory" wire:loading.attr="disabled" wire:target="downloadSelectedHistory">
+                        <span>↓</span> Download ZIP ({{ count($selectedHistoryIds) }})
+                    </button>
+                    @if(count($selectedHistoryIds))
+                        <button type="button" class="rms-history-clear-all" wire:click="clearHistorySelection">Batalkan pilihan</button>
+                    @endif
+                </div>
                 <div class="rms-history-toolbar-meta">
                     <span>Showing {{ $this->recentGenerations->count() }} of {{ $this->historyTotal }} generation{{ $this->historyTotal === 1 ? '' : 's' }}</span>
                     @if($this->historyTotal > 0)
@@ -2298,6 +2412,12 @@ new class extends Component
                     @endphp
 
                     <article wire:key="generation-history-{{ $generation->id }}" class="rms-generator-history-item rms-generation-card status-{{ $status }}">
+                        @if($images->contains(fn ($image) => is_string($image->image_path) && $image->image_path !== ''))
+                            <label style="display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:12px;font-weight:700;color:#555;cursor:pointer">
+                                <input type="checkbox" wire:click="toggleHistorySelection({{ $generation->id }})" @checked(in_array((int) $generation->id, array_map('intval', $selectedHistoryIds), true))>
+                                Pilih hasil untuk ZIP
+                            </label>
+                        @endif
                         <div class="rms-generation-card-head">
                             <div class="rms-history-item-meta"><span>{{ optional($generation->created_at)->format('d M Y · H:i') }}</span><small>#{{ $generation->id }}</small></div>
                             <span class="rms-history-status {{ $status }}" title="Status generation: {{ $statusLabel }}">
