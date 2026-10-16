@@ -1469,10 +1469,11 @@ new class extends Component
                             @endif
                         </div>
 
-                        <div class="rms-generator-upload-box rms-upload-reference" :class="{ 'has-image': imageTwo, 'is-disabled': !useInstalledReference }"
-                            x-on:dragover.prevent="if (useInstalledReference) $el.classList.add('is-dragover')"
+                        <div class="rms-generator-upload-box rms-upload-reference" :class="{ 'has-image': imageTwo, 'is-disabled': !$wire.useInstalledReference }"
+                            x-on:dragenter.prevent="$el.classList.add('is-dragover')"
+                            x-on:dragover.prevent="$el.classList.add('is-dragover')"
                             x-on:dragleave.prevent="$el.classList.remove('is-dragover')"
-                            x-on:drop.prevent.stop="$el.classList.remove('is-dragover'); if (useInstalledReference && $event.dataTransfer.files.length && ['image/jpeg','image/png','image/webp'].includes($event.dataTransfer.files[0].type) && $event.dataTransfer.files[0].size <= 10 * 1024 * 1024) $wire.upload('imageTwo', $event.dataTransfer.files[0])">
+                            x-on:drop.prevent.stop="$el.classList.remove('is-dragover'); const file = $event.dataTransfer?.files?.[0]; if ($wire.useInstalledReference && file && ['image/jpeg','image/png','image/webp'].includes(file.type) && file.size <= 10 * 1024 * 1024) { $wire.upload('imageTwo', file, () => {}, (error) => console.error('Upload foto terpasang gagal:', error)); }">
                             <div class="rms-upload-label-row">
                                 <span class="rms-upload-number">02</span>
                                 <div><strong>Foto Produk Terpasang</strong><small>Referensi bentuk, posisi, dan penggunaan part pada motor.</small></div>
