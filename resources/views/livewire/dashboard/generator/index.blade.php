@@ -1217,6 +1217,9 @@ new class extends Component
                                 class="rms-generator-template-card {{ (int)$selectedTemplateId === (int)$template->id ? 'selected' : '' }}"
                                 wire:click="toggleTemplate({{ $template->id }})" x-on:click="$nextTick(() => activeStep = (selectedTemplateId === {{ $template->id }}) ? 2 : 1)">
                                 <div class="rms-generator-template-image">
+                                    <span style="position:absolute;z-index:2;left:10px;top:10px;max-width:calc(100% - 20px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid rgba(255,255,255,.7);border-radius:999px;padding:5px 9px;background:rgba(255,255,255,.92);color:#343741;font-size:10px;font-weight:800;box-shadow:0 3px 10px rgba(20,20,30,.08)">
+                                        {{ $this->stores->firstWhere('id', $template->store_id)?->name ?? 'Store' }}
+                                    </span>
                                     @if($template->example_image_path)
                                         <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($template->example_image_path) }}" alt="">
                                     @else
@@ -1228,7 +1231,7 @@ new class extends Component
                                 </div>
                                 <div class="rms-generator-template-copy">
                                     <strong>{{ $template->name }}</strong>
-                                    <small>{{ $template->aspect_ratio ?: '1:1' }}</small>
+                                    <small><span>{{ $template->aspect_ratio ?: '1:1' }}</span>@if((int)$selectedTemplateId === (int)$template->id) <span style="color:#16a34a;font-weight:800">· Terpilih</span>@endif</small>
                                 </div>
                             </button>
                         @empty
