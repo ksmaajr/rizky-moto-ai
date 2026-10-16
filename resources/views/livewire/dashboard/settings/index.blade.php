@@ -1428,6 +1428,7 @@
                                     <article><small>Completed</small><strong>{{ $gr['completed'] ?? '—' }}</strong><span class="is-good">Successful generations</span></article>
                                     <article><small>Failed</small><strong>{{ $gr['failed'] ?? '—' }}</strong><span class="{{ ($gr['failed'] ?? 0) > 0 ? 'is-bad' : 'is-good' }}">Needs investigation</span></article>
                                     <article><small>In progress</small><strong>{{ $gr['processing'] ?? '—' }}</strong><span>Pending / queued / processing</span></article>
+                                    <article><small>Potentially stuck</small><strong>{{ $gr['stuck'] ?? '—' }}</strong><span class="{{ ($gr['stuck'] ?? 0) > 0 ? 'is-bad' : 'is-good' }}">Unchanged for 10+ minutes</span></article>
                                     <article><small>Queue backlog</small><strong>{{ $gr['queue_pending'] ?? 'N/A' }}</strong><span>Database queue jobs</span></article>
                                     <article><small>Failed queue jobs</small><strong>{{ $gr['failed_jobs'] ?? 'N/A' }}</strong><span>Laravel failed_jobs table</span></article>
                                 </div>
@@ -1436,7 +1437,7 @@
                                     @forelse (($gr['latest_failures'] ?? []) as $failure)
                                         <article class="rms-server-failure-row">
                                             <div class="rms-server-failure-id">#{{ $failure['id'] }}</div>
-                                            <div class="rms-server-failure-copy"><strong>{{ $failure['model'] }}</strong><p>{{ $failure['error'] }}</p><small>Provider: {{ $failure['provider'] }} · {{ $failure['time'] ?? 'Time unavailable' }}</small></div>
+                                            <div class="rms-server-failure-copy"><strong>{{ $failure['model'] }}</strong><p>{{ $failure['error'] }}</p><small>{{ $failure['error_type'] ?? 'Generation error' }} · Provider: {{ $failure['provider'] }} · {{ $failure['time'] ?? 'Time unavailable' }}</small></div>
                                             <span>FAILED</span>
                                         </article>
                                     @empty
