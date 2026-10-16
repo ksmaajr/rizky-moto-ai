@@ -383,8 +383,8 @@ new class extends Component
 
         $zipBaseName = trim((string) $this->historyZipName);
         $zipBaseName = preg_replace('/\.zip$/i', '', $zipBaseName) ?? '';
-        $zipBaseName = preg_replace('/[\\\\\\/:*?"<>|]+/u', '', $zipBaseName) ?? '';
-        $zipBaseName = trim($zipBaseName, " .\\t\\n\\r\\0\\x0B");
+        $zipBaseName = str_replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], '', $zipBaseName);
+        $zipBaseName = trim($zipBaseName, " .\t\n\r\0\x0B");
         $zipBaseName = mb_substr($zipBaseName, 0, 100);
         if ($zipBaseName === '') {
             $zipBaseName = 'rizky-moto-history-' . now()->format('Ymd-His');
