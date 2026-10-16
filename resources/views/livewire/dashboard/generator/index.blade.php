@@ -317,6 +317,10 @@ new class extends Component
                 // Keep the generated title readable: no slug/hyphen conversion.
                 $safeTitle = preg_replace('/[\\\\\\/:*?"<>|]+/u', '', $title);
                 $safeTitle = trim((string) $safeTitle, " .\\t\\n\\r\\0\\x0B");
+                // Repair legacy product titles saved without the leading "B" in BAUT PAPAN.
+                if (preg_match('/^AUT\\s+PAPAN\\s+SPEEDOMETER\\b/i', $safeTitle) === 1) {
+                    $safeTitle = 'B' . $safeTitle;
+                }
                 if ($safeTitle === '') {
                     $safeTitle = 'Hasil Generation ' . $generation->id;
                 }
@@ -2357,6 +2361,7 @@ new class extends Component
             bulkDeleting: false,
             bulkDeleteError: '',
             downloadInfoOpen: false,
+            downloadPanelOpen: false,
             openBulkDrawer() {
                 this.bulkDeleteError = '';
                 this.bulkDrawerOpen = true;
@@ -2541,6 +2546,30 @@ new class extends Component
                     @endif
                 </div>
 
+                <div class="rms-history-download-disclosure">
+                    <span class="rms-history-download-disclosure-copy">
+                        <span class="rms-history-download-disclosure-icon" aria-hidden="true">↓</span>
+                        <span>
+                            <strong>Download hasil</strong>
+                            <small>{{ $this->historyDownloadImageCount }} foto sesuai filter</small>
+                        </span>
+                    </span>
+                    <button type="button" class="rms-history-download-disclosure-button"
+                        x-on:click="downloadPanelOpen = !downloadPanelOpen"
+                        :aria-expanded="downloadPanelOpen.toString()">
+                        <span x-text="downloadPanelOpen ? 'Sembunyikan' : 'Tampilkan download'"></span>
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" :class="{ 'is-open': downloadPanelOpen }"><path d="m7 10 5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                </div>
+                <div class="rms-history-download-panel"
+                    x-show="downloadPanelOpen"
+                    x-transition:enter="transition ease-out duration-250"
+                    x-transition:enter-start="opacity-0 -translate-y-2"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    x-transition:leave="transition ease-in duration-180"
+                    x-transition:leave-start="opacity-100 translate-y-0"
+                    x-transition:leave-end="opacity-0 -translate-y-2"
+                    x-cloak>
                 <div class="rms-history-bulk-actions">
                     <div class="rms-history-download-summary">
                         <span class="rms-history-download-icon" aria-hidden="true">
@@ -2578,6 +2607,7 @@ new class extends Component
                         <span wire:loading wire:target="downloadFilteredHistory">Menyiapkan ZIP...</span>
                         <b>{{ $this->historyDownloadImageCount }} foto</b>
                     </button>
+                </div>
                 </div>
                 <div class="rms-history-toolbar-meta">
                     <span>Showing {{ $this->recentGenerations->count() }} of {{ $this->historyTotal }} generation{{ $this->historyTotal === 1 ? '' : 's' }}</span>
@@ -8022,5 +8052,24 @@ body.rms-bulk-delete-lock{overflow:hidden}
         animation:none!important;
     }
 }
+
+
+/* Recent History V5: compact download disclosure */
+.rms-history-download-disclosure{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;width:100%!important;min-width:0!important;padding:10px 13px!important;margin:12px 0 10px!important;border:1px solid #e6eaf0!important;border-radius:14px!important;background:#fff!important;transition:border-color .2s ease,box-shadow .2s ease!important}
+.rms-history-download-disclosure:hover{border-color:#cce8d7!important;box-shadow:0 5px 16px rgba(22,130,69,.05)!important}
+.rms-history-download-disclosure-copy{display:flex!important;align-items:center!important;gap:10px!important;min-width:0!important}
+.rms-history-download-disclosure-icon{display:grid!important;place-items:center!important;width:34px!important;height:34px!important;flex:0 0 34px!important;border:1px solid #d8f2e2!important;border-radius:10px!important;background:#effbf4!important;color:#159451!important;font-size:21px!important;line-height:1!important}
+.rms-history-download-disclosure-copy>span:last-child{display:flex!important;flex-direction:column!important;gap:3px!important;min-width:0!important}
+.rms-history-download-disclosure-copy strong{font-size:11px!important;font-weight:800!important;color:#303541!important;line-height:1.35!important}
+.rms-history-download-disclosure-copy small{font-size:10px!important;color:#89909e!important;line-height:1.4!important}
+.rms-history-download-disclosure-button{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;min-height:34px!important;padding:0 10px!important;flex:0 0 auto!important;border:1px solid #e1e6ed!important;border-radius:10px!important;background:linear-gradient(180deg,#fff,#f9fafb)!important;color:#505968!important;font-size:10px!important;font-weight:800!important;cursor:pointer!important;transition:background .2s ease,border-color .2s ease,transform .2s ease!important}
+.rms-history-download-disclosure-button:hover{background:#f0fbf4!important;border-color:#c7e8d3!important;color:#128348!important;transform:translateY(-1px)!important}
+.rms-history-download-disclosure-button svg{width:14px!important;height:14px!important;transition:transform .22s ease!important}
+.rms-history-download-disclosure-button svg.is-open{transform:rotate(180deg)!important}
+.rms-history-download-panel{width:100%!important;min-width:0!important}
+.rms-history-download-panel .rms-history-bulk-actions{margin-top:0!important}
+[x-cloak]{display:none!important}
+@media(max-width:760px){.rms-history-download-disclosure{padding:9px 10px!important;margin:10px 0!important;border-radius:12px!important}.rms-history-download-disclosure-icon{width:31px!important;height:31px!important;flex-basis:31px!important}.rms-history-download-disclosure-copy strong{font-size:10px!important}.rms-history-download-disclosure-copy small{font-size:9px!important}.rms-history-download-disclosure-button{min-height:33px!important;padding:0 8px!important;font-size:9px!important}}
+@media(max-width:360px){.rms-history-download-disclosure{gap:6px!important}.rms-history-download-disclosure-copy{gap:7px!important}.rms-history-download-disclosure-button{gap:4px!important}}
 
 </style>
