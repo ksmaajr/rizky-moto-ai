@@ -8072,4 +8072,116 @@ body.rms-bulk-delete-lock{overflow:hidden}
 @media(max-width:760px){.rms-history-download-disclosure{padding:9px 10px!important;margin:10px 0!important;border-radius:12px!important}.rms-history-download-disclosure-icon{width:31px!important;height:31px!important;flex-basis:31px!important}.rms-history-download-disclosure-copy strong{font-size:10px!important}.rms-history-download-disclosure-copy small{font-size:9px!important}.rms-history-download-disclosure-button{min-height:33px!important;padding:0 8px!important;font-size:9px!important}}
 @media(max-width:360px){.rms-history-download-disclosure{gap:6px!important}.rms-history-download-disclosure-copy{gap:7px!important}.rms-history-download-disclosure-button{gap:4px!important}}
 
+
+/* Recent History V6: denser generation gallery, maximum four cards per desktop row */
+.rms-generator-history-mobile-safe .rms-generator-history-grid.rms-generator-history-list{
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    align-items:start!important;
+    gap:14px!important;
+    width:100%!important;
+    min-width:0!important;
+}
+.rms-generator-history-mobile-safe .rms-generator-history-grid.rms-generator-history-list > .rms-generator-history-item{
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    padding:10px!important;
+    border-radius:15px!important;
+}
+.rms-generator-history-mobile-safe .rms-generator-history-grid.rms-generator-history-list .rms-generation-card-head{
+    gap:6px!important;
+    margin-bottom:8px!important;
+}
+.rms-generator-history-mobile-safe .rms-generator-history-grid.rms-generator-history-list .rms-history-item-meta{
+    min-width:0!important;
+    flex-wrap:wrap!important;
+    gap:4px!important;
+}
+.rms-generator-history-mobile-safe .rms-generator-history-grid.rms-generator-history-list .rms-history-status{
+    max-width:100%!important;
+    padding:6px 8px!important;
+}
+.rms-generator-history-mobile-safe .rms-generator-history-grid.rms-generator-history-list .rms-generation-image,
+.rms-generator-history-mobile-safe .rms-generator-history-grid.rms-generator-history-list .rms-generation-result-image,
+.rms-generator-history-mobile-safe .rms-generator-history-grid.rms-generator-history-list .rms-generation-card img{
+    max-width:100%!important;
+}
+.rms-generator-history-mobile-safe .rms-generator-history-grid.rms-generator-history-list .rms-generation-card-info{
+    gap:6px!important;
+    padding:8px 1px!important;
+}
+.rms-generator-history-mobile-safe .rms-generator-history-grid.rms-generator-history-list .rms-generation-card-info strong{
+    font-size:11px!important;
+}
+.rms-generator-history-mobile-safe .rms-generator-history-grid.rms-generator-history-list .rms-generation-actions{
+    gap:6px!important;
+}
+@media(max-width:1399px){
+    .rms-generator-history-mobile-safe .rms-generator-history-grid.rms-generator-history-list{
+        grid-template-columns:repeat(3,minmax(0,1fr))!important;
+        gap:12px!important;
+    }
+}
+@media(max-width:1050px){
+    .rms-generator-history-mobile-safe .rms-generator-history-grid.rms-generator-history-list{
+        grid-template-columns:repeat(2,minmax(0,1fr))!important;
+        gap:11px!important;
+    }
+}
+@media(max-width:600px){
+    .rms-generator-history-mobile-safe .rms-generator-history-grid.rms-generator-history-list{
+        grid-template-columns:repeat(2,minmax(0,1fr))!important;
+        gap:9px!important;
+        padding:10px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-generator-history-grid.rms-generator-history-list > .rms-generator-history-item{
+        padding:8px!important;
+        border-radius:12px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-generator-history-grid.rms-generator-history-list .rms-generation-card-head{
+        align-items:flex-start!important;
+        flex-direction:column!important;
+    }
+    .rms-generator-history-mobile-safe .rms-generator-history-grid.rms-generator-history-list .rms-history-status{
+        align-self:flex-start!important;
+        font-size:8px!important;
+        padding:5px 7px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-generator-history-grid.rms-generator-history-list .rms-generation-card-info strong{
+        font-size:10px!important;
+    }
+}
+@media(max-width:359px){
+    .rms-generator-history-mobile-safe .rms-generator-history-grid.rms-generator-history-list{
+        grid-template-columns:minmax(0,1fr)!important;
+    }
+    .rms-generator-history-mobile-safe .rms-generator-history-grid.rms-generator-history-list .rms-generation-card-head{
+        align-items:center!important;
+        flex-direction:row!important;
+    }
+}
+/* V6 polish: make the download disclosure feel like one compact control */
+.rms-generator-history-mobile-safe .rms-history-download-disclosure{
+    padding:9px 12px!important;
+    margin:10px 0!important;
+    box-shadow:0 3px 12px rgba(25,35,50,.025)!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-disclosure-copy strong{
+    font-size:12px!important;
+    letter-spacing:-.01em!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-disclosure-button{
+    min-height:36px!important;
+    padding:0 12px!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-panel .rms-history-bulk-actions{
+    border-radius:13px!important;
+    box-shadow:0 3px 12px rgba(25,35,50,.025)!important;
+}
+@media(max-width:600px){
+    .rms-generator-history-mobile-safe .rms-history-download-disclosure-copy strong{font-size:11px!important}
+    .rms-generator-history-mobile-safe .rms-history-download-disclosure-button{font-size:9px!important;padding:0 8px!important}
+}
+
 </style>
