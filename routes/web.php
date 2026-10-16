@@ -86,16 +86,16 @@ Route::middleware('auth')->group(function () {
             ->get(['id', 'metric_key', 'severity', 'title', 'message', 'observed_value', 'threshold_value', 'started_at', 'resolved_at'])
             ->map(static fn ($a) => (array) $a)->values();
         $generationSince = now()->subDay();
-        $recentGenerations = \\App\\Models\\Generation::query()->where('created_at', '>=', $generationSince);
+        $recentGenerations = \App\Models\Generation::query()->where('created_at', '>=', $generationSince);
         $generationReliability = [
             'total' => (clone $recentGenerations)->count(),
             'completed' => (clone $recentGenerations)->where('status', 'completed')->count(),
             'failed' => (clone $recentGenerations)->where('status', 'failed')->count(),
             'processing' => (clone $recentGenerations)->whereIn('status', ['processing', 'pending', 'queued'])->count(),
-            'stuck' => \\App\\Models\\Generation::query()->whereIn('status', ['processing', 'pending', 'queued'])->where('updated_at', '<', now()->subMinutes(10))->count(),
-            'queue_pending' => \\Illuminate\\Support\\Facades\\Schema::hasTable('jobs') ? \\Illuminate\\Support\\Facades\\DB::table('jobs')->count() : null,
-            'failed_jobs' => \\Illuminate\\Support\\Facades\\Schema::hasTable('failed_jobs') ? \\Illuminate\\Support\\Facades\\DB::table('failed_jobs')->count() : null,
-            'latest_failures' => \\App\\Models\\Generation::query()->where('status', 'failed')->orderByDesc('completed_at')->limit(5)
+            'stuck' => \App\Models\Generation::query()->whereIn('status', ['processing', 'pending', 'queued'])->where('updated_at', '<', now()->subMinutes(10))->count(),
+            'queue_pending' => \Illuminate\Support\Facades\Schema::hasTable('jobs') ? \Illuminate\Support\Facades\DB::table('jobs')->count() : null,
+            'failed_jobs' => \Illuminate\Support\Facades\Schema::hasTable('failed_jobs') ? \Illuminate\Support\Facades\DB::table('failed_jobs')->count() : null,
+            'latest_failures' => \App\Models\Generation::query()->where('status', 'failed')->orderByDesc('completed_at')->limit(5)
                 ->get(['id', 'model', 'error_message', 'completed_at', 'metadata'])
                 ->map(static function ($generation) {
                     $message = strtolower((string) ($generation->error_message ?? ''));
@@ -110,7 +110,7 @@ Route::middleware('auth')->group(function () {
                     return [
                         'id' => $generation->id,
                         'model' => $generation->model ?: 'Unknown provider/model',
-                        'error' => \\Illuminate\\Support\\Str::limit((string) ($generation->error_message ?: 'No error detail recorded'), 180),
+                        'error' => \Illuminate\Support\Str::limit((string) ($generation->error_message ?: 'No error detail recorded'), 180),
                         'error_type' => $type,
                         'time' => optional($generation->completed_at)->diffForHumans(),
                         'provider' => data_get($generation->metadata, 'provider', data_get($generation->metadata, 'ai_provider', 'unknown')),
