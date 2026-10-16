@@ -327,6 +327,7 @@ class Index extends Component
             'completed' => (clone $recent)->where('status', 'completed')->count(),
             'failed' => (clone $recent)->where('status', 'failed')->count(),
             'processing' => (clone $recent)->whereIn('status', ['processing', 'pending', 'queued'])->count(),
+            'stuck' => Generation::query()->whereIn('status', ['processing', 'pending', 'queued'])->where('updated_at', '<', now()->subMinutes(10))->count(),
             'latest_failures' => Generation::query()
                 ->where('status', 'failed')
                 ->orderByDesc('completed_at')
@@ -336,6 +337,17 @@ class Index extends Component
                     'id' => $generation->id,
                     'model' => $generation->model ?: 'Unknown provider/model',
                     'error' => \Illuminate\Support\Str::limit((string) ($generation->error_message ?: 'No error detail recorded'), 180),
+                    'error_type' => (static function (string $message): string {
+                        $message = strtolower($message);
+                        return match (true) {
+                            str_contains($message, 'rate limit'), str_contains($message, '429'), str_contains($message, 'too many requests') => 'Rate limit',
+                            str_contains($message, 'token'), str_contains($message, 'unauthorized'), str_contains($message, '401'), str_contains($message, 'authentication') => 'Authentication',
+                            str_contains($message, 'timeout'), str_contains($message, 'timed out') => 'Timeout',
+                            str_contains($message, 'getaddrinfo'), str_contains($message, 'connection'), str_contains($message, 'network'), str_contains($message, 'dns') => 'Network',
+                            str_contains($message, 'provider'), str_contains($message, 'unsupported_image_generation_tool') => 'Provider / model',
+                            default => 'Generation error',
+                        };
+                    })((string) ($generation->error_message ?? '')),
                     'time' => optional($generation->completed_at)->diffForHumans(),
                     'provider' => data_get($generation->metadata, 'provider', data_get($generation->metadata, 'ai_provider', 'unknown')),
                 ])->all(),
