@@ -2561,6 +2561,7 @@ new class extends Component
                     <span class="rms-history-download-trigger-chevron" aria-hidden="true">↗</span>
                 </button>
 
+                <template x-teleport="body">
                 <div class="rms-history-download-modal"
                     x-show="downloadPanelOpen"
                     x-cloak
@@ -2621,6 +2622,7 @@ new class extends Component
                         <p class="rms-history-download-dialog-footnote">ZIP akan dibuat dari hasil yang tampil sesuai filter saat ini.</p>
                     </section>
                 </div>
+                </template>
                 <div class="rms-history-toolbar-meta">
                     <span>Showing {{ $this->recentGenerations->count() }} of {{ $this->historyTotal }} generation{{ $this->historyTotal === 1 ? '' : 's' }}</span>
                     @if($this->historyTotal > 0)
@@ -8314,9 +8316,15 @@ body.rms-bulk-delete-lock{overflow:hidden}
 .rms-generator-history-mobile-safe .rms-history-download-trigger-copy small{font-size:10px!important;color:#7a8b81!important}
 .rms-generator-history-mobile-safe .rms-history-download-trigger-chevron{font-size:16px!important;opacity:.65!important}
 .rms-history-download-modal{
- position:fixed!important;inset:0!important;z-index:100000!important;display:flex;align-items:center!important;justify-content:center!important;
- padding:24px!important;background:rgba(13,17,23,.68)!important;backdrop-filter:blur(9px)!important;-webkit-backdrop-filter:blur(9px)!important;
+ position:fixed!important;inset:0!important;z-index:2147483647!important;display:flex;align-items:center!important;justify-content:center!important;
+ width:100vw!important;min-width:100vw!important;height:100dvh!important;min-height:100dvh!important;max-width:none!important;max-height:none!important;
+ margin:0!important;transform:none!important;overflow-y:auto!important;overflow-x:hidden!important;box-sizing:border-box!important;
+ padding:24px!important;background:rgba(8,9,11,.76)!important;backdrop-filter:blur(10px)!important;-webkit-backdrop-filter:blur(10px)!important;
+ isolation:isolate!important;overscroll-behavior:contain!important;
 }
+body > .rms-history-download-modal{position:fixed!important;inset:0!important;z-index:2147483647!important;width:100vw!important;height:100dvh!important;min-width:100vw!important;min-height:100dvh!important;max-width:none!important;max-height:none!important;transform:none!important}
+.rms-history-download-modal[x-cloak]{display:none!important}
+.rms-history-download-modal > .rms-history-download-dialog{position:relative!important;z-index:1!important;flex:0 0 auto!important}
 .rms-history-download-modal[x-cloak]{display:none!important}
 .rms-history-download-dialog{
  position:relative!important;width:min(100%,500px)!important;max-height:min(88vh,780px)!important;overflow-y:auto!important;
