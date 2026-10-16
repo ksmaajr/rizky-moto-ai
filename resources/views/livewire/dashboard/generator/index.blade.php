@@ -8297,6 +8297,53 @@ body.rms-bulk-delete-lock{overflow:hidden}
 }
 
 
+
+/* Download modal centering fix: body-teleported overlays must remain a flex viewport layer. */
+body > .rms-history-download-modal,
+.rms-history-download-modal{
+ position:fixed!important;
+ inset:0!important;
+ z-index:2147483647!important;
+ display:flex!important;
+ flex-direction:row!important;
+ align-items:center!important;
+ justify-content:center!important;
+ width:100vw!important;
+ height:100vh!important;
+ height:100dvh!important;
+ min-width:100vw!important;
+ min-height:100vh!important;
+ min-height:100dvh!important;
+ max-width:none!important;
+ max-height:none!important;
+ margin:0!important;
+ padding:24px!important;
+ box-sizing:border-box!important;
+ transform:none!important;
+ overflow-x:hidden!important;
+ overflow-y:auto!important;
+ background:rgba(8,9,11,.76)!important;
+ backdrop-filter:blur(10px)!important;
+ -webkit-backdrop-filter:blur(10px)!important;
+}
+body > .rms-history-download-modal > .rms-history-download-dialog,
+.rms-history-download-modal > .rms-history-download-dialog{
+ position:relative!important;
+ inset:auto!important;
+ flex:0 1 500px!important;
+ width:min(500px,100%)!important;
+ min-width:0!important;
+ max-width:500px!important;
+ margin:auto!important;
+ transform:none!important;
+}
+@media(max-width:600px){
+ body > .rms-history-download-modal,
+ .rms-history-download-modal{padding:16px!important}
+ body > .rms-history-download-modal > .rms-history-download-dialog,
+ .rms-history-download-modal > .rms-history-download-dialog{width:100%!important;max-width:500px!important;max-height:calc(100dvh - 32px)!important}
+}
+
 /* Recent History V8: download action lives with filters and opens a dedicated modal */
 .rms-generator-history-mobile-safe .rms-history-toolbar{position:relative!important}
 .rms-generator-history-mobile-safe .rms-history-download-trigger{
