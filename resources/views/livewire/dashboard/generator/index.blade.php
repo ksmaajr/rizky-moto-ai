@@ -28,7 +28,6 @@ new class extends Component
     public string $historyDateRange = 'all';
     public string $historySort = 'newest';
     public int $recentHistoryLimit = 12;
-    public array $selectedHistoryIds = [];
 
     public $imageOne = null;
     public $imageTwo = null;
@@ -209,108 +208,230 @@ new class extends Component
             ->all();
     }
 
-    public function toggleHistorySelection(int $generationId): void
+    public function getHistoryDownloadImageCountProperty(): int
     {
-        $generation = $this->ownedGeneration($generationId);
-        $ids = collect($this->selectedHistoryIds)->map(fn ($id) => (int) $id)->all();
-
-        $this->selectedHistoryIds = in_array($generation->id, $ids, true)
-            ? array_values(array_diff($ids, [$generation->id]))
-            : array_values(array_unique([...$ids, $generation->id]));
+        return (clone $this->historyQuery())
+            ->without(['store', 'template', 'generatedImages'])
+            ->whereHas('generatedImages', fn ($query) => $query->whereNotNull('image_path')->where('image_path', '<>', ''))
+            ->withCount([
+                'generatedImages as downloadable_images_count' => fn ($query) => $query
+                    ->whereNotNull('image_path')
+                    ->where('image_path', '<>', ''),
+            ])
+            ->get(['id'])
+            ->sum('downloadable_images_count');
     }
 
-    public function selectFilteredHistory(): void
+    public function downloadFilteredHistory()
     {
-        $ids = (clone $this->historyQuery())
-            ->whereHas('generatedImages', fn ($query) => $query->whereNotNull('image_path'))
-            ->orderByDesc('created_at')
-            ->limit(500)
-            ->pluck('id')
-            ->map(fn ($id) => (int) $id)
-            ->all();
-
-        $this->selectedHistoryIds = array_values(array_unique([
-            ...array_map('intval', $this->selectedHistoryIds),
-            ...$ids,
-        ]));
-
-        $this->dispatch('toast', type: 'success', title: 'Hasil dipilih', message: count($ids) . ' generation dengan file hasil ditambahkan ke pilihan (maksimal 500).');
-    }
-
-    public function clearHistorySelection(): void
-    {
-        $this->selectedHistoryIds = [];
-    }
-
-    public function downloadSelectedHistory()
-    {
-        $ids = collect($this->selectedHistoryIds)->map(fn ($id) => (int) $id)->filter()->unique()->take(500)->values();
-
-        if ($ids->isEmpty()) {
-            $this->dispatch('toast', type: 'warning', title: 'Belum ada pilihan', message: 'Pilih setidaknya satu generation untuk diunduh.');
-            return null;
-        }
-
-        if (! class_exists(\ZipArchive::class)) {
+        if (! class_exists(\\ZipArchive::class)) {
             $this->dispatch('toast', type: 'error', title: 'ZIP tidak tersedia', message: 'Ekstensi PHP ZIP belum aktif di server.');
             return null;
         }
 
-        $generations = Generation::query()
-            ->where('user_id', auth()->id())
-            ->whereIn('id', $ids)
-            ->with('generatedImages')
-            ->get();
+        if (! function_exists('imagecreatefromstring') || ! function_exists('imagejpeg')) {
+            $this->dispatch('toast', type: 'error', title: 'Kompresi gambar tidak tersedia', message: 'Ekstensi PHP GD harus aktif untuk mengoptimalkan foto ke ukuran maksimal 2 MB.');
+            return null;
+        }
 
-        $tempPath = tempnam(sys_get_temp_dir(), 'rms-history-');
+        // Reuse Recent History filters, but intentionally ignore the visible-record limit.
+        $query = (clone $this->historyQuery())
+            ->whereHas('generatedImages', fn ($images) => $images
+                ->whereNotNull('image_path')
+                ->where('image_path', '<>', ''));
+
+        if ($this->historySort === 'oldest') {
+            $query->orderBy('created_at', 'asc')->orderBy('id', 'asc');
+        } else {
+            $query->orderBy('created_at', 'desc')->orderBy('id', 'desc');
+        }
+
+        // Guard against an unexpectedly huge synchronous archive.
+        $totalMatching = (clone $query)->count();
+        if ($totalMatching > 500) {
+            $this->dispatch('toast', type: 'warning', title: 'Terlalu banyak hasil', message: 'ZIP dibatasi maksimal 500 generation sekali unduh. Persempit filter tanggal, Store, atau status.');
+            return null;
+        }
+
+        $generations = $query->with(['store', 'template', 'generatedImages'])->get();
+
+        if ($generations->isEmpty()) {
+            $this->dispatch('toast', type: 'warning', title: 'Belum ada foto untuk diunduh', message: 'Tidak ada foto hasil yang tersedia sesuai filter aktif.');
+            return null;
+        }
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'rms-history-zip-');
         if ($tempPath === false) {
             $this->dispatch('toast', type: 'error', title: 'Gagal menyiapkan ZIP', message: 'Server tidak dapat membuat file sementara.');
             return null;
         }
 
-        $zip = new \ZipArchive();
-        if ($zip->open($tempPath, \ZipArchive::OVERWRITE) !== true) {
+        $zip = new \\ZipArchive();
+        if ($zip->open($tempPath, \\ZipArchive::OVERWRITE) !== true) {
             @unlink($tempPath);
             $this->dispatch('toast', type: 'error', title: 'Gagal menyiapkan ZIP', message: 'File ZIP tidak dapat dibuka.');
             return null;
         }
 
-        $disk = \Illuminate\Support\Facades\Storage::disk('public');
+        $disk = \\Illuminate\\Support\\Facades\\Storage::disk('public');
         $added = 0;
-        foreach ($generations as $generation) {
-            foreach ($generation->generatedImages as $index => $image) {
-                $path = $image->image_path;
-                if (! is_string($path) || $path === '' || ! $disk->exists($path)) {
-                    continue;
-                }
 
-                $absolute = $disk->path($path);
-                if (! is_file($absolute) || ! is_readable($absolute)) {
-                    continue;
-                }
+        try {
+            foreach ($generations as $generation) {
+                $imageIndex = 0;
+                $safeStore = \\Illuminate\\Support\\Str::slug($generation->store?->name ?: 'store');
+                $safeTemplate = \\Illuminate\\Support\\Str::slug($generation->template?->name ?: 'template');
+                $generationMetadata = is_array($generation->metadata) ? $generation->metadata : [];
+                $title = trim((string) (
+                    data_get($generationMetadata, 'requested_custom_title')
+                    ?: data_get($generationMetadata, 'custom_title')
+                    ?: data_get($generationMetadata, 'final_title')
+                    ?: ''
+                ));
+                $safeTitle = \\Illuminate\\Support\\Str::slug($title) ?: 'generated-product';
 
-                $extension = strtolower(pathinfo($absolute, PATHINFO_EXTENSION) ?: 'png');
-                $safeStore = \Illuminate\Support\Str::slug($generation->store?->name ?: 'store');
-                $safeTemplate = \Illuminate\Support\Str::slug($generation->template?->name ?: 'template');
-                $filename = sprintf('generation-%d-%s-%s-%02d.%s', $generation->id, $safeStore, $safeTemplate, $index + 1, $extension);
-                $zip->addFile($absolute, $filename);
-                $added++;
+                foreach ($generation->generatedImages as $image) {
+                    $path = $image->image_path;
+                    if (! is_string($path) || $path === '' || ! $disk->exists($path)) {
+                        continue;
+                    }
+
+                    $absolute = $disk->path($path);
+                    if (! is_file($absolute) || ! is_readable($absolute)) {
+                        continue;
+                    }
+
+                    $optimized = $this->encodeHistoryImageUnderLimit($absolute, 2 * 1024 * 1024);
+                    $imageIndex++;
+                    $filename = sprintf(
+                        'generation-%d/%s-%s-%s-%02d.jpg',
+                        $generation->id,
+                        $safeStore,
+                        $safeTemplate,
+                        $safeTitle,
+                        $imageIndex
+                    );
+
+                    if (! $zip->addFromString($filename, $optimized)) {
+                        throw new \\RuntimeException('Gagal menambahkan foto ke dalam ZIP.');
+                    }
+
+                    $added++;
+                }
             }
-        }
 
-        if ($added === 0) {
-            $zip->close();
+            if ($added === 0) {
+                $zip->close();
+                @unlink($tempPath);
+                $this->dispatch('toast', type: 'warning', title: 'Tidak ada file untuk diunduh', message: 'Foto hasil pada riwayat ini tidak ditemukan di penyimpanan.');
+                return null;
+            }
+
+            if (! $zip->close()) {
+                throw new \\RuntimeException('File ZIP gagal diselesaikan.');
+            }
+        } catch (\\Throwable $exception) {
+            try {
+                $zip->close();
+            } catch (\\Throwable) {
+                // Ignore a secondary close failure while cleaning up the failed archive.
+            }
+
             @unlink($tempPath);
-            $this->dispatch('toast', type: 'warning', title: 'Tidak ada file untuk diunduh', message: 'Pilihan tidak memiliki gambar hasil yang masih tersedia.');
+            report($exception);
+            $this->dispatch('toast', type: 'error', title: 'Gagal membuat ZIP', message: 'Sebagian foto tidak dapat diproses. Coba perkecil hasil dengan filter Store, tanggal, atau status.');
             return null;
         }
 
-        $zip->close();
-        $this->selectedHistoryIds = [];
+        $this->dispatch(
+            'toast',
+            type: 'success',
+            title: 'ZIP siap diunduh',
+            message: $added . ' foto sudah dioptimalkan (maks. 2 MB per foto) dan dimasukkan ke ZIP.'
+        );
 
-        return response()->download($tempPath, 'rizky-moto-history-' . now()->format('Ymd-His') . '.zip', [
-            'Content-Type' => 'application/zip',
-        ])->deleteFileAfterSend(true);
+        return response()->download(
+            $tempPath,
+            'rizky-moto-history-' . now()->format('Ymd-His') . '.zip',
+            ['Content-Type' => 'application/zip']
+        )->deleteFileAfterSend(true);
+    }
+
+    private function encodeHistoryImageUnderLimit(string $absolutePath, int $maxBytes): string
+    {
+        $sourceBinary = file_get_contents($absolutePath);
+        if ($sourceBinary === false) {
+            throw new \\RuntimeException('File gambar tidak dapat dibaca.');
+        }
+
+        $sourceImage = @imagecreatefromstring($sourceBinary);
+        unset($sourceBinary);
+
+        if (! $sourceImage instanceof \\GdImage) {
+            throw new \\RuntimeException('Format gambar tidak dapat diproses oleh GD.');
+        }
+
+        $sourceWidth = imagesx($sourceImage);
+        $sourceHeight = imagesy($sourceImage);
+        $currentWidth = $sourceWidth;
+        $currentHeight = $sourceHeight;
+        $quality = 85;
+        $result = null;
+
+        try {
+            for ($attempt = 0; $attempt < 24; $attempt++) {
+                $canvas = imagecreatetruecolor($currentWidth, $currentHeight);
+                if (! $canvas instanceof \\GdImage) {
+                    throw new \\RuntimeException('Canvas kompresi gambar gagal dibuat.');
+                }
+
+                $white = imagecolorallocate($canvas, 255, 255, 255);
+                imagefill($canvas, 0, 0, $white);
+                imagecopyresampled(
+                    $canvas,
+                    $sourceImage,
+                    0,
+                    0,
+                    0,
+                    0,
+                    $currentWidth,
+                    $currentHeight,
+                    $sourceWidth,
+                    $sourceHeight
+                );
+
+                ob_start();
+                imagejpeg($canvas, null, $quality);
+                $binary = ob_get_clean();
+                imagedestroy($canvas);
+
+                if (is_string($binary) && strlen($binary) <= $maxBytes) {
+                    $result = $binary;
+                    break;
+                }
+
+                if ($quality > 42) {
+                    $quality = max(40, $quality - 7);
+                    continue;
+                }
+
+                if ($currentWidth <= 320 || $currentHeight <= 320) {
+                    break;
+                }
+
+                $currentWidth = max(320, (int) floor($currentWidth * 0.88));
+                $currentHeight = max(320, (int) floor($currentHeight * 0.88));
+                $quality = 78;
+            }
+        } finally {
+            imagedestroy($sourceImage);
+        }
+
+        if (! is_string($result) || strlen($result) > $maxBytes) {
+            throw new \\RuntimeException('Foto tidak dapat dikompresi hingga di bawah 2 MB.');
+        }
+
+        return $result;
     }
 
     public function loadMoreHistory(): void
@@ -2393,14 +2514,27 @@ new class extends Component
                     @endif
                 </div>
 
-                <div class="rms-history-bulk-actions" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:0 2px 10px">
-                    <button type="button" class="rms-history-clear-all" wire:click="selectFilteredHistory">Pilih hasil sesuai filter</button>
-                    <button type="button" class="rms-history-clear-all" wire:click="downloadSelectedHistory" wire:loading.attr="disabled" wire:target="downloadSelectedHistory">
-                        <span>↓</span> Download ZIP ({{ count($selectedHistoryIds) }})
+                <div class="rms-history-bulk-actions">
+                    <div class="rms-history-download-summary">
+                        <span class="rms-history-download-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </span>
+                        <span class="rms-history-download-copy">
+                            <strong>Unduh semua hasil sesuai filter</strong>
+                            <small>Setiap foto dikompres ke maksimal 2 MB sebelum dimasukkan ke ZIP.</small>
+                        </span>
+                    </div>
+                    <button type="button" class="rms-history-download-button"
+                        wire:click="downloadFilteredHistory"
+                        wire:loading.attr="disabled"
+                        wire:target="downloadFilteredHistory"
+                        @disabled($this->historyDownloadImageCount < 1)>
+                        <span class="rms-history-download-button-icon" wire:loading.remove wire:target="downloadFilteredHistory">↓</span>
+                        <span class="rms-history-download-spinner" wire:loading wire:target="downloadFilteredHistory"></span>
+                        <span wire:loading.remove wire:target="downloadFilteredHistory">Download ZIP</span>
+                        <span wire:loading wire:target="downloadFilteredHistory">Menyiapkan ZIP...</span>
+                        <b>{{ $this->historyDownloadImageCount }} foto</b>
                     </button>
-                    @if(count($selectedHistoryIds))
-                        <button type="button" class="rms-history-clear-all" wire:click="clearHistorySelection">Batalkan pilihan</button>
-                    @endif
                 </div>
                 <div class="rms-history-toolbar-meta">
                     <span>Showing {{ $this->recentGenerations->count() }} of {{ $this->historyTotal }} generation{{ $this->historyTotal === 1 ? '' : 's' }}</span>
@@ -2441,12 +2575,6 @@ new class extends Component
                     @endphp
 
                     <article wire:key="generation-history-{{ $generation->id }}" class="rms-generator-history-item rms-generation-card status-{{ $status }}">
-                        @if($images->contains(fn ($image) => is_string($image->image_path) && $image->image_path !== ''))
-                            <label style="display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:12px;font-weight:700;color:#555;cursor:pointer">
-                                <input type="checkbox" wire:click="toggleHistorySelection({{ $generation->id }})" @checked(in_array((int) $generation->id, array_map('intval', $selectedHistoryIds), true))>
-                                Pilih hasil untuk ZIP
-                            </label>
-                        @endif
                         <div class="rms-generation-card-head">
                             <div class="rms-history-item-meta"><span>{{ optional($generation->created_at)->format('d M Y · H:i') }}</span><small>#{{ $generation->id }}</small></div>
                             <span class="rms-history-status {{ $status }}" title="Status generation: {{ $statusLabel }}">
@@ -7281,6 +7409,52 @@ body.rms-bulk-delete-lock{overflow:hidden}
         width:min(310px,calc(100vw - 30px))!important;
         max-width:calc(100vw - 30px)!important;
     }
+}
+
+
+/* ---------- Recent History: filter-aware ZIP download ---------- */
+.rms-generator-workspace-animated .rms-history-bulk-actions{
+    display:flex!important;align-items:center!important;justify-content:space-between!important;
+    gap:14px!important;flex-wrap:wrap!important;padding:14px 16px!important;margin:0 0 12px!important;
+    border:1px solid #e7eaf0!important;border-radius:17px!important;
+    background:linear-gradient(135deg,#fff 0%,#fafbfc 100%)!important;
+    box-shadow:0 4px 14px rgba(22,27,38,.025)!important;
+}
+.rms-generator-workspace-animated .rms-history-download-summary{
+    display:flex!important;align-items:center!important;gap:11px!important;min-width:0!important;flex:1 1 280px!important;
+}
+.rms-generator-workspace-animated .rms-history-download-icon{
+    display:grid!important;place-items:center!important;width:40px!important;height:40px!important;flex:0 0 40px!important;
+    border:1px solid #d9f3e4!important;border-radius:13px!important;background:#effbf4!important;color:#159451!important;
+}
+.rms-generator-workspace-animated .rms-history-download-icon svg{display:block!important;width:20px!important;height:20px!important}
+.rms-generator-workspace-animated .rms-history-download-copy{display:flex!important;min-width:0!important;flex-direction:column!important;gap:4px!important}
+.rms-generator-workspace-animated .rms-history-download-copy strong{color:#272b34!important;font-size:12px!important;font-weight:800!important;line-height:1.4!important}
+.rms-generator-workspace-animated .rms-history-download-copy small{color:#828896!important;font-size:10px!important;line-height:1.45!important}
+.rms-generator-workspace-animated .rms-history-download-button{
+    display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;
+    min-height:43px!important;flex:0 0 auto!important;padding:0 15px!important;border:1px solid #168b4c!important;
+    border-radius:12px!important;background:linear-gradient(135deg,#159451,#0f8042)!important;color:#fff!important;
+    box-shadow:0 5px 13px rgba(21,148,81,.17)!important;font-size:11px!important;font-weight:800!important;
+    transition:transform .18s ease,box-shadow .18s ease,opacity .18s ease!important;
+}
+.rms-generator-workspace-animated .rms-history-download-button:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 18px rgba(21,148,81,.22)!important}
+.rms-generator-workspace-animated .rms-history-download-button:disabled{cursor:not-allowed!important;opacity:.45!important;box-shadow:none!important}
+.rms-generator-workspace-animated .rms-history-download-button b{
+    display:inline-flex!important;align-items:center!important;justify-content:center!important;min-height:24px!important;padding:0 7px!important;
+    border:1px solid rgba(255,255,255,.24)!important;border-radius:7px!important;background:rgba(255,255,255,.14)!important;
+    color:#fff!important;font-size:10px!important;white-space:nowrap!important;
+}
+.rms-generator-workspace-animated .rms-history-download-button-icon{font-size:17px!important;line-height:1!important}
+.rms-generator-workspace-animated .rms-history-download-spinner{
+    width:14px!important;height:14px!important;border:2px solid rgba(255,255,255,.35)!important;border-top-color:#fff!important;
+    border-radius:50%!important;animation:rmsHistoryZipSpin .7s linear infinite!important;
+}
+@keyframes rmsHistoryZipSpin{to{transform:rotate(360deg)}}
+@media(max-width:760px){
+    .rms-generator-workspace-animated .rms-history-bulk-actions{align-items:stretch!important;padding:12px!important;border-radius:15px!important}
+    .rms-generator-workspace-animated .rms-history-download-summary{flex-basis:100%!important}
+    .rms-generator-workspace-animated .rms-history-download-button{width:100%!important;min-height:45px!important}
 }
 
 </style>
