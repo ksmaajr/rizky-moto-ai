@@ -6,6 +6,9 @@ use App\Livewire\Concerns\ManagesAgentAiCredentials;
 use App\Models\AiProviderSetting;
 use App\Models\ActivityLog;
 use App\Models\VercelGatewayApiKey;
+use App\Models\Generation;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\On;
@@ -313,6 +316,35 @@ class Index extends Component
             'disk_used' => max(0, ($diskTotal ?: 0) - ($diskFree ?: 0)),
             'services' => $services,
             'queue_workers' => function_exists('shell_exec') ? count(preg_split('/\n/', trim((string) @shell_exec("pgrep -af 'artisan queue:work' 2>/dev/null")) , -1, PREG_SPLIT_NO_EMPTY)) : null,
+        ];
+
+        // Generation reliability snapshot: read-only diagnostics; never re-dispatch jobs here.
+        $since = now()->subDay();
+        $recent = Generation::query()->where('created_at', '>=', $since);
+        $this->serverMetrics['generation_reliability'] = [
+            'window_hours' => 24,
+            'total' => (clone $recent)->count(),
+            'completed' => (clone $recent)->where('status', 'completed')->count(),
+            'failed' => (clone $recent)->where('status', 'failed')->count(),
+            'processing' => (clone $recent)->whereIn('status', ['processing', 'pending', 'queued'])->count(),
+            'latest_failures' => Generation::query()
+                ->where('status', 'failed')
+                ->orderByDesc('completed_at')
+                ->limit(5)
+                ->get(['id', 'model', 'error_message', 'completed_at', 'metadata'])
+                ->map(static fn (Generation $generation) => [
+                    'id' => $generation->id,
+                    'model' => $generation->model ?: 'Unknown provider/model',
+                    'error' => \Illuminate\Support\Str::limit((string) ($generation->error_message ?: 'No error detail recorded'), 180),
+                    'time' => optional($generation->completed_at)->diffForHumans(),
+                    'provider' => data_get($generation->metadata, 'provider', data_get($generation->metadata, 'ai_provider', 'unknown')),
+                ])->all(),
+            'queue_pending' => Schema::hasTable('jobs')
+                ? DB::table('jobs')->count()
+                : null,
+            'failed_jobs' => Schema::hasTable('failed_jobs')
+                ? DB::table('failed_jobs')->count()
+                : null,
         ];
     }
 
