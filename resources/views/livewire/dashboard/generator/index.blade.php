@@ -210,11 +210,30 @@ new class extends Component
 
     public function getHistoryDownloadImageCountProperty(): int
     {
-        return (clone $this->historyQuery())
+        $query = (clone $this->historyQuery())
             ->without(['store', 'template', 'generatedImages'])
-            ->whereHas('generatedImages', fn ($query) => $query->whereNotNull('image_path')->where('image_path', '<>', ''))
+            ->whereHas('generatedImages', fn ($images) => $images
+                ->whereNotNull('image_path')
+                ->where('image_path', '<>', ''));
+
+        if ($this->historySort === 'oldest') {
+            $query->orderBy('created_at', 'asc')->orderBy('id', 'asc');
+        } else {
+            $query->orderBy('created_at', 'desc')->orderBy('id', 'desc');
+        }
+
+        // Keep the displayed count aligned with the 500-generation archive safety limit.
+        $ids = $query->limit(500)->pluck('id');
+
+        if ($ids->isEmpty()) {
+            return 0;
+        }
+
+        return Generation::query()
+            ->where('user_id', auth()->id())
+            ->whereIn('id', $ids)
             ->withCount([
-                'generatedImages as downloadable_images_count' => fn ($query) => $query
+                'generatedImages as downloadable_images_count' => fn ($images) => $images
                     ->whereNotNull('image_path')
                     ->where('image_path', '<>', ''),
             ])
