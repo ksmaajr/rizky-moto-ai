@@ -2628,6 +2628,7 @@ new class extends Component
                             <button type="button" class="rms-history-download-cancel" style="display:inline-flex;align-items:center;justify-content:center;min-height:49px;flex:1 1 35%;padding:0 17px;border:1px solid #e7e9ef;border-radius:12px;background:#fff;color:#535b69;font-size:12px;font-weight:750;cursor:pointer;" x-on:click="downloadPanelOpen = false">Batal</button>
                             <button type="button" class="rms-history-download-button rms-history-download-confirm" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:49px;flex:1 1 65%;padding:0 15px;border:0;border-radius:12px;background:linear-gradient(135deg,#159653,#087d43);color:#fff;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 7px 18px rgba(21,148,81,.2);"
                                 wire:click="downloadFilteredHistory"
+                                x-on:click="downloadPanelOpen = false"
                                 wire:loading.attr="disabled"
                                 wire:target="downloadFilteredHistory"
                                 @disabled($this->historyDownloadImageCount < 1)>
@@ -8314,6 +8315,21 @@ body.rms-bulk-delete-lock{overflow:hidden}
 }
 
 
+
+/* Hide scrollbars in the export modal while preserving touch, wheel and keyboard scrolling. */
+body > .rms-history-download-modal,
+.rms-history-download-modal,
+.rms-history-download-modal .rms-history-download-dialog{
+ scrollbar-width:none!important;
+ -ms-overflow-style:none!important;
+}
+body > .rms-history-download-modal::-webkit-scrollbar,
+.rms-history-download-modal::-webkit-scrollbar,
+.rms-history-download-modal .rms-history-download-dialog::-webkit-scrollbar{
+ display:none!important;
+ width:0!important;
+ height:0!important;
+}
 
 /* Download modal centering fix: body-teleported overlays must remain a flex viewport layer. */
 body > .rms-history-download-modal,
