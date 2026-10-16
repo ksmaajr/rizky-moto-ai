@@ -1417,6 +1417,33 @@
                                 <div><span class="rms-server-kicker">INFRASTRUCTURE / LIVE TELEMETRY</span><h2>Server Monitoring</h2><p>Realtime health overview untuk VPS Rizky Moto Shop AI.</p></div>
                                 <div class="rms-server-live"><i></i><span>LIVE</span><small>{{ isset($m['time']) ? \Carbon\Carbon::parse($m['time'])->format('H:i:s') : 'Connecting…' }}</small></div>
                             </div>
+                            @php $gr = $m['generation_reliability'] ?? []; @endphp
+                            <section class="rms-server-reliability" aria-label="AI generation reliability">
+                                <header class="rms-server-reliability-head">
+                                    <div><span>AI OPERATIONS / LAST 24 HOURS</span><h3>Generation Reliability Center</h3><p>Read-only overview of generation outcomes, queue backlog, and recent failures.</p></div>
+                                    <span class="rms-server-reliability-live"><i></i> LIVE SNAPSHOT</span>
+                                </header>
+                                <div class="rms-server-reliability-stats">
+                                    <article><small>Total requests</small><strong>{{ $gr['total'] ?? '—' }}</strong><span>Created in 24 hours</span></article>
+                                    <article><small>Completed</small><strong>{{ $gr['completed'] ?? '—' }}</strong><span class="is-good">Successful generations</span></article>
+                                    <article><small>Failed</small><strong>{{ $gr['failed'] ?? '—' }}</strong><span class="{{ ($gr['failed'] ?? 0) > 0 ? 'is-bad' : 'is-good' }}">Needs investigation</span></article>
+                                    <article><small>In progress</small><strong>{{ $gr['processing'] ?? '—' }}</strong><span>Pending / queued / processing</span></article>
+                                    <article><small>Queue backlog</small><strong>{{ $gr['queue_pending'] ?? 'N/A' }}</strong><span>Database queue jobs</span></article>
+                                    <article><small>Failed queue jobs</small><strong>{{ $gr['failed_jobs'] ?? 'N/A' }}</strong><span>Laravel failed_jobs table</span></article>
+                                </div>
+                                <div class="rms-server-reliability-failures">
+                                    <div class="rms-server-reliability-subhead"><div><span>DIAGNOSTICS</span><h4>Latest failed generations</h4></div><small>Latest 5 records · no automatic retries</small></div>
+                                    @forelse (($gr['latest_failures'] ?? []) as $failure)
+                                        <article class="rms-server-failure-row">
+                                            <div class="rms-server-failure-id">#{{ $failure['id'] }}</div>
+                                            <div class="rms-server-failure-copy"><strong>{{ $failure['model'] }}</strong><p>{{ $failure['error'] }}</p><small>Provider: {{ $failure['provider'] }} · {{ $failure['time'] ?? 'Time unavailable' }}</small></div>
+                                            <span>FAILED</span>
+                                        </article>
+                                    @empty
+                                        <div class="rms-server-failure-empty"><strong>No failed generations recorded</strong><span>Belum ada generation gagal yang tercatat.</span></div>
+                                    @endforelse
+                                </div>
+                            </section>
                             <div class="rms-server-metric-grid">
                                 <article><span>CPU LOAD</span><strong>{{ $m['load'][0] ?? '—' }}</strong><small>{{ $m['cpu_cores'] ?? '—' }} logical cores · 1 min average</small><div class="rms-server-meter"><i style="width:{{ min(100, (float)($m['load'][0] ?? 0) / max(1,(int)($m['cpu_cores'] ?? 1))*100) }}%"></i></div></article>
                                 <article><span>MEMORY USAGE</span><strong>{{ isset($m['memory_total']) && $m['memory_total'] ? round(($m['memory_used']/$m['memory_total'])*100) : '—' }}<em>%</em></strong><small>{{ number_format(($m['memory_used'] ?? 0)/1073741824,2) }} / {{ number_format(($m['memory_total'] ?? 0)/1073741824,2) }} GiB used</small><div class="rms-server-meter"><i style="width:{{ isset($m['memory_total']) && $m['memory_total'] ? min(100,$m['memory_used']/$m['memory_total']*100) : 0 }}%"></i></div></article>
@@ -1504,6 +1531,34 @@
 /* Ensure server monitoring tab content occupies the same full panel container as General/Activity. */
 .rms-settings-content{min-width:0;width:100%}
 .rms-settings-content>.rms-settings-panel{width:100%;min-width:0}
+.rms-server-reliability{margin:0 0 22px;padding:20px;border:1px solid #e4e4e7;border-radius:18px;background:linear-gradient(145deg,#fff 0%,#fafafa 100%);box-shadow:0 10px 30px rgba(24,24,27,.035);min-width:0}
+.rms-server-reliability-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+.rms-server-reliability-head>div>span,.rms-server-reliability-subhead>div>span{color:#a1a1aa;font-size:8px;font-weight:850;letter-spacing:.14em}
+.rms-server-reliability-head h3{margin:5px 0 0;color:#18181b;font-size:18px;line-height:1.25;font-weight:800;letter-spacing:-.035em}
+.rms-server-reliability-head p{margin:5px 0 0;color:#71717a;font-size:10px;line-height:1.5}
+.rms-server-reliability-live{display:inline-flex;align-items:center;gap:7px;flex:0 0 auto;padding:7px 9px;border:1px solid #d4d4d8;border-radius:999px;color:#52525b;font-size:8px;font-weight:800;letter-spacing:.08em}
+.rms-server-reliability-live i{width:6px;height:6px;border-radius:50%;background:#22c55e}
+.rms-server-reliability-stats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}
+.rms-server-reliability-stats article{display:flex;flex-direction:column;min-width:0;padding:13px;border:1px solid #ededf0;border-radius:12px;background:#fff}
+.rms-server-reliability-stats small{color:#71717a;font-size:9px;font-weight:650}
+.rms-server-reliability-stats strong{margin:7px 0 4px;color:#18181b;font-size:25px;line-height:1;font-weight:800;letter-spacing:-.05em;font-variant-numeric:tabular-nums}
+.rms-server-reliability-stats span{color:#a1a1aa;font-size:8px;line-height:1.4}
+.rms-server-reliability-stats .is-good{color:#15803d}.rms-server-reliability-stats .is-bad{color:#dc2626}
+.rms-server-reliability-failures{margin-top:18px;border:1px solid #ededf0;border-radius:13px;overflow:hidden;background:#fff}
+.rms-server-reliability-subhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 15px;border-bottom:1px solid #f0f0f2;background:#fcfcfd}
+.rms-server-reliability-subhead h4{margin:4px 0 0;color:#27272a;font-size:12px;font-weight:800}
+.rms-server-reliability-subhead>small{color:#a1a1aa;font-size:8px}
+.rms-server-failure-row{display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:start;gap:11px;padding:13px 15px;border-bottom:1px solid #f4f4f5}
+.rms-server-failure-row:last-child{border-bottom:0}
+.rms-server-failure-id{display:grid;place-items:center;min-height:30px;border-radius:8px;background:#fef2f2;color:#b91c1c;font-family:monospace;font-size:10px;font-weight:800}
+.rms-server-failure-copy{min-width:0}.rms-server-failure-copy strong{display:block;color:#3f3f46;font-size:10px;font-weight:800;overflow-wrap:anywhere}
+.rms-server-failure-copy p{margin:4px 0;color:#71717a;font-size:9px;line-height:1.5;overflow-wrap:anywhere}
+.rms-server-failure-copy small{color:#a1a1aa;font-size:8px;overflow-wrap:anywhere}
+.rms-server-failure-row>span{padding:5px 7px;border-radius:6px;background:#fef2f2;color:#dc2626;font-size:7px;font-weight:850;letter-spacing:.08em}
+.rms-server-failure-empty{display:flex;flex-direction:column;gap:5px;padding:25px;text-align:center}
+.rms-server-failure-empty strong{color:#52525b;font-size:10px}.rms-server-failure-empty span{color:#a1a1aa;font-size:9px}
+@media(max-width:1100px){.rms-server-reliability-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){.rms-server-reliability{padding:13px;border-radius:14px}.rms-server-reliability-head{flex-direction:column}.rms-server-reliability-head h3{font-size:16px}.rms-server-reliability-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.rms-server-reliability-stats article{padding:11px}.rms-server-reliability-stats strong{font-size:22px}.rms-server-reliability-subhead{align-items:flex-start;flex-direction:column}.rms-server-failure-row{grid-template-columns:34px minmax(0,1fr);gap:8px;padding:11px}.rms-server-failure-row>span{grid-column:2;justify-self:start}}
 .rms-server-monitor{width:100%;min-width:0;box-sizing:border-box}
 .rms-server-monitor *{box-sizing:border-box}
 .rms-settings-tab-icon{display:grid;place-items:center;transition:background .22s ease,color .22s ease,transform .22s ease,box-shadow .22s ease}.rms-settings-tab-icon svg{display:block;width:19px;height:19px;flex:0 0 19px}.rms-settings-tab:hover .rms-settings-tab-icon{transform:translateY(-1px)}.rms-settings-tab.is-active .rms-settings-tab-icon{box-shadow:0 7px 16px rgba(239,48,48,.12)}.rms-settings-ai svg{width:21px;height:21px}.rms-settings-server-tab-icon{background:linear-gradient(145deg,#eff6ff,#e0e7ff)!important;color:#4f46e5!important}.rms-settings-tab.is-active .rms-settings-server-tab-icon{background:linear-gradient(145deg,#4f46e5,#6366f1)!important;color:#fff!important}.rms-settings-tab.is-active .rms-settings-activity-tab-icon{background:linear-gradient(145deg,#dcfce7,#bbf7d0)!important;color:#15803d!important}.rms-settings-tab.is-active .rms-settings-ai{background:linear-gradient(145deg,#27272a,#09090b)!important;color:#fff!important}.rms-settings-tab.is-active .rms-settings-general-tab-icon{background:linear-gradient(145deg,#fee2e2,#fecaca)!important;color:#dc2626!important}
