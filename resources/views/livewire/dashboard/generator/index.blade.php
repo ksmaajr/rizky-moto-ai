@@ -251,7 +251,7 @@ new class extends Component
             return null;
         }
 
-        if (! class_exists(\\ZipArchive::class)) {
+        if (! class_exists(\ZipArchive::class)) {
             $this->dispatch('toast', type: 'error', title: 'ZIP tidak tersedia', message: 'Ekstensi PHP ZIP belum aktif di server.');
             return null;
         }
@@ -268,14 +268,14 @@ new class extends Component
             return null;
         }
 
-        $zip = new \\ZipArchive();
-        if ($zip->open($tempPath, \\ZipArchive::OVERWRITE) !== true) {
+        $zip = new \ZipArchive();
+        if ($zip->open($tempPath, \ZipArchive::OVERWRITE) !== true) {
             @unlink($tempPath);
             $this->dispatch('toast', type: 'error', title: 'Gagal menyiapkan ZIP', message: 'File ZIP tidak dapat dibuka.');
             return null;
         }
 
-        $disk = \\Illuminate\\Support\\Facades\\Storage::disk('public');
+        $disk = \Illuminate\Support\Facades\Storage::disk('public');
         $added = 0;
         foreach ($generations as $generation) {
             foreach ($generation->generatedImages as $index => $image) {
@@ -290,8 +290,8 @@ new class extends Component
                 }
 
                 $extension = strtolower(pathinfo($absolute, PATHINFO_EXTENSION) ?: 'png');
-                $safeStore = \\Illuminate\\Support\\Str::slug($generation->store?->name ?: 'store');
-                $safeTemplate = \\Illuminate\\Support\\Str::slug($generation->template?->name ?: 'template');
+                $safeStore = \Illuminate\Support\Str::slug($generation->store?->name ?: 'store');
+                $safeTemplate = \Illuminate\Support\Str::slug($generation->template?->name ?: 'template');
                 $filename = sprintf('generation-%d-%s-%s-%02d.%s', $generation->id, $safeStore, $safeTemplate, $index + 1, $extension);
                 $zip->addFile($absolute, $filename);
                 $added++;
