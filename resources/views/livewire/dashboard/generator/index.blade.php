@@ -1217,9 +1217,20 @@ new class extends Component
                                 class="rms-generator-template-card {{ (int)$selectedTemplateId === (int)$template->id ? 'selected' : '' }}"
                                 wire:click="toggleTemplate({{ $template->id }})" x-on:click="$nextTick(() => activeStep = (selectedTemplateId === {{ $template->id }}) ? 2 : 1)">
                                 <div class="rms-generator-template-image">
-                                    <span style="position:absolute;z-index:2;left:10px;top:10px;max-width:calc(100% - 20px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid rgba(255,255,255,.7);border-radius:999px;padding:5px 9px;background:rgba(255,255,255,.92);color:#343741;font-size:10px;font-weight:800;box-shadow:0 3px 10px rgba(20,20,30,.08)">
-                                        {{ $this->stores->firstWhere('id', $template->store_id)?->name ?? 'Store' }}
-                                    </span>
+                                    <div class="rms-template-store-overlay" aria-hidden="true">
+                                        <span class="rms-template-store-overlay-logo">
+                                            @php
+                                                $templateStore = $this->stores->firstWhere('id', $template->store_id);
+                                                $templateStoreLogo = $templateStore?->logo_path ?? $templateStore?->logo ?? null;
+                                            @endphp
+                                            @if($templateStoreLogo)
+                                                <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($templateStoreLogo) }}" alt="" loading="lazy">
+                                            @else
+                                                <span>{{ \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($templateStore?->name ?? 'S', 0, 1)) }}</span>
+                                            @endif
+                                        </span>
+                                        <span class="rms-template-store-overlay-name">{{ $templateStore?->name ?? 'Store' }}</span>
+                                    </div>
                                     @if($template->example_image_path)
                                         <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($template->example_image_path) }}" alt="">
                                     @else
@@ -6056,6 +6067,82 @@ body.rms-bulk-delete-lock{overflow:hidden}
     }
     .rms-generator-history-grid .rms-generation-card-meta>span>strong{
         font-size:10px!important;
+    }
+}
+
+/* ---------- Store identity hover overlay ---------- */
+.rms-generator-workspace-animated .rms-generator-template-image{
+    position:relative;
+    isolation:isolate;
+}
+.rms-generator-workspace-animated .rms-template-store-overlay{
+    position:absolute;
+    z-index:5;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:9px;
+    padding:14px;
+    border:0;
+    border-radius:inherit;
+    background:rgba(18,20,25,.68);
+    color:#fff;
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transform:translateY(5px);
+    transition:opacity .2s ease,visibility .2s ease,transform .2s ease;
+    backdrop-filter:blur(5px);
+    -webkit-backdrop-filter:blur(5px);
+}
+.rms-generator-workspace-animated .rms-generator-template-card:hover .rms-template-store-overlay,
+.rms-generator-workspace-animated .rms-generator-template-card:focus-visible .rms-template-store-overlay{
+    opacity:1;
+    visibility:visible;
+    transform:translateY(0);
+}
+.rms-generator-workspace-animated .rms-template-store-overlay-logo{
+    display:grid;
+    place-items:center;
+    width:54px;
+    height:54px;
+    flex:0 0 54px;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.6);
+    border-radius:15px;
+    background:#fff;
+    color:#272a31;
+    box-shadow:0 8px 24px rgba(0,0,0,.18);
+    font-size:22px;
+    font-weight:850;
+}
+.rms-generator-workspace-animated .rms-template-store-overlay-logo img{
+    display:block;
+    width:100%;
+    height:100%;
+    padding:6px;
+    object-fit:contain;
+    border-radius:0;
+    box-shadow:none;
+    background:#fff;
+}
+.rms-generator-workspace-animated .rms-template-store-overlay-name{
+    max-width:100%;
+    overflow:hidden;
+    color:#fff;
+    font-size:12px;
+    font-weight:800;
+    line-height:1.35;
+    text-align:center;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    text-shadow:0 1px 3px rgba(0,0,0,.2);
+}
+@media(hover:none){
+    .rms-generator-workspace-animated .rms-template-store-overlay{
+        display:none!important;
     }
 }
 
