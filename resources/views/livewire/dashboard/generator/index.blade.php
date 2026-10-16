@@ -2356,6 +2356,7 @@ new class extends Component
             bulkDrawerOpen: false,
             bulkDeleting: false,
             bulkDeleteError: '',
+            downloadInfoOpen: false,
             openBulkDrawer() {
                 this.bulkDeleteError = '';
                 this.bulkDrawerOpen = true;
@@ -2545,11 +2546,27 @@ new class extends Component
                         <span class="rms-history-download-icon" aria-hidden="true">
                             <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </span>
-                        <span class="rms-history-download-copy">
+                        <span class="rms-history-download-copy"
+                            x-show="downloadInfoOpen"
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 -translate-y-1"
+                            x-transition:enter-end="opacity-100 translate-y-0"
+                            x-transition:leave="transition ease-in duration-150"
+                            x-transition:leave-start="opacity-100 translate-y-0"
+                            x-transition:leave-end="opacity-0 -translate-y-1"
+                            x-cloak>
                             <strong>Unduh semua hasil sesuai filter</strong>
                             <small>Setiap foto dikompres ke maksimal 2 MB sebelum dimasukkan ke ZIP.</small>
                         </span>
                     </div>
+                    <button type="button"
+                        class="rms-history-download-info-toggle"
+                        x-on:click="downloadInfoOpen = !downloadInfoOpen"
+                        :aria-expanded="downloadInfoOpen.toString()"
+                        :aria-label="downloadInfoOpen ? 'Sembunyikan detail download' : 'Tampilkan detail download'"
+                        :title="downloadInfoOpen ? 'Sembunyikan detail' : 'Tampilkan detail'">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
                     <button type="button" class="rms-history-download-button"
                         wire:click="downloadFilteredHistory"
                         wire:loading.attr="disabled"
@@ -7655,6 +7672,355 @@ body.rms-bulk-delete-lock{overflow:hidden}
 @media(max-width:380px){
     .rms-history-filter{flex-basis:155px!important;width:155px!important}
     .rms-history-download-button{gap:7px!important;padding:0 10px!important}
+}
+
+
+/* ---------- Recent History V4: collapsible ZIP details + mobile containment ---------- */
+.rms-generator-history-mobile-safe,
+.rms-generator-history-mobile-safe *{
+    box-sizing:border-box;
+}
+.rms-generator-history-mobile-safe{
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+}
+.rms-generator-history-mobile-safe .rms-generator-history-head-v2{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    flex-wrap:wrap!important;
+    min-width:0!important;
+    width:100%!important;
+}
+.rms-generator-history-mobile-safe .rms-history-title{
+    min-width:0!important;
+    flex:1 1 220px!important;
+}
+.rms-generator-history-mobile-safe .rms-history-title>div{min-width:0!important}
+.rms-generator-history-mobile-safe .rms-history-title small{
+    display:block!important;
+    overflow-wrap:anywhere!important;
+}
+.rms-generator-history-mobile-safe .rms-generator-history-head-actions{
+    min-width:0!important;
+    max-width:100%!important;
+    flex-wrap:wrap!important;
+}
+.rms-generator-history-mobile-safe .rms-history-toolbar,
+.rms-generator-history-mobile-safe .rms-history-search,
+.rms-generator-history-mobile-safe .rms-history-filter-group,
+.rms-generator-history-mobile-safe .rms-generator-history-grid,
+.rms-generator-history-mobile-safe .rms-generator-history-item{
+    min-width:0!important;
+    max-width:100%!important;
+}
+.rms-generator-history-mobile-safe .rms-history-bulk-actions{
+    display:flex!important;
+    align-items:center!important;
+    gap:8px!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    padding:9px 10px!important;
+    margin:10px 0!important;
+    border-radius:14px!important;
+    transition:box-shadow .22s ease,border-color .22s ease,background .22s ease!important;
+}
+.rms-generator-history-mobile-safe .rms-history-bulk-actions:hover{
+    border-color:#d6e9de!important;
+    box-shadow:0 7px 22px rgba(20,110,62,.06)!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-summary{
+    display:flex!important;
+    align-items:center!important;
+    gap:0!important;
+    flex:1 1 auto!important;
+    min-width:0!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-icon{
+    width:34px!important;
+    height:34px!important;
+    min-width:34px!important;
+    max-width:34px!important;
+    flex:0 0 34px!important;
+    border-radius:10px!important;
+    transition:transform .22s ease,background .22s ease!important;
+}
+.rms-generator-history-mobile-safe .rms-history-bulk-actions:hover .rms-history-download-icon{
+    transform:translateY(-1px);
+    background:#e6f9ee!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-icon svg{
+    width:18px!important;
+    height:18px!important;
+    min-width:18px!important;
+    max-width:18px!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-copy{
+    min-width:0!important;
+    padding-left:10px!important;
+    overflow:hidden!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-copy strong{
+    display:block!important;
+    font-size:12px!important;
+    line-height:1.4!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-copy small{
+    display:block!important;
+    font-size:10px!important;
+    line-height:1.45!important;
+    overflow-wrap:anywhere!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-info-toggle{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:30px!important;
+    height:30px!important;
+    min-width:30px!important;
+    flex:0 0 30px!important;
+    padding:0!important;
+    border:1px solid #e5e9ef!important;
+    border-radius:9px!important;
+    background:#fff!important;
+    color:#7c8492!important;
+    cursor:pointer!important;
+    transition:transform .22s ease,border-color .22s ease,background .22s ease!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-info-toggle:hover{
+    border-color:#b8e3c9!important;
+    background:#f3fbf6!important;
+    color:#13884a!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-info-toggle[aria-expanded="true"] svg{
+    transform:rotate(180deg);
+}
+.rms-generator-history-mobile-safe .rms-history-download-info-toggle svg{
+    display:block!important;
+    width:15px!important;
+    height:15px!important;
+    transition:transform .22s ease!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-button{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:7px!important;
+    min-width:0!important;
+    min-height:40px!important;
+    flex:0 0 auto!important;
+    padding:0 11px!important;
+    border-radius:11px!important;
+    white-space:nowrap!important;
+    transition:transform .2s ease,box-shadow .2s ease,filter .2s ease!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-button:hover:not(:disabled){
+    transform:translateY(-1px)!important;
+    filter:brightness(1.04)!important;
+    box-shadow:0 7px 17px rgba(21,148,81,.2)!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-button:active:not(:disabled){
+    transform:scale(.98)!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-button b{
+    font-size:9px!important;
+    padding:0 6px!important;
+}
+.rms-generator-history-mobile-safe .rms-history-toolbar-meta{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:10px!important;
+    flex-wrap:wrap!important;
+    min-width:0!important;
+}
+.rms-generator-history-mobile-safe .rms-generator-history-grid{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:12px!important;
+}
+.rms-generator-history-mobile-safe .rms-generation-card{
+    width:100%!important;
+    min-width:0!important;
+    overflow:hidden!important;
+}
+@media(max-width:760px){
+    .rms-generator-history-mobile-safe{
+        margin-top:12px!important;
+        margin-bottom:18px!important;
+        padding-left:0!important;
+        padding-right:0!important;
+        border-radius:18px!important;
+        overflow:clip!important;
+    }
+    .rms-generator-history-mobile-safe .rms-generator-history-head-v2{
+        align-items:flex-start!important;
+        gap:12px!important;
+        padding:14px 13px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-title{
+        flex:1 1 100%!important;
+        gap:9px!important;
+        align-items:flex-start!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-title>span{
+        flex:0 0 36px!important;
+        width:36px!important;
+        height:36px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-title strong{
+        font-size:14px!important;
+        line-height:1.35!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-title small{
+        font-size:10px!important;
+        line-height:1.45!important;
+        max-width:34ch!important;
+    }
+    .rms-generator-history-mobile-safe .rms-generator-history-head-actions{
+        display:flex!important;
+        align-items:center!important;
+        justify-content:flex-start!important;
+        width:100%!important;
+        gap:6px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-count{
+        min-height:34px!important;
+        padding:0 9px!important;
+        font-size:9px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-bulk-delete-trigger,
+    .rms-generator-history-mobile-safe .rms-generator-history-toggle{
+        min-height:34px!important;
+        padding:0 9px!important;
+        font-size:9px!important;
+        border-radius:10px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-toolbar{
+        padding:10px 12px!important;
+        gap:10px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-search{
+        width:100%!important;
+        min-height:43px!important;
+        border-radius:12px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-search > input{
+        min-width:0!important;
+        width:100%!important;
+        font-size:11px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-filter-group{
+        width:100%!important;
+        max-width:100%!important;
+        display:flex!important;
+        flex-wrap:nowrap!important;
+        overflow-x:auto!important;
+        overflow-y:hidden!important;
+        gap:8px!important;
+        padding:0 0 7px!important;
+        margin:0!important;
+        scrollbar-width:thin!important;
+        -webkit-overflow-scrolling:touch!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-filter{
+        flex:0 0 155px!important;
+        width:155px!important;
+        max-width:155px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-filter > button{
+        width:100%!important;
+        min-height:45px!important;
+        padding:8px 9px!important;
+        grid-template-columns:auto minmax(0,1fr) 10px!important;
+        gap:6px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-filter > button span{font-size:9px!important}
+    .rms-generator-history-mobile-safe .rms-history-filter > button b{font-size:10px!important}
+    .rms-generator-history-mobile-safe .rms-history-filter-menu{
+        z-index:999!important;
+        max-height:55vh!important;
+        overflow-y:auto!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-bulk-actions{
+        display:grid!important;
+        grid-template-columns:minmax(0,1fr) auto minmax(0,1.15fr)!important;
+        align-items:center!important;
+        gap:7px!important;
+        padding:9px!important;
+        margin:4px 0 8px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-download-summary{
+        display:flex!important;
+        min-width:0!important;
+        width:auto!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-download-icon{
+        width:32px!important;height:32px!important;min-width:32px!important;max-width:32px!important;flex-basis:32px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-download-icon svg{
+        width:17px!important;height:17px!important;min-width:17px!important;max-width:17px!important;flex-basis:17px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-download-copy{padding-left:7px!important}
+    .rms-generator-history-mobile-safe .rms-history-download-copy strong{font-size:10px!important}
+    .rms-generator-history-mobile-safe .rms-history-download-copy small{font-size:9px!important}
+    .rms-generator-history-mobile-safe .rms-history-download-info-toggle{
+        width:26px!important;height:26px!important;min-width:26px!important;flex-basis:26px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-download-button{
+        width:100%!important;
+        min-height:40px!important;
+        padding:0 8px!important;
+        gap:5px!important;
+        font-size:10px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-download-button-icon{font-size:15px!important}
+    .rms-generator-history-mobile-safe .rms-history-download-button b{font-size:8px!important;padding:0 5px!important}
+    .rms-generator-history-mobile-safe .rms-history-toolbar-meta{
+        padding:2px 0!important;
+        font-size:10px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-generator-history-grid{
+        grid-template-columns:minmax(0,1fr)!important;
+        gap:10px!important;
+        padding:10px 12px 14px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-generation-card{
+        padding:10px!important;
+        border-radius:14px!important;
+    }
+}
+@media(max-width:420px){
+    .rms-generator-history-mobile-safe .rms-history-bulk-actions{
+        grid-template-columns:minmax(0,1fr) auto!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-download-summary{
+        grid-column:1/-1!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-download-info-toggle{
+        position:absolute!important;
+        top:8px!important;
+        right:8px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-bulk-actions{
+        position:relative!important;
+        padding-top:42px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-download-button{
+        grid-column:1/-1!important;
+    }
+}
+@media(prefers-reduced-motion:reduce){
+    .rms-generator-history-mobile-safe .rms-history-bulk-actions,
+    .rms-generator-history-mobile-safe .rms-history-download-button,
+    .rms-generator-history-mobile-safe .rms-history-download-icon,
+    .rms-generator-history-mobile-safe .rms-history-download-info-toggle,
+    .rms-generator-history-mobile-safe .rms-history-download-info-toggle svg{
+        transition:none!important;
+        animation:none!important;
+    }
 }
 
 </style>
