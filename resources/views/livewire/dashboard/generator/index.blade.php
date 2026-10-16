@@ -6070,6 +6070,171 @@ body.rms-bulk-delete-lock{overflow:hidden}
     }
 }
 
+/* ---------- Premium template gallery container V3 ---------- */
+.rms-generator-workspace-animated .rms-generator-selection{
+    padding:clamp(16px,2.2vw,26px)!important;
+    border:1px solid #e8eaf0!important;
+    border-radius:22px!important;
+    background:linear-gradient(180deg,#fff 0%,#fdfdfe 100%)!important;
+    box-shadow:0 10px 32px rgba(24,28,38,.035),0 1px 2px rgba(24,28,38,.025);
+}
+.rms-generator-workspace-animated .rms-generator-template-heading{
+    margin-bottom:18px!important;
+}
+.rms-generator-workspace-animated .rms-generator-template-heading label{
+    display:block;
+    color:#22252d;
+    font-size:13px;
+    font-weight:800;
+    letter-spacing:-.025em;
+}
+.rms-generator-workspace-animated .rms-generator-template-heading small{
+    color:#858b98;
+    font-size:11px;
+    line-height:1.55;
+}
+.rms-generator-workspace-animated .rms-generator-filter-row{
+    gap:11px!important;
+    margin-bottom:13px!important;
+}
+.rms-generator-workspace-animated .rms-generator-search-enhanced,
+.rms-generator-workspace-animated .rms-generator-store-filter .rms-generator-store-trigger{
+    min-height:46px!important;
+    border:1px solid #e1e5ec!important;
+    border-radius:13px!important;
+    background:#fff!important;
+    box-shadow:0 2px 5px rgba(20,24,35,.025);
+    transition:border-color .18s ease,box-shadow .18s ease;
+}
+.rms-generator-workspace-animated .rms-generator-search-enhanced:focus-within,
+.rms-generator-workspace-animated .rms-generator-store-filter .rms-generator-store-trigger:focus-visible{
+    border-color:#f29aa5!important;
+    box-shadow:0 0 0 3px rgba(239,35,60,.08)!important;
+}
+.rms-generator-workspace-animated .rms-generator-chips{
+    gap:7px!important;
+    padding:2px 1px 10px!important;
+    margin-bottom:7px!important;
+}
+.rms-generator-workspace-animated .rms-filter-chip{
+    min-height:33px!important;
+    padding:0 14px!important;
+    border-color:#e3e6ec!important;
+    border-radius:999px!important;
+    color:#687080!important;
+    background:#fff!important;
+    font-size:11px!important;
+    font-weight:750!important;
+    transition:background .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease;
+}
+.rms-generator-workspace-animated .rms-filter-chip:hover{
+    border-color:#f3b0b8!important;
+    color:#d91f35!important;
+    background:#fff8f9!important;
+}
+.rms-generator-workspace-animated .rms-filter-chip.active{
+    color:#fff!important;
+    background:#ef233c!important;
+    border-color:#ef233c!important;
+    box-shadow:0 5px 13px rgba(239,35,60,.18)!important;
+}
+.rms-generator-workspace-animated .rms-generator-template-grid{
+    gap:13px!important;
+    padding:3px 2px 6px!important;
+}
+.rms-generator-workspace-animated .rms-generator-template-card{
+    padding:8px!important;
+    border:1px solid #e5e8ee!important;
+    border-radius:17px!important;
+    background:#fff!important;
+    box-shadow:0 3px 9px rgba(22,27,38,.025)!important;
+}
+.rms-generator-workspace-animated .rms-generator-template-card:hover{
+    border-color:#d8dce5!important;
+    box-shadow:0 11px 26px rgba(22,27,38,.075)!important;
+}
+.rms-generator-workspace-animated .rms-generator-template-card.selected{
+    border-color:rgba(239,35,60,.75)!important;
+    box-shadow:0 0 0 2px rgba(239,35,60,.075),0 9px 24px rgba(239,35,60,.07)!important;
+}
+.rms-generator-workspace-animated .rms-generator-template-image{
+    aspect-ratio:1.28/1!important;
+    border:1px solid #edf0f4!important;
+    border-radius:12px!important;
+    background:linear-gradient(145deg,#f8f9fb,#f0f2f6)!important;
+}
+.rms-generator-workspace-animated .rms-generator-template-copy{
+    min-height:40px!important;
+    padding:10px 2px 2px!important;
+    gap:8px!important;
+}
+.rms-generator-workspace-animated .rms-generator-template-copy strong{
+    font-size:11.5px!important;
+    line-height:1.45!important;
+    letter-spacing:-.015em;
+}
+.rms-generator-workspace-animated .rms-generator-template-copy small span:first-child{
+    min-width:31px;
+    min-height:25px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:8px!important;
+    border-color:#e7eaf0!important;
+    background:#f8f9fb!important;
+}
+.rms-generator-workspace-animated .rms-generator-no-template{
+    border:1px dashed #dfe3eb;
+    border-radius:15px;
+    background:#fafbfc;
+}
+@media(min-width:1000px){
+    .rms-generator-workspace-animated .rms-generator-template-grid{
+        grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    }
+}
+@media(max-width:760px){
+    .rms-generator-workspace-animated .rms-generator-selection{
+        padding:15px!important;
+        border-radius:18px!important;
+    }
+    .rms-generator-workspace-animated .rms-generator-template-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr))!important;
+        gap:10px!important;
+    }
+}
+@media(max-width:420px){
+    .rms-generator-workspace-animated .rms-generator-selection{
+        padding:12px!important;
+        border-radius:16px!important;
+    }
+    .rms-generator-workspace-animated .rms-generator-template-grid{
+        gap:8px!important;
+    }
+    .rms-generator-workspace-animated .rms-generator-template-card{
+        padding:6px!important;
+        border-radius:14px!important;
+    }
+    .rms-generator-workspace-animated .rms-generator-template-image{
+        aspect-ratio:1.04/1!important;
+        border-radius:9px!important;
+    }
+    .rms-generator-workspace-animated .rms-generator-template-copy{
+        min-height:35px!important;
+        padding-top:8px!important;
+    }
+    .rms-generator-workspace-animated .rms-generator-template-copy strong{
+        font-size:10.5px!important;
+    }
+}
+@media(prefers-reduced-motion:reduce){
+    .rms-generator-workspace-animated .rms-generator-search-enhanced,
+    .rms-generator-workspace-animated .rms-generator-store-filter .rms-generator-store-trigger,
+    .rms-generator-workspace-animated .rms-filter-chip{
+        transition:none!important;
+    }
+}
+
 /* ---------- Store identity hover overlay ---------- */
 .rms-generator-workspace-animated .rms-generator-template-image{
     position:relative;
