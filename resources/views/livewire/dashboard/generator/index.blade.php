@@ -211,7 +211,6 @@ new class extends Component
     public function getHistoryDownloadImageCountProperty(): int
     {
         $query = (clone $this->historyQuery())
-            ->without(['store', 'template', 'generatedImages'])
             ->whereHas('generatedImages', fn ($images) => $images
                 ->whereNotNull('image_path')
                 ->where('image_path', '<>', ''));
@@ -243,7 +242,7 @@ new class extends Component
 
     public function downloadFilteredHistory()
     {
-        if (! class_exists(\\ZipArchive::class)) {
+        if (! class_exists(\ZipArchive::class)) {
             $this->dispatch('toast', type: 'error', title: 'ZIP tidak tersedia', message: 'Ekstensi PHP ZIP belum aktif di server.');
             return null;
         }
@@ -285,21 +284,21 @@ new class extends Component
             return null;
         }
 
-        $zip = new \\ZipArchive();
-        if ($zip->open($tempPath, \\ZipArchive::OVERWRITE) !== true) {
+        $zip = new \ZipArchive();
+        if ($zip->open($tempPath, \ZipArchive::OVERWRITE) !== true) {
             @unlink($tempPath);
             $this->dispatch('toast', type: 'error', title: 'Gagal menyiapkan ZIP', message: 'File ZIP tidak dapat dibuka.');
             return null;
         }
 
-        $disk = \\Illuminate\\Support\\Facades\\Storage::disk('public');
+        $disk = \Illuminate\Support\Facades\Storage::disk('public');
         $added = 0;
 
         try {
             foreach ($generations as $generation) {
                 $imageIndex = 0;
-                $safeStore = \\Illuminate\\Support\\Str::slug($generation->store?->name ?: 'store');
-                $safeTemplate = \\Illuminate\\Support\\Str::slug($generation->template?->name ?: 'template');
+                $safeStore = \Illuminate\Support\Str::slug($generation->store?->name ?: 'store');
+                $safeTemplate = \Illuminate\Support\Str::slug($generation->template?->name ?: 'template');
                 $generationMetadata = is_array($generation->metadata) ? $generation->metadata : [];
                 $title = trim((string) (
                     data_get($generationMetadata, 'requested_custom_title')
@@ -307,7 +306,7 @@ new class extends Component
                     ?: data_get($generationMetadata, 'final_title')
                     ?: ''
                 ));
-                $safeTitle = \\Illuminate\\Support\\Str::slug($title) ?: 'generated-product';
+                $safeTitle = \Illuminate\Support\Str::slug($title) ?: 'generated-product';
 
                 foreach ($generation->generatedImages as $image) {
                     $path = $image->image_path;
@@ -332,7 +331,7 @@ new class extends Component
                     );
 
                     if (! $zip->addFromString($filename, $optimized)) {
-                        throw new \\RuntimeException('Gagal menambahkan foto ke dalam ZIP.');
+                        throw new \RuntimeException('Gagal menambahkan foto ke dalam ZIP.');
                     }
 
                     $added++;
@@ -347,12 +346,12 @@ new class extends Component
             }
 
             if (! $zip->close()) {
-                throw new \\RuntimeException('File ZIP gagal diselesaikan.');
+                throw new \RuntimeException('File ZIP gagal diselesaikan.');
             }
-        } catch (\\Throwable $exception) {
+        } catch (\Throwable $exception) {
             try {
                 $zip->close();
-            } catch (\\Throwable) {
+            } catch (\Throwable) {
                 // Ignore a secondary close failure while cleaning up the failed archive.
             }
 
@@ -380,14 +379,14 @@ new class extends Component
     {
         $sourceBinary = file_get_contents($absolutePath);
         if ($sourceBinary === false) {
-            throw new \\RuntimeException('File gambar tidak dapat dibaca.');
+            throw new \RuntimeException('File gambar tidak dapat dibaca.');
         }
 
         $sourceImage = @imagecreatefromstring($sourceBinary);
         unset($sourceBinary);
 
-        if (! $sourceImage instanceof \\GdImage) {
-            throw new \\RuntimeException('Format gambar tidak dapat diproses oleh GD.');
+        if (! $sourceImage instanceof \GdImage) {
+            throw new \RuntimeException('Format gambar tidak dapat diproses oleh GD.');
         }
 
         $sourceWidth = imagesx($sourceImage);
@@ -400,8 +399,8 @@ new class extends Component
         try {
             for ($attempt = 0; $attempt < 24; $attempt++) {
                 $canvas = imagecreatetruecolor($currentWidth, $currentHeight);
-                if (! $canvas instanceof \\GdImage) {
-                    throw new \\RuntimeException('Canvas kompresi gambar gagal dibuat.');
+                if (! $canvas instanceof \GdImage) {
+                    throw new \RuntimeException('Canvas kompresi gambar gagal dibuat.');
                 }
 
                 $white = imagecolorallocate($canvas, 255, 255, 255);
@@ -447,7 +446,7 @@ new class extends Component
         }
 
         if (! is_string($result) || strlen($result) > $maxBytes) {
-            throw new \\RuntimeException('Foto tidak dapat dikompresi hingga di bawah 2 MB.');
+            throw new \RuntimeException('Foto tidak dapat dikompresi hingga di bawah 2 MB.');
         }
 
         return $result;
