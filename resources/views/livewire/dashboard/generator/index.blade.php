@@ -8117,6 +8117,12 @@ body.rms-bulk-delete-lock{overflow:hidden}
 .rms-generator-history-mobile-safe .rms-generator-history-grid.rms-generator-history-list .rms-generation-actions{
     gap:6px!important;
 }
+@media(min-width:1400px){
+    .rms-generator-history-mobile-safe .rms-generator-history-grid.rms-generator-history-list{
+        grid-template-columns:repeat(3,minmax(0,1fr))!important;
+        gap:14px!important;
+    }
+}
 @media(max-width:1399px){
     .rms-generator-history-mobile-safe .rms-generator-history-grid.rms-generator-history-list{
         grid-template-columns:repeat(3,minmax(0,1fr))!important;
