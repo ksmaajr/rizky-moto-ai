@@ -297,16 +297,29 @@ new class extends Component
         try {
             foreach ($generations as $generation) {
                 $imageIndex = 0;
-                $safeStore = \Illuminate\Support\Str::slug($generation->store?->name ?: 'store');
-                $safeTemplate = \Illuminate\Support\Str::slug($generation->template?->name ?: 'template');
+                // Use the Store's actual display name as the ZIP folder (keep spaces).
+                $storeName = trim((string) ($generation->store?->name ?: 'Store'));
+                $safeStore = preg_replace('/[\\\\\\/:*?"<>|]+/u', '', $storeName) ?: 'Store';
+                $safeStore = trim($safeStore, " .\\t\\n\\r\\0\\x0B");
+                if ($safeStore === '') {
+                    $safeStore = 'Store';
+                }
+
                 $generationMetadata = is_array($generation->metadata) ? $generation->metadata : [];
                 $title = trim((string) (
                     data_get($generationMetadata, 'requested_custom_title')
                     ?: data_get($generationMetadata, 'custom_title')
                     ?: data_get($generationMetadata, 'final_title')
+                    ?: data_get($generationMetadata, 'product_title')
+                    ?: data_get($generationMetadata, 'title')
                     ?: ''
                 ));
-                $safeTitle = \Illuminate\Support\Str::slug($title) ?: 'generated-product';
+                // Keep the generated title readable: no slug/hyphen conversion.
+                $safeTitle = preg_replace('/[\\\\\\/:*?"<>|]+/u', '', $title);
+                $safeTitle = trim((string) $safeTitle, " .\\t\\n\\r\\0\\x0B");
+                if ($safeTitle === '') {
+                    $safeTitle = 'Hasil Generation ' . $generation->id;
+                }
 
                 foreach ($generation->generatedImages as $image) {
                     $path = $image->image_path;
@@ -321,14 +334,9 @@ new class extends Component
 
                     $optimized = $this->encodeHistoryImageUnderLimit($absolute, 2 * 1024 * 1024);
                     $imageIndex++;
-                    $filename = sprintf(
-                        'generation-%d/%s-%s-%s-%02d.jpg',
-                        $generation->id,
-                        $safeStore,
-                        $safeTemplate,
-                        $safeTitle,
-                        $imageIndex
-                    );
+                    $filename = $safeStore . '/' . $safeTitle
+                        . ($imageIndex > 1 ? ' (' . $imageIndex . ')' : '')
+                        . '.jpg';
 
                     if (! $zip->addFromString($filename, $optimized)) {
                         throw new \RuntimeException('Gagal menambahkan foto ke dalam ZIP.');
@@ -7520,6 +7528,133 @@ body.rms-bulk-delete-lock{overflow:hidden}
     .rms-generator-workspace-animated .rms-history-bulk-actions{align-items:stretch!important;padding:12px!important;border-radius:15px!important}
     .rms-generator-workspace-animated .rms-history-download-summary{flex-basis:100%!important}
     .rms-generator-workspace-animated .rms-history-download-button{width:100%!important;min-height:45px!important}
+}
+
+
+/* ---------- Recent History V3: balanced filters and ZIP action on every device ---------- */
+.rms-history-toolbar{min-width:0!important}
+.rms-history-filter-group{
+    display:grid!important;
+    grid-template-columns:repeat(7,minmax(0,1fr))!important;
+    align-items:stretch!important;
+    gap:10px!important;
+    overflow:visible!important;
+    padding:0!important;
+}
+.rms-history-filter{min-width:0!important;width:100%!important;flex:initial!important}
+.rms-history-filter > button{
+    display:grid!important;
+    grid-template-columns:auto minmax(0,1fr) 12px!important;
+    align-items:center!important;
+    gap:8px!important;
+    width:100%!important;
+    min-width:0!important;
+    min-height:54px!important;
+    padding:10px 12px!important;
+    border-radius:14px!important;
+}
+.rms-history-filter > button span{
+    min-width:0!important;
+    font-size:10px!important;
+    letter-spacing:.07em!important;
+}
+.rms-history-filter > button b{
+    display:block!important;
+    min-width:0!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+    font-size:12px!important;
+}
+.rms-history-filter > button i{justify-self:end!important}
+.rms-history-filter-menu{z-index:120!important;max-width:calc(100vw - 24px)!important}
+.rms-history-clear-all{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:6px!important;
+    min-height:44px!important;
+    padding:0 13px!important;
+    border:1px solid #e2e6ed!important;
+    border-radius:12px!important;
+    background:#fff!important;
+    color:#687181!important;
+    font-size:11px!important;
+    font-weight:750!important;
+    white-space:nowrap!important;
+}
+.rms-history-bulk-actions{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:16px!important;
+    width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+    padding:13px 15px!important;
+    margin:14px 0 12px!important;
+    border:1px solid #e7eaf0!important;
+    border-radius:16px!important;
+    background:linear-gradient(135deg,#fff,#fafbfc)!important;
+    box-shadow:0 4px 14px rgba(22,27,38,.025)!important;
+}
+.rms-history-download-summary{display:flex!important;align-items:center!important;gap:11px!important;min-width:0!important;flex:1 1 300px!important}
+.rms-history-download-icon{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:40px!important;height:40px!important;min-width:40px!important;max-width:40px!important;flex:0 0 40px!important;overflow:hidden!important}
+.rms-history-download-icon svg{width:20px!important;height:20px!important;min-width:20px!important;max-width:20px!important;flex:0 0 20px!important}
+.rms-history-download-copy{display:flex!important;flex-direction:column!important;gap:4px!important;min-width:0!important}
+.rms-history-download-copy strong{font-size:12px!important;line-height:1.4!important}
+.rms-history-download-copy small{font-size:11px!important;line-height:1.45!important}
+.rms-history-download-button{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:9px!important;
+    min-height:44px!important;
+    min-width:160px!important;
+    flex:0 0 auto!important;
+    padding:0 14px!important;
+    white-space:nowrap!important;
+}
+.rms-history-download-button b{white-space:nowrap!important}
+@media(max-width:1200px){
+    .rms-history-filter-group{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
+@media(max-width:760px){
+    .rms-history-filter-group{
+        display:flex!important;
+        flex-wrap:nowrap!important;
+        gap:8px!important;
+        overflow-x:auto!important;
+        overflow-y:visible!important;
+        padding:0 0 7px!important;
+        margin-right:-2px!important;
+        scrollbar-width:thin!important;
+        -webkit-overflow-scrolling:touch;
+    }
+    .rms-history-filter{flex:0 0 172px!important;width:172px!important}
+    .rms-history-filter > button{min-height:48px!important;padding:9px 10px!important;gap:7px!important}
+    .rms-history-filter > button span{font-size:9px!important}
+    .rms-history-filter > button b{font-size:11px!important}
+    .rms-history-filter-menu{position:fixed!important;left:12px!important;right:12px!important;width:auto!important;max-width:none!important;max-height:55vh!important;overflow-y:auto!important}
+    .rms-history-clear-all{flex:0 0 auto!important;min-height:42px!important}
+    .rms-history-bulk-actions{
+        align-items:stretch!important;
+        flex-direction:column!important;
+        gap:12px!important;
+        padding:12px!important;
+        margin:12px 0!important;
+        border-radius:15px!important;
+    }
+    .rms-history-download-summary{flex:0 1 auto!important;width:100%!important}
+    .rms-history-download-icon{width:36px!important;height:36px!important;min-width:36px!important;max-width:36px!important;flex-basis:36px!important}
+    .rms-history-download-icon svg{width:18px!important;height:18px!important;min-width:18px!important;max-width:18px!important;flex-basis:18px!important}
+    .rms-history-download-copy strong{font-size:11px!important}
+    .rms-history-download-copy small{font-size:10px!important}
+    .rms-history-download-button{width:100%!important;min-width:0!important;min-height:44px!important}
+}
+@media(max-width:380px){
+    .rms-history-filter{flex-basis:155px!important;width:155px!important}
+    .rms-history-download-button{gap:7px!important;padding:0 10px!important}
 }
 
 </style>
