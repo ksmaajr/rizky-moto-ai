@@ -8314,7 +8314,7 @@ body.rms-bulk-delete-lock{overflow:hidden}
 .rms-generator-history-mobile-safe .rms-history-download-trigger-copy small{font-size:10px!important;color:#7a8b81!important}
 .rms-generator-history-mobile-safe .rms-history-download-trigger-chevron{font-size:16px!important;opacity:.65!important}
 .rms-history-download-modal{
- position:fixed!important;inset:0!important;z-index:100000!important;display:flex!important;align-items:center!important;justify-content:center!important;
+ position:fixed!important;inset:0!important;z-index:100000!important;display:flex;align-items:center!important;justify-content:center!important;
  padding:24px!important;background:rgba(13,17,23,.68)!important;backdrop-filter:blur(9px)!important;-webkit-backdrop-filter:blur(9px)!important;
 }
 .rms-history-download-modal[x-cloak]{display:none!important}
