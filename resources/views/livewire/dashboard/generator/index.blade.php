@@ -7430,6 +7430,53 @@ body.rms-bulk-delete-lock{overflow:hidden}
 }
 
 
+
+/* ---------- V2 hotfix: Recent History ZIP toolbar is outside generator workspace wrapper ---------- */
+.rms-history-bulk-actions{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:14px!important;
+    flex-wrap:wrap!important;
+    padding:14px 16px!important;
+    margin:0 0 12px!important;
+    border:1px solid #e7eaf0!important;
+    border-radius:17px!important;
+    background:linear-gradient(135deg,#fff 0%,#fafbfc 100%)!important;
+    box-shadow:0 4px 14px rgba(22,27,38,.025)!important;
+}
+.rms-history-download-summary{display:flex!important;align-items:center!important;gap:11px!important;min-width:0!important;flex:1 1 280px!important}
+.rms-history-download-icon{
+    display:inline-flex!important;align-items:center!important;justify-content:center!important;
+    width:40px!important;height:40px!important;min-width:40px!important;max-width:40px!important;
+    min-height:40px!important;max-height:40px!important;flex:0 0 40px!important;
+    padding:0!important;overflow:hidden!important;border:1px solid #d9f3e4!important;
+    border-radius:13px!important;background:#effbf4!important;color:#159451!important;
+}
+.rms-history-download-icon svg{
+    display:block!important;width:20px!important;height:20px!important;
+    min-width:20px!important;max-width:20px!important;min-height:20px!important;max-height:20px!important;
+    flex:0 0 20px!important;position:static!important;inset:auto!important;transform:none!important;
+}
+.rms-history-download-copy{display:flex!important;min-width:0!important;flex-direction:column!important;gap:4px!important}
+.rms-history-download-copy strong{color:#272b34!important;font-size:12px!important;font-weight:800!important;line-height:1.4!important}
+.rms-history-download-copy small{color:#828896!important;font-size:10px!important;line-height:1.45!important}
+.rms-history-download-button{
+    display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;
+    min-height:43px!important;flex:0 0 auto!important;padding:0 15px!important;
+    border:1px solid #168b4c!important;border-radius:12px!important;
+    background:linear-gradient(135deg,#159451,#0f8042)!important;color:#fff!important;
+    box-shadow:0 5px 13px rgba(21,148,81,.17)!important;font-size:11px!important;font-weight:800!important;
+}
+.rms-history-download-button b{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-height:24px!important;padding:0 7px!important;border:1px solid rgba(255,255,255,.24)!important;border-radius:7px!important;background:rgba(255,255,255,.14)!important;color:#fff!important;font-size:10px!important;white-space:nowrap!important}
+.rms-history-download-button-icon{font-size:17px!important;line-height:1!important}
+.rms-history-download-spinner{width:14px!important;height:14px!important;border:2px solid rgba(255,255,255,.35)!important;border-top-color:#fff!important;border-radius:50%!important;animation:rmsHistoryZipSpin .7s linear infinite!important}
+@media(max-width:760px){
+ .rms-history-bulk-actions{align-items:stretch!important;padding:12px!important;border-radius:15px!important}
+ .rms-history-download-summary{flex-basis:100%!important}
+ .rms-history-download-button{width:100%!important;min-height:45px!important}
+}
+
 /* ---------- Recent History: filter-aware ZIP download ---------- */
 .rms-generator-workspace-animated .rms-history-bulk-actions{
     display:flex!important;align-items:center!important;justify-content:space-between!important;
