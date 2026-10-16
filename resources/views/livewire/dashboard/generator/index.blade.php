@@ -59,12 +59,8 @@ new class extends Component
 
     public function getTemplatesProperty()
     {
-        if (!$this->selectedStoreId) {
-            return collect();
-        }
-
         return Template::query()
-            ->where('store_id', $this->selectedStoreId)
+            ->when($this->selectedStoreId, fn ($query) => $query->where('store_id', $this->selectedStoreId))
             ->where('is_active', true)
             ->when($this->templateSearch !== '', function ($query) {
                 $keyword = '%' . trim($this->templateSearch) . '%';
@@ -493,8 +489,7 @@ new class extends Component
     public function toggleTemplate(int $templateId): void
     {
         $template = Template::query()
-            ->where('id', $templateId)
-            ->where('store_id', $this->selectedStoreId)
+            ->whereKey($templateId)
             ->where('is_active', true)
             ->firstOrFail();
 
@@ -503,9 +498,12 @@ new class extends Component
             return;
         }
 
-        $this->selectedTemplateId = $templateId;
+        // Selecting a template also selects its owner Store, preserving the
+        // Store -> Template -> logo/prompt relationship for generation.
+        $this->selectedStoreId = (int) $template->store_id;
+        $this->selectedTemplateId = (int) $template->id;
 
-        // Template adalah source of truth untuk default generator settings.
+        // Template is the source of truth for generation defaults.
         $this->aspectRatio = '1:1';
         $this->quality = 'low';
     }
@@ -677,14 +675,25 @@ new class extends Component
     {
         $generation = $this->ownedGeneration($generationId);
 
+        // Never cancel an in-flight provider request just to retry it: that can
+        // waste a paid request and the original job may still complete remotely.
         if (in_array($generation->status, ['queued', 'processing'], true)) {
-            $generation->update([
-                'status' => 'cancelled', 'completed_at' => now(),
-                'metadata' => array_merge($generation->metadata ?? [], [
-                    'progress_stage' => 'Dibatalkan untuk retry', 'cancelled_at' => now()->toIso8601String(),
-                ]),
-            ]);
-        } elseif (! in_array($generation->status, ['failed', 'cancelled', 'completed'], true)) {
+            $this->dispatch('toast', type: 'warning', title: 'Generation masih berjalan', message: 'Tunggu proses ini selesai atau gagal sebelum mencoba lagi. Retry tidak membatalkan request provider yang sedang berjalan.');
+            return;
+        }
+
+        // Completed output should be reused/downloaded, not regenerated. A new
+        // provider request may incur a new charge and cannot be promised free.
+        if (in_array($generation->status, ['completed', 'success', 'succeeded'], true)) {
+            if ($generation->generatedImages()->whereNotNull('image_path')->exists()) {
+                $this->dispatch('toast', type: 'info', title: 'Hasil sudah tersedia', message: 'Buka preview atau download hasil yang sudah ada. Generate ulang dapat menimbulkan biaya provider baru.');
+            } else {
+                $this->dispatch('toast', type: 'warning', title: 'Hasil tidak ditemukan', message: 'Generation berstatus selesai tetapi file hasil tidak tersedia. Periksa storage sebelum membuat request baru.');
+            }
+            return;
+        }
+
+        if ($generation->status !== 'failed' && $generation->status !== 'cancelled') {
             return;
         }
 
@@ -971,7 +980,7 @@ new class extends Component
             <span class="rms-generator-note-icon">✦</span>
             <div>
                 <strong>Template based generation</strong>
-                <small>Pilih Store terlebih dahulu untuk melihat template yang tersedia.</small>
+                <small>Semua template aktif tersedia. Pilih template; Store pemilik akan dipilih otomatis.</small>
             </div>
         </div>
     </div>
@@ -1007,7 +1016,7 @@ new class extends Component
                         <div>
                             <span>STEP 01</span>
                             <h2>Pilih Store & Template</h2>
-                            <p>Template akan menyesuaikan dengan Store yang dipilih.</p>
+                            <p>Jelajahi semua template aktif; filter Store bersifat opsional.</p>
                         </div>
                     </div>
 
@@ -1070,16 +1079,13 @@ new class extends Component
 
                     <div class="rms-generator-template-heading">
                         <label class="rms-generator-field-label">Template <em>*</em></label>
-                        @if($this->selectedStore)
-                            <span>{{ $this->templates->count() }} tersedia</span>
-                        @endif
+                        <span>{{ $this->templates->count() }} template tersedia</span>
                     </div>
 
                     <div class="rms-generator-search">
                         <span>⌕</span>
                         <input type="text" wire:model.live.debounce.250ms="templateSearch"
-                            placeholder="{{ $this->selectedStore ? 'Cari template...' : 'Pilih Store terlebih dahulu' }}"
-                            @disabled(!$this->selectedStore)>
+                            placeholder="Cari nama atau deskripsi template...">
                     </div>
 
                     <div class="rms-generator-chips rms-filter-drag">
@@ -1087,7 +1093,7 @@ new class extends Component
                             <button type="button"
                                 class="rms-filter-chip {{ $templateCategory === $key ? 'active' : '' }}"
                                 wire:click="$set('templateCategory','{{ $key }}')"
-                                @disabled(!$this->selectedStore)>
+                                 >
                                 {{ $label }}
                             </button>
                         @endforeach
@@ -1116,8 +1122,8 @@ new class extends Component
                         @empty
                             <div class="rms-generator-no-template">
                                 <span>✦</span>
-                                <strong>{{ $this->selectedStore ? 'Belum ada template aktif' : 'Pilih Store terlebih dahulu' }}</strong>
-                                <small>{{ $this->selectedStore ? 'Tambahkan template dari Template Library.' : 'Template akan muncul otomatis setelah Store dipilih.' }}</small>
+                                <strong>Tidak ada template yang cocok</strong>
+                                <small>Coba ubah pencarian atau filter kategori/Store.</small>
                             </div>
                         @endforelse
                     </div>
