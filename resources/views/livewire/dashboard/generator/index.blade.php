@@ -8489,4 +8489,119 @@ body > .rms-history-download-modal{position:fixed!important;inset:0!important;z-
  pointer-events:none;
 }
 .rms-generator-upload-box{transition:border-color .18s ease,box-shadow .18s ease,background .18s ease,transform .18s ease}
+
+/* ============================================================
+   UPLOAD PREVIEW V2 — clean image stage, consistent proportions
+   ============================================================ */
+.rms-generator-upload-box .rms-upload-preview-wrap{
+    position:relative;
+    display:grid;
+    place-items:center;
+    width:100%;
+    height:clamp(260px, 30vw, 390px);
+    min-height:260px;
+    padding:14px;
+    overflow:hidden;
+    isolation:isolate;
+    border-top:1px solid #edf0f4;
+    border-bottom:1px solid #edf0f4;
+    background:
+        radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.98),transparent 72%),
+        linear-gradient(145deg,#f8fafc 0%,#eef1f5 100%);
+}
+.rms-generator-upload-box .rms-upload-preview-wrap::before{
+    content:"";
+    position:absolute;
+    inset:10px;
+    border:1px solid rgba(148,163,184,.16);
+    border-radius:12px;
+    pointer-events:none;
+    z-index:0;
+}
+.rms-generator-upload-box .rms-upload-preview-wrap img{
+    position:relative;
+    z-index:1;
+    display:block;
+    width:100%;
+    height:100%;
+    max-width:100%;
+    max-height:100%;
+    object-fit:contain;
+    object-position:center;
+    border-radius:10px;
+    filter:drop-shadow(0 8px 14px rgba(15,23,42,.12));
+}
+.rms-generator-upload-box .rms-upload-preview-shade{
+    position:absolute;
+    inset:0;
+    z-index:2;
+    background:linear-gradient(180deg,rgba(15,23,42,.06),transparent 24%,transparent 72%,rgba(15,23,42,.04));
+    opacity:.55;
+    pointer-events:none;
+}
+.rms-generator-upload-box .rms-generator-remove{
+    position:absolute;
+    z-index:4;
+    top:14px;
+    right:14px;
+    display:grid;
+    place-items:center;
+    width:38px;
+    height:38px;
+    border:1px solid rgba(255,255,255,.75);
+    border-radius:12px;
+    background:rgba(31,41,55,.78);
+    color:#fff;
+    font-size:22px;
+    line-height:1;
+    box-shadow:0 5px 16px rgba(15,23,42,.18);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+}
+.rms-generator-upload-box .rms-generator-remove:hover{
+    background:#ef233c;
+    border-color:#ef233c;
+}
+.rms-generator-upload-box .rms-upload-complete{
+    position:absolute;
+    z-index:4;
+    left:14px;
+    bottom:14px;
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    min-height:30px;
+    padding:6px 11px;
+    border:1px solid rgba(255,255,255,.7);
+    border-radius:999px;
+    background:rgba(17,24,39,.76);
+    color:#fff;
+    font-size:11px;
+    font-weight:750;
+    letter-spacing:.01em;
+    box-shadow:0 4px 12px rgba(15,23,42,.12);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+}
+.rms-generator-upload-box .rms-upload-complete::first-letter{color:#86efac}
+.rms-generator-upload-box.has-image{
+    border-color:#dcefe4;
+    background:#fff;
+}
+.rms-generator-upload-box.has-image:hover{
+    transform:none;
+}
+@media (max-width:640px){
+    .rms-generator-upload-box .rms-upload-preview-wrap{
+        height:clamp(230px,72vw,340px);
+        min-height:230px;
+        padding:10px;
+    }
+    .rms-generator-upload-box .rms-upload-preview-wrap::before{inset:7px;border-radius:10px}
+    .rms-generator-upload-box .rms-generator-remove{
+        top:11px;right:11px;width:34px;height:34px;border-radius:11px;
+    }
+    .rms-generator-upload-box .rms-upload-complete{left:11px;bottom:11px;min-height:27px;padding:5px 9px}
+}
+
 </style>
