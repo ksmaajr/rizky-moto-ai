@@ -802,6 +802,22 @@ new class extends Component
             return;
         }
 
+        $existingMetadata = $generation->metadata ?? [];
+        $providerMayHaveBeenCalled = filled(data_get($existingMetadata, 'worker_started_at'))
+            || filled(data_get($existingMetadata, 'provider_request_started_at'))
+            || filled(data_get($existingMetadata, 'provider_request_id'))
+            || filled(data_get($existingMetadata, 'provider_response_received_at'));
+
+        if ($providerMayHaveBeenCalled) {
+            $this->dispatch(
+                'toast',
+                type: 'warning',
+                title: 'Retry otomatis diblokir demi biaya',
+                message: 'Worker/provider sudah mulai menangani request ini. Biaya request sebelumnya tidak dapat dipastikan dari status lokal, jadi retry tidak dijalankan otomatis. Periksa detail error/provider terlebih dahulu.'
+            );
+            return;
+        }
+
         // Old generations can lose their original source file after a storage
         // migration/cleanup. Do not dispatch a retry that is guaranteed to fail.
         // Prefer the original product; otherwise use the primary generated image
