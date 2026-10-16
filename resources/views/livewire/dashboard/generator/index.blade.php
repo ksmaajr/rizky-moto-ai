@@ -27,6 +27,7 @@ new class extends Component
     public string $historyModel = 'all';
     public string $historyDateRange = 'all';
     public string $historySort = 'newest';
+    public string $historyZipName = '';
     public int $recentHistoryLimit = 12;
 
     public $imageOne = null;
@@ -380,9 +381,18 @@ new class extends Component
             message: $added . ' foto sudah dioptimalkan (maks. 2 MB per foto) dan dimasukkan ke ZIP.'
         );
 
+        $zipBaseName = trim((string) $this->historyZipName);
+        $zipBaseName = preg_replace('/\.zip$/i', '', $zipBaseName) ?? '';
+        $zipBaseName = preg_replace('/[\\\\\\/:*?"<>|]+/u', '', $zipBaseName) ?? '';
+        $zipBaseName = trim($zipBaseName, " .\\t\\n\\r\\0\\x0B");
+        $zipBaseName = mb_substr($zipBaseName, 0, 100);
+        if ($zipBaseName === '') {
+            $zipBaseName = 'rizky-moto-history-' . now()->format('Ymd-His');
+        }
+
         return response()->download(
             $tempPath,
-            'rizky-moto-history-' . now()->format('Ymd-His') . '.zip',
+            $zipBaseName . '.zip',
             ['Content-Type' => 'application/zip']
         )->deleteFileAfterSend(true);
     }
@@ -2598,7 +2608,15 @@ new class extends Component
                             </div>
                             <span class="rms-history-download-summary-count" style="display:grid;place-items:center;min-width:36px;height:32px;padding:0 8px;border:1px solid #d8f0e0;border-radius:10px;background:#effaf3;color:#118649;font-size:13px;font-weight:850;">{{ $this->historyDownloadImageCount }}</span>
                         </div>
-                        <div class="rms-history-download-specs" style="display:grid;gap:11px;padding:18px 2px 17px;">
+                        <div class="rms-history-zip-name-field" style="margin-top:15px;">
+                            <label for="rms-history-zip-name" style="display:block;margin-bottom:8px;color:#343b47;font-size:12px;font-weight:800;">Nama file ZIP</label>
+                            <div style="display:flex;align-items:center;gap:0;min-height:48px;overflow:hidden;border:1px solid #dfe5ed;border-radius:13px;background:#fff;transition:border-color .18s,box-shadow .18s;" onfocusin="this.style.borderColor='#16a05a';this.style.boxShadow='0 0 0 3px rgba(22,160,90,.10)'" onfocusout="this.style.borderColor='#dfe5ed';this.style.boxShadow='none'">
+                                <input id="rms-history-zip-name" type="text" wire:model="historyZipName" maxlength="100" autocomplete="off" placeholder="Contoh: Katalog Produk Oktober" style="display:block;flex:1;min-width:0;width:100%;height:46px;padding:0 13px;border:0;outline:0;background:transparent;color:#252b35;font-size:13px;font-weight:600;box-shadow:none;">
+                                <span aria-hidden="true" style="display:grid;place-items:center;align-self:stretch;padding:0 14px;border-left:1px solid #edf0f4;background:#f8fafc;color:#697586;font-size:12px;font-weight:800;">.zip</span>
+                            </div>
+                            <p style="margin:7px 1px 0;color:#929aa8;font-size:10px;line-height:1.5;">Nama file bisa kamu ubah. Ekstensi .zip ditambahkan otomatis.</p>
+                        </div>
+                        <div class="rms-history-download-specs" style="display:grid;gap:11px;padding:16px 2px 17px;">
                             <span style="display:flex;align-items:center;gap:9px;color:#596371;font-size:12px;line-height:1.4;"><i style="display:grid;place-items:center;width:19px;height:19px;flex:0 0 19px;border-radius:50%;background:#e9f9ef;color:#13864a;font-size:11px;font-style:normal;font-weight:900;">✓</i> Mengikuti filter aktif</span>
                             <span style="display:flex;align-items:center;gap:9px;color:#596371;font-size:12px;line-height:1.4;"><i style="display:grid;place-items:center;width:19px;height:19px;flex:0 0 19px;border-radius:50%;background:#e9f9ef;color:#13864a;font-size:11px;font-style:normal;font-weight:900;">✓</i> Kompres foto maksimal 2 MB</span>
                             <span style="display:flex;align-items:center;gap:9px;color:#596371;font-size:12px;line-height:1.4;"><i style="display:grid;place-items:center;width:19px;height:19px;flex:0 0 19px;border-radius:50%;background:#e9f9ef;color:#13864a;font-size:11px;font-style:normal;font-weight:900;">✓</i> Semua foto dalam satu ZIP</span>
