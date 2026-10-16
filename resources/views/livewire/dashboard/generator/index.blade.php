@@ -2563,6 +2563,7 @@ new class extends Component
 
                 <template x-teleport="body">
                 <div class="rms-history-download-modal"
+                    style="position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;z-index:2147483647;display:flex;align-items:center;justify-content:center;box-sizing:border-box;padding:24px;background:rgba(8,9,11,.76);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);overflow-y:auto;overflow-x:hidden;"
                     x-show="downloadPanelOpen"
                     x-cloak
                     x-transition:enter="transition ease-out duration-200"
@@ -2575,6 +2576,7 @@ new class extends Component
                     x-on:click.self="downloadPanelOpen = false"
                     role="presentation">
                     <section class="rms-history-download-dialog"
+                        style="position:relative;z-index:1;flex:0 0 auto;width:min(100%,500px);max-height:min(88vh,780px);overflow-y:auto;box-sizing:border-box;"
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby="rms-history-download-title"
