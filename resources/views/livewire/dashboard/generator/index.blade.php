@@ -2576,7 +2576,7 @@ new class extends Component
                     x-on:click.self="downloadPanelOpen = false"
                     role="presentation">
                     <section class="rms-history-download-dialog"
-                        style="position:relative;z-index:1;flex:0 0 auto;width:min(100%,500px);max-height:min(88vh,780px);overflow-y:auto;box-sizing:border-box;"
+                        style="position:relative;z-index:1;flex:0 0 auto;width:min(100%,500px);max-height:min(88vh,780px);overflow-y:auto;box-sizing:border-box;padding:30px;border:1px solid rgba(255,255,255,.75);border-radius:25px;background:radial-gradient(ellipse at 100% 0%,rgba(255,228,232,.78),transparent 45%),linear-gradient(160deg,#fff 0%,#fcfcfd 100%);color:#20242d;box-shadow:0 28px 100px rgba(0,0,0,.28);"
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby="rms-history-download-title"
@@ -2609,7 +2609,7 @@ new class extends Component
                         @endif
                         <div class="rms-history-download-dialog-actions" style="display:flex;gap:10px;padding-top:16px;border-top:1px solid #eceef2;">
                             <button type="button" class="rms-history-download-cancel" style="display:inline-flex;align-items:center;justify-content:center;min-height:49px;flex:1 1 35%;padding:0 17px;border:1px solid #e7e9ef;border-radius:12px;background:#fff;color:#535b69;font-size:12px;font-weight:750;cursor:pointer;" x-on:click="downloadPanelOpen = false">Batal</button>
-                            <button type="button" class="rms-history-download-button rms-history-download-confirm"
+                            <button type="button" class="rms-history-download-button rms-history-download-confirm" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:49px;flex:1 1 65%;padding:0 15px;border:0;border-radius:12px;background:linear-gradient(135deg,#159653,#087d43);color:#fff;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 7px 18px rgba(21,148,81,.2);"
                                 wire:click="downloadFilteredHistory"
                                 wire:loading.attr="disabled"
                                 wire:target="downloadFilteredHistory"
