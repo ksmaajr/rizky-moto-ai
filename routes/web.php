@@ -85,8 +85,40 @@ Route::middleware('auth')->group(function () {
             ->orderByRaw('resolved_at IS NULL DESC')->orderByDesc('started_at')->limit(12)
             ->get(['id', 'metric_key', 'severity', 'title', 'message', 'observed_value', 'threshold_value', 'started_at', 'resolved_at'])
             ->map(static fn ($a) => (array) $a)->values();
+        $generationSince = now()->subDay();
+        $recentGenerations = \\App\\Models\\Generation::query()->where('created_at', '>=', $generationSince);
+        $generationReliability = [
+            'total' => (clone $recentGenerations)->count(),
+            'completed' => (clone $recentGenerations)->where('status', 'completed')->count(),
+            'failed' => (clone $recentGenerations)->where('status', 'failed')->count(),
+            'processing' => (clone $recentGenerations)->whereIn('status', ['processing', 'pending', 'queued'])->count(),
+            'stuck' => \\App\\Models\\Generation::query()->whereIn('status', ['processing', 'pending', 'queued'])->where('updated_at', '<', now()->subMinutes(10))->count(),
+            'queue_pending' => \\Illuminate\\Support\\Facades\\Schema::hasTable('jobs') ? \\Illuminate\\Support\\Facades\\DB::table('jobs')->count() : null,
+            'failed_jobs' => \\Illuminate\\Support\\Facades\\Schema::hasTable('failed_jobs') ? \\Illuminate\\Support\\Facades\\DB::table('failed_jobs')->count() : null,
+            'latest_failures' => \\App\\Models\\Generation::query()->where('status', 'failed')->orderByDesc('completed_at')->limit(5)
+                ->get(['id', 'model', 'error_message', 'completed_at', 'metadata'])
+                ->map(static function ($generation) {
+                    $message = strtolower((string) ($generation->error_message ?? ''));
+                    $type = match (true) {
+                        str_contains($message, 'rate limit'), str_contains($message, '429'), str_contains($message, 'too many requests') => 'Rate limit',
+                        str_contains($message, 'token'), str_contains($message, 'unauthorized'), str_contains($message, '401'), str_contains($message, 'authentication') => 'Authentication',
+                        str_contains($message, 'timeout'), str_contains($message, 'timed out') => 'Timeout',
+                        str_contains($message, 'getaddrinfo'), str_contains($message, 'connection'), str_contains($message, 'network'), str_contains($message, 'dns') => 'Network',
+                        str_contains($message, 'provider'), str_contains($message, 'unsupported_image_generation_tool') => 'Provider / model',
+                        default => 'Generation error',
+                    };
+                    return [
+                        'id' => $generation->id,
+                        'model' => $generation->model ?: 'Unknown provider/model',
+                        'error' => \\Illuminate\\Support\\Str::limit((string) ($generation->error_message ?: 'No error detail recorded'), 180),
+                        'error_type' => $type,
+                        'time' => optional($generation->completed_at)->diffForHumans(),
+                        'provider' => data_get($generation->metadata, 'provider', data_get($generation->metadata, 'ai_provider', 'unknown')),
+                    ];
+                })->values(),
+        ];
         return response()->json([
-            'ok'=>true,'time'=>now()->toIso8601String(),'history_range'=>$historyRange,'history'=>$history,'analytics'=>$analytics,'alerts'=>$alerts,'hostname'=>gethostname()?:'Server','os'=>php_uname('s').' '.php_uname('r'),
+            'ok'=>true,'time'=>now()->toIso8601String(),'history_range'=>$historyRange,'history'=>$history,'analytics'=>$analytics,'alerts'=>$alerts,'generation_reliability'=>$generationReliability,'hostname'=>gethostname()?:'Server','os'=>php_uname('s').' '.php_uname('r'),
             'php'=>PHP_VERSION,'laravel'=>app()->version(),'environment'=>app()->environment(),'uptime_seconds'=>(int)($up[0]??0),
             'load'=>array_map(static fn($v)=>round((float)$v,2),$load),'cpu_cores'=>$cores,'cpu_ticks'=>array_map('intval',$cpuLine),
             'memory_total'=>$total,'memory_available'=>$available,'memory_used'=>max(0,$total-$available),
