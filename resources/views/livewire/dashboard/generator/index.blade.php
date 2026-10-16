@@ -2552,7 +2552,7 @@ new class extends Component
                     :aria-expanded="downloadPanelOpen.toString()"
                     aria-haspopup="dialog">
                     <span class="rms-history-download-trigger-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <svg style="width:26px;height:26px;display:block" viewBox="0 0 24 24" fill="none"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </span>
                     <span class="rms-history-download-trigger-copy">
                         <strong>Download ZIP</strong>
@@ -2583,32 +2583,32 @@ new class extends Component
                         x-transition:enter="transition ease-out duration-250"
                         x-transition:enter-start="opacity-0 translate-y-3 scale-95"
                         x-transition:enter-end="opacity-100 translate-y-0 scale-100">
-                        <button type="button" class="rms-history-download-dialog-close"
+                        <button type="button" class="rms-history-download-dialog-close" style="position:absolute;top:17px;right:17px;display:grid;place-items:center;width:36px;height:36px;border:1px solid #e7e9ef;border-radius:11px;background:#fff;color:#737d8c;font-size:23px;cursor:pointer;"
                             x-on:click="downloadPanelOpen = false" aria-label="Tutup dialog download">×</button>
-                        <div class="rms-history-download-dialog-icon" aria-hidden="true">
+                        <div class="rms-history-download-dialog-icon" aria-hidden="true" style="display:grid;place-items:center;width:55px;height:55px;margin-bottom:19px;border:1px solid #d9f1e2;border-radius:17px;background:linear-gradient(145deg,#f0fcf4,#dcf8e6);color:#118849;box-shadow:0 7px 18px rgba(20,140,73,.08);">
                             <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </div>
-                        <span class="rms-history-download-dialog-eyebrow"><i></i> EXPORT GENERATIONS</span>
-                        <h3 id="rms-history-download-title">Download hasil generation</h3>
-                        <p class="rms-history-download-dialog-description">Semua hasil yang sesuai dengan filter Recent History akan dikemas dalam satu file ZIP.</p>
-                        <div class="rms-history-download-summary-card">
-                            <div class="rms-history-download-summary-card-icon" aria-hidden="true">▤</div>
-                            <div class="rms-history-download-summary-card-copy">
-                                <strong>Arsip ZIP</strong>
-                                <small>Nama folder mengikuti store · nama foto mengikuti judul</small>
+                        <span class="rms-history-download-dialog-eyebrow" style="display:flex;align-items:center;gap:7px;margin-bottom:9px;color:#16834a;font-size:10px;font-weight:850;letter-spacing:.12em;"><i style="width:7px;height:7px;border-radius:50%;background:#20b765;box-shadow:0 0 0 4px #e4f8eb;display:inline-block;"></i> EXPORT GENERATIONS</span>
+                        <h3 id="rms-history-download-title" style="margin:0 0 9px;font-size:25px;font-weight:850;letter-spacing:-.045em;line-height:1.2;color:#20232b;">Download hasil generation</h3>
+                        <p class="rms-history-download-dialog-description" style="margin:0 0 21px;color:#7d8492;font-size:13px;line-height:1.65;">Semua hasil yang sesuai dengan filter Recent History akan dikemas dalam satu file ZIP.</p>
+                        <div class="rms-history-download-summary-card" style="display:flex;align-items:center;gap:12px;min-width:0;padding:14px;border:1px solid #e5e9ef;border-radius:15px;background:rgba(255,255,255,.9);">
+                            <div class="rms-history-download-summary-card-icon" aria-hidden="true" style="display:grid;place-items:center;width:40px;height:40px;flex:0 0 40px;border-radius:12px;background:#f2f4f7;color:#596474;font-size:23px;">▤</div>
+                            <div class="rms-history-download-summary-card-copy" style="display:flex;flex:1 1 auto;flex-direction:column;gap:4px;min-width:0;">
+                                <strong style="font-size:12px;font-weight:800;color:#303642;">Arsip ZIP</strong>
+                                <small style="font-size:10px;line-height:1.45;color:#8a92a0;">Nama folder mengikuti store · nama foto mengikuti judul</small>
                             </div>
-                            <span class="rms-history-download-summary-count">{{ $this->historyDownloadImageCount }}</span>
+                            <span class="rms-history-download-summary-count" style="display:grid;place-items:center;min-width:36px;height:32px;padding:0 8px;border:1px solid #d8f0e0;border-radius:10px;background:#effaf3;color:#118649;font-size:13px;font-weight:850;">{{ $this->historyDownloadImageCount }}</span>
                         </div>
-                        <div class="rms-history-download-specs">
-                            <span><i>✓</i> Mengikuti filter aktif</span>
-                            <span><i>✓</i> Kompres foto maksimal 2 MB</span>
-                            <span><i>✓</i> Semua foto dalam satu ZIP</span>
+                        <div class="rms-history-download-specs" style="display:grid;gap:11px;padding:18px 2px 17px;">
+                            <span style="display:flex;align-items:center;gap:9px;color:#596371;font-size:12px;line-height:1.4;"><i style="display:grid;place-items:center;width:19px;height:19px;flex:0 0 19px;border-radius:50%;background:#e9f9ef;color:#13864a;font-size:11px;font-style:normal;font-weight:900;">✓</i> Mengikuti filter aktif</span>
+                            <span style="display:flex;align-items:center;gap:9px;color:#596371;font-size:12px;line-height:1.4;"><i style="display:grid;place-items:center;width:19px;height:19px;flex:0 0 19px;border-radius:50%;background:#e9f9ef;color:#13864a;font-size:11px;font-style:normal;font-weight:900;">✓</i> Kompres foto maksimal 2 MB</span>
+                            <span style="display:flex;align-items:center;gap:9px;color:#596371;font-size:12px;line-height:1.4;"><i style="display:grid;place-items:center;width:19px;height:19px;flex:0 0 19px;border-radius:50%;background:#e9f9ef;color:#13864a;font-size:11px;font-style:normal;font-weight:900;">✓</i> Semua foto dalam satu ZIP</span>
                         </div>
                         @if($this->historyDownloadImageCount < 1)
                             <div class="rms-history-download-empty">Tidak ada foto yang bisa diunduh dari hasil filter saat ini.</div>
                         @endif
-                        <div class="rms-history-download-dialog-actions">
-                            <button type="button" class="rms-history-download-cancel" x-on:click="downloadPanelOpen = false">Batal</button>
+                        <div class="rms-history-download-dialog-actions" style="display:flex;gap:10px;padding-top:16px;border-top:1px solid #eceef2;">
+                            <button type="button" class="rms-history-download-cancel" style="display:inline-flex;align-items:center;justify-content:center;min-height:49px;flex:1 1 35%;padding:0 17px;border:1px solid #e7e9ef;border-radius:12px;background:#fff;color:#535b69;font-size:12px;font-weight:750;cursor:pointer;" x-on:click="downloadPanelOpen = false">Batal</button>
                             <button type="button" class="rms-history-download-button rms-history-download-confirm"
                                 wire:click="downloadFilteredHistory"
                                 wire:loading.attr="disabled"
@@ -2621,7 +2621,7 @@ new class extends Component
                                 <b>{{ $this->historyDownloadImageCount }} foto</b>
                             </button>
                         </div>
-                        <p class="rms-history-download-dialog-footnote">ZIP akan dibuat dari hasil yang tampil sesuai filter saat ini.</p>
+                        <p class="rms-history-download-dialog-footnote" style="margin:13px 0 0;text-align:center;color:#9aa1ad;font-size:10px;line-height:1.5;">ZIP akan dibuat dari hasil yang tampil sesuai filter saat ini.</p>
                     </section>
                 </div>
                 </template>
