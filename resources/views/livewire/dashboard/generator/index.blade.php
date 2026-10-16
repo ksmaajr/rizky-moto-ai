@@ -2570,32 +2570,16 @@ new class extends Component
                     x-transition:leave-start="opacity-100 translate-y-0"
                     x-transition:leave-end="opacity-0 -translate-y-2"
                     x-cloak>
-                <div class="rms-history-bulk-actions">
+                <div class="rms-history-bulk-actions rms-history-download-action-card">
                     <div class="rms-history-download-summary">
                         <span class="rms-history-download-icon" aria-hidden="true">
                             <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </span>
-                        <span class="rms-history-download-copy"
-                            x-show="downloadInfoOpen"
-                            x-transition:enter="transition ease-out duration-200"
-                            x-transition:enter-start="opacity-0 -translate-y-1"
-                            x-transition:enter-end="opacity-100 translate-y-0"
-                            x-transition:leave="transition ease-in duration-150"
-                            x-transition:leave-start="opacity-100 translate-y-0"
-                            x-transition:leave-end="opacity-0 -translate-y-1"
-                            x-cloak>
-                            <strong>Unduh semua hasil sesuai filter</strong>
-                            <small>Setiap foto dikompres ke maksimal 2 MB sebelum dimasukkan ke ZIP.</small>
+                        <span class="rms-history-download-copy">
+                            <strong>Siapkan arsip ZIP</strong>
+                            <small>Semua hasil sesuai filter · foto dikompres maksimal 2 MB</small>
                         </span>
                     </div>
-                    <button type="button"
-                        class="rms-history-download-info-toggle"
-                        x-on:click="downloadInfoOpen = !downloadInfoOpen"
-                        :aria-expanded="downloadInfoOpen.toString()"
-                        :aria-label="downloadInfoOpen ? 'Sembunyikan detail download' : 'Tampilkan detail download'"
-                        :title="downloadInfoOpen ? 'Sembunyikan detail' : 'Tampilkan detail'">
-                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </button>
                     <button type="button" class="rms-history-download-button"
                         wire:click="downloadFilteredHistory"
                         wire:loading.attr="disabled"
@@ -8188,6 +8172,96 @@ body.rms-bulk-delete-lock{overflow:hidden}
 @media(max-width:600px){
     .rms-generator-history-mobile-safe .rms-history-download-disclosure-copy strong{font-size:11px!important}
     .rms-generator-history-mobile-safe .rms-history-download-disclosure-button{font-size:9px!important;padding:0 8px!important}
+}
+
+
+/* Recent History V7: unified, premium ZIP download panel */
+.rms-generator-history-mobile-safe .rms-history-download-disclosure{
+    min-height:68px!important;
+    padding:12px 16px!important;
+    margin:12px 0 8px!important;
+    border:1px solid #e4e9ef!important;
+    border-radius:16px!important;
+    background:linear-gradient(115deg,#ffffff 0%,#f8fbf9 100%)!important;
+    box-shadow:0 4px 16px rgba(22,34,51,.025)!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-disclosure-copy{
+    gap:12px!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-disclosure-icon{
+    width:40px!important;height:40px!important;flex-basis:40px!important;
+    border-radius:12px!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9)!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-disclosure-copy strong{
+    color:#202936!important;font-size:13px!important;letter-spacing:-.02em!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-disclosure-copy small{
+    margin-top:2px!important;font-size:11px!important;color:#818b9a!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-disclosure-button{
+    min-height:38px!important;padding:0 13px!important;border-radius:11px!important;
+    background:#fff!important;font-size:11px!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-panel{
+    padding:0!important;margin:0 0 12px!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-panel .rms-history-download-action-card{
+    display:flex!important;align-items:center!important;justify-content:space-between!important;
+    gap:16px!important;width:100%!important;min-width:0!important;
+    padding:14px 16px!important;margin:0!important;
+    border:1px solid #dfe9e3!important;border-radius:16px!important;
+    background:linear-gradient(120deg,#f7fcf8 0%,#ffffff 64%)!important;
+    box-shadow:0 6px 22px rgba(22,130,69,.045)!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-action-card .rms-history-download-summary{
+    flex:1 1 auto!important;min-width:0!important;gap:12px!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-action-card .rms-history-download-icon{
+    width:42px!important;height:42px!important;min-width:42px!important;max-width:42px!important;flex:0 0 42px!important;
+    border-radius:12px!important;background:#e9f9ef!important;border:1px solid #d0f0dc!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-action-card .rms-history-download-icon svg{
+    width:20px!important;height:20px!important;min-width:20px!important;max-width:20px!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-action-card .rms-history-download-copy{
+    padding-left:0!important;overflow:visible!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-action-card .rms-history-download-copy strong{
+    font-size:13px!important;font-weight:800!important;color:#24312a!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-action-card .rms-history-download-copy small{
+    margin-top:3px!important;font-size:11px!important;color:#7a8790!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-action-card .rms-history-download-button{
+    min-height:44px!important;padding:0 17px!important;gap:9px!important;
+    border-radius:12px!important;font-size:12px!important;
+    box-shadow:0 5px 13px rgba(21,148,81,.14)!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-action-card .rms-history-download-button b{
+    padding:4px 8px!important;border-radius:7px!important;font-size:10px!important;
+}
+.rms-generator-history-mobile-safe .rms-history-download-action-card .rms-history-download-button-icon{
+    font-size:19px!important;line-height:1!important;
+}
+@media(max-width:760px){
+ .rms-generator-history-mobile-safe .rms-history-download-disclosure{min-height:60px!important;padding:10px 11px!important;gap:8px!important}
+ .rms-generator-history-mobile-safe .rms-history-download-disclosure-icon{width:35px!important;height:35px!important;flex-basis:35px!important}
+ .rms-generator-history-mobile-safe .rms-history-download-disclosure-copy strong{font-size:12px!important}
+ .rms-generator-history-mobile-safe .rms-history-download-disclosure-copy small{font-size:10px!important}
+ .rms-generator-history-mobile-safe .rms-history-download-disclosure-button{min-height:35px!important;padding:0 9px!important;font-size:10px!important}
+ .rms-generator-history-mobile-safe .rms-history-download-panel .rms-history-download-action-card{padding:11px!important;gap:10px!important;border-radius:13px!important}
+ .rms-generator-history-mobile-safe .rms-history-download-action-card .rms-history-download-icon{width:35px!important;height:35px!important;min-width:35px!important;max-width:35px!important;flex-basis:35px!important}
+ .rms-generator-history-mobile-safe .rms-history-download-action-card .rms-history-download-icon svg{width:18px!important;height:18px!important;min-width:18px!important;max-width:18px!important}
+ .rms-generator-history-mobile-safe .rms-history-download-action-card .rms-history-download-summary{gap:9px!important}
+ .rms-generator-history-mobile-safe .rms-history-download-action-card .rms-history-download-copy strong{font-size:11px!important}
+ .rms-generator-history-mobile-safe .rms-history-download-action-card .rms-history-download-copy small{font-size:9px!important;line-height:1.45!important}
+ .rms-generator-history-mobile-safe .rms-history-download-action-card .rms-history-download-button{min-height:40px!important;padding:0 10px!important;gap:6px!important;font-size:10px!important}
+ .rms-generator-history-mobile-safe .rms-history-download-action-card .rms-history-download-button b{font-size:9px!important;padding:3px 6px!important}
+}
+@media(max-width:420px){
+ .rms-generator-history-mobile-safe .rms-history-download-panel .rms-history-download-action-card{align-items:stretch!important;flex-direction:column!important}
+ .rms-generator-history-mobile-safe .rms-history-download-action-card .rms-history-download-button{width:100%!important;justify-content:center!important}
 }
 
 </style>
