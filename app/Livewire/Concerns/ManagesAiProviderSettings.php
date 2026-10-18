@@ -99,7 +99,7 @@ trait ManagesAiProviderSettings
             ->orderByRaw('CASE WHEN user_id = ? THEN 0 ELSE 1 END', [Auth::id()])
             ->first();
 
-        $this->nvidiaApiKeyConfigured = filled($setting?->nvidia_api_key);
+        $this->nvidiaApiKeyConfigured = app(\App\Services\NvidiaApiKeyPool::class)->activeCount(Auth::id()) > 0 || filled($setting?->nvidia_api_key);
 
         if ($setting) {
             $this->activeProvider = $setting->active_provider ?: 'vercel';
