@@ -131,7 +131,6 @@ final class NvidiaProvider implements ImageProviderInterface
                     ->post($endpoint, $payload);
 
                 if ($response->successful()) {
-                    $this->apiPool->reportSuccess($credential['id'], $request->userId);
                     break;
                 }
 
@@ -173,6 +172,8 @@ final class NvidiaProvider implements ImageProviderInterface
                 throw new RuntimeException('NVIDIA NIM merespons sukses tetapi tidak mengembalikan data gambar yang dikenali.');
             }
 
+            $this->apiPool->reportSuccess($credential['id'] ?? null, $request->userId);
+
             $this->activity->success(
                 action: 'ai_provider_request',
                 category: 'api',
@@ -184,6 +185,8 @@ final class NvidiaProvider implements ImageProviderInterface
                     'generation_id' => $request->generationId,
                     'http_status' => $response->status(),
                     'image_count' => count($images),
+                    'nvidia_key_id' => $credential['id'] ?? null,
+                    'credential_name' => $credential['name'] ?? null,
                     'duration_ms' => (int) round((microtime(true) - $started) * 1000),
                 ],
                 httpStatus: $response->status(),
