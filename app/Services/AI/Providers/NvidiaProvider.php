@@ -294,13 +294,13 @@ final class NvidiaProvider implements ImageProviderInterface
 
         if (strtolower(trim($request->model)) === 'qwen/qwen-image-edit-2511') {
             return $request->prompt
-                . "\\n\\nNVIDIA QWEN IMAGE EDITING POLICY — mandatory:"
-                . "\\n- The uploaded reference board contains PRODUCT, optional INSTALLED context, and the official STORE LOGO only."
-                . "\\n- Template instructions are supplied in this prompt; the Template preview image is NOT an input reference."
-                . "\\n- Preserve exact product identity, geometry, material, packaging, colors, and visible details from PRODUCT."
-                . "\\n- Use STORE LOGO as the sole authority for shop branding; do not copy or redraw logos from the product or other imagery."
-                . "\\n- " . ($hasInstalled ? 'Use INSTALLED only as fitment/context guidance while preserving the exact product.' : 'Do not invent an installed-on-motorcycle scene because no installed reference was supplied.')
-                . "\\n- Follow the selected Template style and exact title. Do not invent specifications, prices, compatibility claims, or watermarks.";
+                . "\n\nNVIDIA QWEN IMAGE EDITING POLICY — mandatory:"
+                . "\n- The uploaded reference board contains PRODUCT, optional INSTALLED context, and the official STORE LOGO only."
+                . "\n- Template instructions are supplied in this prompt; the Template preview image is NOT an input reference."
+                . "\n- Preserve exact product identity, geometry, material, packaging, colors, and visible details from PRODUCT."
+                . "\n- Use STORE LOGO as the sole authority for shop branding; do not copy or redraw logos from the product or other imagery."
+                . "\n- " . ($hasInstalled ? 'Use INSTALLED only as fitment/context guidance while preserving the exact product.' : 'Do not invent an installed-on-motorcycle scene because no installed reference was supplied.')
+                . "\n- Follow the selected Template style and exact title. Do not invent specifications, prices, compatibility claims, or watermarks.";
         }
 
         // FLUX.3 Image Klein hosted preview has a strict 2,000-character prompt
