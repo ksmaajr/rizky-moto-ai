@@ -263,9 +263,8 @@ final class NvidiaProvider implements ImageProviderInterface
 
     private function compactFluxKleinPrompt(ImageGenerationRequest $request, bool $hasInstalled): string
     {
-        // The selected Template prompt is the creative source of truth.
-        // Preserve it verbatim; reduce only redundant system boilerplate so
-        // the NVIDIA-specific payload fits the hosted FLUX.3 Klein limit.
+        // FLUX.3 Klein has a strict 2,000-character request limit. The selected
+        // Template prompt is authoritative and must never be truncated.
         $templateDirection = '';
         if (preg_match('/TEMPLATE PROMPT — mandatory visual direction:\\s*(.*?)\\s*(?=\\R+TITLE:)/su', $request->prompt, $matches)) {
             $templateDirection = trim($matches[1]);
@@ -277,39 +276,29 @@ final class NvidiaProvider implements ImageProviderInterface
         }
 
         if ($templateDirection === '') {
-            // Do not silently replace a missing Template prompt with a generic style.
             throw new RuntimeException('Prompt dari Template terpilih tidak ditemukan. Periksa prompt Template sebelum generate NVIDIA.');
         }
 
-        // Keep mandatory provider rules compact so more of the 2,000-character
-        // endpoint budget remains available for the user's actual Template prompt.
-        // Never truncate or rewrite the selected Template direction.
-        $fixed = [
-            'Create a premium square marketplace poster. Follow the selected Template prompt below for visual design, layout, palette, typography and spacing.',
-            'PRODUCT reference defines the exact item. Preserve its shape, proportions, colors, materials, packaging and visible details; invent no specifications.',
-            'Use the labeled board as guidance, not a collage. STORE LOGO is the only source for the shop logo; never copy logos from other references.',
-            $hasInstalled
-                ? 'Use INSTALLED only for truthful fitment context; keep the product prominent.'
-                : 'No installed reference: do not invent a motorcycle or installation scene.',
-            'Keep product and logo clear. Invent no prices, compatibility or factual claims.',
-            $titleInstruction !== '' ? 'TITLE RULE (preserve exactly): ' . $titleInstruction : '',
-            'SELECTED TEMPLATE PROMPT (preserve fully): ' . $templateDirection,
-        ];
-
-        $prompt = implode("\n\n", array_values(array_filter($fixed, static fn ($part) => $part !== '')));
+        // The template prompt is already nearly the full budget in some stores.
+        // Do not append repeated generic policy paragraphs. Reference roles are
+        // also explicitly labeled on the image board; add the custom title only
+        // when it fits without altering the selected Template prompt.
+        $prompt = $templateDirection;
+        $titleRule = $titleInstruction !== '' ? "\\nTITLE (preserve exactly): " . $titleInstruction : '';
+        if ($titleRule !== '' && mb_strlen($prompt . $titleRule) <= 2000) {
+            $prompt .= $titleRule;
+        }
 
         if (mb_strlen($prompt) > 2000) {
-            $templateLength = mb_strlen($templateDirection);
-            $overBy = mb_strlen($prompt) - 2000;
             throw new RuntimeException(
-                'Prompt Template terpilih terlalu panjang untuk batas 2.000 karakter NVIDIA FLUX.3 Klein ('
-                . $templateLength . ' karakter pada prompt Template; perlu dikurangi minimal '
-                . $overBy . ' karakter pada instruksi Template atau gunakan model NVIDIA dengan batas prompt lebih tinggi).'
+                'Prompt Template terpilih sendiri melebihi batas 2.000 karakter NVIDIA FLUX.3 Klein ('
+                . mb_strlen($prompt) . ' karakter). Ringkas prompt pada Template atau pilih model NVIDIA dengan batas lebih tinggi.'
             );
         }
 
         return $prompt;
     }
+
     /**
      * The hosted NVIDIA trial endpoints document one image input. A labeled board
      * prevents silently dropping template/product/logo roles. The board uses GD.
