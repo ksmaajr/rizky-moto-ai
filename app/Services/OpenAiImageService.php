@@ -1608,6 +1608,32 @@ PROMPT;
         array $references,
         int $generationId,
     ): array {
+        // Hard allow-list at the final transport boundary. Template preview images
+        // are never billable generation inputs; Template styling is conveyed by prompt.
+        $allowedRoles = ['product', 'installed', 'store_logo'];
+        $references = array_values(array_filter(
+            $references,
+            static fn (array $reference): bool => in_array(
+                strtolower(trim((string) ($reference['role'] ?? ''))),
+                $allowedRoles,
+                true
+            )
+        ));
+
+        $hasProduct = false;
+        $hasStoreLogo = false;
+        foreach ($references as $reference) {
+            $role = strtolower(trim((string) ($reference['role'] ?? '')));
+            $hasProduct = $hasProduct || $role === 'product';
+            $hasStoreLogo = $hasStoreLogo || $role === 'store_logo';
+        }
+        if (! $hasProduct) {
+            throw new RuntimeException('Reference produk wajib dikirim ke provider.');
+        }
+        if (! $hasStoreLogo) {
+            throw new RuntimeException('Logo resmi Store wajib dikirim ke provider.');
+        }
+
         if ($this->modelSupportsMultipleReferenceImages($model)) {
             return [
                 'transport' => 'multiple_reference_images',
