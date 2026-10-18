@@ -976,8 +976,8 @@
                                     <strong>NVIDIA Image Generation</strong>
                                     <small>Hosted FLUX models, shared generator workflow, and centralized activity logging.</small>
                                 </div>
-                                <div class="rms-provider-block-state {{ $nvidiaApiKeyConfigured ? 'is-ready' : 'is-pending' }}">
-                                    <i></i><span>{{ $nvidiaApiKeyConfigured ? 'Key configured' : 'API key required' }}</span>
+                                <div class="rms-provider-block-state {{ $this->nvidiaApiKeyConfigured ? 'is-ready' : 'is-pending' }}">
+                                    <i></i><span>{{ $this->nvidiaApiKeyConfigured ? 'Key configured' : 'API key required' }}</span>
                                 </div>
                             </div>
 
@@ -1000,7 +1000,7 @@
                                                 type="{{ $showNvidiaApiKey ? 'text' : 'password' }}"
                                                 wire:model="nvidiaApiKey"
                                                 autocomplete="new-password"
-                                                placeholder="{{ $nvidiaApiKeyConfigured ? 'Key tersimpan — isi hanya untuk mengganti' : 'nvapi-••••••••••••••••' }}"
+                                                placeholder="{{ $this->nvidiaApiKeyConfigured ? 'Key tersimpan — isi hanya untuk mengganti' : 'nvapi-••••••••••••••••' }}"
                                                 style="width:100%;min-width:0"
                                             >
                                             <button type="button" class="rms-ai-save-button" wire:click="$toggle('showNvidiaApiKey')">{{ $showNvidiaApiKey ? 'Hide' : 'Show' }}</button>
