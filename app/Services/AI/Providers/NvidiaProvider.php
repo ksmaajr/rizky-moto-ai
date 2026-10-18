@@ -159,24 +159,24 @@ final class NvidiaProvider implements ImageProviderInterface
 
                 $http = Http::withToken($credential['key'])
                     ->acceptJson()
+                    ->asJson()
                     ->connectTimeout(15)
                     ->timeout((int) config('services.nvidia.timeout', 240));
 
                 if ($model === 'qwen/qwen-image-edit-2511') {
-                    $boardBinary = file_get_contents($reference['path']);
-                    if ($boardBinary === false) {
-                        throw new RuntimeException('Reference board NVIDIA Qwen tidak dapat dibaca.');
-                    }
-                    $response = $http
-                        ->attach('image', $boardBinary, 'reference-board.png', ['Content-Type' => 'image/png'])
-                        ->post($endpoint, [
-                            'model' => $model,
-                            'prompt' => $prompt,
-                            'n' => 1,
-                            'response_format' => 'b64_json',
-                        ]);
+                    // NVIDIA's OpenAI-compatible NIM image-edit endpoint expects JSON
+                    // with a data URL (not multipart/form-data). Qwen-Image-Edit-2511
+                    // accepts up to three image inputs; use the labeled board as one
+                    // image to preserve all reference roles in a single stable payload.
+                    $response = $http->post($endpoint, [
+                        'model' => $model,
+                        'prompt' => $prompt,
+                        'image' => $reference['data'],
+                        'n' => 1,
+                        'response_format' => 'b64_json',
+                    ]);
                 } else {
-                    $response = $http->asJson()->post($endpoint, $payload);
+                    $response = $http->post($endpoint, $payload);
                 }
 
                 if ($response->successful()) {
