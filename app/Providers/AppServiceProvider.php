@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use App\Services\AI\ProviderManager;
 use App\Services\AI\Providers\AgentKitProvider;
 use App\Services\AI\Providers\VercelProvider;
+use App\Services\AI\Providers\NvidiaProvider;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
