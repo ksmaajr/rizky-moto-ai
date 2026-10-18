@@ -3,6 +3,8 @@
 namespace App\Livewire\Concerns;
 
 use App\Models\AiProviderSetting;
+use App\Models\ActivityLog;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
 
 trait ManagesAiProviderSettings
@@ -111,7 +113,7 @@ trait ManagesAiProviderSettings
     {
         $this->validate([
             'activeProvider' => ['required', 'in:vercel,agentkit,nvidia'],
-            'fallbackProvider' => ['nullable', 'in:vercel,agentkit'],
+            'fallbackProvider' => ['nullable', 'in:vercel,agentkit,nvidia'],
         ]);
 
         if ($this->fallbackProvider === $this->activeProvider) {
