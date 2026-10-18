@@ -50,7 +50,7 @@ class extends Component
         $stage = 'openai_settings';
 
         try {
-            $settings = \\App\\Models\\OpenAiSetting::query()->first();
+            $settings = \App\Models\OpenAiSetting::query()->first();
 
             if ($settings) {
                 $this->imageModel = $settings->model ?: 'OpenAI Image Generation';
@@ -66,12 +66,12 @@ class extends Component
             $stage = 'activity_logs';
             $this->loadActivityLogs();
 
-            \\Illuminate\\Support\\Facades\\Log::debug('Dashboard mount completed', [
+            \Illuminate\Support\Facades\Log::debug('Dashboard mount completed', [
                 'user_id' => auth()->id(),
                 'duration_ms' => (int) ((microtime(true) - $startedAt) * 1000),
             ]);
         } catch (\Throwable $exception) {
-            \\Illuminate\\Support\\Facades\\Log::error('Dashboard mount failed', [
+            \Illuminate\Support\Facades\Log::error('Dashboard mount failed', [
                 'stage' => $stage,
                 'user_id' => auth()->id(),
                 'duration_ms' => (int) ((microtime(true) - $startedAt) * 1000),
