@@ -92,6 +92,13 @@ final class ProviderManager
                     'description' => 'NVIDIA NIM · high-quality image generation and editing',
                     'owned_by' => 'NVIDIA NIM',
                 ],
+                [
+                    'id' => 'qwen/qwen-image-edit-2511',
+                    'value' => 'qwen/qwen-image-edit-2511',
+                    'label' => 'Qwen Image Edit 2511',
+                    'description' => 'NVIDIA NIM deployment · reference-guided product editing',
+                    'owned_by' => 'NVIDIA NIM',
+                ],
             ];
         }
 
