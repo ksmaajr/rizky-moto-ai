@@ -3,6 +3,9 @@
 namespace App\Livewire\Dashboard\Settings;
 
 use App\Livewire\Concerns\ManagesAgentAiCredentials;
+use App\Livewire\Concerns\ManagesNvidiaApiKeys;
+use App\Models\NvidiaApiKey;
+use App\Services\NvidiaApiKeyPool;
 use App\Models\AiProviderSetting;
 use App\Models\ActivityLog;
 use App\Models\VercelGatewayApiKey;
@@ -17,6 +20,7 @@ use Livewire\Component;
 class Index extends Component
 {
     use ManagesAgentAiCredentials;
+    use ManagesNvidiaApiKeys;
 
     public string $activeTab = 'general';
 
@@ -95,16 +99,31 @@ class Index extends Component
             ->orderByRaw('CASE WHEN user_id = ? THEN 0 ELSE 1 END', [Auth::id()])
             ->first();
 
-        // Always refresh the state on Livewire requests. Leaving it unchanged when
-        // no row exists can retain stale UI state after a setting is removed.
-        $this->nvidiaApiKeyConfigured = false;
+        // Import the legacy single key once so existing installations retain
+        // their credential while the pool UI and generation workers share one source.
+        $pool = app(NvidiaApiKeyPool::class);
+        if ($setting && filled($setting->nvidia_api_key) && $pool->totalCount(Auth::id()) === 0) {
+            NvidiaApiKey::create([
+                'user_id' => Auth::id(),
+                'name' => 'NVIDIA Legacy Key',
+                'api_key' => $setting->nvidia_api_key,
+                'status' => 'active',
+                'is_active' => true,
+                'priority' => 0,
+            ]);
+        }
+
+        // Always refresh provider state on each component hydration.
         if ($setting) {
             $this->activeProvider = $setting->active_provider ?: 'vercel';
             $this->fallbackProvider = (string) ($setting->fallback_provider ?? '');
             $this->allowProviderFallback = (bool) $setting->allow_provider_fallback;
             $this->emergencyFallback = (bool) $setting->emergency_fallback;
-            $this->nvidiaApiKeyConfigured = filled($setting->nvidia_api_key);
         }
+
+        $this->nvidiaApiKeyConfigured = $pool->totalCount(Auth::id()) > 0
+            ? $pool->activeCount(Auth::id()) > 0
+            : filled($setting?->nvidia_api_key);
     }
 
     public function saveAiProviderConfiguration(): void
