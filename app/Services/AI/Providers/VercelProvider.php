@@ -300,25 +300,18 @@ final class VercelProvider implements ImageProviderInterface
         $hasInstalled = count(array_intersect($roles, ['installed', 'installed_reference'])) > 0;
 
         return $request->prompt
-            . "\n\nOUTPUT CONTRACT — mandatory: generate exactly one square 1:1 image (1024x1024). Use the API's lowest supported image quality setting: quality=low. Do not raise quality for detail or polish.\n"
-            . "\nTEMPLATE CONSISTENCY LOCK — highest design priority:\n"
-            . "- Treat the selected Template's saved prompt and negative prompt as a strict reusable design specification, not loose inspiration. Follow them literally and do not freestyle, redesign, modernize, simplify, or introduce a different visual theme.\n"
-            . "- For every product using this Template, keep the same design system: same background treatment, dominant and accent colors, composition and placement of major zones, headline hierarchy and alignment, typography character, border/frame treatment, badge/callout style, icon style, decorative motifs, spacing, lighting and visual density. Change only product-specific content and truthful installation context.\n"
-            . "- Keep the headline, product hero, supporting product/installation view, Store logo, feature callouts and footer in consistent relative positions and scale according to the Template prompt. Do not rearrange these zones between products.\n"
-            . "- Do not use the product or installed photo as a design reference. They define product identity and fitment only; the saved Template prompt defines the graphic design. No new badges, stickers, extra labels, random text, alternate color palette or extra decorative elements unless the Template prompt explicitly requires them.\n"
-            . "\nSTORE BRAND LOCK — mandatory:\n"
-            . "- The dedicated Store-logo reference is the ONLY authority for Store identity. Never extract, copy, trace, reconstruct, imitate or substitute a logo/wordmark/watermark from product or installed photos. Manufacturer branding may remain only on the physical product/packaging.\n"
+            . "\n\nOUTPUT CONTRACT — mandatory: generate a square 1:1 image (1024x1024). Use Low generation quality while keeping the composition, typography, product details and Store branding professionally designed.\n"
+            . "\nPROVIDER POLICY — mandatory:\n"
+            . "- The dedicated Store-logo reference is the ONLY authority for Store identity. Never extract, copy, trace, reconstruct, imitate or substitute a logo/wordmark/watermark from product or installed photos, or from the Template example. Manufacturer branding may remain only on the physical product/packaging.\n"
             . ($hasStoreLogo
-                ? "- Use the supplied Store logo as the exact brand source. Preserve its spelling, symbol, colors, proportions and aspect ratio; do not invent a variant, redraw it, typeset it, stretch it or duplicate it. Place it in the same branding zone and at the same relative prominence required by the Template prompt.\n"
+                ? "- Use the supplied Store logo artwork itself, undistorted and visibly placed; do not redraw or typeset it. Follow the selected Template's branding zone and consistent logo prominence.\n"
                 : "- Store logo reference is missing: do not invent one; stop generation until a valid logo is attached.\n")
-            . "- Adding/removing an installed reference must never change the Template's overall graphic design. "
+            . "- The selected Template prompt/master defines the reusable design system: composition, major zones, hierarchy, palette, typography, background, frames, badges, motifs, callouts and spacing. Keep these consistent across products; do not copy the Template's example product or logo.\n"
+            . "- Adding/removing an installed reference must not change the overall Template identity. "
             . ($hasInstalled
-                ? "Use the installed image only for truthful installation, orientation, placement, scale and fitment context; preserve the same Template zones and hierarchy."
-                : "Do not invent an installed-on-motorcycle view, vehicle, rider, mechanic, road, garage or workshop scene.")
-            . "\nPRODUCT AND TITLE LOCK — mandatory:\n"
-            . "- Preserve the actual product's silhouette, geometry, proportions, material, finish, color, visible markings and packaging. Do not merge products, add/remove parts, or invent technical claims.\n"
-            . "- Preserve the exact requested title and spelling. Keep typography readable and avoid extra text not requested by the Template or application.\n"
-            . "- One cohesive marketplace advertisement only: no split-screen, no reference-board collage, no duplicated product, no duplicate logo, no watermark, no alternate wordmark.";
+                ? "Use the installed image only for truthful installation/fitment context."
+                : "Do not invent an installed-on-motorcycle view.")
+            . " Preserve the actual product and exact requested title. Never add duplicate Store logos, alternative wordmarks or watermarks.";
     }
 
     /**
