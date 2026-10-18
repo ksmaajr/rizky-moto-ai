@@ -231,6 +231,14 @@ final class NvidiaProvider implements ImageProviderInterface
         $roles = array_map(static fn ($reference) => strtolower(trim((string) $reference->role)), $request->references);
         $hasInstalled = count(array_intersect($roles, ['installed', 'installed_reference'])) > 0;
 
+        // FLUX.3 Image Klein hosted preview has a strict 2,000-character prompt
+        // ceiling. The shared generator prompt is intentionally comprehensive,
+        // so distill it for this endpoint while preserving template direction,
+        // any exact custom title, product identity, and store-logo rules.
+        if (strtolower(trim($request->model)) === 'black-forest-labs/flux.3-image-klein') {
+            return $this->compactFluxKleinPrompt($request, $hasInstalled);
+        }
+
         return $request->prompt
             . "\n\nNVIDIA IMAGE EDITING POLICY — mandatory:"
             . "\n- Preserve the real product identity, package shape, color, geometry, and visible details from the product reference."
@@ -238,6 +246,53 @@ final class NvidiaProvider implements ImageProviderInterface
             . "\n- Use the provided reference board as labeled guidance: PRODUCT = exact item identity; TEMPLATE = style direction; INSTALLED = real installation context; STORE LOGO = official branding artwork."
             . "\n- " . ($hasInstalled ? 'Use installed-reference guidance for plausible fitment while preserving the product.' : 'Do not invent an installed-on-motorcycle scene because no installed reference was supplied.')
             . "\n- Create a premium, original square marketplace product poster. Keep headline and Store logo legible; do not invent specifications, prices, or compatibility claims.";
+    }
+
+    private function compactFluxKleinPrompt(ImageGenerationRequest $request, bool $hasInstalled): string
+    {
+        $templateDirection = '';
+        if (preg_match('/TEMPLATE PROMPT — mandatory visual direction:\\s*(.*?)\\s*(?=\\nTITLE:)/su', $request->prompt, $matches)) {
+            $templateDirection = trim($matches[1]);
+        }
+
+        $titleInstruction = '';
+        if (preg_match('/\\nTITLE:\\s*(.*?)\\s*(?=\\nBRAND CONTEXT:)/su', $request->prompt, $matches)) {
+            $titleInstruction = trim($matches[1]);
+        }
+
+        // Leave room for the fixed safety/role instructions. The template's
+        // prompt is the only free-form section shortened for this model.
+        $templateDirection = mb_substr($templateDirection, 0, 650);
+        $titleInstruction = mb_substr($titleInstruction, 0, 350);
+
+        $fixed = [
+            'Create one premium, square marketplace product poster. Follow the selected Template visual system: layout, hierarchy, palette, typography, background, frames, badges and spacing.',
+            'PRODUCT reference is the sole authority for the exact item. Preserve its shape, proportions, color, material, packaging, markings and visible details; do not redesign it or invent specifications.',
+            'Use the labeled reference board only as guidance; never reproduce the board as a collage. PRODUCT = item identity; TEMPLATE = style; INSTALLED = real fitment/context; STORE LOGO = official branding.',
+            'The dedicated STORE LOGO panel is the only source for the shop logo. Use that artwork faithfully; never copy, redraw or infer a logo from other images.',
+            $hasInstalled
+                ? 'Use the INSTALLED reference for plausible fitment and context; preserve the real product and keep the product clearly visible.'
+                : 'No installed reference exists: do not add a motorcycle, vehicle, wheel, rider, person, hand, garage or installation scene.',
+            'Keep the product prominent and text/logo legible. One cohesive composition, not a collage. Do not invent prices, compatibility, benefits or factual claims.',
+            $titleInstruction !== '' ? 'TITLE RULE: ' . $titleInstruction : '',
+            $templateDirection !== '' ? 'TEMPLATE DIRECTION: ' . $templateDirection : '',
+        ];
+
+        $prompt = implode("\\n\\n", array_values(array_filter($fixed, static fn ($part) => $part !== '')));
+
+        // If a very long custom title or fixed instruction pushes the prompt over
+        // the API ceiling, shorten only the free-form template direction further.
+        while (mb_strlen($prompt) > 1950 && $templateDirection !== '') {
+            $templateDirection = mb_substr($templateDirection, 0, max(0, mb_strlen($templateDirection) - 100));
+            $fixed[count($fixed) - 1] = $templateDirection !== '' ? 'TEMPLATE DIRECTION: ' . $templateDirection : '';
+            $prompt = implode("\\n\\n", array_values(array_filter($fixed, static fn ($part) => $part !== '')));
+        }
+
+        if (mb_strlen($prompt) > 2000) {
+            throw new RuntimeException('Judul atau instruksi wajib melebihi batas 2.000 karakter NVIDIA FLUX.3 Klein. Persingkat judul atau prompt template.');
+        }
+
+        return $prompt;
     }
 
     /**
