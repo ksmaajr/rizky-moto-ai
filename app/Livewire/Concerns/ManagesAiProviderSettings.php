@@ -115,7 +115,7 @@ trait ManagesAiProviderSettings
             ]);
         }
 
-        $nvidiaPool = app(\App\Services\NvidiaApiKeyPool::class);
+        $nvidiaPool = app(NvidiaApiKeyPool::class);
         $this->nvidiaApiKeyConfigured = $nvidiaPool->totalCount(Auth::id()) > 0
             ? $nvidiaPool->activeCount(Auth::id()) > 0
             : filled($setting?->nvidia_api_key);
