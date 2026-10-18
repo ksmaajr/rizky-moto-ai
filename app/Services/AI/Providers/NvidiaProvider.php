@@ -17,7 +17,7 @@ final class NvidiaProvider implements ImageProviderInterface
         'black-forest-labs/flux.2-klein-4b' => 'https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.2-klein-4b',
         'black-forest-labs/flux.3-image-klein' => 'https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.3-image-klein',
         // Qwen-Image-Edit is exposed through a deployed NIM OpenAI-compatible endpoint.
-        'qwen/qwen-image-edit-2511' => '',
+        'qwen/qwen-image-edit-2511' => 'configured-via-nvidia-nim',
     ];
 
     public function __construct(
