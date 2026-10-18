@@ -28,6 +28,15 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'nvidia' => [
+        // Optional deployed NIM inference endpoints. The public NVIDIA API Trial
+        // endpoint is intentionally not used for image editing because it only
+        // accepts predefined example_id images, not uploaded product/logo images.
+        'flux2_endpoint' => env('NVIDIA_FLUX2_ENDPOINT'),
+        'flux3_endpoint' => env('NVIDIA_FLUX3_ENDPOINT'),
+        'timeout' => (int) env('NVIDIA_TIMEOUT', 240),
+    ],
+
     'agent_ai' => [
         'python_binary' => env('AGENT_AI_PYTHON_BINARY', PHP_OS_FAMILY === 'Windows' ? 'python' : 'python3'),
         'codex_cli_binary' => env('CODEX_CLI_BINARY', PHP_OS_FAMILY === 'Windows' ? 'codex.cmd' : 'codex'),
