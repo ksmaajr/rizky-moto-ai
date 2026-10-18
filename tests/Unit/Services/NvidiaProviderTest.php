@@ -4,6 +4,7 @@ namespace Tests\Unit\Services;
 
 use App\Services\AI\Providers\NvidiaProvider;
 use App\Services\ActivityLogService;
+use App\Services\NvidiaApiKeyPool;
 use PHPUnit\Framework\TestCase;
 
 class NvidiaProviderTest extends TestCase
