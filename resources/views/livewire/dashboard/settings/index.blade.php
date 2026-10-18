@@ -379,7 +379,7 @@
                                     </label>
 
                                     <label class="rms-vg-key-input-field">
-                                        <span>VERCEL API KEY</span>
+                                        <span>NVIDIA API KEY</span>
                                         <div>
                                             <input
                                                 :type="showNewKey ? 'text' : 'password'"
@@ -578,7 +578,7 @@
                                 <i></i>
                             </div>
                             <div>
-                                <strong>Gateway health check</strong>
+                                <strong>NVIDIA pool health check</strong>
                                 <small>Test seluruh Vercel API key yang aktif sekaligus. Setiap hasil akan dicatat ke API Key Activity dan status key diperbarui otomatis.</small>
                             </div>
                         </div>
@@ -958,6 +958,7 @@
                         </section>
 
                         <section class="rms-provider-block rms-provider-block-nvidia">
+                            <section class="rms-provider-block rms-provider-block-nvidia">
                             <div class="rms-provider-block-head">
                                 <div class="rms-provider-block-icon" aria-hidden="true"><span>N</span></div>
                                 <div class="rms-provider-block-copy">
