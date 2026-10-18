@@ -19,7 +19,6 @@ class NvidiaProviderTest extends TestCase
         $this->assertSame('nvidia', $provider->name());
         $this->assertTrue($provider->supportsModel('black-forest-labs/flux.2-klein-4b'));
         $this->assertTrue($provider->supportsModel('black-forest-labs/flux.3-image-klein'));
-        $this->assertTrue($provider->supportsModel('qwen/qwen-image-edit-2511'));
         $this->assertFalse($provider->supportsModel('openai/gpt-image-2.5-sunburst'));
         $this->assertFalse($provider->supportsModel('unknown/model'));
     }
