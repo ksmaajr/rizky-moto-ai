@@ -376,9 +376,6 @@
                                             placeholder="Contoh: Vercel Main"
                                             autocomplete="off"
                                         >
-                                        @error('newNvidiaKeyName')
-                                            <small class="rms-nvidia-field-error">{{ $message }}</small>
-                                        @enderror
                                     </label>
 
                                     <label class="rms-vg-key-input-field">
@@ -395,9 +392,6 @@
                                                 <span x-text="showNewKey ? 'Hide' : 'Show'"></span>
                                             </button>
                                         </div>
-                                        @error('newNvidiaApiKey')
-                                            <small class="rms-nvidia-field-error">{{ $message }}</small>
-                                        @enderror
                                     </label>
                                 </div>
 
@@ -1043,6 +1037,9 @@
                                             placeholder="Contoh: NVIDIA Main"
                                             autocomplete="off"
                                         >
+                                        @error('newNvidiaKeyName')
+                                            <small class="rms-nvidia-field-error">{{ $message }}</small>
+                                        @enderror
                                     </label>
 
                                     <label class="rms-vg-key-input-field">
@@ -1059,6 +1056,9 @@
                                                 <span x-text="showNewKey ? 'Hide' : 'Show'"></span>
                                             </button>
                                         </div>
+                                        @error('newNvidiaApiKey')
+                                            <small class="rms-nvidia-field-error">{{ $message }}</small>
+                                        @enderror
                                     </label>
                                 </div>
 
