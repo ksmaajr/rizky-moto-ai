@@ -95,6 +95,9 @@ class Index extends Component
             ->orderByRaw('CASE WHEN user_id = ? THEN 0 ELSE 1 END', [Auth::id()])
             ->first();
 
+        // Always refresh the state on Livewire requests. Leaving it unchanged when
+        // no row exists can retain stale UI state after a setting is removed.
+        $this->nvidiaApiKeyConfigured = false;
         if ($setting) {
             $this->activeProvider = $setting->active_provider ?: 'vercel';
             $this->fallbackProvider = (string) ($setting->fallback_provider ?? '');
@@ -432,6 +435,9 @@ class Index extends Component
     {
         return view('livewire.dashboard.settings.index', [
             'serverMetrics' => $this->serverMetrics,
+            // Explicit view data is a defensive guard against stale deploys and
+            // keeps this value defined if the component's state shape drifts.
+            'nvidiaApiKeyConfigured' => $this->nvidiaApiKeyConfigured,
         ]);
     }
 }
