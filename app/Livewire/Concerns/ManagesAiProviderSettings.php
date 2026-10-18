@@ -112,7 +112,10 @@ trait ManagesAiProviderSettings
             ]);
         }
 
-        $this->nvidiaApiKeyConfigured = app(\App\Services\NvidiaApiKeyPool::class)->activeCount(Auth::id()) > 0 || filled($setting?->nvidia_api_key);
+        $nvidiaPool = app(\App\Services\NvidiaApiKeyPool::class);
+        $this->nvidiaApiKeyConfigured = $nvidiaPool->totalCount(Auth::id()) > 0
+            ? $nvidiaPool->activeCount(Auth::id()) > 0
+            : filled($setting?->nvidia_api_key);
 
         if ($setting) {
             $this->activeProvider = $setting->active_provider ?: 'vercel';
