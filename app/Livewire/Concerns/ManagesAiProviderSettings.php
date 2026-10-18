@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 trait ManagesAiProviderSettings
 {
     public string $activeProvider = 'vercel';
+    public bool $nvidiaApiKeyConfigured = false;
     public string $fallbackProvider = '';
     public bool $allowProviderFallback = false;
     public bool $emergencyFallback = false;
@@ -23,6 +24,8 @@ trait ManagesAiProviderSettings
             ->orderByRaw('CASE WHEN user_id = ? THEN 0 ELSE 1 END', [Auth::id()])
             ->first();
 
+        $this->nvidiaApiKeyConfigured = filled($setting?->nvidia_api_key);
+
         if ($setting) {
             $this->activeProvider = $setting->active_provider ?: 'vercel';
             $this->fallbackProvider = (string) ($setting->fallback_provider ?? '');
@@ -34,7 +37,7 @@ trait ManagesAiProviderSettings
     public function saveAiProviderConfiguration(): void
     {
         $this->validate([
-            'activeProvider' => ['required', 'in:vercel,agentkit'],
+            'activeProvider' => ['required', 'in:vercel,agentkit,nvidia'],
             'fallbackProvider' => ['nullable', 'in:vercel,agentkit'],
         ]);
 
