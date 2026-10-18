@@ -17,7 +17,7 @@ trait ManagesNvidiaApiKeys
     public function getNvidiaApiKeysProperty(): array
     {
         return NvidiaApiKey::query()
-            ->where(fn ($q) => $q->where('user_id', auth()->id())->orWhereNull('user_id'))
+            ->where('user_id', auth()->id())
             ->orderBy('priority')->orderBy('id')->get()
             ->map(fn (NvidiaApiKey $key) => [
                 'id' => $key->id,
@@ -70,7 +70,7 @@ trait ManagesNvidiaApiKeys
         }
 
         $existing = NvidiaApiKey::query()
-            ->where(fn ($q) => $q->where('user_id', auth()->id())->orWhereNull('user_id'))
+            ->where('user_id', auth()->id())
             ->get();
         if ($existing->contains(fn (NvidiaApiKey $key) => hash_equals((string) $key->api_key, $apiKey))) {
             throw ValidationException::withMessages(['newNvidiaApiKey' => 'API key ini sudah ada di NVIDIA pool.']);
@@ -186,7 +186,7 @@ trait ManagesNvidiaApiKeys
 
     public function testAllNvidiaApiKeys(): void
     {
-        $keys = NvidiaApiKey::query()->where(fn ($q) => $q->where('user_id', auth()->id())->orWhereNull('user_id'))->where('is_active', true)->orderBy('priority')->get();
+        $keys = NvidiaApiKey::query()->where('user_id', auth()->id())->where('is_active', true)->orderBy('priority')->get();
         if ($keys->isEmpty()) {
             $this->dispatch('toast', type: 'warning', title: 'Belum ada NVIDIA API key', message: 'Tambahkan minimal satu key terlebih dahulu.');
             return;
@@ -202,8 +202,6 @@ trait ManagesNvidiaApiKeys
 
     private function ownedNvidiaApiKey(int $id): ?NvidiaApiKey
     {
-        return NvidiaApiKey::query()->whereKey($id)
-            ->where(fn ($q) => $q->where('user_id', auth()->id())->orWhereNull('user_id'))
-            ->first();
+        return NvidiaApiKey::query()->whereKey($id)->where('user_id', auth()->id())->first();
     }
 }
