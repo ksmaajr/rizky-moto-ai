@@ -314,7 +314,7 @@
                                 : [];
                         @endphp
 
-                        <div class="rms-vg-key-manager-root" x-data="{ addOpen: false, showNewKey: false, deleteOpen: false, deleteId: null, deleteName: '', deleting: false, confirmDelete(id, name) { this.deleteId = id; this.deleteName = name || 'API key ini'; this.deleteOpen = true; }, closeDelete() { if (!this.deleting) this.deleteOpen = false; }, async deleteKey() { if (!this.deleteId || this.deleting) return; this.deleting = true; try { await $wire.removeVercelGatewayKey(this.deleteId); this.deleteOpen = false; } catch (e) { console.error(e); } finally { this.deleting = false; this.deleteId = null; } } }" @keydown.escape.window="closeDelete()">
+                        <div class="rms-vg-key-manager-root" x-data="{ addOpen: false, showNewKey: false, deleteOpen: false, deleteId: null, deleteName: '', deleting: false, confirmDelete(id, name) { this.deleteId = id; this.deleteName = name || 'API key ini'; this.deleteOpen = true; }, closeDelete() { if (!this.deleting) this.deleteOpen = false; }, async deleteKey() { if (!this.deleteId || this.deleting) return; this.deleting = true; try { await $wire.removeVercelGatewayKey(this.deleteId); this.deleteOpen = false; } catch (e) { console.error(e); } finally { this.deleting = false; this.deleteId = null; } } }" @keydown.escape.window="closeDelete()" @nvidia-key-added.window="addOpen = false; showNewKey = false">
                         <section class="rms-vg-key-manager">
                             <div class="rms-vg-section-head">
                                 <div class="rms-vg-section-title">
@@ -376,6 +376,9 @@
                                             placeholder="Contoh: Vercel Main"
                                             autocomplete="off"
                                         >
+                                        @error('newNvidiaKeyName')
+                                            <small class="rms-nvidia-field-error">{{ $message }}</small>
+                                        @enderror
                                     </label>
 
                                     <label class="rms-vg-key-input-field">
@@ -392,6 +395,9 @@
                                                 <span x-text="showNewKey ? 'Hide' : 'Show'"></span>
                                             </button>
                                         </div>
+                                        @error('newNvidiaApiKey')
+                                            <small class="rms-nvidia-field-error">{{ $message }}</small>
+                                        @enderror
                                     </label>
                                 </div>
 
@@ -1033,7 +1039,7 @@
                                         <span>KEY NAME</span>
                                         <input
                                             type="text"
-                                            wire:model.live="newNvidiaKeyName"
+                                            wire:model="newNvidiaKeyName"
                                             placeholder="Contoh: NVIDIA Main"
                                             autocomplete="off"
                                         >
@@ -1044,7 +1050,7 @@
                                         <div>
                                             <input
                                                 :type="showNewKey ? 'text' : 'password'"
-                                                wire:model.live="newNvidiaApiKey"
+                                                wire:model="newNvidiaApiKey"
                                                 placeholder="nvapi-••••••••••••••••"
                                                 autocomplete="new-password"
                                                 spellcheck="false"
@@ -6694,4 +6700,36 @@
  .rms-provider-block-agent .rms-agent-identity{gap:5px 10px}
  .rms-provider-block-agent .rms-agent-identity>span{max-width:100%;overflow-wrap:anywhere}
 }
+
+/* NVIDIA pool layout and request UX fixes */
+.rms-provider-block-nvidia,.rms-provider-block-nvidia *{box-sizing:border-box}
+.rms-provider-block-nvidia{min-width:0;overflow:visible}
+.rms-provider-block-nvidia .rms-vg-key-manager-root{width:auto!important;max-width:none!important;margin:16px 20px 12px!important;min-width:0}
+.rms-provider-block-nvidia .rms-vg-key-manager{width:100%;max-width:100%;min-width:0;overflow:visible;border-radius:16px}
+.rms-provider-block-nvidia .rms-vg-add-panel{margin:0 12px 14px!important;padding:16px!important;border-radius:14px;min-width:0}
+.rms-provider-block-nvidia .rms-vg-add-grid{grid-template-columns:minmax(180px,.7fr) minmax(0,1.3fr);align-items:start;gap:14px}
+.rms-provider-block-nvidia .rms-vg-add-grid label,.rms-provider-block-nvidia .rms-vg-key-input-field,.rms-provider-block-nvidia .rms-vg-key-input-field>div{min-width:0}
+.rms-provider-block-nvidia .rms-vg-add-grid input{min-width:0}
+.rms-provider-block-nvidia .rms-vg-add-footer{flex-wrap:wrap;align-items:center;gap:12px}
+.rms-provider-block-nvidia .rms-vg-add-footer>small{flex:1 1 230px;min-width:0}
+.rms-provider-block-nvidia .rms-vg-save-key{flex:0 0 auto;min-width:142px;max-width:100%;white-space:nowrap}
+.rms-provider-block-nvidia .rms-vg-key-list{padding:0 12px 14px!important;min-width:0}
+.rms-provider-block-nvidia .rms-vg-key-card,.rms-provider-block-nvidia .rms-vg-key-card-main,.rms-provider-block-nvidia .rms-vg-key-copy{min-width:0}
+.rms-provider-block-nvidia .rms-vg-test-all-card{display:flex!important;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;width:auto!important;max-width:none!important;min-width:0;margin:12px 20px 20px!important;padding:16px!important;box-sizing:border-box!important;border-radius:16px}
+.rms-provider-block-nvidia .rms-vg-test-all-copy{flex:1 1 260px;min-width:0}
+.rms-provider-block-nvidia .rms-vg-test-all-copy small{display:block;line-height:1.55;overflow-wrap:anywhere}
+.rms-provider-block-nvidia .rms-vg-test-all-button{flex:0 0 auto;min-width:150px;max-width:100%}
+.rms-provider-block-nvidia .rms-nvidia-field-error{display:block;margin-top:6px;color:#dc2626;font-size:11px;line-height:1.4;overflow-wrap:anywhere}
+.rms-provider-block-nvidia .rms-vg-empty-keys{min-width:0}
+@media(max-width:760px){
+.rms-provider-block-nvidia .rms-vg-key-manager-root{margin:12px 10px!important}
+.rms-provider-block-nvidia .rms-vg-add-panel{margin:0 8px 10px!important;padding:12px!important}
+.rms-provider-block-nvidia .rms-vg-add-grid{grid-template-columns:minmax(0,1fr)!important}
+.rms-provider-block-nvidia .rms-vg-add-footer{align-items:stretch;flex-direction:column}
+.rms-provider-block-nvidia .rms-vg-save-key,.rms-provider-block-nvidia .rms-vg-test-all-button{width:100%}
+.rms-provider-block-nvidia .rms-vg-key-list{padding:0 8px 10px!important}
+.rms-provider-block-nvidia .rms-vg-test-all-card{margin:10px 10px 12px!important;padding:12px!important;align-items:stretch;flex-direction:column}
+.rms-provider-block-nvidia .rms-vg-test-all-copy{flex-basis:auto}
+}
+
 </style>
