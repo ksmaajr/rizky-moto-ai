@@ -103,7 +103,7 @@ trait ManagesAiProviderSettings
         if ($setting && filled($setting->nvidia_api_key)
             && app(\App\Services\NvidiaApiKeyPool::class)->totalCount(Auth::id()) === 0) {
             \App\Models\NvidiaApiKey::create([
-                'user_id' => $setting->user_id,
+                'user_id' => Auth::id(),
                 'name' => 'NVIDIA Legacy Key',
                 'api_key' => $setting->nvidia_api_key,
                 'status' => 'active',
