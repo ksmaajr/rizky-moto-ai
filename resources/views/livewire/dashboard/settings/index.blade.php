@@ -1262,7 +1262,8 @@
                             </div>
                         </section>
                             {{-- PROVIDER FAILOVER CONFIGURATION --}}
-                            <section class="rms-ai-provider-section rms-failover-card">
+                            <section class="rms-provider-block rms-provider-block-failover" aria-label="Provider failover configuration">
+                            <div class="rms-ai-provider-section rms-failover-card">
                         <div class="rms-ai-provider-section-head">
                             <div class="rms-ai-provider-section-title">
                                 <span class="rms-ai-provider-icon">↗</span>
@@ -1367,7 +1368,8 @@
                                 <span class="rms-ai-save-loading" wire:loading.class="rms-ai-save-visible" wire:target="saveAiProviderConfiguration">Saving...</span>
                             </button>
                         </div>
-                    </section>
+                            </div>
+                            </section>
 
                     @endif
 
@@ -6730,4 +6732,62 @@
 .rms-provider-block-nvidia .rms-vg-test-all-copy{flex-basis:auto}
 }
 
+
+/* FAILOVER PANEL LAYOUT FIX: keep dropdowns above the card and save action visible. */
+.rms-openai-form-upgraded > .rms-provider-block-failover{
+    grid-column:1 / -1!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:0 0 22px!important;
+    overflow:visible!important;
+    isolation:visible!important;
+    z-index:20;
+}
+.rms-provider-block-failover,
+.rms-provider-block-failover .rms-ai-provider-section,
+.rms-provider-block-failover .rms-ai-failover-grid,
+.rms-provider-block-failover .rms-ai-config-field,
+.rms-provider-block-failover .rms-custom-select{
+    overflow:visible!important;
+}
+.rms-provider-block-failover > .rms-ai-provider-section{
+    width:auto!important;
+    min-width:0!important;
+    margin:0!important;
+    border:0!important;
+    border-radius:inherit!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    overflow:visible!important;
+}
+.rms-provider-block-failover .rms-ai-provider-section-head,
+.rms-provider-block-failover .rms-ai-failover-grid,
+.rms-provider-block-failover .rms-ai-provider-save-row{
+    position:relative;
+}
+.rms-provider-block-failover .rms-ai-provider-section-head{z-index:2}
+.rms-provider-block-failover .rms-ai-failover-grid{z-index:30}
+.rms-provider-block-failover .rms-ai-config-field{z-index:31;min-width:0}
+.rms-provider-block-failover .rms-ai-config-field:has(.rms-custom-select.is-open){z-index:5000}
+.rms-provider-block-failover .rms-custom-select{position:relative;z-index:40;min-width:0}
+.rms-provider-block-failover .rms-custom-select.is-open{z-index:6000}
+.rms-provider-block-failover .rms-custom-select-menu{z-index:6100!important;max-height:min(320px,55vh);overflow-y:auto}
+.rms-provider-block-failover .rms-ai-toggle-field{z-index:1}
+.rms-provider-block-failover .rms-ai-provider-save-row{
+    z-index:2;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+    min-width:0;
+}
+.rms-provider-block-failover .rms-ai-provider-save-row>div{flex:1 1 220px}
+.rms-provider-block-failover .rms-ai-save-button{flex:0 0 auto;visibility:visible!important;opacity:1}
+@media(max-width:760px){
+    .rms-openai-form-upgraded > .rms-provider-block-failover{margin:0 0 16px!important}
+    .rms-provider-block-failover .rms-ai-provider-save-row{align-items:stretch;flex-direction:column}
+    .rms-provider-block-failover .rms-ai-provider-save-row>div{flex-basis:auto}
+    .rms-provider-block-failover .rms-ai-save-button{width:100%;min-width:0!important}
+}
 </style>
