@@ -100,6 +100,8 @@ class NvidiaConfiguration extends Component
         }
 
         $started = microtime(true);
+        $this->testStatus = 'processing';
+        $this->testMessage = 'Menjalankan tes generasi gambar…';
         try {
             // A small real generation is the most reliable hosted-endpoint check.
             $result = app(NvidiaImageService::class)->generate(
@@ -112,6 +114,7 @@ class NvidiaConfiguration extends Component
             $this->testDurationMs = (int) round((microtime(true) - $started) * 1000);
             $setting->forceFill(['last_tested_at' => now(), 'last_test_status' => 'success'])->save();
             $this->connectionStatus = 'success';
+            $this->testStatus = 'success';
             $this->lastTestedAt = now()->diffForHumans();
             $this->writeLog('nvidia_connection_test', 'NVIDIA generation test succeeded', 'Tes koneksi berhasil melalui image generation.', 'success', [
                 'provider' => 'nvidia', 'model' => $this->model, 'http_status' => $this->testHttpStatus,
@@ -124,6 +127,7 @@ class NvidiaConfiguration extends Component
             $this->testDurationMs = (int) round((microtime(true) - $started) * 1000);
             $setting->forceFill(['last_tested_at' => now(), 'last_test_status' => 'error'])->save();
             $this->connectionStatus = 'error';
+            $this->testStatus = 'error';
             $this->lastTestedAt = now()->diffForHumans();
             $message = $this->safeError($e);
             $this->writeLog('nvidia_connection_test', 'NVIDIA generation test failed', $message, 'error', [
