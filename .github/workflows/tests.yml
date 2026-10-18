@@ -53,6 +53,13 @@ jobs:
           php -l app/Console/Commands/ImportCodexCredentialCommand.php
           php -l tests/Feature/ImportCodexCredentialCommandTest.php
           php -l app/Livewire/Concerns/ManagesAgentAiCredentials.php
+          php -l app/Services/AI/Providers/NvidiaProvider.php
+          php -l app/Services/AI/ProviderManager.php
+          php -l app/Livewire/Dashboard/Settings/Index.php
+          php -l tests/Unit/Services/NvidiaProviderTest.php
 
       - name: Test AgentKit credential importer
         run: php artisan test --filter=ImportCodexCredentialCommandTest
+
+      - name: Test NVIDIA provider model catalog
+        run: php artisan test --filter=NvidiaProviderTest
