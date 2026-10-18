@@ -1231,7 +1231,6 @@
                             </div>
                         </div>
                     </div>
-                        </div>
                     </template>
                         </section>
                         </div>
