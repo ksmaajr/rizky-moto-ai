@@ -1041,7 +1041,7 @@
                                     </label>
 
                                     <label class="rms-vg-key-input-field">
-                                        <span>VERCEL API KEY</span>
+                                        <span>NVIDIA API KEY</span>
                                         <div>
                                             <input
                                                 :type="showNewKey ? 'text' : 'password'"
@@ -1232,7 +1232,7 @@
 
 
 
-                            {{-- TEST ALL VERCEL KEYS --}}
+                            {{-- TEST ALL NVIDIA KEYS --}}
                             <div class="rms-vg-test-all-card rms-vg-test-all-card-full">
                         <div class="rms-vg-test-all-copy">
                             <div class="rms-vg-test-all-icon">
