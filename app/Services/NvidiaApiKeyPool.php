@@ -101,7 +101,7 @@ final class NvidiaApiKeyPool
                     ? ['status' => 'cooldown', 'retry' => true, 'reason' => 'rate_limited', 'seconds' => 60]
                     : ($serverError
                         ? ['status' => 'cooldown', 'retry' => true, 'reason' => 'provider_server_error', 'seconds' => 30]
-                        : ['status' => 'error', 'retry' => false, 'reason' => 'request_error', 'seconds' => 0]));
+                        : ['status' => 'error', 'retry' => false, 'reason' => 'request_error', 'seconds' => 0])));
 
         if ($id) {
             $updates = [
