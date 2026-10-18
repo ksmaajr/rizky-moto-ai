@@ -83,7 +83,7 @@ trait ManagesAiProviderSettings
                 'metadata' => ['provider' => 'nvidia', 'http_status' => $response->status(), 'duration_ms' => (int) round((microtime(true) - $started) * 1000)],
             ]);
             $this->dispatch('toast', type: $ok ? 'success' : 'error', title: $ok ? 'NVIDIA test berhasil' : 'NVIDIA test gagal', message: $this->nvidiaApiKeyStatus['message']);
-        } catch (\\Throwable $exception) {
+        } catch (\Throwable $exception) {
             $this->nvidiaApiKeyStatus = ['ok' => false, 'message' => 'NVIDIA test gagal: ' . mb_substr($exception->getMessage(), 0, 700)];
             $this->dispatch('toast', type: 'error', title: 'NVIDIA test gagal', message: $this->nvidiaApiKeyStatus['message']);
         }
