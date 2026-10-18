@@ -99,6 +99,19 @@ trait ManagesAiProviderSettings
             ->orderByRaw('CASE WHEN user_id = ? THEN 0 ELSE 1 END', [Auth::id()])
             ->first();
 
+        // Import the previous single-key setting into the new pool once, preserving existing deployments.
+        if ($setting && filled($setting->nvidia_api_key)
+            && app(\App\Services\NvidiaApiKeyPool::class)->totalCount(Auth::id()) === 0) {
+            \App\Models\NvidiaApiKey::create([
+                'user_id' => $setting->user_id,
+                'name' => 'NVIDIA Legacy Key',
+                'api_key' => $setting->nvidia_api_key,
+                'status' => 'active',
+                'is_active' => true,
+                'priority' => 0,
+            ]);
+        }
+
         $this->nvidiaApiKeyConfigured = app(\App\Services\NvidiaApiKeyPool::class)->activeCount(Auth::id()) > 0 || filled($setting?->nvidia_api_key);
 
         if ($setting) {
