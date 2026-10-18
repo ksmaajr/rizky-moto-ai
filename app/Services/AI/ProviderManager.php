@@ -67,8 +67,8 @@ final class ProviderManager
     /**
      * Return the image model catalog for the currently selected provider.
      *
-     * Vercel keeps its live Gateway catalog. AgentKit intentionally exposes
-     * only the two models supported by the upstream toolkit.
+     * Vercel keeps its live Gateway catalog. AgentKit and NVIDIA expose only the
+     * models explicitly supported by their respective adapters.
      *
      * @return array<int,array{id:string,value:string,label:string,description:string,owned_by:string}>
      */
