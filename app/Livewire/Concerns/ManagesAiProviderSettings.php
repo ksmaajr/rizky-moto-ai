@@ -4,8 +4,11 @@ namespace App\Livewire\Concerns;
 
 use App\Models\AiProviderSetting;
 use App\Models\ActivityLog;
+use App\Models\NvidiaApiKey;
+use App\Services\NvidiaApiKeyPool;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
+use Throwable;
 
 trait ManagesAiProviderSettings
 {
@@ -83,7 +86,7 @@ trait ManagesAiProviderSettings
                 'metadata' => ['provider' => 'nvidia', 'http_status' => $response->status(), 'duration_ms' => (int) round((microtime(true) - $started) * 1000)],
             ]);
             $this->dispatch('toast', type: $ok ? 'success' : 'error', title: $ok ? 'NVIDIA test berhasil' : 'NVIDIA test gagal', message: $this->nvidiaApiKeyStatus['message']);
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             $this->nvidiaApiKeyStatus = ['ok' => false, 'message' => 'NVIDIA test gagal: ' . mb_substr($exception->getMessage(), 0, 700)];
             $this->dispatch('toast', type: 'error', title: 'NVIDIA test gagal', message: $this->nvidiaApiKeyStatus['message']);
         }
@@ -101,8 +104,8 @@ trait ManagesAiProviderSettings
 
         // Import the previous single-key setting into the new pool once, preserving existing deployments.
         if ($setting && filled($setting->nvidia_api_key)
-            && app(\App\Services\NvidiaApiKeyPool::class)->totalCount(Auth::id()) === 0) {
-            \App\Models\NvidiaApiKey::create([
+            && app(NvidiaApiKeyPool::class)->totalCount(Auth::id()) === 0) {
+            NvidiaApiKey::create([
                 'user_id' => Auth::id(),
                 'name' => 'NVIDIA Legacy Key',
                 'api_key' => $setting->nvidia_api_key,
