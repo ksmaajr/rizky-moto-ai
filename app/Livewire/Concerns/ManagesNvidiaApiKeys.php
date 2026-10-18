@@ -49,6 +49,7 @@ trait ManagesNvidiaApiKeys
     {
         if (!$key->is_active || $key->status === 'disabled') return 'disabled';
         if ($key->cooldown_until?->isFuture()) return 'rate_limited';
+        if (in_array($key->status, ['cooldown', 'rate_limited'], true)) return 'active';
         return $key->status ?: 'active';
     }
 
