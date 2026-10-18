@@ -15,7 +15,7 @@ final class NvidiaProvider implements ImageProviderInterface
 {
     private const ENDPOINTS = [
         'black-forest-labs/flux.2-klein-4b' => 'https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.2-klein-4b',
-        'black-forest-labs/flux.3-image-klein' => 'https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.3-image-klein',
+        'black-forest-labs/flux.3-image-klein' => 'https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux-3-image-klein',
     ];
 
     public function __construct(
