@@ -70,10 +70,23 @@ final class NvidiaProvider implements ImageProviderInterface
         // editing. Build one clearly labeled contact sheet so all canonical roles
         // survive transport without pretending the endpoint accepts multipart arrays.
         $reference = $this->makeReferenceBoard($references);
-        $prompt = $this->lockedPrompt($request);
-        if (mb_strlen($prompt) > ($model === 'black-forest-labs/flux.3-image-klein' ? 2000 : 10000)) {
+        try {
+            $prompt = $this->lockedPrompt($request);
+        } catch (Throwable $e) {
             @unlink($reference['path']);
-            throw new RuntimeException('Prompt melebihi batas karakter model NVIDIA yang dipilih.');
+            throw $e;
+        }
+
+        $promptLimit = $model === 'black-forest-labs/flux.3-image-klein' ? 2000 : 10000;
+        $promptLength = mb_strlen($prompt);
+        if ($promptLength > $promptLimit) {
+            @unlink($reference['path']);
+            throw new RuntimeException(sprintf(
+                'Prompt NVIDIA %s berjumlah %d karakter, sedangkan batas endpoint adalah %d. Prompt Template tidak dipotong otomatis; ringkas instruksi Template atau pilih model dengan batas lebih tinggi.',
+                $model,
+                $promptLength,
+                $promptLimit,
+            ));
         }
 
         $payload = [
@@ -268,14 +281,17 @@ final class NvidiaProvider implements ImageProviderInterface
             throw new RuntimeException('Prompt dari Template terpilih tidak ditemukan. Periksa prompt Template sebelum generate NVIDIA.');
         }
 
+        // Keep mandatory provider rules compact so more of the 2,000-character
+        // endpoint budget remains available for the user's actual Template prompt.
+        // Never truncate or rewrite the selected Template direction.
         $fixed = [
-            'Create one premium square marketplace product poster. The selected Template prompt below is the authoritative visual direction; follow its design, layout, palette, typography and spacing.',
-            'PRODUCT reference alone defines the exact product. Preserve its shape, proportions, colors, materials, packaging and visible details; invent no specifications.',
-            'Use the labeled reference board as guidance, not as a collage. The dedicated STORE LOGO panel is the only source for the shop logo; never copy or redraw logos from other references.',
+            'Create a premium square marketplace poster. Follow the selected Template prompt below for visual design, layout, palette, typography and spacing.',
+            'PRODUCT reference defines the exact item. Preserve its shape, proportions, colors, materials, packaging and visible details; invent no specifications.',
+            'Use the labeled board as guidance, not a collage. STORE LOGO is the only source for the shop logo; never copy logos from other references.',
             $hasInstalled
-                ? 'Use INSTALLED only for truthful fitment and context while keeping the real product prominent.'
-                : 'No installed reference was supplied. Do not invent a motorcycle, vehicle, wheel, rider, person, garage or installation scene.',
-            'One cohesive composition, not a collage. Keep text/logo legible and do not invent prices, compatibility or factual claims.',
+                ? 'Use INSTALLED only for truthful fitment context; keep the product prominent.'
+                : 'No installed reference: do not invent a motorcycle or installation scene.',
+            'Keep product and logo clear. Invent no prices, compatibility or factual claims.',
             $titleInstruction !== '' ? 'TITLE RULE (preserve exactly): ' . $titleInstruction : '',
             'SELECTED TEMPLATE PROMPT (preserve fully): ' . $templateDirection,
         ];
