@@ -570,7 +570,7 @@
 
 
 
-                            {{-- TEST ALL VERCEL KEYS --}}
+                            {{-- TEST ALL NVIDIA KEYS --}}
                             <div class="rms-vg-test-all-card rms-vg-test-all-card-full">
                         <div class="rms-vg-test-all-copy">
                             <div class="rms-vg-test-all-icon">
@@ -958,7 +958,6 @@
                         </section>
 
                         <section class="rms-provider-block rms-provider-block-nvidia">
-                            <section class="rms-provider-block rms-provider-block-nvidia">
                             <div class="rms-provider-block-head">
                                 <div class="rms-provider-block-icon" aria-hidden="true"><span>N</span></div>
                                 <div class="rms-provider-block-copy">
@@ -1241,7 +1240,7 @@
                                 <i></i>
                             </div>
                             <div>
-                                <strong>Gateway health check</strong>
+                                <strong>NVIDIA pool health check</strong>
                                 <small>Test seluruh NVIDIA API key yang aktif sekaligus. Setiap hasil akan dicatat ke API Key Activity dan status key diperbarui otomatis.</small>
                             </div>
                         </div>
