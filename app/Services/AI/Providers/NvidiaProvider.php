@@ -284,7 +284,7 @@ final class NvidiaProvider implements ImageProviderInterface
         // also explicitly labeled on the image board; add the custom title only
         // when it fits without altering the selected Template prompt.
         $prompt = $templateDirection;
-        $titleRule = $titleInstruction !== '' ? "\\nTITLE (preserve exactly): " . $titleInstruction : '';
+        $titleRule = $titleInstruction !== '' ? "\nTITLE (preserve exactly): " . $titleInstruction : '';
         if ($titleRule !== '' && mb_strlen($prompt . $titleRule) <= 2000) {
             $prompt .= $titleRule;
         }
