@@ -35,12 +35,6 @@ trait ManagesNvidiaApiKeys
             ])->all();
     }
 
-    public function getNvidiaApiKeyConfiguredProperty(): bool
-    {
-        return app(NvidiaApiKeyPool::class)->activeCount(auth()->id()) > 0
-            || $this->legacyNvidiaKeyConfigured();
-    }
-
     private function legacyNvidiaKeyConfigured(): bool
     {
         $setting = \App\Models\AiProviderSetting::query()
