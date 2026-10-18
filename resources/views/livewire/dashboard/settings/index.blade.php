@@ -966,7 +966,7 @@
                                     <small>Encrypted credential pool, automatic rotation, rate-limit cooldown, and shared generation workers.</small>
                                 </div>
                                 <div class="rms-provider-block-state {{ $this->nvidiaApiKeyConfigured ? 'is-ready' : 'is-pending' }}">
-                                    <i></i><span>{{ $this->nvidiaApiKeyConfigured ? 'Pool ready' : 'API key required' }}</span>
+                                    <i></i><span>{{ $this->nvidiaApiKeyConfigured ? 'Pool ready' : 'Pool needs attention' }}</span>
                                 </div>
                             </div>
 
