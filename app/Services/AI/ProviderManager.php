@@ -146,66 +146,6 @@ final class ProviderManager
         try {
             return $primary->generate($request);
         } catch (Throwable $primaryError) {
-            // NVIDIA's public Trial endpoint cannot accept the generator's custom
-            // product/installed/store-logo references. For that specific known
-            // limitation, automatically route the same generation through Vercel
-            // using its default image model and the original individual references.
-            // This is a compatibility fallback, not a text-only NVIDIA retry.
-            if (
-                $primary->name() === 'nvidia'
-                && str_contains($primaryError->getMessage(), 'NVIDIA API Trial')
-                && str_contains($primaryError->getMessage(), 'NVIDIA_FLUX')
-            ) {
-                $vercel = null;
-                foreach ($this->providers as $candidate) {
-                    if ($candidate->name() === 'vercel') {
-                        $vercel = $candidate;
-                        break;
-                    }
-                }
-
-                if ($vercel && $vercel->supportsModel('openai/gpt-image-2.5-sunburst')) {
-                    $fallbackModel = app(\\App\\Services\\OpenAiImageService::class)->defaultImageModel();
-                    $fallbackRequest = new ImageGenerationRequest(
-                        model: $fallbackModel,
-                        prompt: $request->prompt,
-                        references: $request->references,
-                        imageCount: $request->imageCount,
-                        size: $request->size,
-                        quality: $request->quality,
-                        outputFormat: $request->outputFormat,
-                        userId: $request->userId,
-                        generationId: $request->generationId,
-                        metadata: array_diff_key($request->metadata, [
-                            'attachments' => true,
-                            'reference_transport' => true,
-                        ]),
-                    );
-
-                    $this->activity->warning(
-                        action: 'ai_provider_failover',
-                        category: 'api',
-                        title: 'NVIDIA Trial tidak mendukung referensi kustom; beralih ke Vercel.',
-                        description: 'Generation dialihkan ke Vercel AI Gateway agar foto produk, foto terpasang (jika ada), dan logo Store tetap dikirim sebagai referensi asli.',
-                        metadata: [
-                            'generation_id' => $request->generationId,
-                            'user_id' => $request->userId,
-                            'primary_provider' => 'nvidia',
-                            'fallback_provider' => 'vercel',
-                            'fallback_model' => $fallbackModel,
-                            'reason' => 'nvidia_trial_custom_image_input_unsupported',
-                            'reference_count' => count($request->references),
-                            'reference_roles' => array_map(
-                                static fn ($reference): string => strtolower(trim((string) $reference->role)),
-                                $request->references,
-                            ),
-                        ],
-                    );
-
-                    return $vercel->generate($fallbackRequest);
-                }
-            }
-
             $fallbackName = $setting?->fallback_provider;
 
             if (! ($setting?->allow_provider_fallback || $setting?->emergency_fallback) || ! $fallbackName || $fallbackName === $primary->name()) {
