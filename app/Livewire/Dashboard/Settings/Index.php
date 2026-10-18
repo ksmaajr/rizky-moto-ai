@@ -1,18 +1,18 @@
 <?php
 
-namespace App\\Livewire\\Dashboard\\Settings;
+namespace App\Livewire\Dashboard\Settings;
 
-use App\\Livewire\\Concerns\\ManagesAgentAiCredentials;
-use App\\Models\\AiProviderSetting;
-use App\\Models\\ActivityLog;
-use App\\Models\\VercelGatewayApiKey;
-use App\\Models\\Generation;
-use Illuminate\\Support\\Facades\\DB;
-use Illuminate\\Support\\Facades\\Schema;
-use Illuminate\\Support\\Facades\\Http;
-use Illuminate\\Support\\Facades\\Auth;
-use Livewire\\Attributes\\On;
-use Livewire\\Component;
+use App\Livewire\Concerns\ManagesAgentAiCredentials;
+use App\Models\AiProviderSetting;
+use App\Models\ActivityLog;
+use App\Models\VercelGatewayApiKey;
+use App\Models\Generation;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\On;
+use Livewire\Component;
 
 class Index extends Component
 {
@@ -189,7 +189,7 @@ class Index extends Component
             ]);
             $this->nvidiaApiKeyStatus = ['ok' => $ok, 'http_status' => $status, 'message' => $ok ? 'Test generate berhasil.' : 'Test generate gagal: ' . $detail];
             $this->toast($ok ? 'success' : 'error', $ok ? 'NVIDIA test berhasil' : 'NVIDIA test gagal', $this->nvidiaApiKeyStatus['message']);
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             $message = mb_substr($e->getMessage(), 0, 900);
             $this->writeSettingsActivity('provider_connection_test', 'NVIDIA image generation test failed', $message, 'error', [
                 'provider' => 'nvidia', 'exception' => get_class($e), 'duration_ms' => (int) round((microtime(true) - $started) * 1000),
@@ -259,7 +259,7 @@ class Index extends Component
             $key->update(['status'=>$status,'is_active'=>$status!=='invalid','last_http_status'=>$response->status(),'last_used_at'=>now(),'last_success_at'=>$ok?now():$key->last_success_at,'last_failure_at'=>$ok?$key->last_failure_at:now(),'last_error_type'=>$ok?null:'connection_test_failed','last_error'=>$ok?null:mb_substr($response->body(),0,1000),'cooldown_until'=>$status==='cooldown'?now()->addMinute():null]);
             $this->writeSettingsActivity('provider_connection_test','Vercel connection test '.($ok?'passed':'failed'),'Connection test untuk '.$key->name.'.',$ok?'success':'error',['provider'=>'vercel','credential_id'=>$key->id,'credential_name'=>$key->name,'http_status'=>$response->status(),'duration_ms'=>(int)round((microtime(true)-$started)*1000)]);
             $this->toast($ok?'success':'error',$ok?'Connection healthy':'Connection failed',$ok?'Vercel Gateway merespons dengan baik.':'Credential tidak lolos connection test.');
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             $key->update(['status'=>'error','last_error_type'=>'connection_exception','last_error'=>mb_substr($e->getMessage(),0,1000),'last_failure_at'=>now()]);
             $this->toast('error','Connection failed','Gateway tidak dapat dihubungi saat ini.');
         }
@@ -345,8 +345,8 @@ class Index extends Component
             return is_readable($path) ? (string) file_get_contents($path) : '';
         };
         $mem = [];
-        foreach (preg_split('/\\n/', $read('/proc/meminfo')) as $line) {
-            if (preg_match('/^(MemTotal|MemAvailable|MemFree|Buffers|Cached|SwapTotal|SwapFree):\\s+(\\d+)/', $line, $m)) {
+        foreach (preg_split('/\n/', $read('/proc/meminfo')) as $line) {
+            if (preg_match('/^(MemTotal|MemAvailable|MemFree|Buffers|Cached|SwapTotal|SwapFree):\s+(\d+)/', $line, $m)) {
                 $mem[$m[1]] = (int) $m[2] * 1024;
             }
         }
@@ -386,7 +386,7 @@ class Index extends Component
             'disk_free' => $diskFree ?: 0,
             'disk_used' => max(0, ($diskTotal ?: 0) - ($diskFree ?: 0)),
             'services' => $services,
-            'queue_workers' => function_exists('shell_exec') ? count(preg_split('/\\n/', trim((string) @shell_exec("pgrep -af 'artisan queue:work' 2>/dev/null")) , -1, PREG_SPLIT_NO_EMPTY)) : null,
+            'queue_workers' => function_exists('shell_exec') ? count(preg_split('/\n/', trim((string) @shell_exec("pgrep -af 'artisan queue:work' 2>/dev/null")) , -1, PREG_SPLIT_NO_EMPTY)) : null,
         ];
 
         // Generation reliability snapshot: read-only diagnostics; never re-dispatch jobs here.
@@ -407,7 +407,7 @@ class Index extends Component
                 ->map(static fn (Generation $generation) => [
                     'id' => $generation->id,
                     'model' => $generation->model ?: 'Unknown provider/model',
-                    'error' => \\Illuminate\\Support\\Str::limit((string) ($generation->error_message ?: 'No error detail recorded'), 180),
+                    'error' => \Illuminate\Support\Str::limit((string) ($generation->error_message ?: 'No error detail recorded'), 180),
                     'error_type' => (static function (string $message): string {
                         $message = strtolower($message);
                         return match (true) {
