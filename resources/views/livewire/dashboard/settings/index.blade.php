@@ -292,7 +292,6 @@
                     <div class="rms-settings-divider"></div>
 
                     {{-- CONFIGURATION --}}
-                    @livewire('dashboard.settings.nvidia-configuration')
 
                     <div class="rms-settings-form rms-openai-form-upgraded">
 
