@@ -7,7 +7,6 @@ use App\Services\AI\DTO\ImageGenerationRequest;
 use App\Services\AI\DTO\ImageGenerationResult;
 use App\Services\ActivityLogService;
 use App\Services\NvidiaApiKeyPool;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 use Throwable;
@@ -95,21 +94,6 @@ final class NvidiaProvider implements ImageProviderInterface
 
         $started = microtime(true);
         try {
-            $this->activity->processing(
-                action: 'ai_provider_request',
-                category: 'api',
-                title: 'NVIDIA NIM request dimulai.',
-                description: 'Mengirim generation ke model ' . $model . '.',
-                metadata: [
-                    'provider' => $this->name(),
-                    'model' => $model,
-                    'generation_id' => $request->generationId,
-                    'user_id' => $request->userId,
-                    'reference_count' => count($references),
-                    'transport' => 'single_labeled_reference_board',
-                ],
-            );
-
             $response = null;
             $credential = null;
             for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
