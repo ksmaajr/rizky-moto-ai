@@ -988,6 +988,7 @@
                                         <div>
                                             <strong>NVIDIA NIM API Key</strong>
                                             <small>Key terenkripsi di database. Nilai tersimpan tidak ditampilkan kembali dan tidak dicatat ke activity log.</small>
+                                            <small style="display:block;margin-top:6px;color:#9a6700">Catatan: NVIDIA trial/preview dapat membatasi input editing ke gambar contoh. Test Generate memverifikasi akses model, tetapi alur foto produk + logo Store tetap harus diuji pada akun ini.</small>
                                         </div>
                                     </div>
                                 </div>
