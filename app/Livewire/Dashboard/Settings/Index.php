@@ -24,6 +24,7 @@ class Index extends Component
     public string $fallbackProvider = '';
     public string $nvidiaApiKey = '';
     public bool $showNvidiaApiKey = false;
+    public bool $nvidiaApiKeyConfigured = false;
     public array $nvidiaApiKeyStatus = [];
     public bool $allowProviderFallback = false;
     public bool $emergencyFallback = false;
@@ -99,6 +100,7 @@ class Index extends Component
             $this->fallbackProvider = (string) ($setting->fallback_provider ?? '');
             $this->allowProviderFallback = (bool) $setting->allow_provider_fallback;
             $this->emergencyFallback = (bool) $setting->emergency_fallback;
+            $this->nvidiaApiKeyConfigured = filled($setting->nvidia_api_key);
         }
     }
 
@@ -141,6 +143,7 @@ class Index extends Component
         $setting = AiProviderSetting::firstOrNew(['user_id' => Auth::id()]);
         $setting->nvidia_api_key = trim($this->nvidiaApiKey);
         $setting->save();
+        $this->nvidiaApiKeyConfigured = true;
 
         $this->nvidiaApiKey = '';
         $this->showNvidiaApiKey = false;
