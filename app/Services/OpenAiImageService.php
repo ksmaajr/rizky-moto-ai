@@ -208,9 +208,6 @@ class OpenAiImageService
         }
 
         $model = $this->normalizeGatewayImageModel($model);
-        $dispatchProviderLabel = $this->providerDisplayName(
-            app(ProviderManager::class)->providerFor($model, $user->id)->name()
-        );
 
         if ($model === '') {
             $message = 'Model OpenAI belum dipilih.';
@@ -229,6 +226,10 @@ class OpenAiImageService
 
             throw new RuntimeException($message);
         }
+
+        $dispatchProviderLabel = $this->providerDisplayName(
+            app(ProviderManager::class)->providerFor($model, $user->id)->name()
+        );
 
         $prompt = $this->buildPrompt($store, $template, $hasInstalledReference, $customTitle, $attachTemplateReference);
         $negativePrompt = trim((string) ($template->negative_prompt ?? ''));
