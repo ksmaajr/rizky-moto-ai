@@ -2,11 +2,11 @@
 
 namespace App\Services\AI\Providers;
 
-use App\Models\AiProviderSetting;
 use App\Services\AI\Contracts\ImageProviderInterface;
 use App\Services\AI\DTO\ImageGenerationRequest;
 use App\Services\AI\DTO\ImageGenerationResult;
 use App\Services\ActivityLogService;
+use App\Services\NvidiaApiKeyPool;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -19,7 +19,10 @@ final class NvidiaProvider implements ImageProviderInterface
         'black-forest-labs/flux.3-image-klein' => 'https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.3-image-klein',
     ];
 
-    public function __construct(private readonly ActivityLogService $activity)
+    public function __construct(
+        private readonly ActivityLogService $activity,
+        private readonly NvidiaApiKeyPool $apiPool,
+    )
     {
     }
 
@@ -42,16 +45,8 @@ final class NvidiaProvider implements ImageProviderInterface
         }
 
         $this->assertStoreLogoReference($request);
-        $setting = AiProviderSetting::query()
-            ->where(function ($query) use ($request) {
-                $query->where('user_id', $request->userId)->orWhereNull('user_id');
-            })
-            ->orderByRaw('CASE WHEN user_id = ? THEN 0 ELSE 1 END', [$request->userId])
-            ->first();
-        $apiKey = trim((string) ($setting?->nvidia_api_key ?? ''));
-        if ($apiKey === '') {
-            throw new RuntimeException('NVIDIA API key belum diatur. Buka Settings → AI Provider → NVIDIA NIM.');
-        }
+        $attemptedIds = [];
+        $maxAttempts = max(1, $this->apiPool->totalCount($request->userId) + 1);
 
         $references = [];
         foreach ($request->references as $reference) {
@@ -115,31 +110,77 @@ final class NvidiaProvider implements ImageProviderInterface
                 ],
             );
 
-            $response = Http::withToken($apiKey)
-                ->acceptJson()
-                ->asJson()
-                ->connectTimeout(15)
-                ->timeout((int) config('services.nvidia.timeout', 240))
-                ->post($endpoint, $payload);
+            $response = null;
+            $credential = null;
+            for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+                $credential = $this->apiPool->acquire($request->userId, $attemptedIds);
+                if (! $credential) {
+                    break;
+                }
+                if ($credential['id'] !== null) {
+                    $attemptedIds[] = $credential['id'];
+                }
 
-            if (! $response->successful()) {
-                $message = trim((string) ($response->json('detail') ?? $response->json('error.message') ?? $response->body()));
-                $message = mb_substr($message !== '' ? $message : 'NVIDIA NIM request gagal.', 0, 1200);
-                $this->activity->error(
+                $this->activity->processing(
                     action: 'ai_provider_request',
                     category: 'api',
-                    title: 'NVIDIA NIM request gagal.',
-                    description: $message,
+                    title: 'NVIDIA NIM request dimulai.',
+                    description: sprintf('Attempt %d menggunakan credential %s untuk model %s.', $attempt, $credential['name'], $model),
                     metadata: [
                         'provider' => $this->name(),
                         'model' => $model,
                         'generation_id' => $request->generationId,
+                        'user_id' => $request->userId,
+                        'nvidia_key_id' => $credential['id'],
+                        'credential_name' => $credential['name'],
+                        'reference_count' => count($references),
+                        'transport' => 'single_labeled_reference_board',
+                        'attempt' => $attempt,
+                    ],
+                );
+
+                $response = Http::withToken($credential['key'])
+                    ->acceptJson()
+                    ->asJson()
+                    ->connectTimeout(15)
+                    ->timeout((int) config('services.nvidia.timeout', 240))
+                    ->post($endpoint, $payload);
+
+                if ($response->successful()) {
+                    $this->apiPool->reportSuccess($credential['id'], $request->userId);
+                    break;
+                }
+
+                $message = trim((string) ($response->json('detail') ?? $response->json('error.message') ?? $response->body()));
+                $message = mb_substr($message !== '' ? $message : 'NVIDIA NIM request gagal.', 0, 1200);
+                $classification = $this->apiPool->reportFailure($credential['id'], $request->userId, $response, $message);
+
+                $this->activity->error(
+                    action: 'ai_provider_request',
+                    category: 'api',
+                    title: 'NVIDIA NIM credential request gagal.',
+                    description: $credential['name'] . ': ' . $message,
+                    metadata: [
+                        'provider' => $this->name(),
+                        'model' => $model,
+                        'generation_id' => $request->generationId,
+                        'nvidia_key_id' => $credential['id'],
+                        'credential_name' => $credential['name'],
                         'http_status' => $response->status(),
+                        'error_type' => $classification['reason'],
+                        'retry' => $classification['retry'],
                         'duration_ms' => (int) round((microtime(true) - $started) * 1000),
                     ],
                     httpStatus: $response->status(),
                 );
-                throw new RuntimeException('NVIDIA NIM HTTP ' . $response->status() . ': ' . $message);
+
+                if (! $classification['retry'] || $attempt >= $maxAttempts) {
+                    throw new RuntimeException('NVIDIA NIM HTTP ' . $response->status() . ': ' . $message);
+                }
+            }
+
+            if (! $response || ! $response->successful()) {
+                throw new RuntimeException('NVIDIA API key pool tidak memiliki credential aktif yang dapat digunakan.');
             }
 
             $json = $response->json();
