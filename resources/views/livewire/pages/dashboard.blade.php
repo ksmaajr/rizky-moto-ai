@@ -70,7 +70,7 @@ class extends Component
                 'user_id' => auth()->id(),
                 'duration_ms' => (int) ((microtime(true) - $startedAt) * 1000),
             ]);
-        } catch (\\Throwable $exception) {
+        } catch (\Throwable $exception) {
             \\Illuminate\\Support\\Facades\\Log::error('Dashboard mount failed', [
                 'stage' => $stage,
                 'user_id' => auth()->id(),
