@@ -250,51 +250,50 @@ final class NvidiaProvider implements ImageProviderInterface
 
     private function compactFluxKleinPrompt(ImageGenerationRequest $request, bool $hasInstalled): string
     {
+        // The selected Template prompt is the creative source of truth.
+        // Preserve it verbatim; reduce only redundant system boilerplate so
+        // the NVIDIA-specific payload fits the hosted FLUX.3 Klein limit.
         $templateDirection = '';
-        if (preg_match('/TEMPLATE PROMPT — mandatory visual direction:\\s*(.*?)\\s*(?=\\nTITLE:)/su', $request->prompt, $matches)) {
+        if (preg_match('/TEMPLATE PROMPT — mandatory visual direction:\\s*(.*?)\\s*(?=\\R+TITLE:)/su', $request->prompt, $matches)) {
             $templateDirection = trim($matches[1]);
         }
 
         $titleInstruction = '';
-        if (preg_match('/\\nTITLE:\\s*(.*?)\\s*(?=\\nBRAND CONTEXT:)/su', $request->prompt, $matches)) {
+        if (preg_match('/(?:^|\\R+)TITLE:\\s*(.*?)\\s*(?=\\R+BRAND CONTEXT:)/su', $request->prompt, $matches)) {
             $titleInstruction = trim($matches[1]);
         }
 
-        // Leave room for the fixed safety/role instructions. The template's
-        // prompt is the only free-form section shortened for this model.
-        $templateDirection = mb_substr($templateDirection, 0, 650);
-        $titleInstruction = mb_substr($titleInstruction, 0, 350);
-
-        $fixed = [
-            'Create one premium, square marketplace product poster. Follow the selected Template visual system: layout, hierarchy, palette, typography, background, frames, badges and spacing.',
-            'PRODUCT reference is the sole authority for the exact item. Preserve its shape, proportions, color, material, packaging, markings and visible details; do not redesign it or invent specifications.',
-            'Use the labeled reference board only as guidance; never reproduce the board as a collage. PRODUCT = item identity; TEMPLATE = style; INSTALLED = real fitment/context; STORE LOGO = official branding.',
-            'The dedicated STORE LOGO panel is the only source for the shop logo. Use that artwork faithfully; never copy, redraw or infer a logo from other images.',
-            $hasInstalled
-                ? 'Use the INSTALLED reference for plausible fitment and context; preserve the real product and keep the product clearly visible.'
-                : 'No installed reference exists: do not add a motorcycle, vehicle, wheel, rider, person, hand, garage or installation scene.',
-            'Keep the product prominent and text/logo legible. One cohesive composition, not a collage. Do not invent prices, compatibility, benefits or factual claims.',
-            $titleInstruction !== '' ? 'TITLE RULE: ' . $titleInstruction : '',
-            $templateDirection !== '' ? 'TEMPLATE DIRECTION: ' . $templateDirection : '',
-        ];
-
-        $prompt = implode("\n\n", array_values(array_filter($fixed, static fn ($part) => $part !== '')));
-
-        // If a very long custom title or fixed instruction pushes the prompt over
-        // the API ceiling, shorten only the free-form template direction further.
-        while (mb_strlen($prompt) > 1950 && $templateDirection !== '') {
-            $templateDirection = mb_substr($templateDirection, 0, max(0, mb_strlen($templateDirection) - 100));
-            $fixed[count($fixed) - 1] = $templateDirection !== '' ? 'TEMPLATE DIRECTION: ' . $templateDirection : '';
-            $prompt = implode("\n\n", array_values(array_filter($fixed, static fn ($part) => $part !== '')));
+        if ($templateDirection === '') {
+            // Do not silently replace a missing Template prompt with a generic style.
+            throw new RuntimeException('Prompt dari Template terpilih tidak ditemukan. Periksa prompt Template sebelum generate NVIDIA.');
         }
 
+        $fixed = [
+            'Create one premium square marketplace product poster. The selected Template prompt below is the authoritative visual direction; follow its design, layout, palette, typography and spacing.',
+            'PRODUCT reference alone defines the exact product. Preserve its shape, proportions, colors, materials, packaging and visible details; invent no specifications.',
+            'Use the labeled reference board as guidance, not as a collage. The dedicated STORE LOGO panel is the only source for the shop logo; never copy or redraw logos from other references.',
+            $hasInstalled
+                ? 'Use INSTALLED only for truthful fitment and context while keeping the real product prominent.'
+                : 'No installed reference was supplied. Do not invent a motorcycle, vehicle, wheel, rider, person, garage or installation scene.',
+            'One cohesive composition, not a collage. Keep text/logo legible and do not invent prices, compatibility or factual claims.',
+            $titleInstruction !== '' ? 'TITLE RULE (preserve exactly): ' . $titleInstruction : '',
+            'SELECTED TEMPLATE PROMPT (preserve fully): ' . $templateDirection,
+        ];
+
+        $prompt = implode("\\n\\n", array_values(array_filter($fixed, static fn ($part) => $part !== '')));
+
         if (mb_strlen($prompt) > 2000) {
-            throw new RuntimeException('Judul atau instruksi wajib melebihi batas 2.000 karakter NVIDIA FLUX.3 Klein. Persingkat judul atau prompt template.');
+            $templateLength = mb_strlen($templateDirection);
+            $overBy = mb_strlen($prompt) - 2000;
+            throw new RuntimeException(
+                'Prompt Template terpilih terlalu panjang untuk batas 2.000 karakter NVIDIA FLUX.3 Klein ('
+                . $templateLength . ' karakter pada prompt Template; perlu dikurangi minimal '
+                . $overBy . ' karakter pada instruksi Template atau gunakan model NVIDIA dengan batas prompt lebih tinggi).'
+            );
         }
 
         return $prompt;
     }
-
     /**
      * The hosted NVIDIA trial endpoints document one image input. A labeled board
      * prevents silently dropping template/product/logo roles. The board uses GD.
