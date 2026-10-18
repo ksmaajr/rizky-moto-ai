@@ -147,7 +147,19 @@ final class NvidiaProvider implements ImageProviderInterface
                     break;
                 }
 
-                $message = trim((string) ($response->json('detail') ?? $response->json('error.message') ?? $response->body()));
+                // NVIDIA may return "detail" as a structured array/object (for example,
+                // validation errors). Never cast that payload directly to string.
+                $errorPayload = $response->json();
+                $messageCandidate = is_array($errorPayload)
+                    ? ($errorPayload['detail'] ?? data_get($errorPayload, 'error.message') ?? null)
+                    : null;
+                if (is_array($messageCandidate) || is_object($messageCandidate)) {
+                    $messageCandidate = json_encode($messageCandidate, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                }
+                if (! is_string($messageCandidate) && ! is_numeric($messageCandidate)) {
+                    $messageCandidate = $response->body();
+                }
+                $message = trim((string) $messageCandidate);
                 $message = mb_substr($message !== '' ? $message : 'NVIDIA NIM request gagal.', 0, 1200);
                 $classification = $this->apiPool->reportFailure($credential['id'], $request->userId, $response, $message);
 
