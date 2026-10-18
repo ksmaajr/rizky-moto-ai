@@ -45,7 +45,7 @@ final class NvidiaProvider implements ImageProviderInterface
 
         $this->assertStoreLogoReference($request);
         $attemptedIds = [];
-        $maxAttempts = max(1, $this->apiPool->totalCount($request->userId) + 1);
+        $maxAttempts = max(1, $this->apiPool->totalCount($request->userId));
 
         $references = [];
         foreach ($request->references as $reference) {
