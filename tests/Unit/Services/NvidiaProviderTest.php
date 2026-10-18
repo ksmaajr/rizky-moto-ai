@@ -10,7 +10,10 @@ class NvidiaProviderTest extends TestCase
 {
     public function test_provider_exposes_only_supported_nvidia_models(): void
     {
-        $provider = new NvidiaProvider($this->createMock(ActivityLogService::class));
+        $provider = new NvidiaProvider(
+            $this->createMock(ActivityLogService::class),
+            $this->createMock(NvidiaApiKeyPool::class),
+        );
 
         $this->assertSame('nvidia', $provider->name());
         $this->assertTrue($provider->supportsModel('black-forest-labs/flux.2-klein-4b'));
