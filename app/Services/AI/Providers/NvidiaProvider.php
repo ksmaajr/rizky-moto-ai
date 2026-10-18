@@ -15,7 +15,7 @@ final class NvidiaProvider implements ImageProviderInterface
 {
     private const ENDPOINTS = [
         'black-forest-labs/flux.2-klein-4b' => 'https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.2-klein-4b',
-        'black-forest-labs/flux.3-image-klein' => 'https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux-3-image-klein',
+        'black-forest-labs/flux.3-image-klein' => 'https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.3-image-klein',
     ];
 
     public function __construct(
@@ -41,6 +41,21 @@ final class NvidiaProvider implements ImageProviderInterface
         $endpoint = self::ENDPOINTS[$model] ?? null;
         if (! $endpoint) {
             throw new RuntimeException('Model NVIDIA tidak didukung: ' . $request->model);
+        }
+
+        // NVIDIA's public hosted trial endpoint only accepts predefined example_id
+        // images, not arbitrary uploaded base64 references. This generator must
+        // preserve product/template/logo references, so require a deployed NIM
+        // endpoint for image editing rather than silently substituting demo images.
+        $customEndpoint = $model === 'black-forest-labs/flux.3-image-klein'
+            ? trim((string) config('services.nvidia.flux3_endpoint', ''))
+            : trim((string) config('services.nvidia.flux2_endpoint', ''));
+        if ($customEndpoint !== '') {
+            $endpoint = $customEndpoint;
+        } else {
+            throw new RuntimeException(
+                'NVIDIA API Trial untuk model ini hanya menerima gambar contoh (example_id 0-3), bukan gambar produk, Template, dan logo Store yang diunggah. Agar workflow generator tetap memakai reference asli, konfigurasikan endpoint NVIDIA NIM deployment yang mendukung image-to-image melalui NVIDIA_FLUX3_ENDPOINT atau NVIDIA_FLUX2_ENDPOINT.'
+            );
         }
 
         $this->assertStoreLogoReference($request);
@@ -90,7 +105,7 @@ final class NvidiaProvider implements ImageProviderInterface
         }
 
         $payload = [
-            'mode' => 'i2i',
+            'mode' => 'Image Editing',
             'prompt' => $prompt,
             'image' => $reference['data'],
             'height' => 1024,
