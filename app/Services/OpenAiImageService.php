@@ -617,7 +617,7 @@ class OpenAiImageService
             $this->activity()->success(
                 action: 'generate_openai_image',
                 category: 'generator',
-                title: 'Generate AI image via ' . ($providerName === 'agentkit' ? 'Agent AI' : 'Vercel AI Gateway') . ' berhasil.',
+                title: 'Generate AI image via ' . $this->providerDisplayName($providerName) . ' berhasil.',
                 description: sprintf(
                     '%d gambar berhasil dibuat dan disimpan. Generation #%d.',
                     $saved,
@@ -781,7 +781,7 @@ class OpenAiImageService
             description: sprintf(
                 'Generation #%d siap diproses via %s. %d reference image akan digunakan.',
                 $generation->id,
-                $provider->name() === 'agentkit' ? 'Agent AI' : 'Vercel AI Gateway',
+                $this->providerDisplayName($provider->name()),
                 $referenceCount
             ),
             metadata: [
@@ -998,7 +998,7 @@ class OpenAiImageService
                 metadata: [
                     'source' => 'openai_image_queue',
                     'generation_id' => $generation->id,
-                    'endpoint' => $dispatchProviderLabel === 'NVIDIA NIM' ? 'NVIDIA NIM inference endpoint' : ($dispatchProviderLabel === 'Agent AI' ? 'Agent AI image endpoint' : '/v1/images/edits'),
+                    'endpoint' => $providerName === 'nvidia' ? 'NVIDIA NIM inference endpoint' : ($providerName === 'agentkit' ? 'Agent AI image endpoint' : '/v1/images/edits'),
                     'attachment_count' => count($attachments),
                     'reference_transport' => $referenceTransport['transport'],
                     'reference_manifest' => $this->publicReferenceManifest($referenceManifest),
