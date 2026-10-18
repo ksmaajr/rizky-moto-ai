@@ -96,6 +96,7 @@ trait ManagesNvidiaApiKeys
         $this->refreshNvidiaPoolReadiness();
         $this->newNvidiaKeyName = '';
         $this->newNvidiaApiKey = '';
+        $this->resetValidation(['newNvidiaKeyName', 'newNvidiaApiKey']);
         $this->dispatch('nvidia-key-added', id: $key->id);
         $this->dispatch('toast', type: 'success', title: 'NVIDIA API key ditambahkan', message: "{$name} sudah tersedia untuk worker.");
     }
