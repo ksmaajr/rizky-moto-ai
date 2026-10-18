@@ -167,14 +167,3 @@ class NvidiaImageService
         return mb_substr($message !== '' ? $message : 'Request NVIDIA gagal.', 0, 1200);
     }
 }
-
-class NvidiaImageRequestException extends RuntimeException
-{
-    public function __construct(
-        string $message,
-        public readonly ?int $httpStatus = null,
-        public readonly ?string $model = null,
-    ) {
-        parent::__construct($message);
-    }
-}
