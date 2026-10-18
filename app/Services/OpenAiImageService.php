@@ -381,7 +381,7 @@ class OpenAiImageService
                 metadata: [
                     'source' => 'openai_image_service',
                     'generation_id' => $generation->id,
-                    'endpoint' => '/v1/images/edits',
+                    'endpoint' => $providerName === 'nvidia' ? 'NVIDIA NIM inference endpoint' : ($providerName === 'agentkit' ? 'Agent AI image endpoint' : '/v1/images/edits'),
                     'attachment_count' => count($attachments),
                     'reference_transport' => $referenceTransport['transport'],
                     'reference_manifest' => $this->publicReferenceManifest($referenceManifest),
@@ -872,6 +872,7 @@ class OpenAiImageService
             $providerManager = app(ProviderManager::class);
             $provider = $providerManager->providerFor((string) $generation->model, $generation->user_id);
             $providerName = $provider->name();
+            $providerLabel = $this->providerDisplayName($providerName);
 
             $credential = $providerName === 'vercel'
                 ? $this->apiPool()->acquire($generation->user_id)
@@ -975,7 +976,7 @@ class OpenAiImageService
 
             $generation->update(['metadata' => array_merge($generation->metadata ?? [], [
                 'progress' => 35,
-                'progress_stage' => 'Mengirim request ke OpenAI',
+                'progress_stage' => 'Mengirim request ke ' . $providerLabel,
                 'attachment_count' => count($attachments),
                 'reference_transport' => $referenceTransport['transport'],
                 'reference_manifest' => $this->publicReferenceManifest($referenceManifest),
@@ -984,8 +985,8 @@ class OpenAiImageService
             $this->activity()->processing(
                 action: 'generate_openai_image',
                 category: 'generator',
-                title: $providerName === 'agentkit' ? 'Mengirim request ke Agent AI.' : 'Mengirim request ke Vercel AI Gateway.',
-                description: sprintf('%s memproses %d attachment, model %s.', $providerName === 'agentkit' ? 'Agent AI' : 'Vercel AI Gateway', count($attachments), $model),
+                title: 'Mengirim request ke ' . $providerLabel . '.',
+                description: sprintf('%s memproses %d attachment, model %s.', $providerLabel, count($attachments), $model),
                 metadata: [
                     'source' => 'openai_image_queue',
                     'generation_id' => $generation->id,
@@ -1056,12 +1057,12 @@ class OpenAiImageService
 
             $generation->update(['metadata' => array_merge($generation->metadata ?? [], [
                 'progress' => 78,
-                'progress_stage' => 'Memproses hasil ' . ($providerName === 'agentkit' ? 'Agent AI' : 'Vercel'),
+                'progress_stage' => 'Memproses hasil ' . $providerLabel,
             ])]);
 
             $data = $providerResult->images;
             if (! is_array($data) || $data === []) {
-                throw new RuntimeException(($providerName === 'agentkit' ? 'Agent AI' : 'Vercel AI Gateway') . ' tidak mengembalikan gambar.');
+                throw new RuntimeException($providerLabel . ' tidak mengembalikan gambar.');
             }
 
             $saved = 0;
@@ -1072,7 +1073,7 @@ class OpenAiImageService
                 }
                 $binary = $this->resolveImageBinary($item);
                 if ($binary === null || $binary === '') {
-                    throw new RuntimeException(($providerName === 'agentkit' ? 'Agent AI' : 'Vercel AI Gateway') . ' mengembalikan item image #' . ($index + 1) . ' tanpa binary image.');
+                    throw new RuntimeException($providerLabel . ' mengembalikan item image #' . ($index + 1) . ' tanpa binary image.');
                 }
 
                 $filename = 'generation-' . $generation->id . '-' . ($index + 1) . '-' . uniqid() . '.png';
@@ -1130,7 +1131,7 @@ class OpenAiImageService
             $this->activity()->success(
                 action: 'generate_openai_image',
                 category: 'generator',
-                title: 'Generate AI image via Vercel berhasil.',
+                title: 'Generate AI image via ' . $providerLabel . ' berhasil.',
                 description: sprintf('%d gambar berhasil dibuat dan disimpan. Generation #%d.', $saved, $generation->id),
                 metadata: [
                     'source' => 'openai_image_queue',
@@ -1983,6 +1984,15 @@ PROMPT;
     private function activity(): ActivityLogService
     {
         return app(ActivityLogService::class);
+    }
+
+    private function providerDisplayName(string $providerName): string
+    {
+        return match (strtolower($providerName)) {
+            'nvidia' => 'NVIDIA NIM',
+            'agentkit' => 'Agent AI',
+            default => 'Vercel AI Gateway',
+        };
     }
 
     private function durationMs(float $startedAt): int
