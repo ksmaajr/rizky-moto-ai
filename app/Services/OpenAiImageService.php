@@ -719,7 +719,7 @@ class OpenAiImageService
 
         $hasInstalledReference = (bool) $imageTwo;
         $hasTemplateReference = $this->hasTemplateReference($template);
-        $attachTemplateReference = $hasTemplateReference;
+        $attachTemplateReference = false;
         $hasStoreLogo = $this->hasStoreLogo($store);
         $generationMode = $this->generationMode($hasInstalledReference);
         $customTitle = $this->normalizeCustomTitle($customTitle);
@@ -727,10 +727,7 @@ class OpenAiImageService
         // The same value is also persisted in generation metadata for queued processing.
         $requestedCustomTitle = $customTitle;
         $titleSource = $customTitle !== null ? 'custom' : 'ai';
-        $referenceCount = ($attachTemplateReference ? 1 : 0)
-            + 1
-            + ($hasInstalledReference ? 1 : 0)
-            + ($hasStoreLogo ? 1 : 0);
+        $referenceCount = 1 + ($hasInstalledReference ? 1 : 0) + ($hasStoreLogo ? 1 : 0);
 
         $prompt = $this->buildPrompt($store, $template, $hasInstalledReference, $customTitle, $attachTemplateReference);
         $negativePrompt = trim((string) ($template->negative_prompt ?? ''));
@@ -823,7 +820,7 @@ class OpenAiImageService
         $metadata = $generation->metadata ?? [];
         $hasInstalledReference = ! empty($generation->product_image_2_path);
         $hasTemplateReference = $this->hasTemplateReference($template);
-        $attachTemplateReference = $hasTemplateReference;
+        $attachTemplateReference = false;
         $hasStoreLogo = $this->hasStoreLogo($store);
         $generationMode = (string) ($metadata['generation_mode'] ?? $this->generationMode($hasInstalledReference));
         $requestedCustomTitle = $this->normalizeCustomTitle($metadata['requested_custom_title'] ?? null);
@@ -831,10 +828,7 @@ class OpenAiImageService
         $titleSource = $requestedCustomTitle !== null
             ? 'custom'
             : ($customTitle !== null ? (string) ($metadata['title_source'] ?? 'ai') : 'ai');
-        $referenceCount = ($attachTemplateReference ? 1 : 0)
-            + 1
-            + ($hasInstalledReference ? 1 : 0)
-            + ($hasStoreLogo ? 1 : 0);
+        $referenceCount = 1 + ($hasInstalledReference ? 1 : 0) + ($hasStoreLogo ? 1 : 0);
 
         $generation->update([
             'status' => 'processing',
