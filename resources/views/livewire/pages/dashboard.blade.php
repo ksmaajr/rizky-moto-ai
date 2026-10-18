@@ -5,6 +5,7 @@ use Livewire\Component;
 use App\Models\Store;
 use App\Livewire\Concerns\ManagesAiProviderSettings;
 use App\Livewire\Concerns\ManagesVercelGatewayKeys;
+use App\Livewire\Concerns\ManagesNvidiaApiKeys;
 use App\Livewire\Concerns\ManagesAgentAiCredentials;
 
 new
@@ -13,6 +14,7 @@ class extends Component
 {
     use ManagesAiProviderSettings;
     use ManagesVercelGatewayKeys;
+    use ManagesNvidiaApiKeys;
     use ManagesAgentAiCredentials;
 
     public function getUserProperty(): ?object
@@ -68,7 +70,7 @@ class extends Component
                 'user_id' => auth()->id(),
                 'duration_ms' => (int) ((microtime(true) - $startedAt) * 1000),
             ]);
-        } catch (\\Throwable $exception) {
+        } catch (\Throwable $exception) {
             \\Illuminate\\Support\\Facades\\Log::error('Dashboard mount failed', [
                 'stage' => $stage,
                 'user_id' => auth()->id(),

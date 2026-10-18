@@ -379,7 +379,7 @@
                                     </label>
 
                                     <label class="rms-vg-key-input-field">
-                                        <span>VERCEL API KEY</span>
+                                        <span>NVIDIA API KEY</span>
                                         <div>
                                             <input
                                                 :type="showNewKey ? 'text' : 'password'"
@@ -570,7 +570,7 @@
 
 
 
-                            {{-- TEST ALL VERCEL KEYS --}}
+                            {{-- TEST ALL NVIDIA KEYS --}}
                             <div class="rms-vg-test-all-card rms-vg-test-all-card-full">
                         <div class="rms-vg-test-all-copy">
                             <div class="rms-vg-test-all-icon">
@@ -578,7 +578,7 @@
                                 <i></i>
                             </div>
                             <div>
-                                <strong>Gateway health check</strong>
+                                <strong>NVIDIA pool health check</strong>
                                 <small>Test seluruh Vercel API key yang aktif sekaligus. Setiap hasil akan dicatat ke API Key Activity dan status key diperbarui otomatis.</small>
                             </div>
                         </div>
@@ -957,74 +957,306 @@
                             </section>
                         </section>
 
-                        <section class="rms-provider-block rms-provider-block-failover">
-                            <div class="rms-provider-block-head">
-                                <div class="rms-provider-block-icon rms-provider-icon-failover" aria-hidden="true"><span>↗</span></div>
-                                <div class="rms-provider-block-copy">
-                                    <span>RUNTIME POLICY · FAILOVER</span>
-                                    <strong>Provider Failover</strong>
-                                    <small>Aturan fallback server-side untuk menjaga generation tetap tersedia saat provider utama bermasalah.</small>
-                                </div>
-                                <div class="rms-provider-block-state is-ready"><i></i><span>Configurable</span></div>
-                            </div>
-
                         <section class="rms-provider-block rms-provider-block-nvidia">
                             <div class="rms-provider-block-head">
                                 <div class="rms-provider-block-icon" aria-hidden="true"><span>N</span></div>
                                 <div class="rms-provider-block-copy">
                                     <span>PROVIDER 03 · NVIDIA NIM</span>
                                     <strong>NVIDIA Image Generation</strong>
-                                    <small>Hosted FLUX models, shared generator workflow, and centralized activity logging.</small>
+                                    <small>Encrypted credential pool, automatic rotation, rate-limit cooldown, and shared generation workers.</small>
                                 </div>
                                 <div class="rms-provider-block-state {{ $this->nvidiaApiKeyConfigured ? 'is-ready' : 'is-pending' }}">
-                                    <i></i><span>{{ $this->nvidiaApiKeyConfigured ? 'Key configured' : 'API key required' }}</span>
+                                    <i></i><span>{{ $this->nvidiaApiKeyConfigured ? 'Pool ready' : 'Pool needs attention' }}</span>
                                 </div>
                             </div>
 
-                            <div class="rms-ai-provider-section rms-agent-provider-card">
-                                <div class="rms-ai-provider-section-head">
-                                    <div class="rms-ai-provider-section-title">
-                                        <span class="rms-ai-provider-icon">N</span>
-                                        <div>
-                                            <strong>NVIDIA NIM API Key</strong>
-                                            <small>Key terenkripsi di database. Nilai tersimpan tidak ditampilkan kembali dan tidak dicatat ke activity log.</small>
-                                            <small style="display:block;margin-top:6px;color:#9a6700">Catatan: NVIDIA trial/preview dapat membatasi input editing ke gambar contoh. Test Generate memverifikasi akses model, tetapi alur foto produk + logo Store tetap harus diuji pada akun ini.</small>
-                                        </div>
+                        @php
+                            $nvidiaApiKeys = is_iterable($this->nvidiaApiKeys ?? null)
+                                ? $this->nvidiaApiKeys
+                                : [];
+                        @endphp
+
+                        <div class="rms-vg-key-manager-root" x-data="{ addOpen: false, showNewKey: false, deleteOpen: false, deleteId: null, deleteName: '', deleting: false, confirmDelete(id, name) { this.deleteId = id; this.deleteName = name || 'API key ini'; this.deleteOpen = true; }, closeDelete() { if (!this.deleting) this.deleteOpen = false; }, async deleteKey() { if (!this.deleteId || this.deleting) return; this.deleting = true; try { await $wire.removeNvidiaApiKey(this.deleteId); this.deleteOpen = false; } catch (e) { console.error(e); } finally { this.deleting = false; this.deleteId = null; } } }" @keydown.escape.window="closeDelete()">
+                        <section class="rms-vg-key-manager">
+                            <div class="rms-vg-section-head">
+                                <div class="rms-vg-section-title">
+                                    <span class="rms-vg-section-icon">KEY</span>
+                                    <div>
+                                        <strong>NVIDIA API Key Pool</strong>
+                                        <small>Tambahkan beberapa key. Generator akan memilih key yang tersedia secara otomatis.</small>
                                     </div>
                                 </div>
-                                <div class="rms-ai-failover-grid">
-                                    <label class="rms-ai-config-field" style="display:block">
+
+                                <div class="rms-vg-pool-badge">
+                                    <i></i>
+                                    <span>{{ count($nvidiaApiKeys) }} KEY{{ count($nvidiaApiKeys) === 1 ? '' : 'S' }}</span>
+                                </div>
+                            </div>
+
+                            <div class="rms-vg-key-notice">
+                                <span class="rms-vg-notice-mark">↻</span>
+                                <div>
+                                    <strong>Automatic failover enabled</strong>
+                                    <small>
+                                        Jika key terkena limit, credit habis, atau auth error, worker otomatis mencoba key sehat berikutnya. Test per key menjalankan live image request dan dapat memakai quota NVIDIA.
+                                    </small>
+                                </div>
+                            </div>
+
+                            <button
+                                type="button"
+                                class="rms-vg-add-toggle"
+                                @click="addOpen = !addOpen"
+                                :class="{ 'is-open': addOpen }"
+                            >
+                                <span class="rms-vg-add-toggle-icon">+</span>
+                                <span>
+                                    <strong>Add NVIDIA API Key</strong>
+                                    <small>Tambahkan credential baru ke pool</small>
+                                </span>
+                                <b x-text="addOpen ? '−' : '+'"></b>
+                            </button>
+
+                            <div
+                                x-show="addOpen"
+                                x-cloak
+                                x-transition:enter="transition ease-out duration-250"
+                                x-transition:enter-start="opacity-0 -translate-y-3 scale-[.985]"
+                                x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                                x-transition:leave="transition ease-in duration-150"
+                                x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                                x-transition:leave-end="opacity-0 -translate-y-2 scale-[.985]"
+                                class="rms-vg-add-panel"
+                            >
+                                <div class="rms-vg-add-grid">
+                                    <label>
+                                        <span>KEY NAME</span>
+                                        <input
+                                            type="text"
+                                            wire:model.live="newNvidiaKeyName"
+                                            placeholder="Contoh: NVIDIA Main"
+                                            autocomplete="off"
+                                        >
+                                    </label>
+
+                                    <label class="rms-vg-key-input-field">
                                         <span>NVIDIA API KEY</span>
-                                        <div style="display:flex;gap:10px;align-items:center">
+                                        <div>
                                             <input
-                                                type="{{ $showNvidiaApiKey ? 'text' : 'password' }}"
-                                                wire:model="nvidiaApiKey"
+                                                :type="showNewKey ? 'text' : 'password'"
+                                                wire:model.live="newNvidiaApiKey"
+                                                placeholder="nvapi-••••••••••••••••"
                                                 autocomplete="new-password"
-                                                placeholder="{{ $this->nvidiaApiKeyConfigured ? 'Key tersimpan — isi hanya untuk mengganti' : 'nvapi-••••••••••••••••' }}"
-                                                style="width:100%;min-width:0"
+                                                spellcheck="false"
                                             >
-                                            <button type="button" class="rms-ai-save-button" wire:click="$toggle('showNvidiaApiKey')">{{ $showNvidiaApiKey ? 'Hide' : 'Show' }}</button>
+                                            <button type="button" @click="showNewKey = !showNewKey">
+                                                <span x-text="showNewKey ? 'Hide' : 'Show'"></span>
+                                            </button>
                                         </div>
                                     </label>
                                 </div>
-                                <div class="rms-ai-save-row" style="margin-top:14px;gap:10px;flex-wrap:wrap">
-                                    <button type="button" class="rms-ai-save-button" wire:click="saveNvidiaApiKey" wire:loading.attr="disabled" wire:target="saveNvidiaApiKey">
-                                        <span wire:loading.remove wire:target="saveNvidiaApiKey">Save NVIDIA API Key</span>
-                                        <span wire:loading wire:target="saveNvidiaApiKey">Saving...</span>
-                                    </button>
-                                    <button type="button" class="rms-ai-save-button" wire:click="testNvidiaConnection" wire:loading.attr="disabled" wire:target="testNvidiaConnection">
-                                        <span wire:loading.remove wire:target="testNvidiaConnection">Test Generate</span>
-                                        <span wire:loading wire:target="testNvidiaConnection">Generating test...</span>
+
+                                <div class="rms-vg-add-footer">
+                                    <small>
+                                        <i></i>
+                                        Credential terenkripsi di backend. Raw API key tidak pernah ditulis ke activity log.
+                                    </small>
+
+                                    <button
+                                        type="button"
+                                        class="rms-vg-save-key"
+                                        wire:click="addNvidiaApiKey"
+                                        wire:loading.attr="disabled"
+                                        wire:target="addNvidiaApiKey"
+                                    >
+                                        <span wire:loading.remove wire:target="addNvidiaApiKey">
+                                            <b>+</b> Add &amp; Save Key
+                                        </span>
+                                        <span wire:loading wire:target="addNvidiaApiKey" class="rms-vg-button-loading">
+                                            <i></i> Saving key...
+                                        </span>
                                     </button>
                                 </div>
-                                @if (!empty($nvidiaApiKeyStatus))
-                                    <div class="rms-ai-provider-status" style="margin-top:12px">
-                                        <i></i>{{ $nvidiaApiKeyStatus['message'] ?? 'NVIDIA test selesai.' }}
-                                    </div>
-                                @endif
                             </div>
+
+                            <div class="rms-vg-key-list">
+                                @forelse ($nvidiaApiKeys as $key)
+                                    @php
+                                        $keyId = $key['id'] ?? $key->id ?? null;
+                                        $keyName = $key['name'] ?? $key->name ?? ('NVIDIA Key #' . $keyId);
+                                        $keyStatus = $key['status'] ?? $key->status ?? 'active';
+                                        $keyMasked = $key['masked_key'] ?? $key->masked_key ?? 'nvapi-••••••••';
+                                        $keyRequests = (int) ($key['request_count'] ?? $key->request_count ?? 0);
+                                        $keySuccess = (int) ($key['success_count'] ?? $key->success_count ?? 0);
+                                        $keyFailure = (int) ($key['failure_count'] ?? $key->failure_count ?? 0);
+                                        $keyLastUsed = $key['last_used_at'] ?? $key->last_used_at ?? null;
+                                    @endphp
+
+                                    <article
+                                        class="rms-vg-key-card is-{{ $keyStatus }}"
+                                        wire:key="nvidia-api-key-{{ $keyId }}"
+                                        x-data="{ actionsOpen: false }"
+                                        @click.outside="actionsOpen = false"
+                                    >
+                                        <div class="rms-vg-key-card-main">
+                                            <div class="rms-vg-key-avatar">
+                                                <span>AI</span>
+                                                <i></i>
+                                            </div>
+
+                                            <div class="rms-vg-key-copy">
+                                                <div class="rms-vg-key-name-row">
+                                                    <strong>{{ $keyName }}</strong>
+                                                    <span class="rms-vg-status rms-vg-status-{{ $keyStatus }}">
+                                                        <i></i>
+                                                        {{ strtoupper(str_replace('_', ' ', $keyStatus)) }}
+                                                    </span>
+                                                </div>
+
+                                                <code>{{ $keyMasked }}</code>
+
+                                                <div class="rms-vg-key-meta">
+                                                    <span>{{ $keyRequests }} requests</span>
+                                                    <span>{{ $keySuccess }} success</span>
+                                                    <span>{{ $keyFailure }} failed</span>
+                                                    @if ($keyLastUsed)
+                                                        <span>Last used {{ $keyLastUsed }}</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+
+                                            <div class="rms-vg-key-actions">
+                                                <button
+                                                    type="button"
+                                                    class="rms-vg-delete-key"
+                                                    @click.stop="confirmDelete({{ $keyId }}, @js($keyName))"
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="removeNvidiaApiKey({{ $keyId }})"
+                                                    title="Remove API key"
+                                                >
+                                                    <span wire:loading.remove wire:target="removeNvidiaApiKey({{ $keyId }})">×</span>
+                                                    <span wire:loading wire:target="removeNvidiaApiKey({{ $keyId }})" class="rms-vg-mini-spinner"></span>
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    class="rms-vg-test-key"
+                                                    wire:click.stop="testNvidiaApiKey({{ $keyId }})"
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="testNvidiaApiKey({{ $keyId }})"
+                                                >
+                                                    <span wire:loading.remove wire:target="testNvidiaApiKey({{ $keyId }})">Test</span>
+                                                    <span wire:loading wire:target="testNvidiaApiKey({{ $keyId }})"><i></i></span>
+                                                </button>
+
+                                                <div class="rms-vg-more-wrap">
+                                                    <button
+                                                        type="button"
+                                                        class="rms-vg-key-more"
+                                                        @click.stop="actionsOpen = !actionsOpen"
+                                                        :aria-expanded="actionsOpen"
+                                                        title="Key actions"
+                                                    >⋯</button>
+
+                                                    <div
+                                                        x-show="actionsOpen"
+                                                        x-cloak
+                                                        x-transition:enter="transition ease-out duration-150"
+                                                        x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                                                        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                                                        x-transition:leave="transition ease-in duration-100"
+                                                        x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                                                        x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                                                        class="rms-vg-key-menu"
+                                                    >
+                                                        <button type="button" @click="actionsOpen = false" wire:click="toggleNvidiaApiKey({{ $keyId }})">
+                                                            {{ $keyStatus === 'disabled' ? 'Enable key' : 'Disable key' }}
+                                                        </button>
+                                                        <button type="button" @click="actionsOpen = false" wire:click="resetNvidiaApiKey({{ $keyId }})">
+                                                            Reset status
+                                                        </button>
+                                                        <button type="button" class="is-danger" @click="actionsOpen = false; confirmDelete({{ $keyId }}, @js($keyName))">
+                                                            Delete key
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        @if (!empty($key['last_error'] ?? $key->last_error ?? null))
+                                            <div class="rms-vg-key-error">
+                                                <span>!</span>
+                                                <div>
+                                                    <strong>{{ $key['last_error_type'] ?? $key->last_error_type ?? 'Connection issue' }}</strong>
+                                                    <small>{{ $key['last_error'] ?? $key->last_error }}</small>
+                                                </div>
+                                            </div>
+                                        @endif
+
+                                        <div class="rms-vg-key-progress">
+                                            <span style="width: {{ $keyRequests > 0 ? min(100, round(($keySuccess / max(1, $keyRequests)) * 100)) : 0 }}%"></span>
+                                        </div>
+                                    </article>
+                                @empty
+                                    <div class="rms-vg-empty-keys">
+                                        <button type="button" class="rms-vg-empty-orbit" @click="addOpen = true">
+                                            <span>+</span>
+                                        </button>
+                                        <strong>No NVIDIA API key configured</strong>
+                                        <p>Tambahkan key pertama untuk mengaktifkan automatic key pool.</p>
+                                    </div>
+                                @endforelse
+                            </div>
+
+                    <template x-teleport="body">
+                        <div x-show="deleteOpen" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="rms-vg-delete-overlay" @keydown.escape.window="closeDelete()">
+                        <div class="rms-vg-delete-backdrop" @click="closeDelete()"></div>
+                        <div class="rms-vg-delete-modal" x-show="deleteOpen" x-transition:enter="transition ease-out duration-250" x-transition:enter-start="opacity-0 scale-90 translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100 translate-y-0" x-transition:leave-end="opacity-0 scale-95 translate-y-2" @click.stop>
+                            <div class="rms-vg-delete-orb"><span></span></div>
+                            <div class="rms-vg-delete-copy">
+                                <span class="rms-vg-delete-eyebrow">REMOVE API CREDENTIAL</span>
+                                <h3>Hapus API key ini?</h3>
+                                <p>Key <strong x-text="deleteName"></strong> akan dihapus dari pool dan tidak akan dipakai lagi oleh generator.</p>
+                            </div>
+                            <div class="rms-vg-delete-warning"><span>!</span><div><strong>Tindakan ini tidak dapat dibatalkan</strong><small>Riwayat activity tetap tersimpan untuk audit.</small></div></div>
+                            <div class="rms-vg-delete-actions">
+                                <button type="button" class="rms-vg-delete-cancel" @click="closeDelete()" :disabled="deleting">Batal</button>
+                                <button type="button" class="rms-vg-delete-confirm" @click="deleteKey()" :disabled="deleting"><span x-show="!deleting">Hapus API Key</span><span x-show="deleting" x-cloak class="rms-vg-delete-loading"><i></i> Menghapus...</span></button>
+                            </div>
+                        </div>
+                    </div>
+                        </div>
+                    </template>
                         </section>
 
+
+
+                            {{-- TEST ALL NVIDIA KEYS --}}
+                            <div class="rms-vg-test-all-card rms-vg-test-all-card-full">
+                        <div class="rms-vg-test-all-copy">
+                            <div class="rms-vg-test-all-icon">
+                                <span></span>
+                                <i></i>
+                            </div>
+                            <div>
+                                <strong>NVIDIA pool health check</strong>
+                                <small>Test seluruh NVIDIA API key yang aktif sekaligus. Setiap hasil akan dicatat ke API Key Activity dan status key diperbarui otomatis.</small>
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            class="rms-settings-dark-button rms-test-connection-upgraded rms-vg-test-all-button"
+                            wire:click="testAllNvidiaApiKeys"
+                            wire:loading.attr="disabled"
+                            wire:target="testAllNvidiaApiKeys"
+                        >
+                            <span wire:loading.remove wire:target="testAllNvidiaApiKeys">Test All Keys</span>
+                            <span wire:loading wire:target="testAllNvidiaApiKeys" class="rms-vg-test-loading"><i></i> Testing keys...</span>
+                            <b wire:loading.remove wire:target="testAllNvidiaApiKeys">→</b>
+                        </button>
+                            </div>
+                        </section>
                             {{-- PROVIDER FAILOVER CONFIGURATION --}}
                             <section class="rms-ai-provider-section rms-failover-card">
                         <div class="rms-ai-provider-section-head">
@@ -1132,7 +1364,6 @@
                             </button>
                         </div>
                     </section>
-                        </section>
 
                     @endif
 
