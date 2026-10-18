@@ -142,7 +142,7 @@ class OpenAiImageService
         $store = $this->resolveStoreForTemplate($store, $template);
         $hasInstalledReference = (bool) $imageTwo;
         $hasTemplateReference = $this->hasTemplateReference($template);
-        $attachTemplateReference = $hasTemplateReference;
+        $attachTemplateReference = false;
         $hasStoreLogo = $this->hasStoreLogo($store);
         $generationMode = $this->generationMode($hasInstalledReference);
         $customTitle = $this->normalizeCustomTitle($customTitle);
@@ -150,10 +150,7 @@ class OpenAiImageService
         // The same value is also persisted in generation metadata for queued processing.
         $requestedCustomTitle = $customTitle;
         $titleSource = $customTitle !== null ? 'custom' : 'ai';
-        $referenceCount = ($attachTemplateReference ? 1 : 0)
-            + 1
-            + ($hasInstalledReference ? 1 : 0)
-            + ($hasStoreLogo ? 1 : 0);
+        $referenceCount = 1 + ($hasInstalledReference ? 1 : 0) + ($hasStoreLogo ? 1 : 0);
         $initialProviderLabel = $this->providerDisplayName(
             app(ProviderManager::class)->activeProviderName($user->id)
         );
@@ -1564,17 +1561,8 @@ PROMPT;
     ): array {
         $references = [];
 
-        if ($this->hasTemplateReference($template)) {
-            $path = $this->templateReferencePath($template);
-            if ($path) {
-                $references[] = [
-                    'role' => 'template',
-                    'path' => $path,
-                    'filename' => 'template-master-' . basename($path),
-                ];
-            }
-        }
-
+        // The selected Template supplies prompt/style rules only. Its preview/example
+        // image is not a generation input and must never increase the reference count.
         if (! is_readable($productPath)) {
             throw new RuntimeException('Primary product reference tidak dapat dibaca.');
         }
