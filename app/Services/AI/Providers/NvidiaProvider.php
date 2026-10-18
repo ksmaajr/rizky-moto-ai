@@ -16,6 +16,8 @@ final class NvidiaProvider implements ImageProviderInterface
     private const ENDPOINTS = [
         'black-forest-labs/flux.2-klein-4b' => 'https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.2-klein-4b',
         'black-forest-labs/flux.3-image-klein' => 'https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.3-image-klein',
+        // Qwen-Image-Edit is exposed through a deployed NIM OpenAI-compatible endpoint.
+        'qwen/qwen-image-edit-2511' => '',
     ];
 
     public function __construct(
@@ -47,14 +49,18 @@ final class NvidiaProvider implements ImageProviderInterface
         // images, not arbitrary uploaded base64 references. This generator must
         // preserve product/template/logo references, so require a deployed NIM
         // endpoint for image editing rather than silently substituting demo images.
-        $customEndpoint = $model === 'black-forest-labs/flux.3-image-klein'
-            ? trim((string) config('services.nvidia.flux3_endpoint', ''))
-            : trim((string) config('services.nvidia.flux2_endpoint', ''));
+        $customEndpoint = match ($model) {
+            'qwen/qwen-image-edit-2511' => trim((string) config('services.nvidia.qwen_endpoint', '')),
+            'black-forest-labs/flux.3-image-klein' => trim((string) config('services.nvidia.flux3_endpoint', '')),
+            default => trim((string) config('services.nvidia.flux2_endpoint', '')),
+        };
         if ($customEndpoint !== '') {
             $endpoint = $customEndpoint;
         } else {
             throw new RuntimeException(
-                'NVIDIA API Trial untuk model ini hanya menerima gambar contoh (example_id 0-3), bukan gambar produk, Template, dan logo Store yang diunggah. Agar workflow generator tetap memakai reference asli, konfigurasikan endpoint NVIDIA NIM deployment yang mendukung image-to-image melalui NVIDIA_FLUX3_ENDPOINT atau NVIDIA_FLUX2_ENDPOINT.'
+                $model === 'qwen/qwen-image-edit-2511'
+                    ? 'Model NVIDIA Qwen-Image-Edit-2511 memerlukan endpoint NIM yang sudah di-deploy. Isi NVIDIA_QWEN_ENDPOINT dengan URL endpoint OpenAI-compatible /v1/images/edits; NVIDIA API Trial belum menyediakan endpoint hosted untuk model ini.'
+                    : 'NVIDIA API Trial untuk model FLUX ini hanya menerima gambar contoh (example_id 0-3), bukan gambar produk dan logo Store yang diunggah. Konfigurasikan endpoint NVIDIA NIM deployment melalui NVIDIA_FLUX3_ENDPOINT atau NVIDIA_FLUX2_ENDPOINT.'
             );
         }
 
@@ -151,12 +157,27 @@ final class NvidiaProvider implements ImageProviderInterface
                     ],
                 );
 
-                $response = Http::withToken($credential['key'])
+                $http = Http::withToken($credential['key'])
                     ->acceptJson()
-                    ->asJson()
                     ->connectTimeout(15)
-                    ->timeout((int) config('services.nvidia.timeout', 240))
-                    ->post($endpoint, $payload);
+                    ->timeout((int) config('services.nvidia.timeout', 240));
+
+                if ($model === 'qwen/qwen-image-edit-2511') {
+                    $boardBinary = file_get_contents($reference['path']);
+                    if ($boardBinary === false) {
+                        throw new RuntimeException('Reference board NVIDIA Qwen tidak dapat dibaca.');
+                    }
+                    $response = $http
+                        ->attach('image', $boardBinary, 'reference-board.png', ['Content-Type' => 'image/png'])
+                        ->post($endpoint, [
+                            'model' => $model,
+                            'prompt' => $prompt,
+                            'n' => 1,
+                            'response_format' => 'b64_json',
+                        ]);
+                } else {
+                    $response = $http->asJson()->post($endpoint, $payload);
+                }
 
                 if ($response->successful()) {
                     break;
@@ -271,6 +292,17 @@ final class NvidiaProvider implements ImageProviderInterface
         $roles = array_map(static fn ($reference) => strtolower(trim((string) $reference->role)), $request->references);
         $hasInstalled = count(array_intersect($roles, ['installed', 'installed_reference'])) > 0;
 
+        if (strtolower(trim($request->model)) === 'qwen/qwen-image-edit-2511') {
+            return $request->prompt
+                . "\\n\\nNVIDIA QWEN IMAGE EDITING POLICY — mandatory:"
+                . "\\n- The uploaded reference board contains PRODUCT, optional INSTALLED context, and the official STORE LOGO only."
+                . "\\n- Template instructions are supplied in this prompt; the Template preview image is NOT an input reference."
+                . "\\n- Preserve exact product identity, geometry, material, packaging, colors, and visible details from PRODUCT."
+                . "\\n- Use STORE LOGO as the sole authority for shop branding; do not copy or redraw logos from the product or other imagery."
+                . "\\n- " . ($hasInstalled ? 'Use INSTALLED only as fitment/context guidance while preserving the exact product.' : 'Do not invent an installed-on-motorcycle scene because no installed reference was supplied.')
+                . "\\n- Follow the selected Template style and exact title. Do not invent specifications, prices, compatibility claims, or watermarks.";
+        }
+
         // FLUX.3 Image Klein hosted preview has a strict 2,000-character prompt
         // ceiling. The shared generator prompt is intentionally comprehensive,
         // so distill it for this endpoint while preserving template direction,
@@ -283,7 +315,7 @@ final class NvidiaProvider implements ImageProviderInterface
             . "\n\nNVIDIA IMAGE EDITING POLICY — mandatory:"
             . "\n- Preserve the real product identity, package shape, color, geometry, and visible details from the product reference."
             . "\n- The dedicated store_logo reference is the ONLY authority for the shop logo. Never copy or redraw a logo from product, installed, or template imagery."
-            . "\n- Use the provided reference board as labeled guidance: PRODUCT = exact item identity; TEMPLATE = style direction; INSTALLED = real installation context; STORE LOGO = official branding artwork."
+            . "\n- Use the provided reference board as labeled guidance: PRODUCT = exact item identity; INSTALLED = real installation context when present; STORE LOGO = official branding artwork. Template rules come from the prompt, not a reference image."
             . "\n- " . ($hasInstalled ? 'Use installed-reference guidance for plausible fitment while preserving the product.' : 'Do not invent an installed-on-motorcycle scene because no installed reference was supplied.')
             . "\n- Create a premium, original square marketplace product poster. Keep headline and Store logo legible; do not invent specifications, prices, or compatibility claims.";
     }
