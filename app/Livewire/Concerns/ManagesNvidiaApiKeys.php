@@ -93,6 +93,7 @@ trait ManagesNvidiaApiKeys
             metadata: ['provider' => 'nvidia', 'nvidia_key_id' => $key->id, 'nvidia_key_name' => $name, 'user_id' => auth()->id()],
         );
 
+        $this->refreshNvidiaPoolReadiness();
         $this->newNvidiaKeyName = '';
         $this->newNvidiaApiKey = '';
         $this->dispatch('nvidia-key-added', id: $key->id);
@@ -105,6 +106,7 @@ trait ManagesNvidiaApiKeys
         if (!$key) return;
         $name = $key->name;
         $key->delete();
+        $this->refreshNvidiaPoolReadiness();
 
         app(ActivityLogService::class)->success(
             action: 'nvidia_api_key_removed',
@@ -124,6 +126,7 @@ trait ManagesNvidiaApiKeys
         $key->status = $key->is_active ? 'active' : 'disabled';
         $key->cooldown_until = null;
         $key->save();
+        $this->refreshNvidiaPoolReadiness();
         $this->dispatch('toast', type: 'success', title: $key->is_active ? 'API key diaktifkan' : 'API key dinonaktifkan', message: $key->name . ($key->is_active ? ' tersedia untuk worker.' : ' tidak akan digunakan worker.'));
     }
 
@@ -138,6 +141,7 @@ trait ManagesNvidiaApiKeys
             'last_error' => null,
             'last_http_status' => null,
         ]);
+        $this->refreshNvidiaPoolReadiness();
         $this->dispatch('toast', type: 'success', title: 'Status di-reset', message: $key->name . ' siap dicoba kembali.');
     }
 
@@ -177,8 +181,10 @@ trait ManagesNvidiaApiKeys
                 $message = 'HTTP ' . $response->status() . ': ' . $detail;
                 app(ActivityLogService::class)->error(action: 'nvidia_api_key_test', category: 'api', title: 'NVIDIA API key health check gagal.', description: $key->name . ': ' . $message, metadata: ['provider' => 'nvidia', 'nvidia_key_id' => $key->id, 'error_type' => $classification['reason'], 'duration_ms' => $duration], httpStatus: $response->status());
             }
+            $this->refreshNvidiaPoolReadiness();
             $this->dispatch('toast', type: $status, title: $status === 'success' ? 'NVIDIA test berhasil' : 'NVIDIA test gagal', message: $message);
         } catch (\Throwable $e) {
+            $this->refreshNvidiaPoolReadiness();
             $this->dispatch('toast', type: 'error', title: 'NVIDIA test gagal', message: mb_substr($e->getMessage(), 0, 500));
             app(ActivityLogService::class)->error(action: 'nvidia_api_key_test', category: 'api', title: 'NVIDIA API key health check exception.', description: $key->name . ': ' . mb_substr($e->getMessage(), 0, 1000), metadata: ['provider' => 'nvidia', 'nvidia_key_id' => $key->id, 'exception' => $e::class]);
         }
@@ -198,6 +204,14 @@ trait ManagesNvidiaApiKeys
             if ((int) $key->fresh()->success_count > $before) $success++;
         }
         $this->dispatch('toast', type: $success === $keys->count() ? 'success' : ($success > 0 ? 'warning' : 'error'), title: 'NVIDIA pool health check selesai', message: "{$success}/{$keys->count()} API key berhasil.");
+    }
+
+    private function refreshNvidiaPoolReadiness(): void
+    {
+        $pool = app(NvidiaApiKeyPool::class);
+        $this->nvidiaApiKeyConfigured = $pool->totalCount(auth()->id()) > 0
+            ? $pool->activeCount(auth()->id()) > 0
+            : $this->legacyNvidiaKeyConfigured();
     }
 
     private function ownedNvidiaApiKey(int $id): ?NvidiaApiKey
