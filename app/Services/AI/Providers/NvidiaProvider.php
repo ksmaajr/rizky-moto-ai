@@ -280,7 +280,7 @@ final class NvidiaProvider implements ImageProviderInterface
             'SELECTED TEMPLATE PROMPT (preserve fully): ' . $templateDirection,
         ];
 
-        $prompt = implode("\\n\\n", array_values(array_filter($fixed, static fn ($part) => $part !== '')));
+        $prompt = implode("\n\n", array_values(array_filter($fixed, static fn ($part) => $part !== '')));
 
         if (mb_strlen($prompt) > 2000) {
             $templateLength = mb_strlen($templateDirection);
