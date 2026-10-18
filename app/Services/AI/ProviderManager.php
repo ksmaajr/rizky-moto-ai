@@ -79,24 +79,10 @@ final class ProviderManager
         if ($provider === 'nvidia') {
             return [
                 [
-                    'id' => 'black-forest-labs/flux.2-klein-4b',
-                    'value' => 'black-forest-labs/flux.2-klein-4b',
-                    'label' => 'FLUX.2 Klein 4B',
-                    'description' => 'NVIDIA NIM · fast image generation and editing',
-                    'owned_by' => 'NVIDIA NIM',
-                ],
-                [
                     'id' => 'black-forest-labs/flux.3-image-klein',
                     'value' => 'black-forest-labs/flux.3-image-klein',
                     'label' => 'FLUX.3 Image Klein',
-                    'description' => 'NVIDIA NIM · high-quality image generation and editing',
-                    'owned_by' => 'NVIDIA NIM',
-                ],
-                [
-                    'id' => 'qwen/qwen-image-edit-2511',
-                    'value' => 'qwen/qwen-image-edit-2511',
-                    'label' => 'Qwen Image Edit 2511',
-                    'description' => 'NVIDIA NIM deployment · reference-guided product editing',
+                    'description' => 'NVIDIA NIM · default model for product image generation and editing',
                     'owned_by' => 'NVIDIA NIM',
                 ],
             ];
