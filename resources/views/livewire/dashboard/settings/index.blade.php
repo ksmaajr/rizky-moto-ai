@@ -1234,10 +1234,9 @@
                         </div>
                     </template>
                         </section>
+                        </div>
 
-
-
-                            {{-- TEST ALL NVIDIA KEYS --}}
+                        {{-- TEST ALL NVIDIA KEYS --}}
                             <div class="rms-vg-test-all-card rms-vg-test-all-card-full">
                         <div class="rms-vg-test-all-copy">
                             <div class="rms-vg-test-all-icon">
