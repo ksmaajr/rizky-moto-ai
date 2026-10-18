@@ -154,12 +154,15 @@ class OpenAiImageService
             + 1
             + ($hasInstalledReference ? 1 : 0)
             + ($hasStoreLogo ? 1 : 0);
+        $initialProviderLabel = $this->providerDisplayName(
+            app(ProviderManager::class)->activeProviderName($user->id)
+        );
 
         $this->activity()->processing(
             action: 'generate_openai_image',
             category: 'generator',
-            title: 'Generate AI image via Vercel dimulai.',
-            description: 'Generator menerima request dan mulai menyiapkan input untuk Vercel AI Gateway.',
+            title: 'Generate AI image via ' . $initialProviderLabel . ' dimulai.',
+            description: 'Generator menerima request dan mulai menyiapkan input untuk ' . $initialProviderLabel . '.',
             metadata: [
                 'source' => 'dashboard_generator',
                 'store_id' => $store->id,
@@ -205,6 +208,9 @@ class OpenAiImageService
         }
 
         $model = $this->normalizeGatewayImageModel($model);
+        $dispatchProviderLabel = $this->providerDisplayName(
+            app(ProviderManager::class)->providerFor($model, $user->id)->name()
+        );
 
         if ($model === '') {
             $message = 'Model OpenAI belum dipilih.';
@@ -372,9 +378,10 @@ class OpenAiImageService
             $this->activity()->processing(
                 action: 'generate_openai_image',
                 category: 'generator',
-                title: 'Mengirim request ke Vercel AI Gateway.',
+                title: 'Mengirim request ke ' . $dispatchProviderLabel . '.',
                 description: sprintf(
-                    'Vercel AI Gateway POST /v1/images/edits dengan %d attachment, model %s.',
+                    '%s memproses %d attachment, model %s.',
+                    $dispatchProviderLabel,
                     count($attachments),
                     $model
                 ),
@@ -990,7 +997,7 @@ class OpenAiImageService
                 metadata: [
                     'source' => 'openai_image_queue',
                     'generation_id' => $generation->id,
-                    'endpoint' => '/v1/images/edits',
+                    'endpoint' => $dispatchProviderLabel === 'NVIDIA NIM' ? 'NVIDIA NIM inference endpoint' : ($dispatchProviderLabel === 'Agent AI' ? 'Agent AI image endpoint' : '/v1/images/edits'),
                     'attachment_count' => count($attachments),
                     'reference_transport' => $referenceTransport['transport'],
                     'reference_manifest' => $this->publicReferenceManifest($referenceManifest),
