@@ -29,10 +29,7 @@ return [
     ],
 
     'nvidia' => [
-        // Qwen Image Edit requires a deployed NVIDIA NIM OpenAI-compatible endpoint
-        // ending in /v1/images/edits. The FLUX trial endpoints do not accept custom
-        // uploaded product/logo references, so deployed endpoints remain configurable.
-        'qwen_endpoint' => env('NVIDIA_QWEN_ENDPOINT'),
+        // FLUX.3 endpoint must accept custom product/logo reference images.
         'flux2_endpoint' => env('NVIDIA_FLUX2_ENDPOINT'),
         'flux3_endpoint' => env('NVIDIA_FLUX3_ENDPOINT'),
         'timeout' => (int) env('NVIDIA_TIMEOUT', 240),
