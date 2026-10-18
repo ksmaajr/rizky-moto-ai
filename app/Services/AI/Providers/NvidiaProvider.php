@@ -90,7 +90,7 @@ final class NvidiaProvider implements ImageProviderInterface
         }
 
         $payload = [
-            'mode' => 'Image Editing',
+            'mode' => 'i2i',
             'prompt' => $prompt,
             'image' => $reference['data'],
             'height' => 1024,
