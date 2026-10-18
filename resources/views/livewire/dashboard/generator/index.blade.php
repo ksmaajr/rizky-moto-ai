@@ -675,6 +675,7 @@ new class extends Component
     {
         return match ($this->activeGenerationProvider) {
             'agentkit' => 'Agent AI',
+            'nvidia' => 'NVIDIA NIM',
             default => 'Vercel AI Gateway',
         };
     }

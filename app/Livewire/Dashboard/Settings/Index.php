@@ -22,6 +22,10 @@ class Index extends Component
 
     public string $activeProvider = 'vercel';
     public string $fallbackProvider = '';
+    public string $nvidiaApiKey = '';
+    public bool $showNvidiaApiKey = false;
+    public bool $nvidiaApiKeyConfigured = false;
+    public array $nvidiaApiKeyStatus = [];
     public bool $allowProviderFallback = false;
     public bool $emergencyFallback = false;
 
@@ -96,14 +100,15 @@ class Index extends Component
             $this->fallbackProvider = (string) ($setting->fallback_provider ?? '');
             $this->allowProviderFallback = (bool) $setting->allow_provider_fallback;
             $this->emergencyFallback = (bool) $setting->emergency_fallback;
+            $this->nvidiaApiKeyConfigured = filled($setting->nvidia_api_key);
         }
     }
 
     public function saveAiProviderConfiguration(): void
     {
         $this->validate([
-            'activeProvider' => ['required', 'in:vercel,agentkit'],
-            'fallbackProvider' => ['nullable', 'in:vercel,agentkit'],
+            'activeProvider' => ['required', 'in:vercel,agentkit,nvidia'],
+            'fallbackProvider' => ['nullable', 'in:vercel,agentkit,nvidia'],
         ]);
 
         if ($this->fallbackProvider === $this->activeProvider) {
@@ -120,6 +125,7 @@ class Index extends Component
             ]
         );
 
+        $this->dispatch('ai-provider-configuration-updated');
         $this->saved = true;
         $this->dispatch(
             'toast',
@@ -129,6 +135,68 @@ class Index extends Component
         );
     }
 
+
+    public function saveNvidiaApiKey(): void
+    {
+        $this->validate(['nvidiaApiKey' => ['required', 'string', 'min:10', 'max:2000']]);
+
+        $setting = AiProviderSetting::firstOrNew(['user_id' => Auth::id()]);
+        $setting->nvidia_api_key = trim($this->nvidiaApiKey);
+        $setting->save();
+        $this->nvidiaApiKeyConfigured = true;
+
+        $this->nvidiaApiKey = '';
+        $this->showNvidiaApiKey = false;
+        $this->writeSettingsActivity('provider_credential_added', 'NVIDIA API key saved', 'NVIDIA NIM credential tersimpan dalam bentuk terenkripsi.', 'success', ['provider' => 'nvidia', 'credential_type' => 'api_key']);
+        $this->toast('success', 'NVIDIA API key tersimpan', 'API key disimpan terenkripsi. Nilai aslinya tidak ditampilkan kembali.');
+    }
+
+    public function testNvidiaConnection(): void
+    {
+        $setting = AiProviderSetting::query()
+            ->where(function ($query) {
+                $query->where('user_id', Auth::id())->orWhereNull('user_id');
+            })
+            ->orderByRaw('CASE WHEN user_id = ? THEN 0 ELSE 1 END', [Auth::id()])
+            ->first();
+        $key = trim((string) ($setting?->nvidia_api_key ?? ''));
+
+        if ($key === '') {
+            $this->toast('error', 'NVIDIA API key belum tersedia', 'Simpan API key terlebih dahulu.');
+            return;
+        }
+
+        $started = microtime(true);
+        try {
+            $response = Http::withToken($key)->acceptJson()->asJson()->connectTimeout(10)->timeout(120)
+                ->post('https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.2-klein-4b', [
+                    'mode' => 'Image Generation',
+                    'prompt' => 'A simple studio product photograph of a motorcycle spark plug on a clean neutral background.',
+                    'height' => 1024, 'width' => 1024, 'cfg_scale' => 0, 'samples' => 1, 'seed' => 0, 'steps' => 4,
+                ]);
+
+            $ok = $response->successful()
+                && (is_string($response->json('artifacts.0.base64')) || is_string($response->json('data.0.b64_json')) || is_string($response->json('images.0.url')));
+            $status = $response->status();
+            $detail = $ok ? 'NVIDIA NIM berhasil mengembalikan hasil tes image generation.' : mb_substr((string) ($response->json('detail') ?? $response->json('error.message') ?? $response->body()), 0, 900);
+
+            $this->writeSettingsActivity('provider_connection_test', 'NVIDIA image generation test ' . ($ok ? 'passed' : 'failed'), $detail, $ok ? 'success' : 'error', [
+                'provider' => 'nvidia', 'model' => 'black-forest-labs/flux.2-klein-4b', 'http_status' => $status,
+                'duration_ms' => (int) round((microtime(true) - $started) * 1000), 'test_type' => 'image_generation',
+            ]);
+            $this->nvidiaApiKeyStatus = ['ok' => $ok, 'http_status' => $status, 'message' => $ok ? 'Test generate berhasil.' : 'Test generate gagal: ' . $detail];
+            $this->toast($ok ? 'success' : 'error', $ok ? 'NVIDIA test berhasil' : 'NVIDIA test gagal', $this->nvidiaApiKeyStatus['message']);
+        } catch (\Throwable $e) {
+            $message = mb_substr($e->getMessage(), 0, 900);
+            $this->writeSettingsActivity('provider_connection_test', 'NVIDIA image generation test failed', $message, 'error', [
+                'provider' => 'nvidia', 'exception' => get_class($e), 'duration_ms' => (int) round((microtime(true) - $started) * 1000),
+            ]);
+            $this->nvidiaApiKeyStatus = ['ok' => false, 'message' => 'NVIDIA test gagal: ' . $message];
+            $this->toast('error', 'NVIDIA test gagal', $this->nvidiaApiKeyStatus['message']);
+        }
+
+        $this->refreshActivityLogs();
+    }
 
     public function refreshVercelGatewayKeys(): void
     {

@@ -12,6 +12,7 @@ class AiProviderSetting extends Model
         'fallback_provider',
         'allow_provider_fallback',
         'emergency_fallback',
+        'nvidia_api_key',
     ];
 
     protected function casts(): array
@@ -19,6 +20,7 @@ class AiProviderSetting extends Model
         return [
             'allow_provider_fallback' => 'boolean',
             'emergency_fallback' => 'boolean',
+            'nvidia_api_key' => 'encrypted',
         ];
     }
 }

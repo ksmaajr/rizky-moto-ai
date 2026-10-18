@@ -67,14 +67,33 @@ final class ProviderManager
     /**
      * Return the image model catalog for the currently selected provider.
      *
-     * Vercel keeps its live Gateway catalog. AgentKit intentionally exposes
-     * only the two models supported by the upstream toolkit.
+     * Vercel keeps its live Gateway catalog. AgentKit and NVIDIA expose only the
+     * models explicitly supported by their respective adapters.
      *
      * @return array<int,array{id:string,value:string,label:string,description:string,owned_by:string}>
      */
     public function availableModels(?int $userId = null): array
     {
         $provider = $this->activeProviderName($userId);
+
+        if ($provider === 'nvidia') {
+            return [
+                [
+                    'id' => 'black-forest-labs/flux.2-klein-4b',
+                    'value' => 'black-forest-labs/flux.2-klein-4b',
+                    'label' => 'FLUX.2 Klein 4B',
+                    'description' => 'NVIDIA NIM · fast image generation and editing',
+                    'owned_by' => 'NVIDIA NIM',
+                ],
+                [
+                    'id' => 'black-forest-labs/flux.3-image-klein',
+                    'value' => 'black-forest-labs/flux.3-image-klein',
+                    'label' => 'FLUX.3 Image Klein',
+                    'description' => 'NVIDIA NIM · high-quality image generation and editing',
+                    'owned_by' => 'NVIDIA NIM',
+                ],
+            ];
+        }
 
         if ($provider === 'agentkit') {
             return [
