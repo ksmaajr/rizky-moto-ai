@@ -998,8 +998,7 @@
                                 <div>
                                     <strong>Automatic failover enabled</strong>
                                     <small>
-                                        Jika sebuah key terkena credit, budget, rate limit, atau authentication error,
-                                        key tersebut dapat ditandai otomatis dan generator mencoba key berikutnya.
+                                        Jika key terkena limit, credit habis, atau auth error, worker otomatis mencoba key sehat berikutnya. Test per key menjalankan live image request dan dapat memakai quota NVIDIA.
                                     </small>
                                 </div>
                             </div>
