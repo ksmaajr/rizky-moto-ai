@@ -968,6 +968,62 @@
                                 <div class="rms-provider-block-state is-ready"><i></i><span>Configurable</span></div>
                             </div>
 
+                        <section class="rms-provider-block rms-provider-block-nvidia">
+                            <div class="rms-provider-block-head">
+                                <div class="rms-provider-block-icon" aria-hidden="true"><span>N</span></div>
+                                <div class="rms-provider-block-copy">
+                                    <span>PROVIDER 03 · NVIDIA NIM</span>
+                                    <strong>NVIDIA Image Generation</strong>
+                                    <small>Hosted FLUX models, shared generator workflow, and centralized activity logging.</small>
+                                </div>
+                                <div class="rms-provider-block-state {{ $nvidiaApiKeyConfigured ? 'is-ready' : 'is-pending' }}">
+                                    <i></i><span>{{ $nvidiaApiKeyConfigured ? 'Key configured' : 'API key required' }}</span>
+                                </div>
+                            </div>
+
+                            <div class="rms-ai-provider-section rms-agent-provider-card">
+                                <div class="rms-ai-provider-section-head">
+                                    <div class="rms-ai-provider-section-title">
+                                        <span class="rms-ai-provider-icon">N</span>
+                                        <div>
+                                            <strong>NVIDIA NIM API Key</strong>
+                                            <small>Key terenkripsi di database. Nilai tersimpan tidak ditampilkan kembali dan tidak dicatat ke activity log.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="rms-ai-failover-grid">
+                                    <label class="rms-ai-config-field" style="display:block">
+                                        <span>NVIDIA API KEY</span>
+                                        <div style="display:flex;gap:10px;align-items:center">
+                                            <input
+                                                type="{{ $showNvidiaApiKey ? 'text' : 'password' }}"
+                                                wire:model="nvidiaApiKey"
+                                                autocomplete="new-password"
+                                                placeholder="{{ $nvidiaApiKeyConfigured ? 'Key tersimpan — isi hanya untuk mengganti' : 'nvapi-••••••••••••••••' }}"
+                                                style="width:100%;min-width:0"
+                                            >
+                                            <button type="button" class="rms-ai-save-button" wire:click="$toggle('showNvidiaApiKey')">{{ $showNvidiaApiKey ? 'Hide' : 'Show' }}</button>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="rms-ai-save-row" style="margin-top:14px;gap:10px;flex-wrap:wrap">
+                                    <button type="button" class="rms-ai-save-button" wire:click="saveNvidiaApiKey" wire:loading.attr="disabled" wire:target="saveNvidiaApiKey">
+                                        <span wire:loading.remove wire:target="saveNvidiaApiKey">Save NVIDIA API Key</span>
+                                        <span wire:loading wire:target="saveNvidiaApiKey">Saving...</span>
+                                    </button>
+                                    <button type="button" class="rms-ai-save-button" wire:click="testNvidiaConnection" wire:loading.attr="disabled" wire:target="testNvidiaConnection">
+                                        <span wire:loading.remove wire:target="testNvidiaConnection">Test Generate</span>
+                                        <span wire:loading wire:target="testNvidiaConnection">Generating test...</span>
+                                    </button>
+                                </div>
+                                @if (!empty($nvidiaApiKeyStatus))
+                                    <div class="rms-ai-provider-status" style="margin-top:12px">
+                                        <i></i>{{ $nvidiaApiKeyStatus['message'] ?? 'NVIDIA test selesai.' }}
+                                    </div>
+                                @endif
+                            </div>
+                        </section>
+
                             {{-- PROVIDER FAILOVER CONFIGURATION --}}
                             <section class="rms-ai-provider-section rms-failover-card">
                         <div class="rms-ai-provider-section-head">
@@ -982,14 +1038,14 @@
                         </div>
 
                         <div class="rms-ai-failover-grid">
-                            <div class="rms-ai-config-field" x-data="{ open: false, value: @entangle('activeProvider').live, options: [{value:'vercel',label:'Vercel AI Gateway',desc:'Primary generation gateway',icon:'V'}, {value:'agentkit',label:'Agent AI',desc:'GPT Image 2.5 backend',icon:'✦'}] }" @click.outside="open = false">
+                            <div class="rms-ai-config-field" x-data="{ open: false, value: @entangle('activeProvider').live, options: [{value:'vercel',label:'Vercel AI Gateway',desc:'Primary generation gateway',icon:'V'}, {value:'agentkit',label:'Agent AI',desc:'GPT Image 2.5 backend',icon:'✦'}, {value:'nvidia',label:'NVIDIA NIM',desc:'FLUX image models',icon:'N'}] }" @click.outside="open = false">
                                 <span>PRIMARY PROVIDER</span>
                                 <div class="rms-custom-select" :class="{ 'is-open': open }">
                                     <button type="button" class="rms-custom-select-trigger" @click="open = !open" :aria-expanded="open">
-                                        <span class="rms-custom-select-leading rms-leading-primary" x-text="value === 'agentkit' ? '✦' : 'V'"></span>
+                                        <span class="rms-custom-select-leading rms-leading-primary" x-text="value === 'agentkit' ? '✦' : (value === 'nvidia' ? 'N' : 'V')"></span>
                                         <span class="rms-custom-select-value">
-                                            <strong x-text="value === 'agentkit' ? 'Agent AI' : 'Vercel AI Gateway'"></strong>
-                                            <small x-text="value === 'agentkit' ? 'GPT Image 2.5 backend' : 'Primary generation gateway'"></small>
+                                            <strong x-text="value === 'agentkit' ? 'Agent AI' : (value === 'nvidia' ? 'NVIDIA NIM' : 'Vercel AI Gateway')"></strong>
+                                            <small x-text="value === 'agentkit' ? 'GPT Image 2.5 backend' : (value === 'nvidia' ? 'FLUX image models' : 'Primary generation gateway')"></small>
                                         </span>
                                         <span class="rms-custom-select-arrow">⌄</span>
                                     </button>
@@ -1006,14 +1062,14 @@
                                 </div>
                             </div>
 
-                            <div class="rms-ai-config-field" x-data="{ open: false, value: @entangle('fallbackProvider').live, options: [{value:'',label:'No automatic fallback',desc:'Keep generation on the primary provider',icon:'—'}, {value:'vercel',label:'Vercel AI Gateway',desc:'Use Vercel as backup provider',icon:'V'}, {value:'agentkit',label:'Agent AI',desc:'Use Agent AI as backup provider',icon:'✦'}] }" @click.outside="open = false">
+                            <div class="rms-ai-config-field" x-data="{ open: false, value: @entangle('fallbackProvider').live, options: [{value:'',label:'No automatic fallback',desc:'Keep generation on the primary provider',icon:'—'}, {value:'vercel',label:'Vercel AI Gateway',desc:'Use Vercel as backup provider',icon:'V'}, {value:'agentkit',label:'Agent AI',desc:'Use Agent AI as backup provider',icon:'✦'}, {value:'nvidia',label:'NVIDIA NIM',desc:'Use NVIDIA as backup provider',icon:'N'}] }" @click.outside="open = false">
                                 <span>FALLBACK PROVIDER</span>
                                 <div class="rms-custom-select" :class="{ 'is-open': open }">
                                     <button type="button" class="rms-custom-select-trigger" @click="open = !open" :aria-expanded="open">
-                                        <span class="rms-custom-select-leading rms-leading-fallback" x-text="value === 'agentkit' ? '✦' : (value === 'vercel' ? 'V' : '—')"></span>
+                                        <span class="rms-custom-select-leading rms-leading-fallback" x-text="value === 'agentkit' ? '✦' : (value === 'nvidia' ? 'N' : (value === 'vercel' ? 'V' : '—'))"></span>
                                         <span class="rms-custom-select-value">
-                                            <strong x-text="value === 'agentkit' ? 'Agent AI' : (value === 'vercel' ? 'Vercel AI Gateway' : 'No automatic fallback')"></strong>
-                                            <small x-text="value === 'agentkit' ? 'Use Agent AI as backup provider' : (value === 'vercel' ? 'Use Vercel as backup provider' : 'Keep generation on the primary provider')"></small>
+                                            <strong x-text="value === 'agentkit' ? 'Agent AI' : (value === 'nvidia' ? 'NVIDIA NIM' : (value === 'vercel' ? 'Vercel AI Gateway' : 'No automatic fallback'))"></strong>
+                                            <small x-text="value === 'agentkit' ? 'Use Agent AI as backup provider' : (value === 'nvidia' ? 'Use NVIDIA as backup provider' : (value === 'vercel' ? 'Use Vercel as backup provider' : 'Keep generation on the primary provider'))"></small>
                                         </span>
                                         <span class="rms-custom-select-arrow">⌄</span>
                                     </button>
