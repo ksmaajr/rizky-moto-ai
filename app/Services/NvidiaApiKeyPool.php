@@ -40,8 +40,11 @@ final class NvidiaApiKeyPool
 
         if ($row) return $row;
 
-        // Backward compatibility: the original single NVIDIA key remains usable
-        // until administrators move it into the new pool.
+        // Keep the legacy single key only for installations that have never
+        // created a pool. If a pool exists but all keys are exhausted/disabled,
+        // do not silently fall back to a credential the admin intended to rotate away.
+        if ($this->totalCount($userId) > 0) return null;
+
         $legacy = \App\Models\AiProviderSetting::query()
             ->where(fn ($q) => $q->where('user_id', $userId)->orWhereNull('user_id'))
             ->orderByRaw('CASE WHEN user_id = ? THEN 0 ELSE 1 END', [$userId])
