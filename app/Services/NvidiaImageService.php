@@ -48,7 +48,7 @@ class NvidiaImageService
         }
 
         $payload = [
-            'prompt' => mb_substr(trim($prompt), 0, $model === 'black-forest-labs/flux.1-kontext-dev' ? 10000 : 2000),
+            'prompt' => mb_substr(trim($prompt), 0, $model === 'black-forest-labs/flux.3-image-klein' ? 2000 : 10000),
             'height' => 1024,
             'width' => 1024,
             'seed' => 0,
@@ -65,8 +65,9 @@ class NvidiaImageService
         } elseif ($model === 'black-forest-labs/flux.2-klein-4b') {
             $payload += [
                 'mode' => $imageDataUri ? 'Image Editing' : 'Image Generation',
+                'cfg_scale' => 0,
                 'image' => $imageDataUri,
-                'steps' => 30,
+                'steps' => 4,
             ];
         } else {
             $payload += [
