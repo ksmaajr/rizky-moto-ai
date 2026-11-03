@@ -1665,7 +1665,7 @@ public function getUserInitialsProperty(): string
 
     {
 
-        if (! in_array($tab, ['general', 'provider', 'activity', 'openai'], true)) {
+        if (! in_array($tab, ['general', 'provider', 'activity', 'openai', 'api-keys'], true)) {
 
             return;
 
