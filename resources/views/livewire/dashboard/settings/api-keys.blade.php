@@ -27,6 +27,16 @@
         .rms-api-page .api-status-active{background:#eaf8ef;color:#16834a}
         .rms-api-page .api-status-inactive{background:#f1f3f6;color:#7d8794}
         .rms-api-page .api-note{background:linear-gradient(120deg,#f8fbf9,#f5f8fb);border:1px solid #e6eee8;border-radius:16px}
+        .rms-api-page .api-modal-backdrop{position:fixed;inset:0;z-index:100000;display:grid;place-items:center;padding:20px;background:rgba(15,23,42,.58);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}
+        .rms-api-page .api-modal-card{width:min(100%,440px);border:1px solid rgba(255,255,255,.8);border-radius:24px;background:#fff;padding:26px;box-shadow:0 30px 100px rgba(15,23,42,.28);animation:apiModalIn .24s cubic-bezier(.2,.8,.2,1) both}
+        @keyframes apiModalIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+        .rms-api-page .api-modal-icon{display:grid;width:54px;height:54px;place-items:center;margin:0 auto 16px;border-radius:18px}
+        .rms-api-page .api-modal-secondary{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;color:#475569;font-size:12px;font-weight:750;transition:background .18s}
+        .rms-api-page .api-modal-secondary:hover{background:#f8fafc}
+        .rms-api-page .api-modal-danger{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border:1px solid #dc2626;border-radius:12px;background:#ef3038;color:#fff;font-size:12px;font-weight:800;box-shadow:0 7px 16px rgba(239,48,56,.18);transition:transform .18s,box-shadow .18s}
+        .rms-api-page .api-modal-danger:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(239,48,56,.24)}
+        .rms-api-page .api-secret-value{display:block;width:100%;overflow-wrap:anywhere;border:1px solid #a7f3c4;border-radius:13px;background:#f8fffb;padding:14px;color:#14532d;font:600 12px/1.8 ui-monospace,SFMono-Regular,Menlo,monospace;user-select:all}
+        @media(max-width:480px){.rms-api-page .api-modal-card{padding:22px 18px;border-radius:20px}.rms-api-page .api-modal-actions{flex-direction:column-reverse}.rms-api-page .api-modal-actions>*{width:100%}}
         .api-calendar{position:absolute;z-index:99999;width:min(340px,calc(100vw - 32px));max-height:min(440px,calc(100vh - 24px));overflow-y:auto;padding:17px;border:1px solid #e6ebef;border-radius:18px;background:#fff;box-shadow:0 22px 60px rgba(25,39,55,.2);animation:apiCalendarIn .18s ease both}
         .api-calendar-day{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;color:#344052;font-size:12px;font-weight:650;transition:background .15s,color .15s,transform .15s}
         .api-calendar-day:hover:not(:disabled){background:#edf8f1;color:#138449;transform:scale(1.06)}
@@ -164,11 +174,37 @@
     </section>
 
     @if ($newlyCreatedSecret !== '')
-        <section class="api-card border-emerald-200 bg-emerald-50/70 p-5 sm:p-6" style="animation-delay:.08s">
-            <div class="flex flex-wrap items-start justify-between gap-3"><div><h3 class="text-sm font-extrabold text-emerald-900">Your new API key is ready</h3><p class="mt-1 max-w-xl text-xs leading-5 text-emerald-800">Secret lengkap hanya ditampilkan sekali. Simpan sekarang di password manager atau environment variable.</p></div><button type="button" class="text-xs font-bold text-emerald-700" wire:click="dismissSecret">Dismiss</button></div>
-            <code class="mt-4 block break-all rounded-xl border border-emerald-200 bg-white p-4 text-xs leading-6 text-slate-700">{{ $newlyCreatedSecret }}</code>
-            <button type="button" class="api-copy mt-3" x-on:click="navigator.clipboard.writeText(@js($newlyCreatedSecret))"><svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><rect x="8" y="8" width="11" height="12" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.6"/></svg>Copy API key</button>
-        </section>
+        <div x-data="{copied:false,copySecret(){navigator.clipboard.writeText(@js($newlyCreatedSecret)).then(()=>{this.copied=true;setTimeout(()=>this.copied=false,2200)}).catch(()=>{this.copied=false})}}" x-cloak>
+            <div class="api-modal-backdrop" x-transition.opacity>
+                <section class="api-modal-card relative" role="dialog" aria-modal="true" aria-labelledby="api-secret-title">
+                    <button type="button" wire:click="dismissSecret" class="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="Tutup">
+                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    </button>
+                    <div class="api-modal-icon bg-emerald-50 text-emerald-600 shadow-sm shadow-emerald-100">
+                        <svg viewBox="0 0 24 24" fill="none" class="h-7 w-7"><path d="m5 12.5 4.3 4.3L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <div class="text-center">
+                        <span class="text-[9px] font-extrabold uppercase tracking-[.18em] text-emerald-700">Credential created</span>
+                        <h3 id="api-secret-title" class="mt-2 text-xl font-extrabold tracking-tight text-slate-900">API key berhasil dibuat!</h3>
+                        <p class="mx-auto mt-2 max-w-sm text-xs leading-5 text-slate-500">Salin dan simpan API key ini sekarang. Demi keamanan, secret lengkap hanya ditampilkan satu kali dan tidak bisa dilihat kembali.</p>
+                    </div>
+                    <div class="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-3">
+                        <div class="mb-2 flex items-center justify-between gap-2"><span class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800">Your secret key</span><span class="rounded-full bg-white px-2 py-1 text-[9px] font-bold text-emerald-700">FULL ACCESS</span></div>
+                        <code class="api-secret-value">{{ $newlyCreatedSecret }}</code>
+                        <button type="button" class="api-copy mt-3 w-full justify-center py-3" @click="copySecret()">
+                            <svg x-show="!copied" viewBox="0 0 24 24" fill="none" class="h-4 w-4"><rect x="8" y="8" width="11" height="12" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.6"/></svg>
+                            <svg x-show="copied" x-cloak viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="m5 12.5 4.3 4.3L19 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span x-text="copied ? 'Copied successfully!' : 'Copy API key'"></span>
+                        </button>
+                    </div>
+                    <div class="mt-4 flex items-start gap-2 rounded-xl border border-amber-100 bg-amber-50 px-3 py-3 text-left">
+                        <svg viewBox="0 0 24 24" fill="none" class="mt-0.5 h-4 w-4 shrink-0 text-amber-600"><path d="M12 3 2.8 19h18.4L12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 9v4m0 3h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                        <p class="text-[10px] leading-5 text-amber-800">Jangan bagikan secret ini melalui screenshot, chat publik, atau repository. Simpan di password manager atau environment variable.</p>
+                    </div>
+                    <button type="button" wire:click="dismissSecret" class="api-primary mt-5 w-full">I have saved my API key</button>
+                </section>
+            </div>
+        </div>
     @endif
 
     <section class="api-card p-5 sm:p-6" style="animation-delay:.1s">
@@ -181,7 +217,33 @@
                 @php $expired = $key->expires_at && $key->expires_at->isPast(); $revoked = $key->revoked_at !== null; $status = $revoked ? 'Revoked' : ($expired ? 'Expired' : 'Active'); @endphp
                 <article wire:key="api-key-{{ $key->id }}" class="api-key-row flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 md:flex-row md:items-center md:justify-between">
                     <div class="min-w-0"><div class="flex flex-wrap items-center gap-2"><strong class="break-words text-sm font-bold text-slate-800">{{ $key->name }}</strong><span class="api-status {{ $revoked || $expired ? 'api-status-inactive' : 'api-status-active' }}">{{ strtoupper($status) }}</span></div><code class="mt-2 block text-xs text-slate-500">{{ $key->prefix }}••••••••</code><div class="mt-2.5 flex flex-wrap gap-x-4 gap-y-2 text-[10px] font-medium text-slate-500"><span>{{ $key->store?->name ?? 'Full access · All active Stores' }}</span><span>{{ number_format($key->usage_count) }} requests</span><span>{{ $key->last_used_at?->diffForHumans() ?? 'Never used' }}</span>@if ($key->expires_at)<span>Expires {{ $key->expires_at->format('d M Y') }}</span>@endif</div></div>
-                    @if (! $revoked)<flux:button size="sm" variant="danger" wire:click="revokeApiKey({{ $key->id }})" wire:confirm="Nonaktifkan API key ini? Aplikasi yang menggunakan key ini akan kehilangan akses.">Revoke</flux:button>@else<span class="text-[11px] font-semibold text-slate-400">Access disabled</span>@endif
+                    @if (! $revoked)
+                        <div x-data="{confirming:false}">
+                            <button type="button" @click="confirming=true" class="inline-flex min-h-10 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-4 text-xs font-extrabold text-rose-600 transition hover:-translate-y-0.5 hover:border-rose-300 hover:bg-rose-100">Revoke</button>
+                            <template x-teleport="body">
+                                <div x-cloak x-show="confirming" x-transition.opacity class="api-modal-backdrop" @keydown.escape.window="confirming=false">
+                                    <section x-show="confirming" x-transition.scale.origin.center class="api-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="api-revoke-title">
+                                        <div class="api-modal-icon border border-rose-100 bg-rose-50 text-rose-500 shadow-sm shadow-rose-100">
+                                            <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M12 8v4m0 4h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/></svg>
+                                        </div>
+                                        <div class="text-center">
+                                            <span class="text-[9px] font-extrabold uppercase tracking-[.18em] text-rose-500">Remove API credential</span>
+                                            <h3 id="api-revoke-title" class="mt-2 text-xl font-extrabold tracking-tight text-slate-900">Nonaktifkan API key?</h3>
+                                            <p class="mx-auto mt-2 max-w-sm text-xs leading-5 text-slate-500">API key <strong class="text-slate-700">{{ $key->name }}</strong> akan langsung dicabut dan aplikasi yang menggunakannya tidak dapat mengakses API lagi.</p>
+                                        </div>
+                                        <div class="mt-5 flex items-start gap-2 rounded-xl border border-rose-100 bg-rose-50/70 px-3 py-3 text-left">
+                                            <svg viewBox="0 0 24 24" fill="none" class="mt-0.5 h-4 w-4 shrink-0 text-rose-500"><circle cx="12" cy="12" r="9" fill="currentColor"/><path d="M12 7.5v5m0 3h.01" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
+                                            <div><strong class="block text-[10px] font-extrabold text-rose-700">Tindakan ini tidak dapat dibatalkan</strong><p class="mt-0.5 text-[10px] leading-4 text-rose-600">Buat API key baru jika aplikasi perlu mendapatkan akses kembali.</p></div>
+                                        </div>
+                                        <div class="api-modal-actions mt-5 flex gap-2">
+                                            <button type="button" class="api-modal-secondary flex-1" @click="confirming=false">Batal</button>
+                                            <button type="button" class="api-modal-danger flex-1" wire:click="revokeApiKey({{ $key->id }})" wire:loading.attr="disabled" wire:target="revokeApiKey({{ $key->id }})" @click="confirming=false">Hapus API Key</button>
+                                        </div>
+                                    </section>
+                                </div>
+                            </template>
+                        </div>
+                    @else<span class="text-[11px] font-semibold text-slate-400">Access disabled</span>@endif
                 </article>
             @empty
                 <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 px-5 py-12 text-center"><span class="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-white text-slate-400 shadow-sm"><svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M7 14a5 5 0 1 1 3.9 1.86L9 18H7v2H4v-3l4.1-4.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div class="mt-3 text-sm font-bold text-slate-700">No API keys yet</div><p class="mx-auto mt-1 max-w-sm text-xs leading-5 text-slate-500">Buat API key pertama untuk menghubungkan Codex atau aplikasi eksternal ke Image Generation API.</p></div>
