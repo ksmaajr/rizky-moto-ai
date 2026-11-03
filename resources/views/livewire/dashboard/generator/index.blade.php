@@ -2762,15 +2762,6 @@ new class extends Component
                                     <small>{{ $status === 'queued' ? 'Menunggu worker' : 'AI sedang membuat visual' }}</small>
                                 </div>
 
-                                <div class="rms-processing-visual-badge">
-                                    <i></i>
-                                    <span>{{ $status === 'queued' ? 'Menunggu worker' : 'Sedang diproses' }}</span>
-                                    <b>{{ $status === 'queued' ? 'READY' : 'LIVE' }}</b>
-                                </div>
-
-                                <div class="rms-processing-stage-label">
-                                    <span>{{ $stage }}</span>
-                                </div>
                             </div>
                             <div class="rms-generation-eta rms-generation-eta-v3">
     <span class="rms-generation-eta-clock">◷</span>
@@ -8612,4 +8603,60 @@ body > .rms-history-download-modal{position:fixed!important;inset:0!important;z-
 .rms-generation-processing-visual-v3 .rms-processing-topline{z-index:10}
 .rms-generation-processing-visual-v3 .rms-processing-visual-badge,.rms-generation-processing-visual-v3 .rms-processing-stage-label{z-index:10}
 @media(max-width:760px){.rms-generation-processing-visual-v3 .rms-processing-core-ring{width:88px;height:88px}}
+</style>
+
+
+<style>
+/* V21 — single-status, centered premium processing loader for history cards */
+.rms-generator-history-grid .rms-generation-processing-visual-v3{
+    position:relative!important;display:block!important;min-height:300px!important;
+    padding:0!important;overflow:hidden!important;border:1px solid #e7e9ef!important;
+    border-radius:16px!important;
+    background:
+      radial-gradient(ellipse at 50% 54%,rgba(239,35,60,.105),transparent 34%),
+      radial-gradient(ellipse at 50% 100%,rgba(148,163,184,.10),transparent 58%),
+      linear-gradient(145deg,#fff 0%,#f8f9fb 54%,#f2f4f7 100%)!important;
+    box-shadow:inset 0 1px 0 #fff,0 8px 24px rgba(25,35,55,.035)!important;
+}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-topline{
+    position:absolute!important;z-index:12!important;top:14px!important;left:14px!important;right:14px!important;
+    width:auto!important;max-width:none!important;min-height:38px!important;padding:0 13px!important;
+    display:flex!important;justify-content:flex-start!important;align-items:center!important;gap:9px!important;
+    border:1px solid rgba(226,229,236,.95)!important;border-radius:11px!important;
+    background:rgba(255,255,255,.88)!important;box-shadow:0 5px 16px rgba(20,28,45,.045)!important;
+    backdrop-filter:blur(12px)!important;
+}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-topline strong{font-size:10px!important;letter-spacing:.08em!important}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-topline small{font-size:10px!important}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-visual-core{
+    position:absolute!important;inset:48px 0 0!important;z-index:4!important;
+    display:grid!important;place-items:center!important;width:auto!important;height:auto!important;
+    min-height:0!important;margin:0!important;flex:none!important;overflow:hidden!important;
+}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-core-ring{
+    width:100px!important;height:100px!important;min-width:100px!important;min-height:100px!important;
+    flex:0 0 100px!important;border-color:rgba(239,35,60,.20)!important;
+    background:rgba(255,255,255,.86)!important;
+    box-shadow:0 0 0 9px rgba(239,35,60,.035),0 15px 38px rgba(239,35,60,.10),inset 0 0 0 5px rgba(239,35,60,.025)!important;
+}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-core-ring b{font-size:27px!important}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-core-ring small{font-size:7px!important;letter-spacing:.16em!important}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-orbit.orbit-one{width:126px!important;height:126px!important}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-orbit.orbit-two{width:174px!important;height:174px!important}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-orbit.orbit-three{width:222px!important;height:222px!important}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-particle{display:block!important;visibility:visible!important;opacity:.9!important}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-scan{left:12%!important;right:12%!important}
+@media(max-width:760px){
+ .rms-generator-history-grid .rms-generation-processing-visual-v3{min-height:270px!important}
+ .rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-topline{top:11px!important;left:11px!important;right:11px!important;min-height:35px!important}
+ .rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-visual-core{inset:42px 0 0!important}
+ .rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-core-ring{width:88px!important;height:88px!important;min-width:88px!important;min-height:88px!important;flex-basis:88px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-grid,
+ .rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-scan,
+ .rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-orbit,
+ .rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-particle,
+ .rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-core-ring{animation:none!important}
+}
 </style>
