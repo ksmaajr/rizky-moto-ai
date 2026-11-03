@@ -8343,8 +8343,8 @@ body > .rms-history-download-modal::-webkit-scrollbar,
 }
 
 /* Download modal centering fix: body-teleported overlays must remain a flex viewport layer. */
-body > .rms-history-download-modal,
-.rms-history-download-modal{
+body > .rms-history-download-modal:not([style*="display: none"]),
+.rms-history-download-modal:not([style*="display: none"]){
  position:fixed!important;
  inset:0!important;
  z-index:2147483647!important;
