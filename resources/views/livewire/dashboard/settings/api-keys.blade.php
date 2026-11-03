@@ -1,7 +1,7 @@
 <div class="rms-api-page" wire:key="settings-api-keys-panel">
     <style>
         .rms-api-page{--api-ink:#202631;--api-muted:#7b8493;--api-line:#e7ebf0;--api-green:#159653;color:var(--api-ink);animation:apiPageIn .42s ease both}
-        @keyframes apiPageIn{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes apiPageIn{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
         @keyframes apiCardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         @keyframes apiCalendarIn{from{opacity:0;transform:translateY(-7px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
         .rms-api-page .api-card{margin-bottom:18px;background:#fff;border:1px solid var(--api-line);border-radius:20px;box-shadow:0 8px 26px rgba(20,31,48,.045);transition:box-shadow .22s ease,border-color .22s ease,transform .22s ease;animation:apiCardIn .45s ease both}
@@ -272,11 +272,11 @@
                 @php $expired = $key->expires_at && $key->expires_at->isPast(); $revoked = $key->revoked_at !== null; $status = $revoked ? 'Revoked' : ($expired ? 'Expired' : 'Active'); @endphp
                 <article wire:key="api-key-{{ $key->id }}" class="api-key-row flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 md:flex-row md:items-center md:justify-between">
                     <div class="min-w-0"><div class="flex flex-wrap items-center gap-2"><strong class="break-words text-sm font-bold text-slate-800">{{ $key->name }}</strong><span class="api-status {{ $revoked || $expired ? 'api-status-inactive' : 'api-status-active' }}">{{ strtoupper($status) }}</span></div><code class="mt-2 block text-xs text-slate-500">{{ $key->prefix }}••••••••</code><div class="mt-2.5 flex flex-wrap gap-x-4 gap-y-2 text-[10px] font-medium text-slate-500"><span>{{ $key->store?->name ?? 'Full access · All active Stores' }}</span><span>{{ number_format($key->usage_count) }} requests</span><span>{{ $key->last_used_at?->diffForHumans() ?? 'Never used' }}</span>@if ($key->expires_at)<span>Expires {{ $key->expires_at->format('d M Y') }}</span>@endif</div></div>
-                    <div class="flex flex-wrap items-center gap-2" x-data="{revokeOpen:false,deleteOpen:false,deleting:false}" @api-key-deleted.window="if (Number($event.detail.keyId) === {{ $key->id }}) deleteOpen=false" @api-key-revoked.window="if (Number($event.detail.keyId) === {{ $key->id }}) revokeOpen=false">
+                    <div class="flex flex-wrap items-center gap-2" x-data="{revokeOpen:false}" @api-key-revoked.window="if (Number($event.detail.keyId) === {{ $key->id }}) revokeOpen=false">
                         @if (! $revoked)
                             <button type="button" class="api-action-btn api-action-revoke" @click="revokeOpen=true"><svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M12 8v4m0 4h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/></svg>Revoke</button>
                         @endif
-                        <button type="button" class="api-action-btn api-action-delete" @click="deleteOpen=true"><svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>Delete</button>
+                        <button type="button" class="api-action-btn api-action-delete" wire:click="requestDeleteApiKey({{ $key->id }})" wire:loading.attr="disabled" wire:target="requestDeleteApiKey({{ $key->id }})"><svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>Delete</button>
                         <template x-teleport="body">
                             <div x-cloak x-show="revokeOpen" x-transition.opacity class="api-modal-backdrop" @click.self="revokeOpen=false" @keydown.escape.window="revokeOpen=false">
                                 <section x-show="revokeOpen" x-transition.scale.origin.center class="api-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="api-revoke-title-{{ $key->id }}">
@@ -284,14 +284,6 @@
                                     <div class="text-center"><span class="text-[9px] font-extrabold uppercase tracking-[.18em] text-amber-600">Revoke API credential</span><h3 id="api-revoke-title-{{ $key->id }}" class="mt-2 text-xl font-extrabold tracking-tight text-slate-900">Nonaktifkan API key?</h3><p class="mx-auto mt-2 max-w-sm text-xs leading-5 text-slate-500">API key <strong class="text-slate-700">{{ $key->name }}</strong> akan dicabut. Aplikasi yang menggunakannya tidak dapat mengakses API lagi.</p></div>
                                     <div class="mt-5 rounded-xl border border-amber-100 bg-amber-50 px-3 py-3 text-left text-[10px] leading-5 text-amber-800">Key tetap tersimpan dalam riwayat dan dapat dihapus permanen kapan saja.</div>
                                     <div class="api-modal-actions mt-5 flex gap-2"><button type="button" class="api-modal-secondary flex-1" @click="revokeOpen=false">Batal</button><button type="button" class="api-modal-danger flex-1" wire:click="revokeApiKey({{ $key->id }})" wire:loading.attr="disabled" wire:target="revokeApiKey({{ $key->id }})"><span wire:loading.remove wire:target="revokeApiKey({{ $key->id }})">Revoke API Key</span><span wire:loading wire:target="revokeApiKey({{ $key->id }})">Processing...</span></button></div>
-                                </section>
-                            </div>
-                            <div x-cloak x-show="deleteOpen" x-transition.opacity class="api-modal-backdrop" @click.self="deleteOpen=false" @keydown.escape.window="deleteOpen=false">
-                                <section x-show="deleteOpen" x-transition.scale.origin.center class="api-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="api-delete-title-{{ $key->id }}">
-                                    <div class="api-modal-icon border border-rose-100 bg-rose-50 text-rose-500"><svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                                    <div class="text-center"><span class="text-[9px] font-extrabold uppercase tracking-[.18em] text-rose-500">Delete API credential</span><h3 id="api-delete-title-{{ $key->id }}" class="mt-2 text-xl font-extrabold tracking-tight text-slate-900">Hapus API key ini?</h3><p class="mx-auto mt-2 max-w-sm text-xs leading-5 text-slate-500">API key <strong class="text-slate-700">{{ $key->name }}</strong> akan dihapus permanen dari daftar. Tindakan ini tidak dapat dibatalkan.</p></div>
-                                    <div class="mt-5 rounded-xl border border-rose-100 bg-rose-50 px-3 py-3 text-left text-[10px] leading-5 text-rose-700">Jika key masih aktif, aksesnya juga akan langsung dihentikan.</div>
-                                    <div class="api-modal-actions mt-5 flex gap-2"><button type="button" class="api-modal-secondary flex-1" @click="deleteOpen=false">Batal</button><button type="button" class="api-modal-danger flex-1" :disabled="deleting" @click="if (!deleting) { deleting = true; $wire.call('deleteApiKey', {{ $key->id }}).then(() => { deleteOpen = false; }).catch(() => { deleting = false; }); }"><span x-show="!deleting">Hapus API Key</span><span x-cloak x-show="deleting">Menghapus...</span></button></div>
                                 </section>
                             </div>
                         </template>
@@ -304,4 +296,27 @@
     </section>
 
     <section class="api-note p-4 sm:p-5" style="animation-delay:.14s"><div class="flex items-start gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-emerald-700 shadow-sm"><svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M12 3 19 6v5c0 4.7-2.9 8.2-7 10-4.1-1.8-7-5.3-7-10V6l7-3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><strong class="text-xs font-extrabold text-slate-800">Security notes</strong><ul class="mt-2 grid gap-x-8 gap-y-1.5 text-[11px] leading-5 text-slate-600 md:grid-cols-2"><li>API key hanya ditampilkan saat pertama kali dibuat.</li><li>Server menyimpan SHA-256 hash, bukan secret aslinya.</li><li>Scope generation, read, dan cancel tersedia dengan batas default 60 request per menit.</li><li>Full access berlaku untuk seluruh Store dan Template aktif pada workspace pemilik key.</li></ul></div></div></section>
+
+    @if ($deleteKeyId)
+        <div class="api-modal-backdrop" wire:click.self="cancelDeleteApiKey" wire:keydown.escape.window="cancelDeleteApiKey" role="presentation">
+            <section class="api-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="api-delete-confirm-title">
+                <div class="api-modal-icon border border-rose-100 bg-rose-50 text-rose-500">
+                    <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="text-center">
+                    <span class="text-[9px] font-extrabold uppercase tracking-[.18em] text-rose-500">Delete API credential</span>
+                    <h3 id="api-delete-confirm-title" class="mt-2 text-xl font-extrabold tracking-tight text-slate-900">Hapus API key ini?</h3>
+                    <p class="mx-auto mt-2 max-w-sm text-xs leading-5 text-slate-500">API key <strong class="text-slate-700">{{ $deleteKeyName }}</strong> akan dihapus permanen dari daftar. Tindakan ini tidak dapat dibatalkan.</p>
+                </div>
+                <div class="mt-5 rounded-xl border border-rose-100 bg-rose-50 px-3 py-3 text-left text-[10px] leading-5 text-rose-700">Akses API key akan langsung dihentikan, baik statusnya masih Active maupun sudah Revoked.</div>
+                <div class="api-modal-actions mt-5 flex gap-2">
+                    <button type="button" class="api-modal-secondary flex-1" wire:click="cancelDeleteApiKey">Batal</button>
+                    <button type="button" class="api-modal-danger flex-1" wire:click="confirmDeleteApiKey" wire:loading.attr="disabled" wire:target="confirmDeleteApiKey">
+                        <span wire:loading.remove wire:target="confirmDeleteApiKey">Hapus API Key</span>
+                        <span wire:loading wire:target="confirmDeleteApiKey">Menghapus...</span>
+                    </button>
+                </div>
+            </section>
+        </div>
+    @endif
 </div>
