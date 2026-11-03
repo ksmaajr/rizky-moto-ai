@@ -24,16 +24,16 @@
         .rms-api-page .api-status-active{background:#eaf8ef;color:#16834a}
         .rms-api-page .api-status-inactive{background:#f1f3f6;color:#7d8794}
         .rms-api-page .api-note{background:linear-gradient(120deg,#f8fbf9,#f5f8fb);border:1px solid #e6eee8;border-radius:16px}
-        .rms-api-page .api-calendar{position:fixed;z-index:99999;width:min(340px,calc(100vw - 32px));max-height:min(440px,calc(100vh - 24px));overflow-y:auto;padding:17px;border:1px solid #e6ebef;border-radius:18px;background:#fff;box-shadow:0 22px 60px rgba(25,39,55,.2);animation:apiCalendarIn .18s ease both}
-        .rms-api-page .api-calendar-day{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;color:#344052;font-size:12px;font-weight:650;transition:background .15s,color .15s,transform .15s}
-        .rms-api-page .api-calendar-day:hover:not(:disabled){background:#edf8f1;color:#138449;transform:scale(1.06)}
-        .rms-api-page .api-calendar-day:disabled{color:#c5cbd3;cursor:not-allowed}
-        .rms-api-page .api-calendar-day.is-selected{background:#159653;color:#fff;box-shadow:0 5px 12px rgba(21,150,83,.2)}
-        .rms-api-page .api-calendar-day.is-today:not(.is-selected){box-shadow:inset 0 0 0 1px #159653;color:#128149}
-        .rms-api-page .api-calendar-nav{display:grid;place-items:center;width:34px;height:34px;border:1px solid #e8edf1;border-radius:10px;background:#fff;color:#536071;transition:background .15s,border-color .15s}
-        .rms-api-page .api-calendar-nav:hover{background:#f1faf4;border-color:#ccebd7;color:#128149}
-        .rms-api-page .api-calendar-link{font-size:11px;font-weight:750;color:#16834a;transition:color .15s}
-        .rms-api-page .api-calendar-link:hover{color:#075d31}
+        .api-calendar{position:fixed;z-index:99999;width:min(340px,calc(100vw - 32px));max-height:min(440px,calc(100vh - 24px));overflow-y:auto;padding:17px;border:1px solid #e6ebef;border-radius:18px;background:#fff;box-shadow:0 22px 60px rgba(25,39,55,.2);animation:apiCalendarIn .18s ease both}
+        .api-calendar-day{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;color:#344052;font-size:12px;font-weight:650;transition:background .15s,color .15s,transform .15s}
+        .api-calendar-day:hover:not(:disabled){background:#edf8f1;color:#138449;transform:scale(1.06)}
+        .api-calendar-day:disabled{color:#c5cbd3;cursor:not-allowed}
+        .api-calendar-day.is-selected{background:#159653;color:#fff;box-shadow:0 5px 12px rgba(21,150,83,.2)}
+        .api-calendar-day.is-today:not(.is-selected){box-shadow:inset 0 0 0 1px #159653;color:#128149}
+        .api-calendar-nav{display:grid;place-items:center;width:34px;height:34px;border:1px solid #e8edf1;border-radius:10px;background:#fff;color:#536071;transition:background .15s,border-color .15s}
+        .api-calendar-nav:hover{background:#f1faf4;border-color:#ccebd7;color:#128149}
+        .api-calendar-link{font-size:11px;font-weight:750;color:#16834a;transition:color .15s}
+        .api-calendar-link:hover{color:#075d31}
         @media(max-width:640px){.rms-api-page .api-card{border-radius:16px}.rms-api-page .api-primary{width:100%}}
         @media(prefers-reduced-motion:reduce){.rms-api-page,.rms-api-page *{animation:none!important;transition:none!important}}
     </style>
@@ -58,7 +58,7 @@
         </div>
 
         <form wire:submit="createApiKey" class="grid grid-cols-1 gap-x-5 gap-y-5 md:grid-cols-2">
-            <div class="md:col-span-2">
+            <div>
                 <label class="api-field-label" for="api-key-name">Key name <span class="text-rose-500">*</span></label>
                 <input id="api-key-name" class="api-control" type="text" wire:model="keyName" placeholder="Contoh: Codex local client" maxlength="120" required autocomplete="off">
                 @error('keyName')<p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
@@ -119,14 +119,14 @@
                         this.position={top:top,left:left};
                         this.open=true;
                     }
-                }" @click.outside="open=false" @keydown.escape.window="open=false">
+                }" @keydown.escape.window="open=false">
                     <input type="hidden" wire:model="expiresAt">
                     <button x-ref="trigger" type="button" class="api-control flex items-center justify-between text-left" :class="open ? 'border-emerald-400 ring-4 ring-emerald-500/10' : ''" @click="open ? open=false : show()" aria-haspopup="dialog" :aria-expanded="open.toString()">
                         <span :class="selected ? 'text-slate-700' : 'text-slate-400'" x-text="formatSelected() || 'Pilih tanggal kedaluwarsa'"></span>
                         <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5 shrink-0 text-slate-500"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" stroke="currentColor" stroke-width="1.6"/><path d="M7.5 3.5v3M16.5 3.5v3M4 9.5h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
                     </button>
                     <template x-teleport="body">
-                        <div x-cloak x-show="open" x-transition.origin.top.left class="api-calendar" :style="'top:'+position.top+'px;left:'+position.left+'px'" role="dialog" aria-label="Pilih tanggal kedaluwarsa">
+                        <div x-cloak x-show="open" x-transition.origin.top.left class="api-calendar" :style="'top:'+position.top+'px;left:'+position.left+'px'" @click.outside="open=false" role="dialog" aria-label="Pilih tanggal kedaluwarsa">
                             <div class="mb-4 flex items-center justify-between">
                                 <div><span class="block text-[9px] font-extrabold uppercase tracking-[.15em] text-emerald-700">Expiry calendar</span><strong class="mt-1 block text-base font-extrabold tracking-tight text-slate-800" x-text="heading"></strong></div>
                                 <div class="flex gap-1.5">
