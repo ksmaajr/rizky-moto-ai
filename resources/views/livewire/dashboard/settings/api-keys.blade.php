@@ -65,23 +65,7 @@
                 <p class="mt-1.5 text-[10px] text-slate-400">Gunakan nama perangkat atau aplikasi agar mudah dikenali.</p>
             </div>
 
-            <div class="md:col-span-2 rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-50/80 to-white p-4">
-                <div class="flex items-start gap-3">
-                    <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-emerald-700 shadow-sm">
-                        <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M12 3 19 6v5c0 4.7-2.9 8.2-7 10-4.1-1.8-7-5.3-7-10V6l7-3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </span>
-                    <div class="min-w-0">
-                        <strong class="text-xs font-extrabold text-slate-800">Full Image Generation Access</strong>
-                        <p class="mt-1 text-[11px] leading-5 text-slate-600">API key ini dapat mengakses semua Store dan Template aktif milik workspace. Setiap request bebas menentukan Store, Template, model, judul, foto produk, serta foto produk terpasang (opsional).</p>
-                        <div class="mt-2 flex flex-wrap gap-1.5">
-                            <span class="rounded-full border border-emerald-100 bg-white px-2.5 py-1 text-[9px] font-bold text-emerald-700">All Stores</span>
-                            <span class="rounded-full border border-emerald-100 bg-white px-2.5 py-1 text-[9px] font-bold text-emerald-700">All Templates</span>
-                            <span class="rounded-full border border-emerald-100 bg-white px-2.5 py-1 text-[9px] font-bold text-emerald-700">Model selection</span>
-                            <span class="rounded-full border border-emerald-100 bg-white px-2.5 py-1 text-[9px] font-bold text-emerald-700">Optional installed photo</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
 
             <div>
                 <label class="api-field-label" for="api-key-expiry">Expiry date <span class="font-normal text-slate-400">(optional)</span></label>
@@ -147,6 +131,24 @@
                 </div>
                 @error('expiresAt')<p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
                 <p class="mt-1.5 text-[10px] text-slate-400">Kosongkan jika key tidak memiliki tanggal kedaluwarsa.</p>
+            </div>
+
+            <div class="md:col-span-2 rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-50/80 to-white p-4">
+                <div class="flex items-start gap-3">
+                    <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-emerald-700 shadow-sm">
+                        <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M12 3 19 6v5c0 4.7-2.9 8.2-7 10-4.1-1.8-7-5.3-7-10V6l7-3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                    <div class="min-w-0">
+                        <strong class="text-xs font-extrabold text-slate-800">Full Image Generation Access</strong>
+                        <p class="mt-1 text-[11px] leading-5 text-slate-600">API key ini dapat mengakses semua Store dan Template aktif milik workspace. Setiap request bebas menentukan Store, Template, model, judul, foto produk, serta foto produk terpasang (opsional).</p>
+                        <div class="mt-2 flex flex-wrap gap-1.5">
+                            <span class="rounded-full border border-emerald-100 bg-white px-2.5 py-1 text-[9px] font-bold text-emerald-700">All Stores</span>
+                            <span class="rounded-full border border-emerald-100 bg-white px-2.5 py-1 text-[9px] font-bold text-emerald-700">All Templates</span>
+                            <span class="rounded-full border border-emerald-100 bg-white px-2.5 py-1 text-[9px] font-bold text-emerald-700">Model selection</span>
+                            <span class="rounded-full border border-emerald-100 bg-white px-2.5 py-1 text-[9px] font-bold text-emerald-700">Optional installed photo</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="flex flex-col-reverse items-stretch justify-between gap-3 border-t border-slate-100 pt-5 md:col-span-2 md:flex-row md:items-center">
