@@ -2724,11 +2724,11 @@ new class extends Component
                             </button>
                         @elseif(in_array($status, ['queued','processing']))
                             <div class="rms-generation-processing-visual rms-generation-processing-visual-v3" style="aspect-ratio: {{ $ratio }}">
-                                @if($generation->product_image_1_path && \\Illuminate\\Support\\Facades\\Storage::disk('public')->exists($generation->product_image_1_path))
-                                    <img class="rms-processing-source-image" src="{{ \\Illuminate\\Support\\Facades\\Storage::disk('public')->url($generation->product_image_1_path) }}" alt="Foto produk yang sedang digenerate" loading="lazy">
+                                @if($generation->product_image_1_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($generation->product_image_1_path))
+                                    <img class="rms-processing-source-image" src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($generation->product_image_1_path) }}" alt="Foto produk yang sedang digenerate" loading="lazy">
                                     <div class="rms-processing-image-wash"></div>
                                 @elseif($hero)
-                                    <img class="rms-processing-source-image" src="{{ \\Illuminate\\Support\\Facades\\Storage::disk('public')->url($hero->image_path) }}" alt="Processing preview" loading="lazy">
+                                    <img class="rms-processing-source-image" src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($hero->image_path) }}" alt="Processing preview" loading="lazy">
                                     <div class="rms-processing-image-wash"></div>
                                 @endif
 
