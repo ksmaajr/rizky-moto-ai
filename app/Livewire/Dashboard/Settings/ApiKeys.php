@@ -139,7 +139,7 @@ class ApiKeys extends Component
         // Audit failures must not undo or mask a completed deletion.
         try {
             $this->writeActivity('api_key_deleted', 'API key deleted', 'API key ' . $name . ' dihapus permanen.', 'warning');
-        } catch (\\Throwable $exception) {
+        } catch (\Throwable $exception) {
             report($exception);
         }
 
