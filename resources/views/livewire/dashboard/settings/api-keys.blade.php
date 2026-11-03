@@ -27,16 +27,16 @@
         .rms-api-page .api-status-active{background:#eaf8ef;color:#16834a}
         .rms-api-page .api-status-inactive{background:#f1f3f6;color:#7d8794}
         .rms-api-page .api-note{background:linear-gradient(120deg,#f8fbf9,#f5f8fb);border:1px solid #e6eee8;border-radius:16px}
-        .rms-api-page .api-modal-backdrop{position:fixed;inset:0;z-index:100000;display:grid;place-items:center;padding:20px;background:rgba(15,23,42,.58);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}
-        .rms-api-page .api-modal-card{width:min(100%,440px);border:1px solid rgba(255,255,255,.8);border-radius:24px;background:#fff;padding:26px;box-shadow:0 30px 100px rgba(15,23,42,.28);animation:apiModalIn .24s cubic-bezier(.2,.8,.2,1) both}
+        .api-modal-backdrop{position:fixed;inset:0;z-index:100000;display:grid;place-items:center;padding:20px;background:rgba(15,23,42,.58);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}
+        .api-modal-card{width:min(100%,440px);border:1px solid rgba(255,255,255,.8);border-radius:24px;background:#fff;padding:26px;box-shadow:0 30px 100px rgba(15,23,42,.28);animation:apiModalIn .24s cubic-bezier(.2,.8,.2,1) both}
         @keyframes apiModalIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-        .rms-api-page .api-modal-icon{display:grid;width:54px;height:54px;place-items:center;margin:0 auto 16px;border-radius:18px}
-        .rms-api-page .api-modal-secondary{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;color:#475569;font-size:12px;font-weight:750;transition:background .18s}
-        .rms-api-page .api-modal-secondary:hover{background:#f8fafc}
-        .rms-api-page .api-modal-danger{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border:1px solid #dc2626;border-radius:12px;background:#ef3038;color:#fff;font-size:12px;font-weight:800;box-shadow:0 7px 16px rgba(239,48,56,.18);transition:transform .18s,box-shadow .18s}
-        .rms-api-page .api-modal-danger:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(239,48,56,.24)}
-        .rms-api-page .api-secret-value{display:block;width:100%;overflow-wrap:anywhere;border:1px solid #a7f3c4;border-radius:13px;background:#f8fffb;padding:14px;color:#14532d;font:600 12px/1.8 ui-monospace,SFMono-Regular,Menlo,monospace;user-select:all}
-        @media(max-width:480px){.rms-api-page .api-modal-card{padding:22px 18px;border-radius:20px}.rms-api-page .api-modal-actions{flex-direction:column-reverse}.rms-api-page .api-modal-actions>*{width:100%}}
+        .api-modal-icon{display:grid;width:54px;height:54px;place-items:center;margin:0 auto 16px;border-radius:18px}
+        .api-modal-secondary{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;color:#475569;font-size:12px;font-weight:750;transition:background .18s}
+        .api-modal-secondary:hover{background:#f8fafc}
+        .api-modal-danger{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border:1px solid #dc2626;border-radius:12px;background:#ef3038;color:#fff;font-size:12px;font-weight:800;box-shadow:0 7px 16px rgba(239,48,56,.18);transition:transform .18s,box-shadow .18s}
+        .api-modal-danger:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(239,48,56,.24)}
+        .api-secret-value{display:block;width:100%;overflow-wrap:anywhere;border:1px solid #a7f3c4;border-radius:13px;background:#f8fffb;padding:14px;color:#14532d;font:600 12px/1.8 ui-monospace,SFMono-Regular,Menlo,monospace;user-select:all}
+        @media(max-width:480px){.api-modal-card{padding:22px 18px;border-radius:20px}.rms-api-page .api-modal-actions{flex-direction:column-reverse}.rms-api-page .api-modal-actions>*{width:100%}}
         .api-calendar{position:absolute;z-index:99999;width:min(340px,calc(100vw - 32px));max-height:min(440px,calc(100vh - 24px));overflow-y:auto;padding:17px;border:1px solid #e6ebef;border-radius:18px;background:#fff;box-shadow:0 22px 60px rgba(25,39,55,.2);animation:apiCalendarIn .18s ease both}
         .api-calendar-day{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;color:#344052;font-size:12px;font-weight:650;transition:background .15s,color .15s,transform .15s}
         .api-calendar-day:hover:not(:disabled){background:#edf8f1;color:#138449;transform:scale(1.06)}
@@ -175,6 +175,7 @@
 
     @if ($newlyCreatedSecret !== '')
         <div x-data="{copied:false,copySecret(){navigator.clipboard.writeText(@js($newlyCreatedSecret)).then(()=>{this.copied=true;setTimeout(()=>this.copied=false,2200)}).catch(()=>{this.copied=false})}}" x-cloak>
+            <template x-teleport="body">
             <div class="api-modal-backdrop" x-transition.opacity>
                 <section class="api-modal-card relative" role="dialog" aria-modal="true" aria-labelledby="api-secret-title">
                     <button type="button" wire:click="dismissSecret" class="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="Tutup">
@@ -204,6 +205,7 @@
                     <button type="button" wire:click="dismissSecret" class="api-primary mt-5 w-full">I have saved my API key</button>
                 </section>
             </div>
+            </template>
         </div>
     @endif
 
