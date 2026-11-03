@@ -1796,8 +1796,7 @@
                             <div class="rms-server-foot"><span><i></i> Metrics refresh automatically every 3 seconds while this tab is open.</span><button type="button" wire:click="refreshServerMetrics" wire:loading.attr="disabled">↻ Refresh now</button></div>
                         </div>
 
-                    @else
-                        {{-- FOOTER --}}
+                    @elseif ($activeTab === 'provider')
                         <div class="rms-settings-panel-footer rms-openai-footer-upgraded rms-vg-footer">
                             <span><i></i> AI provider configuration is server-managed</span>
                             <strong>Encrypted credentials · Automatic failover ready</strong>
