@@ -27,7 +27,7 @@
         .rms-api-page .api-status-active{background:#eaf8ef;color:#16834a}
         .rms-api-page .api-status-inactive{background:#f1f3f6;color:#7d8794}
         .rms-api-page .api-note{background:linear-gradient(120deg,#f8fbf9,#f5f8fb);border:1px solid #e6eee8;border-radius:16px}
-        .api-calendar{position:fixed;z-index:99999;width:min(340px,calc(100vw - 32px));max-height:min(440px,calc(100vh - 24px));overflow-y:auto;padding:17px;border:1px solid #e6ebef;border-radius:18px;background:#fff;box-shadow:0 22px 60px rgba(25,39,55,.2);animation:apiCalendarIn .18s ease both}
+        .api-calendar{position:absolute;z-index:99999;width:min(340px,calc(100vw - 32px));max-height:min(440px,calc(100vh - 24px));overflow-y:auto;padding:17px;border:1px solid #e6ebef;border-radius:18px;background:#fff;box-shadow:0 22px 60px rgba(25,39,55,.2);animation:apiCalendarIn .18s ease both}
         .api-calendar-day{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;color:#344052;font-size:12px;font-weight:650;transition:background .15s,color .15s,transform .15s}
         .api-calendar-day:hover:not(:disabled){background:#edf8f1;color:#138449;transform:scale(1.06)}
         .api-calendar-day:disabled{color:#c5cbd3;cursor:not-allowed}
@@ -99,10 +99,8 @@
                         if(this.selected){const p=this.selected.split('-');this.month=new Date(Number(p[0]),Number(p[1])-1,1)}
                         const rect=this.$refs.trigger.getBoundingClientRect();
                         const width=Math.min(340,window.innerWidth-32);
-                        const estimatedHeight=390;
-                        const left=Math.max(16,Math.min(rect.left,window.innerWidth-width-16));
-                        const below=rect.bottom+10;
-                        const top=below+estimatedHeight>window.innerHeight-12 ? Math.max(12,rect.top-estimatedHeight-10) : below;
+                        const left=Math.max(16,Math.min(rect.left+window.scrollX,window.scrollX+window.innerWidth-width-16));
+                        const top=rect.bottom+window.scrollY+10;
                         this.position={top:top,left:left};
                         this.open=true;
                     }
