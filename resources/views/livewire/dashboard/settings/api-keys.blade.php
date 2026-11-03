@@ -315,9 +315,9 @@
                         <div class="mt-5 rounded-xl border border-rose-100 bg-rose-50 px-3 py-3 text-left text-[10px] leading-5 text-rose-700">Akses API key akan langsung dihentikan, baik statusnya masih Active maupun sudah Revoked.</div>
                         <div class="api-modal-actions mt-5 flex gap-2">
                             <button type="button" class="api-modal-secondary flex-1" @click="$wire.cancelDeleteApiKey()">Batal</button>
-                            <button type="button" class="api-modal-danger flex-1" wire:click="confirmDeleteApiKey" wire:loading.attr="disabled" wire:target="confirmDeleteApiKey">
-                                <span wire:loading.remove wire:target="confirmDeleteApiKey">Hapus API Key</span>
-                                <span wire:loading wire:target="confirmDeleteApiKey" class="api-delete-loading"><svg aria-hidden="true" class="h-4 w-4 shrink-0 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" opacity=".25"/><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg><span>Menghapus...</span></span>
+                            <button type="button" class="api-modal-danger flex-1" x-data="{ deleting: false }" :disabled="deleting" @click="if (!deleting) { deleting = true; $wire.confirmDeleteApiKey().catch(() => {}).finally(() => { deleting = false }) }">
+                                <span x-show="!deleting" class="api-delete-label">Hapus API Key</span>
+                                <span x-cloak x-show="deleting" class="api-delete-loading"><svg aria-hidden="true" class="h-4 w-4 shrink-0 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" opacity=".25"/><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg><span>Menghapus...</span></span>
                             </button>
                         </div>
                     </section>
