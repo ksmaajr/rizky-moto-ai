@@ -2724,51 +2724,7 @@ new class extends Component
                             </button>
                         @elseif(in_array($status, ['queued','processing']))
                             <div class="rms-generation-processing-visual rms-generation-processing-visual-v3" style="aspect-ratio: {{ $ratio }}">
-                                @if($generation->product_image_1_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($generation->product_image_1_path))
-                                    <img class="rms-processing-source-image" src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($generation->product_image_1_path) }}" alt="Foto produk yang sedang digenerate" loading="lazy">
-                                    <div class="rms-processing-image-wash"></div>
-                                @elseif($hero)
-                                    <img class="rms-processing-source-image" src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($hero->image_path) }}" alt="Processing preview" loading="lazy">
-                                    <div class="rms-processing-image-wash"></div>
-                                @endif
-
-                                <div class="rms-processing-visual-core">
-                                    <div class="rms-processing-grid"></div>
-                                    <div class="rms-processing-scan"></div>
-                                    <div class="rms-processing-orbit orbit-one"></div>
-                                    <div class="rms-processing-orbit orbit-two"></div>
-                                    <div class="rms-processing-orbit orbit-three"></div>
-                                    <span class="rms-processing-particle particle-one"></span>
-                                    <span class="rms-processing-particle particle-two"></span>
-                                    <span class="rms-processing-particle particle-three"></span>
-                                    <span class="rms-processing-particle particle-four"></span>
-                                    <div class="rms-processing-core-ring">
-                                        <svg class="rms-processing-spin-svg" wire:ignore viewBox="0 0 120 120" aria-hidden="true">
-                                            <defs>
-                                                <filter id="rmsDotGlow" x="-150%" y="-150%" width="400%" height="400%">
-                                                    <feGaussianBlur stdDeviation="2.8" result="blur"/>
-                                                    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                                                </filter>
-                                            </defs>
-                                            <circle class="rms-orbit-dot dot-one" cx="60" cy="10" r="5.2" fill="#ef233c" filter="url(#rmsDotGlow)">
-                                                <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="3.20s" repeatCount="indefinite"/>
-                                            </circle>
-                                            <circle class="rms-orbit-dot dot-two" cx="60" cy="18" r="4.7" fill="#ef233c" filter="url(#rmsDotGlow)">
-                                                <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="4.05s" repeatCount="indefinite"/>
-                                            </circle>
-                                            <circle class="rms-orbit-dot dot-three" cx="60" cy="26" r="4.2" fill="#ef233c" filter="url(#rmsDotGlow)">
-                                                <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="2.72s" repeatCount="indefinite"/>
-                                            </circle>
-                                            <circle class="rms-orbit-dot dot-four" cx="60" cy="34" r="3.8" fill="#ef233c" filter="url(#rmsDotGlow)">
-                                                <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="4.70s" repeatCount="indefinite"/>
-                                            </circle>
-                                        </svg>
-                                        <span class="rms-processing-core-glow"></span>
-                                        <b>{{ $progress }}%</b>
-                                        <small>{{ $status === 'queued' ? 'QUEUE' : 'GENERATING' }}</small>
-                                    </div>
-                                </div>
-
+                                {{-- Keep the processing canvas clean: product photos are inputs, not background artwork. --}}
                                 <div class="rms-processing-topline">
                                     <span class="rms-processing-live-dot"></span>
                                     <strong>{{ $status === 'queued' ? 'QUEUED' : 'PROCESSING' }}</strong>
