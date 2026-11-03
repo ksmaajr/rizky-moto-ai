@@ -25,6 +25,7 @@ Route::middleware('auth')->group(function () {
             ->middleware('password.confirm')
             ->name('security.edit');
         Route::livewire('/settings/appearance', 'pages::settings.appearance')->name('appearance.edit');
+        Route::livewire('/settings/api-keys', 'pages::settings.api-keys')->name('api-keys.index');
     });
 
     Route::post('/dashboard/queue-workers/{action}', \App\Http\Controllers\QueueWorkerActionController::class)

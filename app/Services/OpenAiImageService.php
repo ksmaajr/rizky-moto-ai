@@ -685,6 +685,8 @@ class OpenAiImageService
         string $quality,
         int $imageCount = 1,
         ?string $customTitle = null,
+        string $source = 'dashboard_generator',
+        ?int $apiKeyId = null,
     ): Generation {
         // Persist Low quality and 1:1 regardless of legacy Template/client values.
         $quality = 'low';
@@ -746,7 +748,9 @@ class OpenAiImageService
             'model' => $model,
             'status' => 'queued',
             'metadata' => [
-                'source' => 'dashboard_generator',
+                'source' => $source,
+                'request_channel' => $source,
+                'api_key_id' => $apiKeyId,
                 'template_id' => $template->id,
                 'store_id' => $store->id,
                 'requested_image_count' => $imageCount,
