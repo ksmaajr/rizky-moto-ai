@@ -69,7 +69,7 @@
         .api-action-btn{cursor:pointer}
         .api-modal-danger:disabled{opacity:.6;cursor:wait;transform:none}
         .api-modal-actions .api-modal-danger{white-space:nowrap;flex-wrap:nowrap}
-        .api-delete-loading{display:flex!important;width:100%;min-width:0;flex-direction:row!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:center!important;gap:9px!important;white-space:nowrap!important;line-height:1!important;text-align:center}
+        .api-delete-loading{display:flex;width:100%;min-width:0;flex-direction:row!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:center!important;gap:9px!important;white-space:nowrap!important;line-height:1!important;text-align:center}
         .api-delete-loading svg{display:block;flex:0 0 16px;width:16px;height:16px}
         .api-delete-loading span{display:block;flex:0 0 auto;white-space:nowrap}
         /* Modal content is teleported to body, so modal controls must not depend on .rms-api-page selectors. */
