@@ -1852,9 +1852,13 @@ PROMPT;
 
     private function normalizeCustomTitle(?string $customTitle): ?string
     {
-        $title = trim((string) $customTitle);
+        if ($customTitle === null || trim($customTitle) === '') {
+            return null;
+        }
 
-        return $title !== '' ? mb_substr($title, 0, 120) : null;
+        // Preserve the caller-supplied title exactly. The API must not silently
+        // truncate custom product titles to the former 120-character limit.
+        return $customTitle;
     }
 
     private function generationMode(bool $hasInstalledReference): string
