@@ -88,7 +88,11 @@ class ApiKeys extends Component
 
         if ($key->revoked_at === null) {
             $key->update(['revoked_at' => now()]);
-            $this->writeActivity('api_key_revoked', 'API key revoked', 'API key ' . $key->name . ' dinonaktifkan.', 'warning');
+            try {
+                $this->writeActivity('api_key_revoked', 'API key revoked', 'API key ' . $key->name . ' dinonaktifkan.', 'warning');
+            } catch (\\Throwable $exception) {
+                report($exception);
+            }
         }
 
         $this->dispatch('api-key-revoked', keyId: $id);
@@ -103,11 +107,18 @@ class ApiKeys extends Component
             ->firstOrFail();
 
         $name = $key->name;
+        // Delete the credential first so its hash can no longer authenticate requests.
         $key->delete();
 
-        $this->writeActivity('api_key_deleted', 'API key deleted', 'API key ' . $name . ' dihapus permanen.', 'warning');
+        // Audit logging must never make a successful deletion look like a failed action.
+        try {
+            $this->writeActivity('api_key_deleted', 'API key deleted', 'API key ' . $name . ' dihapus permanen.', 'warning');
+        } catch (\\Throwable $exception) {
+            report($exception);
+        }
+
         $this->dispatch('api-key-deleted', keyId: $id);
-        $this->dispatch('toast', type: 'success', title: 'API key dihapus', message: $name);
+        $this->dispatch('toast', type: 'success', title: 'API key dihapus permanen', message: $name);
     }
 
     public function dismissSecret(): void
