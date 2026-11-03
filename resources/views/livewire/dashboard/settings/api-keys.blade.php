@@ -68,6 +68,10 @@
         .api-copy.is-copied{border-color:#86d8a7!important;background:linear-gradient(135deg,#e8fff1,#d7fbe4)!important;color:#087443!important}
         .api-action-btn{cursor:pointer}
         .api-modal-danger:disabled{opacity:.6;cursor:wait;transform:none}
+        .api-modal-actions .api-modal-danger{white-space:nowrap;flex-wrap:nowrap}
+        .api-delete-loading{display:flex!important;width:100%;min-width:0;flex-direction:row!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:center!important;gap:9px!important;white-space:nowrap!important;line-height:1!important;text-align:center}
+        .api-delete-loading svg{display:block;flex:0 0 16px;width:16px;height:16px}
+        .api-delete-loading span{display:block;flex:0 0 auto;white-space:nowrap}
         /* Modal content is teleported to body, so modal controls must not depend on .rms-api-page selectors. */
         .api-modal-card .api-primary{display:flex!important;width:100%;min-height:52px;align-items:center;justify-content:center;gap:10px;padding:0 20px;border:1px solid #0f8b50;border-radius:14px;background:linear-gradient(135deg,#16a05b 0%,#087443 100%);color:#fff;font-size:13px;font-weight:850;letter-spacing:.01em;box-shadow:0 8px 20px rgba(8,116,67,.2);transition:transform .2s ease,box-shadow .2s ease,filter .2s ease}
         .api-modal-card .api-primary:hover{transform:translateY(-2px);filter:brightness(1.04);box-shadow:0 13px 26px rgba(8,116,67,.25)}
@@ -313,7 +317,7 @@
                             <button type="button" class="api-modal-secondary flex-1" @click="$wire.cancelDeleteApiKey()">Batal</button>
                             <button type="button" class="api-modal-danger flex-1" wire:click="confirmDeleteApiKey" wire:loading.attr="disabled" wire:target="confirmDeleteApiKey">
                                 <span wire:loading.remove wire:target="confirmDeleteApiKey">Hapus API Key</span>
-                                <span wire:loading wire:target="confirmDeleteApiKey" class="inline-flex items-center justify-center gap-2"><svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" opacity=".25"/><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>Menghapus...</span>
+                                <span wire:loading wire:target="confirmDeleteApiKey" class="api-delete-loading"><svg aria-hidden="true" class="h-4 w-4 shrink-0 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" opacity=".25"/><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg><span>Menghapus...</span></span>
                             </button>
                         </div>
                     </section>
