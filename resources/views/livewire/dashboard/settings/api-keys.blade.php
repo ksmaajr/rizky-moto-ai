@@ -59,6 +59,15 @@
         .api-copy{min-height:46px;border-radius:12px;background:linear-gradient(135deg,#fff,#f0fdf4);box-shadow:0 3px 10px rgba(21,150,83,.05)}
         .api-copy:hover{background:linear-gradient(135deg,#ecfdf5,#dcfce7);box-shadow:0 8px 18px rgba(21,150,83,.12);transform:translateY(-2px)}
         .api-secret-value{font-size:11px;line-height:1.9;letter-spacing:.01em}
+        .api-copy{display:flex!important;align-items:center!important;justify-content:center!important;position:relative;min-height:58px;padding:12px 16px!important;border:1px solid #ccebd8!important;border-radius:13px!important;background:linear-gradient(135deg,#ffffff 0%,#f0fdf4 100%)!important;color:#087443!important;box-shadow:0 5px 14px rgba(21,150,83,.07);transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease,background .22s ease!important}
+        .api-copy-content{display:inline-flex;align-items:center;justify-content:center;gap:10px;font-size:13px;font-weight:850;line-height:1.2}
+        .api-copy-hint{position:absolute;right:13px;top:50%;transform:translateY(-50%);font-size:8px;font-weight:900;letter-spacing:.12em;color:#79a88d}
+        .api-copy:hover{transform:translateY(-2px)!important;border-color:#8bd6aa!important;background:linear-gradient(135deg,#ecfdf5,#dcfce7)!important;box-shadow:0 10px 22px rgba(21,150,83,.14)!important}
+        .api-copy:active{transform:scale(.985)!important}
+        .api-copy:disabled{opacity:.7;cursor:wait}
+        .api-copy.is-copied{border-color:#86d8a7!important;background:linear-gradient(135deg,#e8fff1,#d7fbe4)!important;color:#087443!important}
+        .api-action-btn{cursor:pointer}
+        .api-modal-danger:disabled{opacity:.6;cursor:wait;transform:none}
         @media(max-width:480px){.api-modal-actions{flex-direction:column-reverse}.api-modal-actions>*{width:100%}.api-modal-backdrop{padding:14px}.api-modal-card{max-height:calc(100vh - 28px)}}
         @media(max-width:480px){.api-modal-card{padding:22px 18px;border-radius:20px}.rms-api-page .api-modal-actions{flex-direction:column-reverse}.rms-api-page .api-modal-actions>*{width:100%}}
         .api-calendar{position:absolute;z-index:99999;width:min(340px,calc(100vw - 32px));max-height:min(440px,calc(100vh - 24px));overflow-y:auto;padding:17px;border:1px solid #e6ebef;border-radius:18px;background:#fff;box-shadow:0 22px 60px rgba(25,39,55,.2);animation:apiCalendarIn .18s ease both}
@@ -198,7 +207,7 @@
     </section>
 
     @if ($newlyCreatedSecret !== '')
-        <div x-data="{copied:false,copySecret(){navigator.clipboard.writeText(@js($newlyCreatedSecret)).then(()=>{this.copied=true;setTimeout(()=>this.copied=false,2200)}).catch(()=>{this.copied=false})}}" x-cloak>
+        <div x-data="{copied:false,copying:false,async copySecret(){if(this.copying)return;this.copying=true;const value=@js($newlyCreatedSecret);try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(value)}else{const field=document.createElement('textarea');field.value=value;field.setAttribute('readonly','');field.style.position='fixed';field.style.opacity='0';document.body.appendChild(field);field.select();const ok=document.execCommand('copy');field.remove();if(!ok)throw new Error('Clipboard unavailable')}this.copied=true;setTimeout(()=>this.copied=false,2400)}catch(error){this.copied=false}finally{this.copying=false}}}" x-cloak>
             <template x-teleport="body">
             <div class="api-modal-backdrop" x-transition.opacity @click.self="$wire.dismissSecret()" @keydown.escape.window="$wire.dismissSecret()">
                 <section class="api-modal-card relative" role="dialog" aria-modal="true" aria-labelledby="api-secret-title">
@@ -216,10 +225,13 @@
                     <div class="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-3">
                         <div class="mb-2 flex items-center justify-between gap-2"><span class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800">Your secret key</span><span class="rounded-full bg-white px-2 py-1 text-[9px] font-bold text-emerald-700">FULL ACCESS</span></div>
                         <code class="api-secret-value">{{ $newlyCreatedSecret }}</code>
-                        <button type="button" class="api-copy mt-3 w-full justify-center py-3" @click="copySecret()">
-                            <svg x-show="!copied" viewBox="0 0 24 24" fill="none" class="h-4 w-4"><rect x="8" y="8" width="11" height="12" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.6"/></svg>
-                            <svg x-show="copied" x-cloak viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="m5 12.5 4.3 4.3L19 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            <span x-text="copied ? 'Copied successfully!' : 'Copy API key'"></span>
+                        <button type="button" class="api-copy mt-3 w-full" :class="copied ? 'is-copied' : ''" @click="copySecret()" :disabled="copying">
+                            <span class="api-copy-content">
+                                <svg x-show="!copied" viewBox="0 0 24 24" fill="none" class="h-[17px] w-[17px]"><rect x="8" y="8" width="11" height="12" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.7"/></svg>
+                                <svg x-show="copied" x-cloak viewBox="0 0 24 24" fill="none" class="h-[17px] w-[17px]"><path d="m5 12.5 4.3 4.3L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <span x-text="copied ? 'Copied successfully!' : (copying ? 'Copying...' : 'Copy API key')"></span>
+                            </span>
+                            <span class="api-copy-hint" x-text="copied ? 'READY' : 'CLIPBOARD'"></span>
                         </button>
                     </div>
                     <div class="mt-4 flex items-start gap-2 rounded-xl border border-amber-100 bg-amber-50 px-3 py-3 text-left">
@@ -243,18 +255,18 @@
                 @php $expired = $key->expires_at && $key->expires_at->isPast(); $revoked = $key->revoked_at !== null; $status = $revoked ? 'Revoked' : ($expired ? 'Expired' : 'Active'); @endphp
                 <article wire:key="api-key-{{ $key->id }}" class="api-key-row flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 md:flex-row md:items-center md:justify-between">
                     <div class="min-w-0"><div class="flex flex-wrap items-center gap-2"><strong class="break-words text-sm font-bold text-slate-800">{{ $key->name }}</strong><span class="api-status {{ $revoked || $expired ? 'api-status-inactive' : 'api-status-active' }}">{{ strtoupper($status) }}</span></div><code class="mt-2 block text-xs text-slate-500">{{ $key->prefix }}••••••••</code><div class="mt-2.5 flex flex-wrap gap-x-4 gap-y-2 text-[10px] font-medium text-slate-500"><span>{{ $key->store?->name ?? 'Full access · All active Stores' }}</span><span>{{ number_format($key->usage_count) }} requests</span><span>{{ $key->last_used_at?->diffForHumans() ?? 'Never used' }}</span>@if ($key->expires_at)<span>Expires {{ $key->expires_at->format('d M Y') }}</span>@endif</div></div>
-                    <div class="flex flex-wrap items-center gap-2" x-data="{revokeOpen:false,deleteOpen:false}">
+                    <div class="flex flex-wrap items-center gap-2" x-data="{revokeOpen:false,deleteOpen:false}" @api-key-deleted.window="if (Number($event.detail.keyId) === {{ $key->id }}) deleteOpen=false" @api-key-revoked.window="if (Number($event.detail.keyId) === {{ $key->id }}) revokeOpen=false">
                         @if (! $revoked)
-                            <button type="button" @click="revokeOpen=true" class="api-action-btn api-action-revoke" @click="revokeOpen=true"><svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M12 8v4m0 4h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/></svg>Revoke</button>
+                            <button type="button" class="api-action-btn api-action-revoke" @click="revokeOpen=true"><svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M12 8v4m0 4h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/></svg>Revoke</button>
                         @endif
-                        <button type="button" @click="deleteOpen=true" class="api-action-btn api-action-delete" @click="deleteOpen=true"><svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>Delete</button>
+                        <button type="button" class="api-action-btn api-action-delete" @click="deleteOpen=true"><svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>Delete</button>
                         <template x-teleport="body">
                             <div x-cloak x-show="revokeOpen" x-transition.opacity class="api-modal-backdrop" @click.self="revokeOpen=false" @keydown.escape.window="revokeOpen=false">
                                 <section x-show="revokeOpen" x-transition.scale.origin.center class="api-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="api-revoke-title-{{ $key->id }}">
                                     <div class="api-modal-icon border border-amber-100 bg-amber-50 text-amber-600"><svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M12 8v4m0 4h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/></svg></div>
                                     <div class="text-center"><span class="text-[9px] font-extrabold uppercase tracking-[.18em] text-amber-600">Revoke API credential</span><h3 id="api-revoke-title-{{ $key->id }}" class="mt-2 text-xl font-extrabold tracking-tight text-slate-900">Nonaktifkan API key?</h3><p class="mx-auto mt-2 max-w-sm text-xs leading-5 text-slate-500">API key <strong class="text-slate-700">{{ $key->name }}</strong> akan dicabut. Aplikasi yang menggunakannya tidak dapat mengakses API lagi.</p></div>
                                     <div class="mt-5 rounded-xl border border-amber-100 bg-amber-50 px-3 py-3 text-left text-[10px] leading-5 text-amber-800">Key tetap tersimpan dalam riwayat dan dapat dihapus permanen kapan saja.</div>
-                                    <div class="api-modal-actions mt-5 flex gap-2"><button type="button" class="api-modal-secondary flex-1" @click="revokeOpen=false">Batal</button><button type="button" class="api-modal-danger flex-1" wire:click="revokeApiKey({{ $key->id }})" wire:loading.attr="disabled" wire:target="revokeApiKey({{ $key->id }})" @click="revokeOpen=false">Revoke API Key</button></div>
+                                    <div class="api-modal-actions mt-5 flex gap-2"><button type="button" class="api-modal-secondary flex-1" @click="revokeOpen=false">Batal</button><button type="button" class="api-modal-danger flex-1" wire:click="revokeApiKey({{ $key->id }})" wire:loading.attr="disabled" wire:target="revokeApiKey({{ $key->id }})"><span wire:loading.remove wire:target="revokeApiKey({{ $key->id }})">Revoke API Key</span><span wire:loading wire:target="revokeApiKey({{ $key->id }})">Processing...</span></button></div>
                                 </section>
                             </div>
                             <div x-cloak x-show="deleteOpen" x-transition.opacity class="api-modal-backdrop" @click.self="deleteOpen=false" @keydown.escape.window="deleteOpen=false">
@@ -262,7 +274,7 @@
                                     <div class="api-modal-icon border border-rose-100 bg-rose-50 text-rose-500"><svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
                                     <div class="text-center"><span class="text-[9px] font-extrabold uppercase tracking-[.18em] text-rose-500">Delete API credential</span><h3 id="api-delete-title-{{ $key->id }}" class="mt-2 text-xl font-extrabold tracking-tight text-slate-900">Hapus API key ini?</h3><p class="mx-auto mt-2 max-w-sm text-xs leading-5 text-slate-500">API key <strong class="text-slate-700">{{ $key->name }}</strong> akan dihapus permanen dari daftar. Tindakan ini tidak dapat dibatalkan.</p></div>
                                     <div class="mt-5 rounded-xl border border-rose-100 bg-rose-50 px-3 py-3 text-left text-[10px] leading-5 text-rose-700">Jika key masih aktif, aksesnya juga akan langsung dihentikan.</div>
-                                    <div class="api-modal-actions mt-5 flex gap-2"><button type="button" class="api-modal-secondary flex-1" @click="deleteOpen=false">Batal</button><button type="button" class="api-modal-danger flex-1" wire:click="deleteApiKey({{ $key->id }})" wire:loading.attr="disabled" wire:target="deleteApiKey({{ $key->id }})" @click="deleteOpen=false">Hapus API Key</button></div>
+                                    <div class="api-modal-actions mt-5 flex gap-2"><button type="button" class="api-modal-secondary flex-1" @click="deleteOpen=false">Batal</button><button type="button" class="api-modal-danger flex-1" wire:click="deleteApiKey({{ $key->id }})" wire:loading.attr="disabled" wire:target="deleteApiKey({{ $key->id }})"><span wire:loading.remove wire:target="deleteApiKey({{ $key->id }})">Hapus API Key</span><span wire:loading wire:target="deleteApiKey({{ $key->id }})">Menghapus...</span></button></div>
                                 </section>
                             </div>
                         </template>
