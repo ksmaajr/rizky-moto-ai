@@ -4,7 +4,7 @@
         @keyframes apiPageIn{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
         @keyframes apiCardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         @keyframes apiCalendarIn{from{opacity:0;transform:translateY(-7px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
-        .rms-api-page .api-card{background:#fff;border:1px solid var(--api-line);border-radius:20px;box-shadow:0 8px 26px rgba(20,31,48,.045);transition:box-shadow .22s ease,border-color .22s ease,transform .22s ease;animation:apiCardIn .45s ease both}
+        .rms-api-page .api-card{margin-bottom:18px;background:#fff;border:1px solid var(--api-line);border-radius:20px;box-shadow:0 8px 26px rgba(20,31,48,.045);transition:box-shadow .22s ease,border-color .22s ease,transform .22s ease;animation:apiCardIn .45s ease both}
         .rms-api-page .api-card:hover{border-color:#d8e5dc;box-shadow:0 14px 34px rgba(20,31,48,.075)}
         .rms-api-page .api-field-label{display:block;margin:0 0 8px;color:#424b59;font-size:12px;font-weight:750}
         .rms-api-page .api-control{display:block;width:100%;height:48px;border:1px solid #dfe4ea;border-radius:12px;background:#fff;padding:0 14px;color:#27303c;font-size:13px;outline:none;transition:border-color .18s ease,box-shadow .18s ease}
@@ -24,7 +24,7 @@
         .rms-api-page .api-status-active{background:#eaf8ef;color:#16834a}
         .rms-api-page .api-status-inactive{background:#f1f3f6;color:#7d8794}
         .rms-api-page .api-note{background:linear-gradient(120deg,#f8fbf9,#f5f8fb);border:1px solid #e6eee8;border-radius:16px}
-        .rms-api-page .api-calendar{position:absolute;z-index:60;top:calc(100% + 10px);right:0;width:min(340px,calc(100vw - 48px));padding:16px;border:1px solid #e6ebef;border-radius:18px;background:#fff;box-shadow:0 22px 60px rgba(25,39,55,.18);animation:apiCalendarIn .18s ease both}
+        .rms-api-page .api-calendar{position:fixed;z-index:99999;width:min(340px,calc(100vw - 32px));max-height:min(440px,calc(100vh - 24px));overflow-y:auto;padding:17px;border:1px solid #e6ebef;border-radius:18px;background:#fff;box-shadow:0 22px 60px rgba(25,39,55,.2);animation:apiCalendarIn .18s ease both}
         .rms-api-page .api-calendar-day{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;color:#344052;font-size:12px;font-weight:650;transition:background .15s,color .15s,transform .15s}
         .rms-api-page .api-calendar-day:hover:not(:disabled){background:#edf8f1;color:#138449;transform:scale(1.06)}
         .rms-api-page .api-calendar-day:disabled{color:#c5cbd3;cursor:not-allowed}
@@ -34,7 +34,7 @@
         .rms-api-page .api-calendar-nav:hover{background:#f1faf4;border-color:#ccebd7;color:#128149}
         .rms-api-page .api-calendar-link{font-size:11px;font-weight:750;color:#16834a;transition:color .15s}
         .rms-api-page .api-calendar-link:hover{color:#075d31}
-        @media(max-width:640px){.rms-api-page .api-card{border-radius:16px}.rms-api-page .api-primary{width:100%}.rms-api-page .api-calendar{right:auto;left:0}}
+        @media(max-width:640px){.rms-api-page .api-card{border-radius:16px}.rms-api-page .api-primary{width:100%}}
         @media(prefers-reduced-motion:reduce){.rms-api-page,.rms-api-page *{animation:none!important;transition:none!important}}
     </style>
 
@@ -89,6 +89,7 @@
                     open:false,
                     month: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
                     selected: @entangle('expiresAt').live,
+                    position: {top:0,left:0},
                     monthNames: ['January','February','March','April','May','June','July','August','September','October','November','December'],
                     get heading(){ return this.monthNames[this.month.getMonth()] + ' ' + this.month.getFullYear() },
                     get days(){
@@ -99,41 +100,50 @@
                         const today = new Date(); today.setHours(0,0,0,0);
                         return Array.from({length:total}, (_,i) => {
                             const date = new Date(this.month.getFullYear(), this.month.getMonth(), i-offset+1);
-                            const y=date.getFullYear(), m=String(date.getMonth()+1).padStart(2,'0'), d=String(date.getDate()).padStart(2,'0');
-                            const iso=y+'-'+m+'-'+d;
+                            const iso=date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
                             const local = new Date(date.getFullYear(),date.getMonth(),date.getDate());
                             return {iso:iso,day:date.getDate(),outside:date.getMonth()!==this.month.getMonth(),past:local<=today,today:local.getTime()===today.getTime()};
                         });
                     },
                     changeMonth(step){ this.month = new Date(this.month.getFullYear(),this.month.getMonth()+step,1) },
                     choose(day){ if(day.past)return; this.selected=day.iso; this.open=false; },
-                    formatSelected(){ if(!this.selected)return ''; const p=this.selected.split('-'); const d=new Date(Number(p[0]),Number(p[1])-1,Number(p[2])); return d.toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'}); },
-                    show(){ if(this.selected){const p=this.selected.split('-');this.month=new Date(Number(p[0]),Number(p[1])-1,1)} this.open=true; }
+                    formatSelected(){ if(!this.selected)return ''; const p=this.selected.split('-'); return new Date(Number(p[0]),Number(p[1])-1,Number(p[2])).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'}); },
+                    show(){
+                        if(this.selected){const p=this.selected.split('-');this.month=new Date(Number(p[0]),Number(p[1])-1,1)}
+                        const rect=this.$refs.trigger.getBoundingClientRect();
+                        const width=Math.min(340,window.innerWidth-32);
+                        const estimatedHeight=390;
+                        const left=Math.max(16,Math.min(rect.left,window.innerWidth-width-16));
+                        const below=rect.bottom+10;
+                        const top=below+estimatedHeight>window.innerHeight-12 ? Math.max(12,rect.top-estimatedHeight-10) : below;
+                        this.position={top:top,left:left};
+                        this.open=true;
+                    }
                 }" @click.outside="open=false" @keydown.escape.window="open=false">
                     <input type="hidden" wire:model="expiresAt">
-                    <button type="button" class="api-control flex items-center justify-between text-left" :class="open ? 'border-emerald-400 ring-4 ring-emerald-500/10' : ''" @click="open ? open=false : show()" aria-haspopup="dialog" :aria-expanded="open.toString()">
+                    <button x-ref="trigger" type="button" class="api-control flex items-center justify-between text-left" :class="open ? 'border-emerald-400 ring-4 ring-emerald-500/10' : ''" @click="open ? open=false : show()" aria-haspopup="dialog" :aria-expanded="open.toString()">
                         <span :class="selected ? 'text-slate-700' : 'text-slate-400'" x-text="formatSelected() || 'Pilih tanggal kedaluwarsa'"></span>
-                        <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5 text-slate-500"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" stroke="currentColor" stroke-width="1.6"/><path d="M7.5 3.5v3M16.5 3.5v3M4 9.5h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="m8 14 2 2 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5 shrink-0 text-slate-500"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" stroke="currentColor" stroke-width="1.6"/><path d="M7.5 3.5v3M16.5 3.5v3M4 9.5h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
                     </button>
-                    <div x-cloak x-show="open" x-transition.origin.top.left class="api-calendar" role="dialog" aria-label="Pilih tanggal kedaluwarsa">
-                        <div class="mb-4 flex items-center justify-between">
-                            <div><span class="block text-[9px] font-extrabold uppercase tracking-[.15em] text-emerald-700">Expiry calendar</span><strong class="mt-1 block text-base font-extrabold tracking-tight text-slate-800" x-text="heading"></strong></div>
-                            <div class="flex gap-1.5">
-                                <button type="button" class="api-calendar-nav" @click="changeMonth(-1)" aria-label="Bulan sebelumnya"><svg viewBox="0 0 24 24" class="h-4 w-4" fill="none"><path d="m15 18-6-6 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                                <button type="button" class="api-calendar-nav" @click="changeMonth(1)" aria-label="Bulan berikutnya"><svg viewBox="0 0 24 24" class="h-4 w-4" fill="none"><path d="m9 18 6-6-6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                    <template x-teleport="body">
+                        <div x-cloak x-show="open" x-transition.origin.top.left class="api-calendar" :style="'top:'+position.top+'px;left:'+position.left+'px'" role="dialog" aria-label="Pilih tanggal kedaluwarsa">
+                            <div class="mb-4 flex items-center justify-between">
+                                <div><span class="block text-[9px] font-extrabold uppercase tracking-[.15em] text-emerald-700">Expiry calendar</span><strong class="mt-1 block text-base font-extrabold tracking-tight text-slate-800" x-text="heading"></strong></div>
+                                <div class="flex gap-1.5">
+                                    <button type="button" class="api-calendar-nav" @click="changeMonth(-1)" aria-label="Bulan sebelumnya"><svg viewBox="0 0 24 24" class="h-4 w-4" fill="none"><path d="m15 18-6-6 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                                    <button type="button" class="api-calendar-nav" @click="changeMonth(1)" aria-label="Bulan berikutnya"><svg viewBox="0 0 24 24" class="h-4 w-4" fill="none"><path d="m9 18 6-6-6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                                </div>
+                            </div>
+                            <div class="mb-2 grid grid-cols-7 justify-items-center text-[10px] font-bold text-slate-400"><template x-for="label in ['Mo','Tu','We','Th','Fr','Sa','Su']" :key="label"><span x-text="label"></span></template></div>
+                            <div class="grid grid-cols-7 justify-items-center gap-y-1">
+                                <template x-for="day in days" :key="day.iso"><button type="button" class="api-calendar-day" :class="{'opacity-30':day.outside,'is-selected':selected===day.iso,'is-today':day.today}" :disabled="day.past" @click="choose(day)" :aria-label="day.iso" x-text="day.day"></button></template>
+                            </div>
+                            <div class="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+                                <button type="button" class="api-calendar-link" @click="selected='';open=false">Clear date</button>
+                                <button type="button" class="api-calendar-link" @click="month=new Date(new Date().getFullYear(),new Date().getMonth(),1)">This month</button>
                             </div>
                         </div>
-                        <div class="mb-2 grid grid-cols-7 justify-items-center text-[10px] font-bold text-slate-400"><template x-for="label in ['Mo','Tu','We','Th','Fr','Sa','Su']" :key="label"><span x-text="label"></span></template></div>
-                        <div class="grid grid-cols-7 justify-items-center gap-y-1">
-                            <template x-for="(day,index) in days" :key="day.iso">
-                                <button type="button" class="api-calendar-day" :class="{'opacity-30':day.outside,'is-selected':selected===day.iso,'is-today':day.today}" :disabled="day.past" @click="choose(day)" :aria-label="day.iso" x-text="day.day"></button>
-                            </template>
-                        </div>
-                        <div class="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-                            <button type="button" class="api-calendar-link" @click="selected='';open=false">Clear date</button>
-                            <button type="button" class="api-calendar-link" @click="month=new Date(new Date().getFullYear(),new Date().getMonth(),1)">This month</button>
-                        </div>
-                    </div>
+                    </template>
                 </div>
                 @error('expiresAt')<p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
                 <p class="mt-1.5 text-[10px] text-slate-400">Kosongkan jika key tidak memiliki tanggal kedaluwarsa.</p>
