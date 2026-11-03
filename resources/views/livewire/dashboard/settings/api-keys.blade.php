@@ -36,6 +36,30 @@
         .api-modal-danger{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border:1px solid #dc2626;border-radius:12px;background:#ef3038;color:#fff;font-size:12px;font-weight:800;box-shadow:0 7px 16px rgba(239,48,56,.18);transition:transform .18s,box-shadow .18s}
         .api-modal-danger:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(239,48,56,.24)}
         .api-secret-value{display:block;width:100%;overflow-wrap:anywhere;border:1px solid #a7f3c4;border-radius:13px;background:#f8fffb;padding:14px;color:#14532d;font:600 12px/1.8 ui-monospace,SFMono-Regular,Menlo,monospace;user-select:all}
+
+        .api-modal-backdrop{cursor:pointer;overscroll-behavior:contain}
+        .api-modal-card{cursor:default;max-height:calc(100vh - 40px);overflow-y:auto}
+        .api-modal-backdrop:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 42%,rgba(255,255,255,.09),transparent 38%);pointer-events:none}
+        .api-modal-card{position:relative;z-index:1}
+        .api-modal-actions{display:flex;gap:10px}
+        .api-modal-secondary,.api-modal-danger{cursor:pointer;position:relative;overflow:hidden;min-height:46px;border-radius:13px;font-size:12px;font-weight:800;transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s,border-color .2s,background .2s}
+        .api-modal-secondary:hover{transform:translateY(-2px);border-color:#cbd5e1;background:#f8fafc;box-shadow:0 8px 18px rgba(15,23,42,.07)}
+        .api-modal-secondary:active,.api-modal-danger:active{transform:scale(.97)}
+        .api-modal-danger{border:1px solid #e11d48;background:linear-gradient(135deg,#fb4754,#e11d48);box-shadow:0 7px 18px rgba(225,29,72,.2)}
+        .api-modal-danger:hover{transform:translateY(-2px);background:linear-gradient(135deg,#f43f5e,#be123c);box-shadow:0 12px 24px rgba(225,29,72,.28)}
+        .api-action-btn{position:relative;isolation:isolate;display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:39px;padding:0 15px;overflow:hidden;border:1px solid transparent;border-radius:12px;font-size:11px;font-weight:850;letter-spacing:.01em;transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s,background .2s,border-color .2s}
+        .api-action-btn:before{content:"";position:absolute;inset:0;z-index:-1;opacity:0;background:linear-gradient(110deg,transparent,rgba(255,255,255,.65),transparent);transform:translateX(-120%);transition:transform .55s,opacity .2s}
+        .api-action-btn:hover:before{opacity:1;transform:translateX(120%)}
+        .api-action-btn:hover{transform:translateY(-2px)}
+        .api-action-btn:active{transform:translateY(0) scale(.96)}
+        .api-action-revoke{border-color:#f4d28b;background:linear-gradient(135deg,#fffaf0,#fff3d6);color:#a16207;box-shadow:0 3px 9px rgba(161,98,7,.07)}
+        .api-action-revoke:hover{border-color:#eabf62;background:linear-gradient(135deg,#fff4d6,#ffebbd);box-shadow:0 8px 18px rgba(161,98,7,.13)}
+        .api-action-delete{border-color:#fecdd3;background:linear-gradient(135deg,#fff5f6,#ffe7eb);color:#e11d48;box-shadow:0 3px 9px rgba(225,29,72,.06)}
+        .api-action-delete:hover{border-color:#fda4af;background:linear-gradient(135deg,#ffe8ec,#ffdce3);box-shadow:0 8px 18px rgba(225,29,72,.13)}
+        .api-copy{min-height:46px;border-radius:12px;background:linear-gradient(135deg,#fff,#f0fdf4);box-shadow:0 3px 10px rgba(21,150,83,.05)}
+        .api-copy:hover{background:linear-gradient(135deg,#ecfdf5,#dcfce7);box-shadow:0 8px 18px rgba(21,150,83,.12);transform:translateY(-2px)}
+        .api-secret-value{font-size:11px;line-height:1.9;letter-spacing:.01em}
+        @media(max-width:480px){.api-modal-actions{flex-direction:column-reverse}.api-modal-actions>*{width:100%}.api-modal-backdrop{padding:14px}.api-modal-card{max-height:calc(100vh - 28px)}}
         @media(max-width:480px){.api-modal-card{padding:22px 18px;border-radius:20px}.rms-api-page .api-modal-actions{flex-direction:column-reverse}.rms-api-page .api-modal-actions>*{width:100%}}
         .api-calendar{position:absolute;z-index:99999;width:min(340px,calc(100vw - 32px));max-height:min(440px,calc(100vh - 24px));overflow-y:auto;padding:17px;border:1px solid #e6ebef;border-radius:18px;background:#fff;box-shadow:0 22px 60px rgba(25,39,55,.2);animation:apiCalendarIn .18s ease both}
         .api-calendar-day{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;color:#344052;font-size:12px;font-weight:650;transition:background .15s,color .15s,transform .15s}
@@ -176,7 +200,7 @@
     @if ($newlyCreatedSecret !== '')
         <div x-data="{copied:false,copySecret(){navigator.clipboard.writeText(@js($newlyCreatedSecret)).then(()=>{this.copied=true;setTimeout(()=>this.copied=false,2200)}).catch(()=>{this.copied=false})}}" x-cloak>
             <template x-teleport="body">
-            <div class="api-modal-backdrop" x-transition.opacity>
+            <div class="api-modal-backdrop" x-transition.opacity @click.self="$wire.dismissSecret()" @keydown.escape.window="$wire.dismissSecret()">
                 <section class="api-modal-card relative" role="dialog" aria-modal="true" aria-labelledby="api-secret-title">
                     <button type="button" wire:click="dismissSecret" class="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="Tutup">
                         <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
@@ -221,11 +245,11 @@
                     <div class="min-w-0"><div class="flex flex-wrap items-center gap-2"><strong class="break-words text-sm font-bold text-slate-800">{{ $key->name }}</strong><span class="api-status {{ $revoked || $expired ? 'api-status-inactive' : 'api-status-active' }}">{{ strtoupper($status) }}</span></div><code class="mt-2 block text-xs text-slate-500">{{ $key->prefix }}••••••••</code><div class="mt-2.5 flex flex-wrap gap-x-4 gap-y-2 text-[10px] font-medium text-slate-500"><span>{{ $key->store?->name ?? 'Full access · All active Stores' }}</span><span>{{ number_format($key->usage_count) }} requests</span><span>{{ $key->last_used_at?->diffForHumans() ?? 'Never used' }}</span>@if ($key->expires_at)<span>Expires {{ $key->expires_at->format('d M Y') }}</span>@endif</div></div>
                     <div class="flex flex-wrap items-center gap-2" x-data="{revokeOpen:false,deleteOpen:false}">
                         @if (! $revoked)
-                            <button type="button" @click="revokeOpen=true" class="inline-flex min-h-10 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 px-4 text-xs font-extrabold text-amber-700 transition hover:-translate-y-0.5 hover:bg-amber-100">Revoke</button>
+                            <button type="button" @click="revokeOpen=true" class="api-action-btn api-action-revoke" @click="revokeOpen=true"><svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M12 8v4m0 4h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/></svg>Revoke</button>
                         @endif
-                        <button type="button" @click="deleteOpen=true" class="inline-flex min-h-10 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-4 text-xs font-extrabold text-rose-600 transition hover:-translate-y-0.5 hover:bg-rose-100">Delete</button>
+                        <button type="button" @click="deleteOpen=true" class="api-action-btn api-action-delete" @click="deleteOpen=true"><svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>Delete</button>
                         <template x-teleport="body">
-                            <div x-cloak x-show="revokeOpen" x-transition.opacity class="api-modal-backdrop" @keydown.escape.window="revokeOpen=false">
+                            <div x-cloak x-show="revokeOpen" x-transition.opacity class="api-modal-backdrop" @click.self="revokeOpen=false" @keydown.escape.window="revokeOpen=false">
                                 <section x-show="revokeOpen" x-transition.scale.origin.center class="api-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="api-revoke-title-{{ $key->id }}">
                                     <div class="api-modal-icon border border-amber-100 bg-amber-50 text-amber-600"><svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M12 8v4m0 4h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/></svg></div>
                                     <div class="text-center"><span class="text-[9px] font-extrabold uppercase tracking-[.18em] text-amber-600">Revoke API credential</span><h3 id="api-revoke-title-{{ $key->id }}" class="mt-2 text-xl font-extrabold tracking-tight text-slate-900">Nonaktifkan API key?</h3><p class="mx-auto mt-2 max-w-sm text-xs leading-5 text-slate-500">API key <strong class="text-slate-700">{{ $key->name }}</strong> akan dicabut. Aplikasi yang menggunakannya tidak dapat mengakses API lagi.</p></div>
@@ -233,7 +257,7 @@
                                     <div class="api-modal-actions mt-5 flex gap-2"><button type="button" class="api-modal-secondary flex-1" @click="revokeOpen=false">Batal</button><button type="button" class="api-modal-danger flex-1" wire:click="revokeApiKey({{ $key->id }})" wire:loading.attr="disabled" wire:target="revokeApiKey({{ $key->id }})" @click="revokeOpen=false">Revoke API Key</button></div>
                                 </section>
                             </div>
-                            <div x-cloak x-show="deleteOpen" x-transition.opacity class="api-modal-backdrop" @keydown.escape.window="deleteOpen=false">
+                            <div x-cloak x-show="deleteOpen" x-transition.opacity class="api-modal-backdrop" @click.self="deleteOpen=false" @keydown.escape.window="deleteOpen=false">
                                 <section x-show="deleteOpen" x-transition.scale.origin.center class="api-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="api-delete-title-{{ $key->id }}">
                                     <div class="api-modal-icon border border-rose-100 bg-rose-50 text-rose-500"><svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
                                     <div class="text-center"><span class="text-[9px] font-extrabold uppercase tracking-[.18em] text-rose-500">Delete API credential</span><h3 id="api-delete-title-{{ $key->id }}" class="mt-2 text-xl font-extrabold tracking-tight text-slate-900">Hapus API key ini?</h3><p class="mx-auto mt-2 max-w-sm text-xs leading-5 text-slate-500">API key <strong class="text-slate-700">{{ $key->name }}</strong> akan dihapus permanen dari daftar. Tindakan ini tidak dapat dibatalkan.</p></div>
