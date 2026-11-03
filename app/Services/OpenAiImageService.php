@@ -783,7 +783,9 @@ class OpenAiImageService
                 $referenceCount
             ),
             metadata: [
-                'source' => 'generator_queue',
+                'source' => $source,
+                'request_channel' => $source,
+                'api_key_id' => $apiKeyId,
                 'generation_id' => $generation->id,
                 'store_id' => $store->id,
                 'template_id' => $template->id,

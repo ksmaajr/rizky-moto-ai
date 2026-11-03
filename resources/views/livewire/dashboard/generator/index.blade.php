@@ -2691,7 +2691,7 @@ new class extends Component
 
                     <article wire:key="generation-history-{{ $generation->id }}" class="rms-generator-history-item rms-generation-card status-{{ $status }}">
                         <div class="rms-generation-card-head">
-                            <div class="rms-history-item-meta"><span>{{ optional($generation->created_at)->format('d M Y · H:i') }}</span><small>#{{ $generation->id }}</small></div>
+                            <div class="rms-history-item-meta"><span>{{ optional($generation->created_at)->format('d M Y · H:i') }}</span><small>#{{ $generation->id }}</small>@if(data_get($meta, 'request_channel') === 'api')<small class="rms-generation-source-badge">API</small>@endif</div>
                             <span class="rms-history-status {{ $status }}" title="Status generation: {{ $statusLabel }}">
                                 <i class="rms-status-dot" aria-hidden="true"></i>
                                 <span class="rms-status-label">{{ $statusLabel }}</span>
@@ -2724,7 +2724,10 @@ new class extends Component
                             </button>
                         @elseif(in_array($status, ['queued','processing']))
                             <div class="rms-generation-processing-visual rms-generation-processing-visual-v3" style="aspect-ratio: {{ $ratio }}">
-                                @if($hero)
+                                @if($generation->product_image_1_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($generation->product_image_1_path))
+                                    <img class="rms-processing-source-image" src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($generation->product_image_1_path) }}" alt="Foto produk yang sedang digenerate" loading="lazy">
+                                    <div class="rms-processing-image-wash"></div>
+                                @elseif($hero)
                                     <img class="rms-processing-source-image" src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($hero->image_path) }}" alt="Processing preview" loading="lazy">
                                     <div class="rms-processing-image-wash"></div>
                                 @else
@@ -8606,4 +8609,7 @@ body > .rms-history-download-modal{position:fixed!important;inset:0!important;z-
     .rms-generator-upload-box .rms-upload-complete{left:11px;bottom:11px;min-height:27px;padding:5px 9px}
 }
 
+</style>
+<style>
+.rms-generation-source-badge{display:inline-flex!important;align-items:center;justify-content:center;padding:3px 7px;border:1px solid #dbeafe;border-radius:999px;background:#eff6ff;color:#2563eb!important;font-size:8px!important;font-weight:850;letter-spacing:.08em;line-height:1!important}
 </style>
