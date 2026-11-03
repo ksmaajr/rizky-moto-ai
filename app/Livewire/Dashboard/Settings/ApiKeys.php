@@ -94,6 +94,20 @@ class ApiKeys extends Component
         $this->dispatch('toast', type: 'success', title: 'API key dinonaktifkan', message: $key->name);
     }
 
+    public function deleteApiKey(int $id): void
+    {
+        $key = ApiKey::query()
+            ->where('user_id', Auth::id())
+            ->whereKey($id)
+            ->firstOrFail();
+
+        $name = $key->name;
+        $key->delete();
+
+        $this->writeActivity('api_key_deleted', 'API key deleted', 'API key ' . $name . ' dihapus permanen.', 'warning');
+        $this->dispatch('toast', type: 'success', title: 'API key dihapus', message: $name);
+    }
+
     public function dismissSecret(): void
     {
         $this->newlyCreatedSecret = '';
