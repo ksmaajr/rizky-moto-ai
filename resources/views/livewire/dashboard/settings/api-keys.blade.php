@@ -68,6 +68,23 @@
         .api-copy.is-copied{border-color:#86d8a7!important;background:linear-gradient(135deg,#e8fff1,#d7fbe4)!important;color:#087443!important}
         .api-action-btn{cursor:pointer}
         .api-modal-danger:disabled{opacity:.6;cursor:wait;transform:none}
+        /* Modal content is teleported to body, so modal controls must not depend on .rms-api-page selectors. */
+        .api-modal-card .api-primary{display:flex!important;width:100%;min-height:52px;align-items:center;justify-content:center;gap:10px;padding:0 20px;border:1px solid #0f8b50;border-radius:14px;background:linear-gradient(135deg,#16a05b 0%,#087443 100%);color:#fff;font-size:13px;font-weight:850;letter-spacing:.01em;box-shadow:0 8px 20px rgba(8,116,67,.2);transition:transform .2s ease,box-shadow .2s ease,filter .2s ease}
+        .api-modal-card .api-primary:hover{transform:translateY(-2px);filter:brightness(1.04);box-shadow:0 13px 26px rgba(8,116,67,.25)}
+        .api-modal-card .api-primary:active{transform:scale(.985)}
+        .api-modal-card .api-primary:focus-visible,.api-modal-card .api-copy:focus-visible{outline:3px solid rgba(22,160,91,.22);outline-offset:3px}
+        .api-modal-card .api-copy{display:flex!important;position:relative!important;width:100%;min-height:62px;align-items:center!important;justify-content:center!important;gap:0!important;padding:12px 92px 12px 18px!important;border:1px solid #bfe8ce!important;border-radius:14px!important;background:linear-gradient(135deg,#ffffff 0%,#f2fcf6 100%)!important;color:#087443!important;box-shadow:0 5px 15px rgba(21,150,83,.07)!important;transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background .2s ease!important}
+        .api-modal-card .api-copy-content{display:inline-flex!important;align-items:center;justify-content:center;gap:10px;white-space:nowrap;font-size:13px;font-weight:800;line-height:1.2}
+        .api-modal-card .api-copy-content svg{display:block;flex:0 0 21px;width:21px;height:21px}
+        .api-modal-card .api-copy-hint{position:absolute;right:15px;top:50%;transform:translateY(-50%);white-space:nowrap;font-size:8px;font-weight:900;letter-spacing:.11em;color:#76a68b}
+        .api-modal-card .api-copy:hover{transform:translateY(-2px)!important;border-color:#8bd6aa!important;background:linear-gradient(135deg,#effcf4,#e0f8e9)!important;box-shadow:0 10px 22px rgba(21,150,83,.13)!important}
+        .api-modal-card .api-copy:active{transform:scale(.985)!important}
+        .api-modal-card .api-copy.is-copied{border-color:#86d8a7!important;background:linear-gradient(135deg,#e8fff1,#d7fbe4)!important;color:#087443!important}
+        .api-modal-card .api-copy:disabled{opacity:.7;cursor:wait}
+        .api-modal-card .api-primary svg{width:17px;height:17px;flex:0 0 17px}
+        .api-modal-card .api-modal-close{display:grid;width:34px;height:34px;place-items:center;border:1px solid #edf0f3;border-radius:11px;background:#fff;color:#8290a0;transition:all .18s ease}
+        .api-modal-card .api-modal-close:hover{transform:rotate(90deg);border-color:#dce5e0;background:#f7faf8;color:#344054}
+        @media(max-width:480px){.api-modal-card .api-copy{padding-right:78px!important;padding-left:12px!important}.api-modal-card .api-copy-content{gap:7px;font-size:12px}.api-modal-card .api-copy-hint{right:10px;font-size:7px}.api-modal-card .api-primary{min-height:50px}}
         @media(max-width:480px){.api-modal-actions{flex-direction:column-reverse}.api-modal-actions>*{width:100%}.api-modal-backdrop{padding:14px}.api-modal-card{max-height:calc(100vh - 28px)}}
         @media(max-width:480px){.api-modal-card{padding:22px 18px;border-radius:20px}.rms-api-page .api-modal-actions{flex-direction:column-reverse}.rms-api-page .api-modal-actions>*{width:100%}}
         .api-calendar{position:absolute;z-index:99999;width:min(340px,calc(100vw - 32px));max-height:min(440px,calc(100vh - 24px));overflow-y:auto;padding:17px;border:1px solid #e6ebef;border-radius:18px;background:#fff;box-shadow:0 22px 60px rgba(25,39,55,.2);animation:apiCalendarIn .18s ease both}
@@ -211,7 +228,7 @@
             <template x-teleport="body">
             <div class="api-modal-backdrop" x-transition.opacity @click.self="$wire.dismissSecret()" @keydown.escape.window="$wire.dismissSecret()">
                 <section class="api-modal-card relative" role="dialog" aria-modal="true" aria-labelledby="api-secret-title">
-                    <button type="button" wire:click="dismissSecret" class="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="Tutup">
+                    <button type="button" wire:click="dismissSecret" class="api-modal-close absolute right-4 top-4" aria-label="Tutup">
                         <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
                     </button>
                     <div class="api-modal-icon bg-emerald-50 text-emerald-600 shadow-sm shadow-emerald-100">
