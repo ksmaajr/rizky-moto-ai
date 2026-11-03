@@ -91,6 +91,7 @@ class ApiKeys extends Component
             $this->writeActivity('api_key_revoked', 'API key revoked', 'API key ' . $key->name . ' dinonaktifkan.', 'warning');
         }
 
+        $this->dispatch('api-key-revoked', keyId: $id);
         $this->dispatch('toast', type: 'success', title: 'API key dinonaktifkan', message: $key->name);
     }
 
@@ -105,6 +106,7 @@ class ApiKeys extends Component
         $key->delete();
 
         $this->writeActivity('api_key_deleted', 'API key deleted', 'API key ' . $name . ' dihapus permanen.', 'warning');
+        $this->dispatch('api-key-deleted', keyId: $id);
         $this->dispatch('toast', type: 'success', title: 'API key dihapus', message: $name);
     }
 
