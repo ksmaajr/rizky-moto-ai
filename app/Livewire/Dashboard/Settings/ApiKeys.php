@@ -90,7 +90,7 @@ class ApiKeys extends Component
             $key->update(['revoked_at' => now()]);
             try {
                 $this->writeActivity('api_key_revoked', 'API key revoked', 'API key ' . $key->name . ' dinonaktifkan.', 'warning');
-            } catch (\\Throwable $exception) {
+            } catch (\Throwable $exception) {
                 report($exception);
             }
         }
@@ -113,7 +113,7 @@ class ApiKeys extends Component
         // Audit logging must never make a successful deletion look like a failed action.
         try {
             $this->writeActivity('api_key_deleted', 'API key deleted', 'API key ' . $name . ' dihapus permanen.', 'warning');
-        } catch (\\Throwable $exception) {
+        } catch (\Throwable $exception) {
             report($exception);
         }
 
