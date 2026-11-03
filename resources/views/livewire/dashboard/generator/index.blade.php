@@ -2724,50 +2724,50 @@ new class extends Component
                             </button>
                         @elseif(in_array($status, ['queued','processing']))
                             <div class="rms-generation-processing-visual rms-generation-processing-visual-v3" style="aspect-ratio: {{ $ratio }}">
-                                @if($generation->product_image_1_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($generation->product_image_1_path))
-                                    <img class="rms-processing-source-image" src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($generation->product_image_1_path) }}" alt="Foto produk yang sedang digenerate" loading="lazy">
+                                @if($generation->product_image_1_path && \\Illuminate\\Support\\Facades\\Storage::disk('public')->exists($generation->product_image_1_path))
+                                    <img class="rms-processing-source-image" src="{{ \\Illuminate\\Support\\Facades\\Storage::disk('public')->url($generation->product_image_1_path) }}" alt="Foto produk yang sedang digenerate" loading="lazy">
                                     <div class="rms-processing-image-wash"></div>
                                 @elseif($hero)
-                                    <img class="rms-processing-source-image" src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($hero->image_path) }}" alt="Processing preview" loading="lazy">
+                                    <img class="rms-processing-source-image" src="{{ \\Illuminate\\Support\\Facades\\Storage::disk('public')->url($hero->image_path) }}" alt="Processing preview" loading="lazy">
                                     <div class="rms-processing-image-wash"></div>
-                                @else
-                                    <div class="rms-processing-visual-core">
-                                        <div class="rms-processing-grid"></div>
-                                        <div class="rms-processing-scan"></div>
-                                        <div class="rms-processing-orbit orbit-one"></div>
-                                        <div class="rms-processing-orbit orbit-two"></div>
-                                        <div class="rms-processing-orbit orbit-three"></div>
-                                        <div class="rms-processing-core-ring">
-                                            <svg class="rms-processing-spin-svg" wire:ignore viewBox="0 0 120 120" aria-hidden="true">
-    <defs>
-        <filter id="rmsDotGlow" x="-150%" y="-150%" width="400%" height="400%">
-            <feGaussianBlur stdDeviation="2.8" result="blur"/>
-            <feMerge>
-                <feMergeNode in="blur"/>
-                <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-        </filter>
-    </defs>
-    <!-- Four compact markers; each has its own speed and glow. -->
-    <circle class="rms-orbit-dot dot-one" cx="60" cy="10" r="5.2" fill="#ef233c" filter="url(#rmsDotGlow)">
-        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="3.20s" repeatCount="indefinite"/>
-    </circle>
-    <circle class="rms-orbit-dot dot-two" cx="60" cy="18" r="4.7" fill="#ef233c" filter="url(#rmsDotGlow)">
-        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="4.05s" repeatCount="indefinite"/>
-    </circle>
-    <circle class="rms-orbit-dot dot-three" cx="60" cy="26" r="4.2" fill="#ef233c" filter="url(#rmsDotGlow)">
-        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="2.72s" repeatCount="indefinite"/>
-    </circle>
-    <circle class="rms-orbit-dot dot-four" cx="60" cy="34" r="3.8" fill="#ef233c" filter="url(#rmsDotGlow)">
-        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="4.70s" repeatCount="indefinite"/>
-    </circle>
-</svg>
-                                            <span class="rms-processing-core-glow"></span>
-                                            <b>{{ $progress }}%</b>
-                                            <small>{{ $status === 'queued' ? 'QUEUE' : 'GENERATING' }}</small>
-                                        </div>
-                                    </div>
                                 @endif
+
+                                <div class="rms-processing-visual-core">
+                                    <div class="rms-processing-grid"></div>
+                                    <div class="rms-processing-scan"></div>
+                                    <div class="rms-processing-orbit orbit-one"></div>
+                                    <div class="rms-processing-orbit orbit-two"></div>
+                                    <div class="rms-processing-orbit orbit-three"></div>
+                                    <span class="rms-processing-particle particle-one"></span>
+                                    <span class="rms-processing-particle particle-two"></span>
+                                    <span class="rms-processing-particle particle-three"></span>
+                                    <span class="rms-processing-particle particle-four"></span>
+                                    <div class="rms-processing-core-ring">
+                                        <svg class="rms-processing-spin-svg" wire:ignore viewBox="0 0 120 120" aria-hidden="true">
+                                            <defs>
+                                                <filter id="rmsDotGlow" x="-150%" y="-150%" width="400%" height="400%">
+                                                    <feGaussianBlur stdDeviation="2.8" result="blur"/>
+                                                    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                                                </filter>
+                                            </defs>
+                                            <circle class="rms-orbit-dot dot-one" cx="60" cy="10" r="5.2" fill="#ef233c" filter="url(#rmsDotGlow)">
+                                                <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="3.20s" repeatCount="indefinite"/>
+                                            </circle>
+                                            <circle class="rms-orbit-dot dot-two" cx="60" cy="18" r="4.7" fill="#ef233c" filter="url(#rmsDotGlow)">
+                                                <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="4.05s" repeatCount="indefinite"/>
+                                            </circle>
+                                            <circle class="rms-orbit-dot dot-three" cx="60" cy="26" r="4.2" fill="#ef233c" filter="url(#rmsDotGlow)">
+                                                <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="2.72s" repeatCount="indefinite"/>
+                                            </circle>
+                                            <circle class="rms-orbit-dot dot-four" cx="60" cy="34" r="3.8" fill="#ef233c" filter="url(#rmsDotGlow)">
+                                                <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="4.70s" repeatCount="indefinite"/>
+                                            </circle>
+                                        </svg>
+                                        <span class="rms-processing-core-glow"></span>
+                                        <b>{{ $progress }}%</b>
+                                        <small>{{ $status === 'queued' ? 'QUEUE' : 'GENERATING' }}</small>
+                                    </div>
+                                </div>
 
                                 <div class="rms-processing-topline">
                                     <span class="rms-processing-live-dot"></span>
@@ -8612,4 +8612,17 @@ body > .rms-history-download-modal{position:fixed!important;inset:0!important;z-
 </style>
 <style>
 .rms-generation-source-badge{display:inline-flex!important;align-items:center;justify-content:center;padding:3px 7px;border:1px solid #dbeafe;border-radius:999px;background:#eff6ff;color:#2563eb!important;font-size:8px!important;font-weight:850;letter-spacing:.08em;line-height:1!important}
+</style>
+
+<style>
+/* V19 — keep the animated particle core visible over uploaded product previews */
+.rms-generation-processing-visual-v3 .rms-processing-visual-core{z-index:4;pointer-events:none;background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.30),rgba(255,255,255,.06) 38%,transparent 66%)}
+.rms-generation-processing-visual-v3 .rms-processing-source-image{opacity:.30;filter:saturate(.78) blur(.2px)}
+.rms-generation-processing-visual-v3 .rms-processing-image-wash{z-index:1;opacity:.48}
+.rms-generation-processing-visual-v3 .rms-processing-particle{display:block!important;visibility:visible!important;opacity:.85;z-index:5}
+.rms-generation-processing-visual-v3 .rms-processing-orbit{z-index:2}
+.rms-generation-processing-visual-v3 .rms-processing-core-ring{z-index:6}
+.rms-generation-processing-visual-v3 .rms-processing-topline{z-index:10}
+.rms-generation-processing-visual-v3 .rms-processing-visual-badge,.rms-generation-processing-visual-v3 .rms-processing-stage-label{z-index:10}
+@media(max-width:760px){.rms-generation-processing-visual-v3 .rms-processing-core-ring{width:88px;height:88px}}
 </style>
