@@ -15,6 +15,8 @@ class ApiKeys extends Component
     public string $selectedStoreId = '';
     public string $expiresAt = '';
     public string $newlyCreatedSecret = '';
+    public ?int $deleteKeyId = null;
+    public string $deleteKeyName = '';
 
     public function getStoresProperty()
     {
@@ -99,21 +101,45 @@ class ApiKeys extends Component
         $this->dispatch('toast', type: 'success', title: 'API key dinonaktifkan', message: $key->name);
     }
 
-    public function deleteApiKey(int $id): void
+    public function requestDeleteApiKey(int $id): void
     {
         $key = ApiKey::query()
             ->where('user_id', Auth::id())
             ->whereKey($id)
             ->firstOrFail();
 
-        $name = $key->name;
-        // Delete the credential first so its hash can no longer authenticate requests.
-        $key->delete();
+        $this->deleteKeyId = (int) $key->id;
+        $this->deleteKeyName = $key->name;
+    }
 
-        // Audit logging must never make a successful deletion look like a failed action.
+    public function cancelDeleteApiKey(): void
+    {
+        $this->deleteKeyId = null;
+        $this->deleteKeyName = '';
+    }
+
+    public function confirmDeleteApiKey(): void
+    {
+        if (! $this->deleteKeyId) {
+            return;
+        }
+
+        $key = ApiKey::query()
+            ->where('user_id', Auth::id())
+            ->whereKey($this->deleteKeyId)
+            ->firstOrFail();
+
+        $id = (int) $key->id;
+        $name = $key->name;
+
+        // Deleting the row immediately invalidates the credential, whether active or revoked.
+        $key->delete();
+        $this->cancelDeleteApiKey();
+
+        // Audit failures must not undo or mask a completed deletion.
         try {
             $this->writeActivity('api_key_deleted', 'API key deleted', 'API key ' . $name . ' dihapus permanen.', 'warning');
-        } catch (\Throwable $exception) {
+        } catch (\\Throwable $exception) {
             report($exception);
         }
 
