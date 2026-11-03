@@ -17,6 +17,60 @@ use Illuminate\Validation\ValidationException;
 
 class ImageGenerationController extends Controller
 {
+    public function catalogStores(Request $request)
+    {
+        $apiKey = $this->apiKey($request);
+        $this->requireScope($apiKey, 'images:generate');
+
+        $stores = Store::query()
+            ->where('is_active', true)
+            ->when($apiKey->store_id !== null, fn ($query) => $query->whereKey($apiKey->store_id))
+            ->withCount(['templates' => fn ($query) => $query->where('is_active', true)])
+            ->orderBy('name')
+            ->get(['id', 'name', 'marketplace', 'brand_name']);
+
+        return response()->json(['data' => $stores]);
+    }
+
+    public function catalogTemplates(Request $request, int $store)
+    {
+        $apiKey = $this->apiKey($request);
+        $this->requireScope($apiKey, 'images:generate');
+
+        abort_if($apiKey->store_id !== null && (int) $apiKey->store_id !== $store, 403);
+
+        $storeRecord = Store::query()->whereKey($store)->where('is_active', true)->firstOrFail();
+        $templates = Template::query()
+            ->where('store_id', $storeRecord->id)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get(['id', 'store_id', 'name', 'slug', 'description', 'aspect_ratio', 'output_quality']);
+
+        return response()->json([
+            'store' => ['id' => $storeRecord->id, 'name' => $storeRecord->name],
+            'data' => $templates,
+        ]);
+    }
+
+    public function catalogModels(Request $request, ProviderManager $providers)
+    {
+        $apiKey = $this->apiKey($request);
+        $this->requireScope($apiKey, 'images:generate');
+
+        $models = collect($providers->availableModels($apiKey->user_id));
+        $preferred = app(OpenAiImageService::class)->defaultImageModel();
+        $default = $models->contains(fn (array $model) => ($model['id'] ?? null) === $preferred)
+            ? $preferred
+            : ($models->first()['id'] ?? null);
+
+        return response()->json([
+            'provider' => $providers->activeProviderName($apiKey->user_id),
+            'default_model' => $default,
+            'data' => $models->values(),
+        ]);
+    }
+
     public function store(Request $request, OpenAiImageService $imageService, ProviderManager $providers)
     {
         $apiKey = $this->apiKey($request);
@@ -44,7 +98,11 @@ class ImageGenerationController extends Controller
         }
 
         $availableModels = $providers->availableModels($apiKey->user_id);
-        $model = trim((string) ($validated['model'] ?? ($availableModels[0]['id'] ?? '')));
+        $preferredModel = $imageService->defaultImageModel();
+        $defaultModel = collect($availableModels)->contains(fn (array $item) => ($item['id'] ?? null) === $preferredModel)
+            ? $preferredModel
+            : ($availableModels[0]['id'] ?? '');
+        $model = trim((string) ($validated['model'] ?? $defaultModel));
         if ($model === '' || ! collect($availableModels)->pluck('id')->contains($model)) {
             throw ValidationException::withMessages([
                 'model' => ['The selected model is not available for the active AI provider.'],
