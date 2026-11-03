@@ -82,7 +82,7 @@ class ImageGenerationController extends Controller
             'product_image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'installed_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'model' => ['nullable', 'string', 'max:150'],
-            'custom_title' => ['nullable', 'string', 'max:120'],
+            'custom_title' => ['nullable', 'string'],
             'image_count' => ['nullable', 'integer', 'min:1', 'max:4'],
         ]);
 
