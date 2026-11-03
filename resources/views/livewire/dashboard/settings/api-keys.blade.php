@@ -11,6 +11,9 @@
         .rms-api-page .api-control::placeholder{color:#a0a8b4}
         .rms-api-page .api-control:hover{border-color:#c8d2dc}
         .rms-api-page .api-control:focus{border-color:#37a96b;box-shadow:0 0 0 4px rgba(36,166,96,.11)}
+.rms-api-page .api-date-trigger{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;text-align:left!important;line-height:1.2}
+        .rms-api-page .api-date-trigger > span{display:block;min-width:0;flex:1}
+        .rms-api-page .api-date-trigger > svg{display:block;flex:0 0 18px;width:18px;height:18px;margin:0}
         .rms-api-page .api-primary{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:47px;padding:0 19px;border:0;border-radius:12px;background:linear-gradient(135deg,#1ba45c,#108348);color:#fff;font-size:12px;font-weight:800;box-shadow:0 7px 16px rgba(21,150,83,.18);transition:transform .18s ease,box-shadow .18s ease}
         .rms-api-page .api-primary:hover{transform:translateY(-2px);box-shadow:0 11px 22px rgba(21,150,83,.24)}
         .rms-api-page .api-primary:active{transform:scale(.98)}
@@ -105,7 +108,7 @@
                     }
                 }" @keydown.escape.window="open=false">
                     <input type="hidden" wire:model="expiresAt">
-                    <button x-ref="trigger" type="button" class="api-control flex items-center justify-between text-left" :class="open ? 'border-emerald-400 ring-4 ring-emerald-500/10' : ''" @click="open ? open=false : show()" aria-haspopup="dialog" :aria-expanded="open.toString()">
+                    <button x-ref="trigger" type="button" class="api-control api-date-trigger" :class="open ? 'border-emerald-400 ring-4 ring-emerald-500/10' : ''" @click="open ? open=false : show()" aria-haspopup="dialog" :aria-expanded="open.toString()">
                         <span :class="selected ? 'text-slate-700' : 'text-slate-400'" x-text="formatSelected() || 'Pilih tanggal kedaluwarsa'"></span>
                         <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5 shrink-0 text-slate-500"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" stroke="currentColor" stroke-width="1.6"/><path d="M7.5 3.5v3M16.5 3.5v3M4 9.5h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
                     </button>
