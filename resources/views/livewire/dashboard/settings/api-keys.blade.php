@@ -1,4 +1,4 @@
-<div class="rms-api-page" wire:key="settings-api-keys-panel" x-data="{ deleteKeyId: @entangle('deleteKeyId') }">
+<div class="rms-api-page" wire:key="settings-api-keys-panel" x-data="{ deleteKeyId: @entangle('deleteKeyId'), deleteKeyName: @entangle('deleteKeyName') }">
     <style>
         .rms-api-page{--api-ink:#202631;--api-muted:#7b8493;--api-line:#e7ebf0;--api-green:#159653;color:var(--api-ink);animation:apiPageIn .42s ease both}
         @keyframes apiPageIn{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
@@ -276,7 +276,7 @@
                         @if (! $revoked)
                             <button type="button" class="api-action-btn api-action-revoke" @click="revokeOpen=true"><svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M12 8v4m0 4h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/></svg>Revoke</button>
                         @endif
-                        <button type="button" class="api-action-btn api-action-delete" wire:click="requestDeleteApiKey({{ $key->id }})" wire:loading.attr="disabled" wire:target="requestDeleteApiKey({{ $key->id }})"><svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>Delete</button>
+                        <button type="button" class="api-action-btn api-action-delete" @click="deleteKeyId = {{ $key->id }}; deleteKeyName = @js($key->name); $wire.requestDeleteApiKey({{ $key->id }})"><svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>Delete</button>
                         <template x-teleport="body">
                             <div x-cloak x-show="revokeOpen" x-transition.opacity class="api-modal-backdrop" @click.self="revokeOpen=false" @keydown.escape.window="revokeOpen=false">
                                 <section x-show="revokeOpen" x-transition.scale.origin.center class="api-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="api-revoke-title-{{ $key->id }}">
@@ -306,14 +306,14 @@
                         <div class="text-center">
                             <span class="text-[9px] font-extrabold uppercase tracking-[.18em] text-rose-500">Delete API credential</span>
                             <h3 id="api-delete-confirm-title" class="mt-2 text-xl font-extrabold tracking-tight text-slate-900">Hapus API key ini?</h3>
-                            <p class="mx-auto mt-2 max-w-sm text-xs leading-5 text-slate-500">API key <strong class="text-slate-700">{{ $deleteKeyName }}</strong> akan dihapus permanen dari daftar. Tindakan ini tidak dapat dibatalkan.</p>
+                            <p class="mx-auto mt-2 max-w-sm text-xs leading-5 text-slate-500">API key <strong class="text-slate-700"><span x-text="deleteKeyName"></span></strong> akan dihapus permanen dari daftar. Tindakan ini tidak dapat dibatalkan.</p>
                         </div>
                         <div class="mt-5 rounded-xl border border-rose-100 bg-rose-50 px-3 py-3 text-left text-[10px] leading-5 text-rose-700">Akses API key akan langsung dihentikan, baik statusnya masih Active maupun sudah Revoked.</div>
                         <div class="api-modal-actions mt-5 flex gap-2">
                             <button type="button" class="api-modal-secondary flex-1" @click="$wire.cancelDeleteApiKey()">Batal</button>
-                            <button type="button" class="api-modal-danger flex-1" x-data="{ deleting: false }" :disabled="deleting" @click="if (!deleting) { deleting = true; $wire.confirmDeleteApiKey().catch(() => { deleting = false }) }">
-                                <span x-show="!deleting">Hapus API Key</span>
-                                <span x-cloak x-show="deleting">Menghapus...</span>
+                            <button type="button" class="api-modal-danger flex-1" wire:click="confirmDeleteApiKey" wire:loading.attr="disabled" wire:target="confirmDeleteApiKey">
+                                <span wire:loading.remove wire:target="confirmDeleteApiKey">Hapus API Key</span>
+                                <span wire:loading wire:target="confirmDeleteApiKey" class="inline-flex items-center justify-center gap-2"><svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" opacity=".25"/><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>Menghapus...</span>
                             </button>
                         </div>
                     </section>
