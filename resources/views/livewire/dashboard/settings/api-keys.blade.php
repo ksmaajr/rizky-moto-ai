@@ -1,4 +1,4 @@
-<div class="rms-api-page" wire:key="settings-api-keys-panel" x-data="{}">
+<div class="rms-api-page" wire:key="settings-api-keys-panel" x-data="{ deleteKeyId: @entangle('deleteKeyId') }">
     <style>
         .rms-api-page{--api-ink:#202631;--api-muted:#7b8493;--api-line:#e7ebf0;--api-green:#159653;color:var(--api-ink);animation:apiPageIn .42s ease both}
         @keyframes apiPageIn{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
@@ -298,8 +298,7 @@
     <section class="api-note p-4 sm:p-5" style="animation-delay:.14s"><div class="flex items-start gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-emerald-700 shadow-sm"><svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M12 3 19 6v5c0 4.7-2.9 8.2-7 10-4.1-1.8-7-5.3-7-10V6l7-3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><strong class="text-xs font-extrabold text-slate-800">Security notes</strong><ul class="mt-2 grid gap-x-8 gap-y-1.5 text-[11px] leading-5 text-slate-600 md:grid-cols-2"><li>API key hanya ditampilkan saat pertama kali dibuat.</li><li>Server menyimpan SHA-256 hash, bukan secret aslinya.</li><li>Scope generation, read, dan cancel tersedia dengan batas default 60 request per menit.</li><li>Full access berlaku untuk seluruh Store dan Template aktif pada workspace pemilik key.</li></ul></div></div></section>
 
     <template x-teleport="body">
-        @if ($deleteKeyId)
-                <div class="api-modal-backdrop" wire:click.self="cancelDeleteApiKey" wire:keydown.escape.window="cancelDeleteApiKey" role="presentation">
+        <div x-cloak x-if="deleteKeyId" x-transition.opacity.duration.180ms class="api-modal-backdrop" @click.self="$wire.cancelDeleteApiKey()" @keydown.escape.window="$wire.cancelDeleteApiKey()" role="presentation">
                     <section class="api-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="api-delete-confirm-title">
                         <div class="api-modal-icon border border-rose-100 bg-rose-50 text-rose-500">
                             <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -311,15 +310,13 @@
                         </div>
                         <div class="mt-5 rounded-xl border border-rose-100 bg-rose-50 px-3 py-3 text-left text-[10px] leading-5 text-rose-700">Akses API key akan langsung dihentikan, baik statusnya masih Active maupun sudah Revoked.</div>
                         <div class="api-modal-actions mt-5 flex gap-2">
-                            <button type="button" class="api-modal-secondary flex-1" wire:click="cancelDeleteApiKey">Batal</button>
-                            <button type="button" class="api-modal-danger flex-1" wire:click="confirmDeleteApiKey" wire:loading.attr="disabled" wire:target="confirmDeleteApiKey">
-                                <span wire:loading.remove wire:target="confirmDeleteApiKey">Hapus API Key</span>
-                                <span wire:loading wire:target="confirmDeleteApiKey">Menghapus...</span>
+                            <button type="button" class="api-modal-secondary flex-1" @click="$wire.cancelDeleteApiKey()">Batal</button>
+                            <button type="button" class="api-modal-danger flex-1" x-data="{ deleting: false }" :disabled="deleting" @click="if (!deleting) { deleting = true; $wire.confirmDeleteApiKey().catch(() => { deleting = false }) }">
+                                <span x-show="!deleting">Hapus API Key</span>
+                                <span x-cloak x-show="deleting">Menghapus...</span>
                             </button>
                         </div>
                     </section>
-                </div>
-        
-        @endif
+        </div>
     </template>
 </div>
