@@ -39,7 +39,8 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
             return;
         }
 
-        $archive->update(['status' => 'processing', 'processed_images' => 0]);\n        app(ActivityLogService::class)->log('history_bulk_download', 'download', 'processing', 'Bulk download sedang diproses', $archive->file_name, ['user_id' => $archive->user_id, 'archive_id' => $archive->id, 'total_images' => $archive->total_images]);
+        $archive->update(['status' => 'processing', 'processed_images' => 0]);
+        app(ActivityLogService::class)->log('history_bulk_download', 'download', 'processing', 'Bulk download sedang diproses', $archive->file_name, ['user_id' => $archive->user_id, 'archive_id' => $archive->id, 'total_images' => $archive->total_images]);
 
         $localDisk = Storage::disk('local');
         $publicDisk = Storage::disk('public');
@@ -289,7 +290,8 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
     private function safeSegment(string $value, string $fallback): string
     {
         $value = str_replace(['\\', '/', ':', '*', '?', '"', '<', '>', '|'], '', $value);
-        $value = trim($value, " .\t\n\r\0\x0B");
+        $value = trim($value, " .\t
+\r\0\x0B");
 
         return mb_substr($value !== '' ? $value : $fallback, 0, 120);
     }
