@@ -163,6 +163,14 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
                 'file_path' => $relativePath,
                 'error_message' => null,
             ]);
+            app(ActivityLogService::class)->log(
+                'history_bulk_download',
+                'download',
+                'success',
+                'Bulk download selesai',
+                $archive->file_name,
+                ['user_id' => $archive->user_id, 'archive_id' => $archive->id, 'processed_images' => $processed, 'file_size' => is_file($absolutePath) ? filesize($absolutePath) : 0]
+            );
         } catch (\Throwable $exception) {
             try {
                 $zip->close();
@@ -179,7 +187,16 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
             $archive->update([
                 'status' => 'failed',
                 'error_message' => mb_substr($exception->getMessage(), 0, 2000),
+                'file_path' => null,
             ]);
+            app(ActivityLogService::class)->log(
+                'history_bulk_download',
+                'download',
+                'error',
+                'Bulk download gagal',
+                $exception->getMessage(),
+                ['user_id' => $archive->user_id, 'archive_id' => $archive->id, 'processed_images' => (int) $archive->fresh()->processed_images]
+            );
         }
     }
 
