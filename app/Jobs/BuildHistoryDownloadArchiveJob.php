@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Generation;
 use App\Models\HistoryDownloadArchive;
+use App\Services\ActivityLogService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
