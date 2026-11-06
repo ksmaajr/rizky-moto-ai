@@ -29,6 +29,7 @@ new class extends Component
     public string $historySort = 'newest';
     public string $historyZipName = '';
     public int $recentHistoryLimit = 12;
+    public array $selectedGenerationIds = [];
 
     public $imageOne = null;
     public $imageTwo = null;
@@ -120,19 +121,19 @@ new class extends Component
                     ->orWhereRaw("JSON_EXTRACT(metadata, '$.hidden') <> true");
             })
             ->when(trim($this->historySearch) !== '', function ($q) {
-                $keyword = '%' . trim($this->historySearch) . '%';
+                $keyword = '%' . mb_strtolower(trim($this->historySearch)) . '%';
 
                 $q->where(function ($inner) use ($keyword) {
-                    $inner->whereHas('store', fn ($store) => $store->where('name', 'like', $keyword))
-                        ->orWhereHas('template', fn ($template) => $template->where('name', 'like', $keyword))
-                        ->orWhere('id', 'like', $keyword)
-                        ->orWhere('model', 'like', $keyword)
-                        ->orWhere('error_message', 'like', $keyword)
-                        ->orWhere('metadata->provider', 'like', $keyword)
-                        ->orWhere('metadata->gateway_key_name', 'like', $keyword)
-                        ->orWhere('metadata->gateway_key_source', 'like', $keyword)
-                        ->orWhere('metadata->final_title', 'like', $keyword)
-                        ->orWhere('metadata->custom_title', 'like', $keyword);
+                    $inner->whereHas('store', fn ($store) => $store->whereRaw('LOWER(name) LIKE ?', [$keyword]))
+                        ->orWhereHas('template', fn ($template) => $template->whereRaw('LOWER(name) LIKE ?', [$keyword]))
+                        ->orWhereRaw('CAST(id AS CHAR) LIKE ?', [$keyword])
+                        ->orWhereRaw('LOWER(COALESCE(model, "")) LIKE ?', [$keyword])
+                        ->orWhereRaw('LOWER(COALESCE(error_message, "")) LIKE ?', [$keyword])
+                        ->orWhereRaw('LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.provider")), "")) LIKE ?', [$keyword])
+                        ->orWhereRaw('LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.gateway_key_name")), "")) LIKE ?', [$keyword])
+                        ->orWhereRaw('LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.gateway_key_source")), "")) LIKE ?', [$keyword])
+                        ->orWhereRaw('LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.final_title")), "")) LIKE ?', [$keyword])
+                        ->orWhereRaw('LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.custom_title")), "")) LIKE ?', [$keyword]);
                 });
             });
     }
@@ -150,6 +151,35 @@ new class extends Component
         return $query
             ->limit($this->recentHistoryLimit)
             ->get();
+    }
+
+    public function toggleGenerationSelection(int $generationId): void
+    {
+        $exists = $this->historyQuery()->whereKey($generationId)->exists();
+        if (! $exists) {
+            return;
+        }
+
+        $selected = array_map('intval', $this->selectedGenerationIds);
+        if (in_array($generationId, $selected, true)) {
+            $this->selectedGenerationIds = array_values(array_diff($selected, [$generationId]));
+        } else {
+            $this->selectedGenerationIds = array_values(array_unique([...$selected, $generationId]));
+        }
+    }
+
+    public function selectVisibleGenerations(): void
+    {
+        $visibleIds = $this->recentGenerations->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $this->selectedGenerationIds = array_values(array_unique([
+            ...array_map('intval', $this->selectedGenerationIds),
+            ...$visibleIds,
+        ]));
+    }
+
+    public function clearGenerationSelection(): void
+    {
+        $this->selectedGenerationIds = [];
     }
 
     public function getHistoryTotalProperty(): int
@@ -212,6 +242,7 @@ new class extends Component
     public function getHistoryDownloadImageCountProperty(): int
     {
         $query = (clone $this->historyQuery())
+            ->when($this->selectedGenerationIds !== [], fn ($q) => $q->whereIn('id', array_map('intval', $this->selectedGenerationIds)))
             ->whereHas('generatedImages', fn ($images) => $images
                 ->whereNotNull('image_path')
                 ->where('image_path', '<>', ''));
@@ -249,6 +280,7 @@ new class extends Component
         }
 
         $query = (clone $this->historyQuery())
+            ->when($this->selectedGenerationIds !== [], fn ($q) => $q->whereIn('id', array_map('intval', $this->selectedGenerationIds)))
             ->whereHas('generatedImages', fn ($images) => $images
                 ->whereNotNull('image_path')
                 ->where('image_path', '<>', ''));
@@ -337,6 +369,7 @@ new class extends Component
         }
 
         $this->dispatch('toast', type: 'success', title: 'ZIP sedang disiapkan', message: $totalImages . ' foto diproses di background. Modal ini akan menampilkan progresnya.');
+        $this->selectedGenerationIds = [];
     }
 
     public function getLatestHistoryDownloadArchiveProperty(): ?\App\Models\HistoryDownloadArchive
