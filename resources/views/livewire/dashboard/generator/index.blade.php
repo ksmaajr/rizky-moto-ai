@@ -243,7 +243,7 @@ new class extends Component
 
     public function downloadFilteredHistory(): void
     {
-        if (! class_exists(\\ZipArchive::class) || ! function_exists('imagecreatefromstring') || ! function_exists('imagejpeg')) {
+        if (! class_exists(\ZipArchive::class) || ! function_exists('imagecreatefromstring') || ! function_exists('imagejpeg')) {
             $this->dispatch('toast', type: 'error', title: 'ZIP tidak tersedia', message: 'Aktifkan ekstensi PHP ZIP dan GD pada server.');
             return;
         }
@@ -272,21 +272,21 @@ new class extends Component
             return;
         }
 
-        $totalImages = \\App\\Models\\GeneratedImage::query()
+        $totalImages = \App\Models\GeneratedImage::query()
             ->whereIn('generation_id', $generationIds)
             ->whereNotNull('image_path')
             ->where('image_path', '<>', '')
             ->count();
 
         $name = trim((string) $this->historyZipName);
-        $name = preg_replace('/\\.zip$/i', '', $name) ?? '';
-        $name = preg_replace('/[\\\\\\/:*?"<>|]+/u', '', $name) ?? '';
-        $name = mb_substr(trim($name, " .\\t\\n\\r\\0\\x0B"), 0, 100);
+        $name = preg_replace('/\.zip$/i', '', $name) ?? '';
+        $name = preg_replace('/[\\\/:*?"<>|]+/u', '', $name) ?? '';
+        $name = mb_substr(trim($name, " .\t\n\r\0\x0B"), 0, 100);
         if ($name === '') {
             $name = 'rizky-moto-history-' . now()->format('Ymd-His');
         }
 
-        $archive = \\App\\Models\\HistoryDownloadArchive::query()->create([
+        $archive = \App\Models\HistoryDownloadArchive::query()->create([
             'user_id' => auth()->id(),
             'generation_ids' => $generationIds,
             'status' => 'queued',
@@ -295,14 +295,14 @@ new class extends Component
             'file_name' => $name . '.zip',
         ]);
 
-        \\App\\Jobs\\BuildHistoryDownloadArchiveJob::dispatch($archive->id)->onQueue('default');
+        \App\Jobs\BuildHistoryDownloadArchiveJob::dispatch($archive->id)->onQueue('default');
 
         $this->dispatch('toast', type: 'success', title: 'ZIP sedang disiapkan', message: $totalImages . ' foto diproses di background. Modal ini akan menampilkan progresnya.');
     }
 
-    public function getLatestHistoryDownloadArchiveProperty(): ?\\App\\Models\\HistoryDownloadArchive
+    public function getLatestHistoryDownloadArchiveProperty(): ?\App\Models\HistoryDownloadArchive
     {
-        return \\App\\Models\\HistoryDownloadArchive::query()
+        return \App\Models\HistoryDownloadArchive::query()
             ->where('user_id', auth()->id())
             ->latest('id')
             ->first();

@@ -38,12 +38,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/server-monitoring/metrics', function () {
         $read = static fn (string $path): string => is_readable($path) ? (string) file_get_contents($path) : '';
         $mem = [];
-        foreach (preg_split('/\\n/', $read('/proc/meminfo')) as $line) {
-            if (preg_match('/^(MemTotal|MemAvailable|MemFree|Buffers|Cached|SwapTotal|SwapFree):\\s+(\\d+)/', $line, $m)) $mem[$m[1]] = (int) $m[2] * 1024;
+        foreach (preg_split('/\n/', $read('/proc/meminfo')) as $line) {
+            if (preg_match('/^(MemTotal|MemAvailable|MemFree|Buffers|Cached|SwapTotal|SwapFree):\s+(\d+)/', $line, $m)) $mem[$m[1]] = (int) $m[2] * 1024;
         }
         $total = $mem['MemTotal'] ?? 0; $available = $mem['MemAvailable'] ?? ($mem['MemFree'] ?? 0);
         $diskTotal = @disk_total_space(base_path()) ?: 0; $diskFree = @disk_free_space(base_path()) ?: 0;
-        $up = preg_split('/\\s+/', trim($read('/proc/uptime')));
+        $up = preg_split('/\s+/', trim($read('/proc/uptime')));
         $load = function_exists('sys_getloadavg') ? sys_getloadavg() : [0,0,0];
         $shellAvailable = function_exists('shell_exec') && !in_array('shell_exec', array_map('trim', explode(',', (string) ini_get('disable_functions'))), true);
         $cmd = static fn (string $c) => $shellAvailable ? @shell_exec($c) : null;
@@ -55,14 +55,14 @@ Route::middleware('auth')->group(function () {
         }
         $workersText = $cmd("pgrep -af '[a]rtisan queue:work' 2>/dev/null");
         $processesText = $cmd('ps -e --no-headers 2>/dev/null');
-        $cpuLine = preg_match('/^cpu\\s+(.+)$/m', $read('/proc/stat'), $cpuMatch) ? preg_split('/\\s+/', trim($cpuMatch[1])) : [];
+        $cpuLine = preg_match('/^cpu\s+(.+)$/m', $read('/proc/stat'), $cpuMatch) ? preg_split('/\s+/', trim($cpuMatch[1])) : [];
         $network = ['rx_bytes'=>0,'tx_bytes'=>0];
-        foreach (array_slice(preg_split('/\\n/', $read('/proc/net/dev')), 2) as $line) {
-            if (str_contains($line, ':')) { [$iface,$values] = explode(':', $line, 2); if (trim($iface) !== 'lo') { $v=preg_split('/\\s+/', trim($values)); $network['rx_bytes']+=(int)($v[0]??0); $network['tx_bytes']+=(int)($v[8]??0); } }
+        foreach (array_slice(preg_split('/\n/', $read('/proc/net/dev')), 2) as $line) {
+            if (str_contains($line, ':')) { [$iface,$values] = explode(':', $line, 2); if (trim($iface) !== 'lo') { $v=preg_split('/\s+/', trim($values)); $network['rx_bytes']+=(int)($v[0]??0); $network['tx_bytes']+=(int)($v[8]??0); } }
         }
         $diskIo = ['read_sectors'=>0,'write_sectors'=>0];
-        foreach (preg_split('/\\n/', $read('/proc/diskstats')) as $line) {
-            $v=preg_split('/\\s+/', trim($line)); if (count($v)>13 && preg_match('/^(nvme|xvd|vd|sd)/', $v[2])) { $diskIo['read_sectors']+=(int)$v[5]; $diskIo['write_sectors']+=(int)$v[9]; }
+        foreach (preg_split('/\n/', $read('/proc/diskstats')) as $line) {
+            $v=preg_split('/\s+/', trim($line)); if (count($v)>13 && preg_match('/^(nvme|xvd|vd|sd)/', $v[2])) { $diskIo['read_sectors']+=(int)$v[5]; $diskIo['write_sectors']+=(int)$v[9]; }
         }
         $historyRange = request()->query('range', '24h');
         if (!in_array($historyRange, ['1h', '24h', '7d'], true)) $historyRange = '24h';
@@ -126,8 +126,8 @@ Route::middleware('auth')->group(function () {
             'swap_total'=>$mem['SwapTotal']??0,'swap_used'=>max(0,($mem['SwapTotal']??0)-($mem['SwapFree']??0)),
             'disk_total'=>$diskTotal,'disk_free'=>$diskFree,'disk_used'=>max(0,$diskTotal-$diskFree),
             'network'=>$network,'disk_io'=>$diskIo,
-            'services'=>$services,'queue_workers'=>is_string($workersText)&&trim($workersText)!==''?count(preg_split('/\\n/',trim($workersText),-1,PREG_SPLIT_NO_EMPTY)):0,
-            'process_count'=>is_string($processesText)&&trim($processesText)!==''?count(preg_split('/\\n/',trim($processesText),-1,PREG_SPLIT_NO_EMPTY)):null,
+            'services'=>$services,'queue_workers'=>is_string($workersText)&&trim($workersText)!==''?count(preg_split('/\n/',trim($workersText),-1,PREG_SPLIT_NO_EMPTY)):0,
+            'process_count'=>is_string($processesText)&&trim($processesText)!==''?count(preg_split('/\n/',trim($processesText),-1,PREG_SPLIT_NO_EMPTY)):null,
             'process_access'=>$shellAvailable,
         ]);
     })->name('dashboard.server-monitoring.metrics');
@@ -142,7 +142,7 @@ Route::middleware('auth')->group(function () {
         'destroy',
     ])->name('dashboard.activity-logs.destroy');
 
-    Route::get('/history-downloads/{archive}/download', \\App\\Http\\Controllers\\HistoryDownloadArchiveController::class)
+    Route::get('/history-downloads/{archive}/download', \App\Http\Controllers\HistoryDownloadArchiveController::class)
         ->name('history-downloads.download');
 
     // Generated image download / compression endpoint.
