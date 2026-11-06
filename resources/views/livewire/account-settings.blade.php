@@ -55,6 +55,42 @@
         .as-footer{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:22px;color:#a1a1aa;font-size:9px}
         @media(max-width:760px){.account-settings-page{padding-top:20px}.as-hero{align-items:flex-start;flex-direction:column;margin:18px 0 22px}.as-secure{align-self:flex-start}.as-grid{grid-template-columns:1fr}.as-card-head{padding:19px 18px 16px}.as-card-body{padding:19px 18px 21px}.as-photo-card{grid-column:auto}.as-photo-layout{align-items:flex-start;flex-direction:column}}
         @media(prefers-reduced-motion:reduce){.account-settings-page,.as-card,.as-confirm-modal,.as-modal-backdrop{animation:none!important;transition:none!important}.as-button:after{display:none}}
+
+        /* Premium account-center refinement */
+        .account-settings-page{max-width:1240px;padding-top:clamp(18px,2.5vw,30px)}
+        .as-hero{position:relative;isolation:isolate;min-height:142px;align-items:center;margin:18px 0 24px;padding:27px 30px;border:1px solid rgba(226,232,240,.9);border-radius:22px;background:radial-gradient(circle at 88% 10%,rgba(34,197,94,.12),transparent 28%),linear-gradient(120deg,#fff 0%,#fbfdfb 58%,#f1faf3 100%);box-shadow:0 12px 35px rgba(15,23,42,.035)}
+        .as-hero:after{position:absolute;z-index:-1;right:30px;bottom:0;width:180px;height:3px;border-radius:9px;background:linear-gradient(90deg,transparent,#22c55e,transparent);content:""}
+        .as-kicker{font-size:9px;letter-spacing:.19em}
+        .as-title{font-size:clamp(28px,3vw,39px);margin-top:10px}
+        .as-subtitle{font-size:12px}
+        .as-secure{padding:11px 15px;border-radius:999px;background:rgba(255,255,255,.82);box-shadow:0 4px 14px rgba(22,101,52,.045)}
+        .as-grid{gap:20px}
+        .as-card{border-radius:22px;box-shadow:0 10px 32px rgba(15,23,42,.045)}
+        .as-card:hover{transform:translateY(-3px);box-shadow:0 18px 42px rgba(15,23,42,.085)}
+        .as-card-head{padding:23px 25px 19px;background:linear-gradient(110deg,#fff,#fcfdfc)}
+        .as-card-body{padding:25px}
+        .as-icon{width:46px;height:46px;flex-basis:46px;border-radius:15px;box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 4px 10px rgba(22,163,74,.06)}
+        .as-card-title{font-size:15px}
+        .as-card-desc{font-size:11px}
+        .as-photo-card{background:radial-gradient(circle at 92% 0%,rgba(34,197,94,.075),transparent 32%),#fff}
+        .as-photo-card:before{position:absolute;top:0;left:25px;right:25px;height:3px;border-radius:0 0 8px 8px;background:linear-gradient(90deg,#16a34a,#86efac,transparent);content:""}
+        .as-photo-layout{gap:25px}
+        .as-photo-preview{flex-basis:124px;width:124px;height:124px;border:4px solid #fff;border-radius:30px;background:linear-gradient(145deg,#111827,#3f3f46);box-shadow:0 0 0 1px #e5e7eb,0 12px 30px rgba(15,23,42,.13);font-size:38px}
+        .as-photo-preview:after{position:absolute;inset:0;border:1px solid rgba(255,255,255,.28);border-radius:25px;content:"";pointer-events:none}
+        .as-photo-actions{gap:10px;margin-top:16px}
+        .as-button-secondary{min-height:40px;padding:0 15px;border-radius:11px}
+        .as-field{gap:9px;margin-bottom:20px}
+        .as-label{font-size:11px}
+        .as-input{height:49px;border-radius:12px;background:linear-gradient(180deg,#fff,#fdfdfd);font-size:12px}
+        .as-input:focus{background:#fff;box-shadow:0 0 0 4px rgba(34,163,74,.10),0 4px 12px rgba(22,163,74,.05)}
+        .as-button{min-height:44px;padding:0 19px;border-radius:12px;font-size:11px}
+        .as-password-note{padding:13px 14px;border-radius:13px;background:linear-gradient(110deg,#f8fcf8,#fff)}
+        .as-footer{margin-top:25px;padding:13px 16px;border:1px solid #e9eee9;border-radius:13px;background:rgba(255,255,255,.58);font-size:10px}
+        .as-modal-backdrop{background:rgba(8,12,10,.68);backdrop-filter:blur(15px)}
+        .as-confirm-modal{border-radius:24px;padding:29px;box-shadow:0 35px 110px rgba(0,0,0,.4)}
+        @media(max-width:760px){.as-hero{padding:22px 19px;border-radius:18px}.as-card-head{padding:19px 18px 16px}.as-card-body{padding:20px 18px 22px}.as-photo-layout{gap:17px}.as-photo-preview{width:104px;height:104px;flex-basis:104px}.as-button-row{align-items:stretch;flex-direction:column}.as-button-row .as-button{width:100%}}
+        @media(prefers-reduced-motion:reduce){.as-card:hover{transform:none}}
+
     </style>
 
     <button type="button" wire:click="$dispatch('account-settings-back')" class="as-back" style="border:0;background:transparent;cursor:pointer">
@@ -82,6 +118,12 @@
                         @endif
                     </div>
                     <div class="min-w-0 flex-1">
+                        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin-bottom:8px">
+                            <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border:1px solid #dcfce7;border-radius:999px;background:#f0fdf4;color:#15803d;font-size:9px;font-weight:800;letter-spacing:.04em">
+                                <span style="width:6px;height:6px;border-radius:50%;background:#22c55e"></span> AKUN AKTIF
+                            </span>
+                            <span style="padding:6px 9px;border:1px solid #e5e7eb;border-radius:999px;background:#fafafa;color:#71717a;font-size:9px;font-weight:700">ADMINISTRATOR</span>
+                        </div>
                         <div class="as-label">Foto akun Anda <span class="as-help">JPG, PNG, WEBP · Maks. 2 MB</span></div>
                         <p class="as-help" style="margin:7px 0 0">Gunakan foto persegi agar hasil tampil optimal pada menu profil dan dashboard.</p>
                         <div class="as-photo-actions">
