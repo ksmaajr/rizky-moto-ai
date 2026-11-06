@@ -2192,6 +2192,24 @@ new class extends Component
         transition-duration:.01ms!important;
     }
 }
+
+/* Bulk ZIP progress animation */
+.rms-history-download-async-status{isolation:isolate;animation:rmsZipCardIn .38s cubic-bezier(.2,.75,.25,1) both}
+.rms-zip-status-glow{position:absolute;inset:-45% -20% auto;height:150px;background:radial-gradient(ellipse,rgba(42,190,111,.12),transparent 68%);pointer-events:none;animation:rmsZipGlow 3.2s ease-in-out infinite alternate}
+.rms-zip-status-icon{position:relative;display:grid;place-items:center;width:40px;height:40px;flex:0 0 40px;border:1px solid #d8efe0;border-radius:13px;background:linear-gradient(145deg,#f1fcf5,#def6e7);box-shadow:0 5px 15px rgba(25,150,80,.08)}
+.rms-zip-status-icon:before{content:'';width:14px;height:14px;border:2px solid #b8e5c8;border-top-color:#159653;border-radius:50%;animation:rmsZipSpin .85s linear infinite}
+.rms-zip-status-icon span{position:absolute;width:5px;height:5px;border-radius:50%;background:#159653;animation:rmsZipPulse 1.4s ease-in-out infinite}
+.rms-zip-status-badge{flex:0 0 auto;padding:6px 8px;border:1px solid #dcefe2;border-radius:8px;background:#effaf3;color:#16834a;font-size:9px;font-weight:900;letter-spacing:.07em}
+.rms-zip-progress-track{position:relative;height:10px;overflow:hidden;border-radius:99px;background:#e4eee7;box-shadow:inset 0 1px 2px rgba(25,65,40,.06)}
+.rms-zip-progress-fill{position:relative;height:100%;min-width:0;border-radius:99px;background:linear-gradient(90deg,#159653,#27bd70,#159653);background-size:200% 100%;box-shadow:0 1px 8px rgba(21,150,83,.22);transition:width .65s cubic-bezier(.22,.7,.25,1);animation:rmsZipShimmer 2s linear infinite}
+.rms-zip-progress-fill:after{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 20%,rgba(255,255,255,.48) 50%,transparent 80%);transform:translateX(-100%);animation:rmsZipSweep 1.8s ease-in-out infinite}
+.rms-zip-step{display:flex;align-items:center;gap:5px;color:#a0aaa3;font-size:9px;font-weight:700;white-space:nowrap}.rms-zip-step i{display:grid;place-items:center;width:17px;height:17px;border:1px solid #dce5de;border-radius:50%;font-size:9px;font-style:normal}.rms-zip-step.is-done{color:#16834a}.rms-zip-step.is-done i{border-color:#ccebd6;background:#e6f7ec}.rms-zip-step.is-current{color:#16834a}.rms-zip-step.is-current i{border-color:#bfe7cd;background:#e8f8ee;animation:rmsZipPulse 1.3s ease-in-out infinite}
+.rms-zip-live-dot{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#20b765;box-shadow:0 0 0 0 rgba(32,183,101,.35);animation:rmsZipLive 1.6s ease-out infinite}
+.rms-zip-complete-head{display:flex;align-items:center;gap:11px;margin-bottom:15px}.rms-zip-complete-icon{display:grid;place-items:center;width:40px;height:40px;flex:0 0 40px;border-radius:13px;background:#e5f8ec;color:#128448;font-size:21px;font-weight:900;animation:rmsZipSuccess .55s cubic-bezier(.2,.8,.2,1) both}.rms-zip-complete-head strong{display:block;color:#16834a;font-size:13px;font-weight:900}.rms-zip-complete-head small{display:block;margin-top:4px;color:#78877e;font-size:10px}.rms-zip-status-badge.is-complete{border-color:#ccebd6;background:#e8f8ee}
+.rms-zip-download-link{display:flex;align-items:center;justify-content:center;gap:8px;min-height:42px;margin-top:13px;padding:0 14px;border-radius:11px;background:linear-gradient(110deg,#159653,#087d43);color:#fff;font-size:11px;font-weight:850;text-decoration:none;box-shadow:0 6px 16px rgba(21,150,83,.17);transition:transform .2s,box-shadow .2s}.rms-zip-download-link:hover{transform:translateY(-2px);box-shadow:0 9px 20px rgba(21,150,83,.24)}.rms-zip-download-link span{font-size:18px}
+.rms-zip-failed-head{display:flex;align-items:center;gap:9px;color:#b42318;font-size:13px}.rms-zip-failed-head span{display:grid;place-items:center;width:27px;height:27px;border-radius:9px;background:#fff0ef;font-weight:900}.rms-zip-idle-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:13px;background:#edf5ef;color:#16834a;font-size:10px;font-weight:900;letter-spacing:.04em}
+@keyframes rmsZipSpin{to{transform:rotate(360deg)}}@keyframes rmsZipPulse{50%{transform:scale(.72);opacity:.55}}@keyframes rmsZipLive{70%{box-shadow:0 0 0 7px rgba(32,183,101,0)}}@keyframes rmsZipShimmer{to{background-position:-200% 0}}@keyframes rmsZipSweep{to{transform:translateX(100%)}}@keyframes rmsZipGlow{to{opacity:.45;transform:translateX(8%)}}@keyframes rmsZipCardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes rmsZipSuccess{0%{transform:scale(.65) rotate(-12deg);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+@media(prefers-reduced-motion:reduce){.rms-history-download-async-status,.rms-zip-status-glow,.rms-zip-status-icon:before,.rms-zip-status-icon span,.rms-zip-progress-fill,.rms-zip-progress-fill:after,.rms-zip-live-dot,.rms-zip-complete-icon{animation:none!important;transition:none!important}}
 </style>
 
 
@@ -2466,27 +2484,53 @@ new class extends Component
                         @if($this->historyDownloadImageCount < 1)
                             <div class="rms-history-download-empty">Tidak ada foto yang bisa diunduh dari hasil filter saat ini.</div>
                         @endif
-                        <div wire:poll.3s.visible class="rms-history-download-async-status" style="margin:0 0 15px;padding:13px 14px;border:1px solid #e4e9ef;border-radius:13px;background:#f8fafc;">
-                            @php
-                                $archive = $this->latestHistoryDownloadArchive;
-                            @endphp
-                            @if($archive && in_array($archive->status, ['queued', 'processing'], true))
-                                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px;">
-                                    <strong style="font-size:12px;color:#303642;">{{ $archive->status === 'queued' ? 'Menunggu worker...' : 'Membuat ZIP...' }}</strong>
-                                    <span style="font-size:11px;font-weight:800;color:#16834a;">{{ min(100, (int) round(($archive->processed_images / max(1, $archive->total_images)) * 100)) }}%</span>
+                        @php
+                            $archive = $this->latestHistoryDownloadArchive;
+                            $archivePercent = $archive ? min(100, (int) round(($archive->processed_images / max(1, $archive->total_images)) * 100)) : 0;
+                            $archiveActive = $archive && in_array($archive->status, ['queued', 'processing'], true);
+                        @endphp
+                        <div wire:poll.2s.visible class="rms-history-download-async-status" style="position:relative;margin:0 0 15px;padding:16px;border:1px solid #e2e9e5;border-radius:16px;background:linear-gradient(145deg,#fbfefc,#f5faf7);overflow:hidden;">
+                            @if($archiveActive)
+                                <div class="rms-zip-status-glow"></div>
+                                <div style="position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px;">
+                                    <div style="display:flex;align-items:center;gap:11px;min-width:0;">
+                                        <span class="rms-zip-status-icon"><span></span></span>
+                                        <div style="min-width:0;">
+                                            <strong style="display:block;color:#26352d;font-size:13px;font-weight:850;">{{ $archive->status === 'queued' ? 'Menunggu worker' : 'Sedang membuat ZIP' }}</strong>
+                                            <small style="display:block;margin-top:3px;color:#78877e;font-size:10px;">{{ $archive->status === 'queued' ? 'Job sudah masuk antrean dan menunggu worker.' : 'Worker sedang memproses gambar dan menyusun arsip.' }}</small>
+                                        </div>
+                                    </div>
+                                    <span class="rms-zip-status-badge">{{ $archive->status === 'queued' ? 'QUEUED' : 'PROCESSING' }}</span>
                                 </div>
-                                <div style="height:7px;overflow:hidden;border-radius:99px;background:#e7ecef;">
-                                    <div style="height:100%;width:{{ min(100, (int) round(($archive->processed_images / max(1, $archive->total_images)) * 100)) }}%;border-radius:99px;background:linear-gradient(90deg,#159653,#28b66a);transition:width .25s ease;"></div>
+                                <div style="position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:8px;">
+                                    <div><strong style="font-size:27px;line-height:1;color:#16834a;font-weight:900;letter-spacing:-1.3px;">{{ $archivePercent }}%</strong><small style="display:block;margin-top:5px;color:#87938b;font-size:10px;">Progress pemrosesan</small></div>
+                                    <div style="text-align:right;"><strong style="display:block;color:#303d34;font-size:13px;font-weight:850;font-variant-numeric:tabular-nums;">{{ number_format($archive->processed_images) }} <span style="color:#9aa69e;font-weight:600;">/ {{ number_format($archive->total_images) }}</span></strong><small style="display:block;margin-top:4px;color:#87938b;font-size:10px;">foto diproses</small></div>
                                 </div>
-                                <small style="display:block;margin-top:8px;color:#7d8492;font-size:10px;">{{ number_format($archive->processed_images) }} dari {{ number_format($archive->total_images) }} foto diproses. Kamu bisa menutup modal, proses tetap berjalan.</small>
+                                <div class="rms-zip-progress-track"><div class="rms-zip-progress-fill" style="width:{{ $archivePercent }}%;"></div></div>
+                                <div style="position:relative;display:flex;justify-content:space-between;gap:8px;margin-top:12px;">
+                                    <span class="rms-zip-step is-done"><i>✓</i> Antrean dibuat</span>
+                                    <span class="rms-zip-step {{ $archive->status === 'processing' ? 'is-current' : '' }}"><i>{{ $archive->status === 'processing' ? '•' : '2' }}</i> Proses gambar</span>
+                                    <span class="rms-zip-step"><i>3</i> ZIP siap</span>
+                                </div>
+                                <div style="position:relative;display:flex;align-items:center;gap:7px;margin-top:14px;padding-top:12px;border-top:1px solid #e6eee8;color:#78877e;font-size:10px;">
+                                    <span class="rms-zip-live-dot"></span> Status diperbarui otomatis setiap 2 detik. Proses tetap berjalan meskipun modal ditutup.
+                                </div>
                             @elseif($archive && $archive->status === 'completed')
-                                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-                                    <div><strong style="display:block;font-size:12px;color:#16834a;">ZIP selesai dibuat</strong><small style="color:#7d8492;font-size:10px;">{{ number_format($archive->processed_images) }} foto berhasil dimasukkan.</small></div>
-                                    <a href="{{ route('history-downloads.download', $archive) }}" style="display:inline-flex;align-items:center;justify-content:center;min-height:37px;padding:0 13px;border-radius:10px;background:#159653;color:#fff;font-size:11px;font-weight:800;text-decoration:none;">Unduh ZIP</a>
+                                <div class="rms-zip-complete-head">
+                                    <span class="rms-zip-complete-icon">✓</span>
+                                    <div style="flex:1;min-width:0;"><strong>ZIP berhasil dibuat!</strong><small>{{ number_format($archive->processed_images) }} dari {{ number_format($archive->total_images) }} foto berhasil dimasukkan.</small></div>
+                                    <span class="rms-zip-status-badge is-complete">COMPLETED</span>
                                 </div>
+                                <div class="rms-zip-progress-track is-complete"><div class="rms-zip-progress-fill" style="width:100%;"></div></div>
+                                <a href="{{ route('history-downloads.download', $archive) }}" class="rms-zip-download-link"><span>↓</span> Unduh {{ $archive->file_name ?: 'hasil-generation.zip' }}</a>
                             @elseif($archive && $archive->status === 'failed')
-                                <strong style="display:block;font-size:12px;color:#b42318;">ZIP gagal dibuat</strong>
-                                <small style="display:block;margin-top:5px;color:#7d8492;font-size:10px;">{{ $archive->error_message ?: 'Terjadi kesalahan saat memproses gambar. Silakan coba lagi.' }}</small>
+                                <div class="rms-zip-failed-head"><span>!</span><strong>ZIP gagal dibuat</strong></div>
+                                <p style="margin:9px 0 0;color:#8c6666;font-size:11px;line-height:1.6;">{{ $archive->error_message ?: 'Terjadi kesalahan saat memproses gambar. Silakan coba lagi.' }}</p>
+                            @else
+                                <div style="display:flex;align-items:center;gap:11px;">
+                                    <span class="rms-zip-idle-icon">ZIP</span>
+                                    <div><strong style="display:block;color:#39443d;font-size:12px;font-weight:800;">Siap membuat arsip</strong><small style="display:block;margin-top:3px;color:#87938b;font-size:10px;">Progress, status antrean, dan hasil unduhan akan tampil di sini.</small></div>
+                                </div>
                             @endif
                         </div>
                         <div class="rms-history-download-dialog-actions" style="display:flex;gap:10px;padding-top:16px;border-top:1px solid #eceef2;">
