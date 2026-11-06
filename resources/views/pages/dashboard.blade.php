@@ -2142,19 +2142,26 @@ public function getUserInitialsProperty(): string
                 </section>
 
                 <div class="worker-api-footer">
+                    <div class="worker-api-footer-status">
+                        <div class="worker-api-state">
+                            <i class="worker-footer-dot {{ $this->openAiStatus['state'] === 'connected' ? 'is-online' : '' }}"></i>
+                            <span>
+                                <small>API STATUS</small>
+                                <strong>{{ $this->openAiStatus['label'] }}</strong>
+                            </span>
+                        </div>
+                        <div class="worker-api-state worker-api-state-vercel">
+                            <i class="worker-footer-dot {{ $this->workerStatus['running'] ? 'is-online' : '' }}"></i>
+                            <span>
+                                <small>VERCEL WORKERS</small>
+                                <strong>{{ $this->workerStatus['running_count'] }}/{{ $this->workerStatus['target_workers'] }} active</strong>
+                            </span>
+                        </div>
+                    </div>
                     <button type="button" class="worker-refresh" wire:click="refreshWorkerStatus" wire:loading.attr="disabled" wire:target="refreshWorkerStatus" title="Refresh worker status" aria-label="Refresh worker status">
                         <span wire:loading.remove wire:target="refreshWorkerStatus">↻</span>
                         <span wire:loading wire:target="refreshWorkerStatus" class="worker-spinner">◌</span>
                     </button>
-
-                    <span>
-                        <i class="worker-footer-dot {{ $this->openAiStatus['state'] === 'connected' ? 'is-online' : '' }}"></i>
-                        API {{ $this->openAiStatus['label'] }}
-                    </span>
-
-                    <span class="worker-step">
-                        {{ $this->workerStatus['running'] ? 'VERCEL READY' : 'VERCEL PAUSED' }}
-                    </span>
                 </div>
             </div>
         </div>
@@ -4381,6 +4388,81 @@ public function getUserInitialsProperty(): string
         @media(prefers-reduced-motion:reduce){
             .worker-section-chevron,.worker-section-chevron:before{transition:none}
         }
+
+        /* V28 — cleaner compact sidebar connection footer */
+        .worker-widget-expanded .worker-api-footer{
+            display:grid!important;
+            grid-template-columns:minmax(0,1fr) 27px!important;
+            align-items:center!important;
+            gap:7px!important;
+            margin-top:10px!important;
+            padding-top:9px!important;
+        }
+        .worker-api-footer-status{
+            display:grid;
+            grid-template-columns:repeat(2,minmax(0,1fr));
+            gap:6px;
+            min-width:0;
+        }
+        .worker-api-state{
+            display:flex;
+            align-items:center;
+            gap:6px;
+            min-width:0;
+            min-height:34px;
+            padding:5px 7px;
+            border:1px solid rgba(255,255,255,.065);
+            border-radius:8px;
+            background:rgba(255,255,255,.028);
+        }
+        .worker-api-state>i{
+            width:6px;
+            height:6px;
+            flex:0 0 6px;
+        }
+        .worker-api-state>span{
+            display:grid;
+            gap:3px;
+            min-width:0;
+        }
+        .worker-api-state small{
+            color:#666674;
+            font-size:5.8px;
+            line-height:1;
+            font-weight:850;
+            letter-spacing:.08em;
+            white-space:nowrap;
+        }
+        .worker-api-state strong{
+            color:#c4c4cc;
+            font-size:7px;
+            line-height:1.15;
+            font-weight:750;
+            white-space:nowrap;
+            overflow:hidden;
+            text-overflow:ellipsis;
+        }
+        .worker-api-state-vercel strong{color:#86efac}
+        .worker-widget-expanded .worker-refresh{
+            width:27px!important;
+            height:27px!important;
+            margin:0!important;
+            border:1px solid rgba(255,255,255,.075)!important;
+            border-radius:8px!important;
+            background:rgba(255,255,255,.045)!important;
+            font-size:12px!important;
+        }
+        .worker-widget-expanded .worker-refresh:hover{
+            border-color:rgba(255,255,255,.15)!important;
+            background:rgba(255,255,255,.09)!important;
+        }
+        @media(max-width:380px){
+            .worker-api-footer-status{gap:4px}
+            .worker-api-state{gap:5px;padding:5px}
+            .worker-api-state small{font-size:5.3px}
+            .worker-api-state strong{font-size:6.5px}
+        }
+
 </style>
 
 </div>
