@@ -685,6 +685,8 @@ class OpenAiImageService
         string $quality,
         int $imageCount = 1,
         ?string $customTitle = null,
+        string $source = 'dashboard_generator',
+        ?int $apiKeyId = null,
     ): Generation {
         // Persist Low quality and 1:1 regardless of legacy Template/client values.
         $quality = 'low';
@@ -746,7 +748,9 @@ class OpenAiImageService
             'model' => $model,
             'status' => 'queued',
             'metadata' => [
-                'source' => 'dashboard_generator',
+                'source' => $source,
+                'request_channel' => $source,
+                'api_key_id' => $apiKeyId,
                 'template_id' => $template->id,
                 'store_id' => $store->id,
                 'requested_image_count' => $imageCount,
@@ -779,7 +783,9 @@ class OpenAiImageService
                 $referenceCount
             ),
             metadata: [
-                'source' => 'generator_queue',
+                'source' => $source,
+                'request_channel' => $source,
+                'api_key_id' => $apiKeyId,
                 'generation_id' => $generation->id,
                 'store_id' => $store->id,
                 'template_id' => $template->id,
@@ -1077,8 +1083,13 @@ class OpenAiImageService
 
                 $filename = 'generation-' . $generation->id . '-' . ($index + 1) . '-' . uniqid() . '.png';
                 $path = 'generations/output/' . now()->format('Y/m') . '/' . $filename;
-                Storage::disk('public')->put($path, $binary);
+                if (! Storage::disk('public')->put($path, $binary)) {
+                    throw new RuntimeException('Gagal menyimpan hasil gambar ke storage.');
+                }
                 [$width, $height] = $this->imageDimensions(Storage::disk('public')->path($path));
+                // Keep the original PNG for preview/download, but serve a small WebP
+                // thumbnail in Recent History just like the synchronous generation path.
+                $thumbnailPath = $this->createHistoryThumbnail($path, $binary);
 
                 GeneratedImage::query()->create([
                     'generation_id' => $generation->id,
@@ -1089,6 +1100,7 @@ class OpenAiImageService
                     'width' => $width,
                     'height' => $height,
                     'metadata' => [
+                        'thumbnail_path' => $thumbnailPath,
                         'openai_index' => $index,
                         'title_source' => $titleSource,
                         'final_title' => $customTitle,
@@ -1846,9 +1858,13 @@ PROMPT;
 
     private function normalizeCustomTitle(?string $customTitle): ?string
     {
-        $title = trim((string) $customTitle);
+        if ($customTitle === null || trim($customTitle) === '') {
+            return null;
+        }
 
-        return $title !== '' ? mb_substr($title, 0, 120) : null;
+        // Preserve the caller-supplied title exactly. The API must not silently
+        // truncate custom product titles to the former 120-character limit.
+        return $customTitle;
     }
 
     private function generationMode(bool $hasInstalledReference): string

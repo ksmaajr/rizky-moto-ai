@@ -29,6 +29,7 @@ new class extends Component
     public string $historySort = 'newest';
     public string $historyZipName = '';
     public int $recentHistoryLimit = 12;
+    public array $selectedGenerationIds = [];
 
     public $imageOne = null;
     public $imageTwo = null;
@@ -120,19 +121,19 @@ new class extends Component
                     ->orWhereRaw("JSON_EXTRACT(metadata, '$.hidden') <> true");
             })
             ->when(trim($this->historySearch) !== '', function ($q) {
-                $keyword = '%' . trim($this->historySearch) . '%';
+                $keyword = '%' . mb_strtolower(trim($this->historySearch)) . '%';
 
                 $q->where(function ($inner) use ($keyword) {
-                    $inner->whereHas('store', fn ($store) => $store->where('name', 'like', $keyword))
-                        ->orWhereHas('template', fn ($template) => $template->where('name', 'like', $keyword))
-                        ->orWhere('id', 'like', $keyword)
-                        ->orWhere('model', 'like', $keyword)
-                        ->orWhere('error_message', 'like', $keyword)
-                        ->orWhere('metadata->provider', 'like', $keyword)
-                        ->orWhere('metadata->gateway_key_name', 'like', $keyword)
-                        ->orWhere('metadata->gateway_key_source', 'like', $keyword)
-                        ->orWhere('metadata->final_title', 'like', $keyword)
-                        ->orWhere('metadata->custom_title', 'like', $keyword);
+                    $inner->whereHas('store', fn ($store) => $store->whereRaw('LOWER(name) LIKE ?', [$keyword]))
+                        ->orWhereHas('template', fn ($template) => $template->whereRaw('LOWER(name) LIKE ?', [$keyword]))
+                        ->orWhereRaw('CAST(id AS CHAR) LIKE ?', [$keyword])
+                        ->orWhereRaw("LOWER(COALESCE(model, '')) LIKE ?", [$keyword])
+                        ->orWhereRaw("LOWER(COALESCE(error_message, '')) LIKE ?", [$keyword])
+                        ->orWhereRaw("LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.provider')), '')) LIKE ?", [$keyword])
+                        ->orWhereRaw("LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.gateway_key_name')), '')) LIKE ?", [$keyword])
+                        ->orWhereRaw("LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.gateway_key_source')), '')) LIKE ?", [$keyword])
+                        ->orWhereRaw("LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.final_title')), '')) LIKE ?", [$keyword])
+                        ->orWhereRaw("LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.custom_title')), '')) LIKE ?", [$keyword]);
                 });
             });
     }
@@ -150,6 +151,35 @@ new class extends Component
         return $query
             ->limit($this->recentHistoryLimit)
             ->get();
+    }
+
+    public function toggleGenerationSelection(int $generationId): void
+    {
+        $exists = $this->historyQuery()->whereKey($generationId)->exists();
+        if (! $exists) {
+            return;
+        }
+
+        $selected = array_map('intval', $this->selectedGenerationIds);
+        if (in_array($generationId, $selected, true)) {
+            $this->selectedGenerationIds = array_values(array_diff($selected, [$generationId]));
+        } else {
+            $this->selectedGenerationIds = array_values(array_unique([...$selected, $generationId]));
+        }
+    }
+
+    public function selectVisibleGenerations(): void
+    {
+        $visibleIds = $this->recentGenerations->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $this->selectedGenerationIds = array_values(array_unique([
+            ...array_map('intval', $this->selectedGenerationIds),
+            ...$visibleIds,
+        ]));
+    }
+
+    public function clearGenerationSelection(): void
+    {
+        $this->selectedGenerationIds = [];
     }
 
     public function getHistoryTotalProperty(): int
@@ -211,7 +241,9 @@ new class extends Component
 
     public function getHistoryDownloadImageCountProperty(): int
     {
-        $query = (clone $this->historyQuery())
+        $query = ($this->selectedGenerationIds !== []
+                ? Generation::query()->where('user_id', auth()->id())->whereIn('id', array_map('intval', $this->selectedGenerationIds))
+                : clone $this->historyQuery())
             ->whereHas('generatedImages', fn ($images) => $images
                 ->whereNotNull('image_path')
                 ->where('image_path', '<>', ''));
@@ -241,20 +273,16 @@ new class extends Component
             ->sum('downloadable_images_count');
     }
 
-    public function downloadFilteredHistory()
+    public function downloadFilteredHistory(): void
     {
-        if (! class_exists(\ZipArchive::class)) {
-            $this->dispatch('toast', type: 'error', title: 'ZIP tidak tersedia', message: 'Ekstensi PHP ZIP belum aktif di server.');
-            return null;
+        if (! class_exists(\ZipArchive::class) || ! function_exists('imagecreatefromstring') || ! function_exists('imagejpeg')) {
+            $this->dispatch('toast', type: 'error', title: 'ZIP tidak tersedia', message: 'Aktifkan ekstensi PHP ZIP dan GD pada server.');
+            return;
         }
 
-        if (! function_exists('imagecreatefromstring') || ! function_exists('imagejpeg')) {
-            $this->dispatch('toast', type: 'error', title: 'Kompresi gambar tidak tersedia', message: 'Ekstensi PHP GD harus aktif untuk mengoptimalkan foto ke ukuran maksimal 2 MB.');
-            return null;
-        }
-
-        // Reuse Recent History filters, but intentionally ignore the visible-record limit.
-        $query = (clone $this->historyQuery())
+        $query = ($this->selectedGenerationIds !== []
+                ? Generation::query()->where('user_id', auth()->id())->whereIn('id', array_map('intval', $this->selectedGenerationIds))
+                : clone $this->historyQuery())
             ->whereHas('generatedImages', fn ($images) => $images
                 ->whereNotNull('image_path')
                 ->where('image_path', '<>', ''));
@@ -265,213 +293,139 @@ new class extends Component
             $query->orderBy('created_at', 'desc')->orderBy('id', 'desc');
         }
 
-        // Guard against an unexpectedly huge synchronous archive.
-        $totalMatching = (clone $query)->count();
-        if ($totalMatching > 500) {
-            $this->dispatch('toast', type: 'warning', title: 'Terlalu banyak hasil', message: 'ZIP dibatasi maksimal 500 generation sekali unduh. Persempit filter tanggal, Store, atau status.');
-            return null;
+        if ((clone $query)->count() > 500) {
+            $this->dispatch('toast', type: 'warning', title: 'Terlalu banyak hasil', message: 'ZIP dibatasi maksimal 500 generation sekali unduh. Persempit filter terlebih dahulu.');
+            return;
         }
 
-        $generations = $query->with(['store', 'template', 'generatedImages'])->get();
-
-        if ($generations->isEmpty()) {
-            $this->dispatch('toast', type: 'warning', title: 'Belum ada foto untuk diunduh', message: 'Tidak ada foto hasil yang tersedia sesuai filter aktif.');
-            return null;
+        $generationIds = $query->limit(500)->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
+        if ($generationIds === []) {
+            $this->dispatch('toast', type: 'warning', title: 'Belum ada foto', message: 'Tidak ada foto hasil sesuai filter aktif.');
+            return;
         }
 
-        $tempPath = tempnam(sys_get_temp_dir(), 'rms-history-zip-');
-        if ($tempPath === false) {
-            $this->dispatch('toast', type: 'error', title: 'Gagal menyiapkan ZIP', message: 'Server tidak dapat membuat file sementara.');
-            return null;
+        $totalImages = \App\Models\GeneratedImage::query()
+            ->whereIn('generation_id', $generationIds)
+            ->whereNotNull('image_path')
+            ->where('image_path', '<>', '')
+            ->count();
+
+        $name = trim((string) $this->historyZipName);
+        $name = preg_replace('/\.zip$/i', '', $name) ?? '';
+        $name = str_replace(['\\', '/', ':', '*', '?', '"', '<', '>', '|'], '', $name);
+        $name = mb_substr(trim($name, " .\t\n\r\0\x0B"), 0, 100);
+        if ($name === '') {
+            $name = 'rizky-moto-history-' . now()->format('Ymd-His');
         }
 
-        $zip = new \ZipArchive();
-        if ($zip->open($tempPath, \ZipArchive::OVERWRITE) !== true) {
-            @unlink($tempPath);
-            $this->dispatch('toast', type: 'error', title: 'Gagal menyiapkan ZIP', message: 'File ZIP tidak dapat dibuka.');
-            return null;
-        }
+        $archive = \Illuminate\Support\Facades\DB::transaction(function () use ($generationIds, $totalImages, $name): ?\App\Models\HistoryDownloadArchive {
+            \Illuminate\Support\Facades\DB::table('users')->where('id', auth()->id())->lockForUpdate()->first();
 
-        $disk = \Illuminate\Support\Facades\Storage::disk('public');
-        $added = 0;
+            $activeArchive = \App\Models\HistoryDownloadArchive::query()
+                ->where('user_id', auth()->id())
+                ->whereIn('status', ['queued', 'processing'])
+                ->lockForUpdate()
+                ->first();
 
-        try {
-            foreach ($generations as $generation) {
-                $imageIndex = 0;
-                // Use the Store's actual display name as the ZIP folder (keep spaces).
-                $storeName = trim((string) ($generation->store?->name ?: 'Store'));
-                $safeStore = preg_replace('/[\\\\\\/:*?"<>|]+/u', '', $storeName) ?: 'Store';
-                $safeStore = trim($safeStore, " .\\t\\n\\r\\0\\x0B");
-                if ($safeStore === '') {
-                    $safeStore = 'Store';
-                }
-
-                $generationMetadata = is_array($generation->metadata) ? $generation->metadata : [];
-                $title = trim((string) (
-                    data_get($generationMetadata, 'requested_custom_title')
-                    ?: data_get($generationMetadata, 'custom_title')
-                    ?: data_get($generationMetadata, 'final_title')
-                    ?: data_get($generationMetadata, 'product_title')
-                    ?: data_get($generationMetadata, 'title')
-                    ?: ''
-                ));
-                // Keep the generated title readable: no slug/hyphen conversion.
-                $safeTitle = preg_replace('/[\\\\\\/:*?"<>|]+/u', '', $title);
-                $safeTitle = trim((string) $safeTitle, " .\\t\\n\\r\\0\\x0B");
-                // Repair legacy product titles saved without the leading "B" in BAUT PAPAN.
-                if (preg_match('/^AUT\\s+PAPAN\\s+SPEEDOMETER\\b/i', $safeTitle) === 1) {
-                    $safeTitle = 'B' . $safeTitle;
-                }
-                if ($safeTitle === '') {
-                    $safeTitle = 'Hasil Generation ' . $generation->id;
-                }
-
-                foreach ($generation->generatedImages as $image) {
-                    $path = $image->image_path;
-                    if (! is_string($path) || $path === '' || ! $disk->exists($path)) {
-                        continue;
-                    }
-
-                    $absolute = $disk->path($path);
-                    if (! is_file($absolute) || ! is_readable($absolute)) {
-                        continue;
-                    }
-
-                    $optimized = $this->encodeHistoryImageUnderLimit($absolute, 2 * 1024 * 1024);
-                    $imageIndex++;
-                    $filename = $safeStore . '/' . $safeTitle
-                        . ($imageIndex > 1 ? ' (' . $imageIndex . ')' : '')
-                        . '.jpg';
-
-                    if (! $zip->addFromString($filename, $optimized)) {
-                        throw new \RuntimeException('Gagal menambahkan foto ke dalam ZIP.');
-                    }
-
-                    $added++;
-                }
-            }
-
-            if ($added === 0) {
-                $zip->close();
-                @unlink($tempPath);
-                $this->dispatch('toast', type: 'warning', title: 'Tidak ada file untuk diunduh', message: 'Foto hasil pada riwayat ini tidak ditemukan di penyimpanan.');
+            if ($activeArchive) {
                 return null;
             }
 
-            if (! $zip->close()) {
-                throw new \RuntimeException('File ZIP gagal diselesaikan.');
-            }
-        } catch (\Throwable $exception) {
-            try {
-                $zip->close();
-            } catch (\Throwable) {
-                // Ignore a secondary close failure while cleaning up the failed archive.
-            }
+            return \App\Models\HistoryDownloadArchive::query()->create([
+                'user_id' => auth()->id(),
+                'generation_ids' => $generationIds,
+                'status' => 'queued',
+                'total_images' => $totalImages,
+                'processed_images' => 0,
+                'file_name' => $name . '.zip',
+            ]);
+        });
 
-            @unlink($tempPath);
-            report($exception);
-            $this->dispatch('toast', type: 'error', title: 'Gagal membuat ZIP', message: 'Sebagian foto tidak dapat diproses. Coba perkecil hasil dengan filter Store, tanggal, atau status.');
-            return null;
+        if (! $archive) {
+            $this->dispatch('toast', type: 'warning', title: 'Bulk download sedang berjalan', message: 'Selesaikan atau tunggu proses ZIP yang aktif sebelum membuat bulk download baru.');
+            return;
         }
-
-        $this->dispatch(
-            'toast',
-            type: 'success',
-            title: 'ZIP siap diunduh',
-            message: $added . ' foto sudah dioptimalkan (maks. 2 MB per foto) dan dimasukkan ke ZIP.'
-        );
-
-        $zipBaseName = trim((string) $this->historyZipName);
-        $zipBaseName = preg_replace('/\.zip$/i', '', $zipBaseName) ?? '';
-        $zipBaseName = str_replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], '', $zipBaseName);
-        $zipBaseName = trim($zipBaseName, " .\t\n\r\0\x0B");
-        $zipBaseName = mb_substr($zipBaseName, 0, 100);
-        if ($zipBaseName === '') {
-            $zipBaseName = 'rizky-moto-history-' . now()->format('Ymd-His');
-        }
-
-        return response()->download(
-            $tempPath,
-            $zipBaseName . '.zip',
-            ['Content-Type' => 'application/zip']
-        )->deleteFileAfterSend(true);
-    }
-
-    private function encodeHistoryImageUnderLimit(string $absolutePath, int $maxBytes): string
-    {
-        $sourceBinary = file_get_contents($absolutePath);
-        if ($sourceBinary === false) {
-            throw new \RuntimeException('File gambar tidak dapat dibaca.');
-        }
-
-        $sourceImage = @imagecreatefromstring($sourceBinary);
-        unset($sourceBinary);
-
-        if (! $sourceImage instanceof \GdImage) {
-            throw new \RuntimeException('Format gambar tidak dapat diproses oleh GD.');
-        }
-
-        $sourceWidth = imagesx($sourceImage);
-        $sourceHeight = imagesy($sourceImage);
-        $currentWidth = $sourceWidth;
-        $currentHeight = $sourceHeight;
-        $quality = 85;
-        $result = null;
 
         try {
-            for ($attempt = 0; $attempt < 24; $attempt++) {
-                $canvas = imagecreatetruecolor($currentWidth, $currentHeight);
-                if (! $canvas instanceof \GdImage) {
-                    throw new \RuntimeException('Canvas kompresi gambar gagal dibuat.');
-                }
+            \App\Jobs\BuildHistoryDownloadArchiveJob::dispatch($archive->id)->onQueue('default');
+            app(\App\Services\ActivityLogService::class)->log(
+                'history_bulk_download',
+                'download',
+                'info',
+                'Bulk download masuk antrean',
+                $archive->file_name,
+                ['user_id' => auth()->id(), 'archive_id' => $archive->id, 'total_images' => $totalImages]
+            );
+        } catch (\Throwable $exception) {
+            $archive->update(['status' => 'failed', 'error_message' => mb_substr($exception->getMessage(), 0, 2000)]);
+            app(\App\Services\ActivityLogService::class)->log(
+                'history_bulk_download',
+                'download',
+                'error',
+                'Bulk download gagal masuk antrean',
+                $exception->getMessage(),
+                ['user_id' => auth()->id(), 'archive_id' => $archive->id, 'total_images' => $totalImages]
+            );
+            $this->dispatch('toast', type: 'error', title: 'Gagal memasukkan antrean', message: 'Periksa queue worker dan activity log.');
+            return;
+        }
 
-                $white = imagecolorallocate($canvas, 255, 255, 255);
-                imagefill($canvas, 0, 0, $white);
-                imagecopyresampled(
-                    $canvas,
-                    $sourceImage,
-                    0,
-                    0,
-                    0,
-                    0,
-                    $currentWidth,
-                    $currentHeight,
-                    $sourceWidth,
-                    $sourceHeight
-                );
+        $this->dispatch('toast', type: 'success', title: 'ZIP sedang disiapkan', message: $totalImages . ' foto diproses di background. Modal ini akan menampilkan progresnya.');
+        $this->selectedGenerationIds = [];
+    }
 
-                ob_start();
-                imagejpeg($canvas, null, $quality);
-                $binary = ob_get_clean();
-                imagedestroy($canvas);
+    public function getLatestHistoryDownloadArchiveProperty(): ?\App\Models\HistoryDownloadArchive
+    {
+        return \App\Models\HistoryDownloadArchive::query()
+            ->where('user_id', auth()->id())
+            ->latest('id')
+            ->first();
+    }
 
-                if (is_string($binary) && strlen($binary) <= $maxBytes) {
-                    $result = $binary;
-                    break;
-                }
+    public function getHistoryDownloadArchivesProperty()
+    {
+        return \App\Models\HistoryDownloadArchive::query()
+            ->where('user_id', auth()->id())
+            ->latest('id')
+            ->limit(30)
+            ->get();
+    }
 
-                if ($quality > 42) {
-                    $quality = max(40, $quality - 7);
-                    continue;
-                }
+    public function deleteHistoryDownloadArchive(int $archiveId): void
+    {
+        $archive = \App\Models\HistoryDownloadArchive::query()
+            ->where('user_id', auth()->id())
+            ->findOrFail($archiveId);
 
-                if ($currentWidth <= 320 || $currentHeight <= 320) {
-                    break;
-                }
+        if (in_array($archive->status, ['queued', 'processing'], true)) {
+            $this->dispatch('toast', type: 'warning', title: 'Arsip sedang diproses', message: 'Tunggu sampai proses ZIP selesai sebelum menghapusnya.');
+            return;
+        }
 
-                $currentWidth = max(320, (int) floor($currentWidth * 0.88));
-                $currentHeight = max(320, (int) floor($currentHeight * 0.88));
-                $quality = 78;
+        $disk = \Illuminate\Support\Facades\Storage::disk('local');
+        if ($archive->file_path && $disk->exists($archive->file_path)) {
+            $deleted = $disk->delete($archive->file_path);
+            clearstatcache();
+
+            if (! $deleted || $disk->exists($archive->file_path)) {
+                throw new \RuntimeException('File ZIP gagal dihapus dari storage server.');
             }
-        } finally {
-            imagedestroy($sourceImage);
         }
 
-        if (! is_string($result) || strlen($result) > $maxBytes) {
-            throw new \RuntimeException('Foto tidak dapat dikompresi hingga di bawah 2 MB.');
-        }
+        $archiveName = $archive->file_name ?: ('Arsip #' . $archive->id);
+        $archiveIdForLog = $archive->id;
+        $archive->delete();
 
-        return $result;
+        app(\App\Services\ActivityLogService::class)->log(
+            'history_bulk_download_delete',
+            'download',
+            'success',
+            'Arsip bulk download dihapus',
+            $archiveName,
+            ['user_id' => auth()->id(), 'archive_id' => $archiveIdForLog, 'file_deleted_from_storage' => true]
+        );
+
+        $this->dispatch('toast', type: 'success', title: 'Arsip dihapus', message: 'File ZIP dari server dan riwayatnya berhasil dihapus.');
     }
 
     public function loadMoreHistory(): void
@@ -2358,6 +2312,25 @@ new class extends Component
         transition-duration:.01ms!important;
     }
 }
+
+/* Bulk ZIP progress animation */
+.rms-history-download-async-status{isolation:isolate;animation:rmsZipCardIn .38s cubic-bezier(.2,.75,.25,1) both}
+.rms-zip-status-glow{position:absolute;inset:-45% -20% auto;height:150px;background:radial-gradient(ellipse,rgba(42,190,111,.12),transparent 68%);pointer-events:none;animation:rmsZipGlow 3.2s ease-in-out infinite alternate}
+.rms-zip-status-icon{position:relative;display:grid;place-items:center;width:40px;height:40px;flex:0 0 40px;border:1px solid #d8efe0;border-radius:13px;background:linear-gradient(145deg,#f1fcf5,#def6e7);box-shadow:0 5px 15px rgba(25,150,80,.08)}
+.rms-zip-status-icon:before{content:'';width:14px;height:14px;border:2px solid #b8e5c8;border-top-color:#159653;border-radius:50%;animation:rmsZipSpin .85s linear infinite}
+.rms-zip-status-icon span{position:absolute;width:5px;height:5px;border-radius:50%;background:#159653;animation:rmsZipPulse 1.4s ease-in-out infinite}
+.rms-zip-status-badge{flex:0 0 auto;padding:6px 8px;border:1px solid #dcefe2;border-radius:8px;background:#effaf3;color:#16834a;font-size:9px;font-weight:900;letter-spacing:.07em}
+.rms-zip-progress-track{position:relative;height:10px;overflow:hidden;border-radius:99px;background:#e4eee7;box-shadow:inset 0 1px 2px rgba(25,65,40,.06)}
+.rms-zip-progress-fill{position:relative;height:100%;min-width:0;border-radius:99px;background:linear-gradient(90deg,#159653,#27bd70,#159653);background-size:200% 100%;box-shadow:0 1px 8px rgba(21,150,83,.22);transition:width .65s cubic-bezier(.22,.7,.25,1);animation:rmsZipShimmer 2s linear infinite}
+.rms-zip-progress-fill:after{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 20%,rgba(255,255,255,.48) 50%,transparent 80%);transform:translateX(-100%);animation:rmsZipSweep 1.8s ease-in-out infinite}
+.rms-zip-step{display:flex;align-items:center;gap:5px;color:#a0aaa3;font-size:9px;font-weight:700;white-space:nowrap}.rms-zip-step i{display:grid;place-items:center;width:17px;height:17px;border:1px solid #dce5de;border-radius:50%;font-size:9px;font-style:normal}.rms-zip-step.is-done{color:#16834a}.rms-zip-step.is-done i{border-color:#ccebd6;background:#e6f7ec}.rms-zip-step.is-current{color:#16834a}.rms-zip-step.is-current i{border-color:#bfe7cd;background:#e8f8ee;animation:rmsZipPulse 1.3s ease-in-out infinite}
+.rms-zip-live-dot{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#20b765;box-shadow:0 0 0 0 rgba(32,183,101,.35);animation:rmsZipLive 1.6s ease-out infinite}
+.rms-zip-complete-head{display:flex;align-items:center;gap:11px;margin-bottom:15px}.rms-zip-complete-icon{display:grid;place-items:center;width:40px;height:40px;flex:0 0 40px;border-radius:13px;background:#e5f8ec;color:#128448;font-size:21px;font-weight:900;animation:rmsZipSuccess .55s cubic-bezier(.2,.8,.2,1) both}.rms-zip-complete-head strong{display:block;color:#16834a;font-size:13px;font-weight:900}.rms-zip-complete-head small{display:block;margin-top:4px;color:#78877e;font-size:10px}.rms-zip-status-badge.is-complete{border-color:#ccebd6;background:#e8f8ee}
+.rms-zip-history-badge{flex:0 0 auto;padding:6px 9px;border:1px solid #dce5ed;border-radius:8px;background:#f1f5f9;color:#64748b;font-size:9px;font-weight:900;letter-spacing:.06em}.rms-zip-history-badge.is-red,.rms-zip-status-badge.is-red{border-color:#fecaca;background:#fff1f2;color:#dc2626}.rms-zip-history-badge.is-blue,.rms-zip-status-badge.is-blue{border-color:#bfdbfe;background:#eff6ff;color:#2563eb}.rms-zip-history-badge.is-green,.rms-zip-status-badge.is-green{border-color:#bbf7d0;background:#ecfdf3;color:#15803d}.rms-zip-progress-number{display:block;font-size:27px;line-height:1;font-weight:900;letter-spacing:-1.3px;transition:color .35s}.rms-zip-progress-number.is-red{color:#dc2626}.rms-zip-progress-number.is-blue{color:#2563eb}.rms-zip-progress-number.is-green{color:#159653}.rms-zip-progress-track.is-red .rms-zip-progress-fill{background:linear-gradient(90deg,#ef4444,#f87171,#dc2626)}.rms-zip-progress-track.is-blue .rms-zip-progress-fill{background:linear-gradient(90deg,#2563eb,#60a5fa,#1d4ed8)}.rms-zip-progress-track.is-green .rms-zip-progress-fill{background:linear-gradient(90deg,#159653,#27bd70,#159653)}.rms-zip-complete-actions{display:flex;align-items:stretch;gap:10px;margin-top:13px}.rms-zip-complete-actions .rms-zip-download-link{flex:1;min-width:0;min-height:44px;margin:0}.rms-zip-delete-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;flex:0 0 112px;min-height:44px;padding:0 12px;border:1px solid #fecaca;border-radius:11px;background:linear-gradient(180deg,#fffafa,#fff1f1);color:#b42318;font-size:11px;font-weight:850;cursor:pointer;box-shadow:0 3px 9px rgba(180,35,24,.06);transition:transform .18s,background .18s}.rms-zip-delete-button:hover{transform:translateY(-1px);background:#fff0f0}.rms-zip-delete-button svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}@media(max-width:480px){.rms-zip-complete-actions{gap:7px}.rms-zip-delete-button{flex-basis:104px;padding:0 8px;font-size:10px}}.rms-history-search-premium{position:relative;display:flex;align-items:center;gap:12px;min-height:48px;padding:0 13px;border:1px solid #dfe5ec;border-radius:14px;background:linear-gradient(180deg,#fff,#fbfcfe);box-shadow:0 2px 8px rgba(15,23,42,.035);transition:border-color .2s,box-shadow .2s}.rms-history-search-premium:focus-within{border-color:#9bcbb0;box-shadow:0 0 0 4px rgba(21,150,83,.09),0 5px 18px rgba(15,23,42,.05)}.rms-history-search-premium .rms-history-search-icon{display:grid;place-items:center;width:20px;height:20px;flex:0 0 20px;color:#7c8999}.rms-history-search-premium .rms-history-search-icon svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}.rms-history-search-premium input{flex:1;min-width:0;height:44px;border:0!important;outline:0!important;background:transparent!important;box-shadow:none!important;color:#253044;font-size:13px;font-weight:550}.rms-history-search-premium input::placeholder{color:#9aa5b3;font-weight:450}.rms-history-search-hint{padding:4px 7px;border:1px solid #e8edf2;border-radius:6px;color:#98a2af;font-size:9px;font-weight:800;letter-spacing:.04em}.rms-history-search-premium .rms-history-search-clear{display:grid;place-items:center;width:28px;height:28px;border:0;border-radius:9px;background:#f0f3f6;color:#718096;font-size:18px;cursor:pointer}.rms-history-selection-tools{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:12px 0 2px}.rms-history-select-visible,.rms-history-selection-clear{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:0 11px;border:1px solid #e1e7ed;border-radius:9px;background:#fff;color:#526071;font-size:10px;font-weight:750;cursor:pointer}.rms-history-selected-count{color:#15803d;font-size:11px;font-weight:850}.rms-history-selected-download{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:0 13px;border:1px solid #bde8cd;border-radius:9px;background:#effaf3;color:#12834a;font-size:10px;font-weight:850;cursor:pointer}.rms-generation-select-control{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:0 0 24px;width:24px;height:24px;margin-right:8px;cursor:pointer}.rms-generation-select-control input{position:absolute;width:1px;height:1px;opacity:0}.rms-generation-select-control span{display:grid;place-items:center;width:19px;height:19px;border:1.5px solid #cbd5df;border-radius:6px;background:#fff;transition:all .18s}.rms-generation-select-control input:checked+span{border-color:#159653;background:#159653;box-shadow:0 2px 6px rgba(21,150,83,.2)}.rms-generation-select-control input:checked+span:after{content:'✓';color:#fff;font-size:12px;font-weight:900}.rms-generation-select-control input:focus-visible+span{outline:3px solid rgba(21,150,83,.2);outline-offset:2px}@media(max-width:640px){.rms-history-selection-tools{gap:6px}.rms-history-search-premium{min-height:44px;padding:0 10px}}
+.rms-history-download-archive-list{max-height:min(42vh,420px);min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 7px 3px 2px;margin:0 -3px 14px;scrollbar-width:thin;scrollbar-color:#cbd9cf transparent}.rms-history-download-archive-list::-webkit-scrollbar{width:6px}.rms-history-download-archive-list::-webkit-scrollbar-track{background:transparent}.rms-history-download-archive-list::-webkit-scrollbar-thumb{background:#cbd9cf;border-radius:99px}.rms-zip-download-link{display:flex;align-items:center;justify-content:center;gap:8px;min-height:42px;margin-top:13px;padding:0 14px;border-radius:11px;background:linear-gradient(110deg,#159653,#087d43);color:#fff;font-size:11px;font-weight:850;text-decoration:none;box-shadow:0 6px 16px rgba(21,150,83,.17);transition:transform .2s,box-shadow .2s}.rms-zip-download-link:hover{transform:translateY(-2px);box-shadow:0 9px 20px rgba(21,150,83,.24)}.rms-zip-download-link span{font-size:18px}
+.rms-zip-failed-head{display:flex;align-items:center;gap:9px;color:#b42318;font-size:13px}.rms-zip-failed-head span{display:grid;place-items:center;width:27px;height:27px;border-radius:9px;background:#fff0ef;font-weight:900}.rms-zip-idle-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:13px;background:#edf5ef;color:#16834a;font-size:10px;font-weight:900;letter-spacing:.04em}
+@keyframes rmsZipSpin{to{transform:rotate(360deg)}}@keyframes rmsZipPulse{50%{transform:scale(.72);opacity:.55}}@keyframes rmsZipLive{70%{box-shadow:0 0 0 7px rgba(32,183,101,0)}}@keyframes rmsZipShimmer{to{background-position:-200% 0}}@keyframes rmsZipSweep{to{transform:translateX(100%)}}@keyframes rmsZipGlow{to{opacity:.45;transform:translateX(8%)}}@keyframes rmsZipCardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes rmsZipSuccess{0%{transform:scale(.65) rotate(-12deg);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+@media(prefers-reduced-motion:reduce){.rms-history-download-async-status,.rms-zip-status-glow,.rms-zip-status-icon:before,.rms-zip-status-icon span,.rms-zip-progress-fill,.rms-zip-progress-fill:after,.rms-zip-live-dot,.rms-zip-complete-icon{animation:none!important;transition:none!important}}
 </style>
 
 
@@ -2419,7 +2392,7 @@ new class extends Component
                 this.confirmId = null;
                 document.body.classList.remove('rms-confirm-lock');
             },
-            runConfirm() {
+            async runConfirm() {
                 if (!this.confirmAction || !this.confirmId) {
                     this.closeConfirm();
                     return;
@@ -2436,6 +2409,12 @@ new class extends Component
                     $wire.cancelGeneration(id);
                 } else if (action === 'retry') {
                     $wire.retryGeneration(id);
+                } else if (action === 'archive-delete') {
+                    try {
+                        await $wire.deleteHistoryDownloadArchive(id);
+                    } catch (error) {
+                        console.error('Bulk archive delete failed', error);
+                    }
                 }
             }
         }"
@@ -2472,11 +2451,13 @@ new class extends Component
                 x-transition:enter="rms-recent-history-enter"
                 x-transition:leave="rms-recent-history-leave">
                 <div class="rms-history-toolbar">
-                <div class="rms-history-search">
-                    <span>⌕</span>
-                    <input type="text" wire:model.live.debounce.400ms="historySearch" placeholder="Cari ID, store, template, model, provider...">
+                <div class="rms-history-search rms-history-search-premium">
+                    <span class="rms-history-search-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.2 4.2"/></svg></span>
+                    <input type="search" wire:model.live.debounce.350ms="historySearch" placeholder="Cari judul produk, Vario, ID, store, template..." aria-label="Cari hasil generation">
                     @if(trim($historySearch) !== '')
-                        <button type="button" class="rms-history-search-clear" wire:click="$set('historySearch','')" aria-label="Clear search">×</button>
+                        <button type="button" class="rms-history-search-clear" wire:click="$set('historySearch','')" aria-label="Hapus pencarian">×</button>
+                    @else
+                        <span class="rms-history-search-hint">Cari</span>
                     @endif
                 </div>
 
@@ -2564,6 +2545,21 @@ new class extends Component
                     @endif
                 </div>
 
+                @if($this->historyTotal > 0)
+                    <div class="rms-history-selection-tools">
+                        <button type="button" class="rms-history-select-visible" wire:click="selectVisibleGenerations">
+                            <span aria-hidden="true">☑</span> Pilih {{ $this->recentGenerations->count() }} tampil
+                        </button>
+                        @if(count($selectedGenerationIds) > 0)
+                            <span class="rms-history-selected-count">{{ count($selectedGenerationIds) }} dipilih</span>
+                            <button type="button" class="rms-history-selected-download" x-on:click="downloadPanelOpen = true">
+                                <span aria-hidden="true">↓</span> ZIP pilihan
+                            </button>
+                            <button type="button" class="rms-history-selection-clear" wire:click="clearGenerationSelection">Batal pilih</button>
+                        @endif
+                    </div>
+                @endif
+
                 <button type="button"
                     class="rms-history-download-trigger"
                     x-on:click="downloadPanelOpen = true"
@@ -2607,7 +2603,7 @@ new class extends Component
                         </div>
                         <span class="rms-history-download-dialog-eyebrow" style="display:flex;align-items:center;gap:7px;margin-bottom:9px;color:#16834a;font-size:10px;font-weight:850;letter-spacing:.12em;"><i style="width:7px;height:7px;border-radius:50%;background:#20b765;box-shadow:0 0 0 4px #e4f8eb;display:inline-block;"></i> EXPORT GENERATIONS</span>
                         <h3 id="rms-history-download-title" style="margin:0 0 9px;font-size:25px;font-weight:850;letter-spacing:-.045em;line-height:1.2;color:#20232b;">Download hasil generation</h3>
-                        <p class="rms-history-download-dialog-description" style="margin:0 0 21px;color:#7d8492;font-size:13px;line-height:1.65;">Semua hasil yang sesuai dengan filter Recent History akan dikemas dalam satu file ZIP.</p>
+                        <p class="rms-history-download-dialog-description" style="margin:0 0 21px;color:#7d8492;font-size:13px;line-height:1.65;">{{ count($selectedGenerationIds) > 0 ? "Generation yang kamu pilih akan dikemas dalam satu file ZIP." : "Semua hasil yang sesuai dengan filter Recent History akan dikemas dalam satu file ZIP." }}</p>
                         <div class="rms-history-download-summary-card" style="display:flex;align-items:center;gap:12px;min-width:0;padding:14px;border:1px solid #e5e9ef;border-radius:15px;background:rgba(255,255,255,.9);">
                             <div class="rms-history-download-summary-card-icon" aria-hidden="true" style="display:grid;place-items:center;width:40px;height:40px;flex:0 0 40px;border-radius:12px;background:#f2f4f7;color:#596474;font-size:23px;">▤</div>
                             <div class="rms-history-download-summary-card-copy" style="display:flex;flex:1 1 auto;flex-direction:column;gap:4px;min-width:0;">
@@ -2632,22 +2628,95 @@ new class extends Component
                         @if($this->historyDownloadImageCount < 1)
                             <div class="rms-history-download-empty">Tidak ada foto yang bisa diunduh dari hasil filter saat ini.</div>
                         @endif
+                        @php
+                            $archives = $this->historyDownloadArchives;
+
+                        @endphp
+                        <div class="rms-history-download-archive-list" aria-label="Riwayat bulk download">
+                        @forelse($archives as $archive)
+                            @php
+                                $rawArchivePercent = min(100, (int) round(($archive->processed_images / max(1, $archive->total_images)) * 100));
+                                $archiveActive = in_array($archive->status, ['queued', 'processing'], true);
+                                // Keep active jobs below 100% until ZipArchive::close() and the completed DB update succeed.
+                                $archivePercent = $archiveActive ? min(99, $rawArchivePercent) : ($archive->status === 'completed' ? 100 : $rawArchivePercent);
+                                $archiveFinalizing = $archive->status === 'processing' && $rawArchivePercent >= 100;
+                                $archiveProgressTone = $archive->status === 'completed' || (!$archiveActive && $archive->status !== 'failed')
+                                    ? 'is-green'
+                                    : ($archivePercent >= 70 ? 'is-green' : ($archivePercent >= 30 ? 'is-blue' : 'is-red'));
+                            @endphp
+                            <div wire:poll.2s.visible wire:key="history-archive-{{ $archive->id }}" class="rms-history-download-async-status" style="position:relative;margin:0 0 12px;padding:16px;border:1px solid #e2e9e5;border-radius:16px;background:linear-gradient(145deg,#fbfefc,#f5faf7);overflow:hidden;">
+                                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #e8eee9;">
+                                    <div style="min-width:0;"><strong style="display:block;color:#344139;font-size:11px;font-weight:850;overflow-wrap:anywhere;">{{ $archive->file_name ?: 'Bulk download ZIP' }}</strong><small style="display:block;margin-top:3px;color:#89958d;font-size:10px;">{{ $archive->created_at?->timezone(config('app.timezone'))->format('d M Y, H:i') }} WIB · #{{ $archive->id }}</small></div>
+                                    <span class="rms-zip-history-badge {{ $archive->status === 'completed' ? 'is-green' : ($archive->status === 'failed' ? 'is-red' : ($archiveProgressTone ?? 'is-blue')) }}">{{ strtoupper($archive->status) }}</span>
+                                </div>
+                            @if($archiveActive)
+                                <div x-data="{ shown: 0, target: {{ $archivePercent }}, ticker: null, init() { this.ticker = setInterval(() => { if (this.shown < this.target) this.shown = Math.min(this.target, this.shown + 1); }, 160); }, destroy() { if (this.ticker) clearInterval(this.ticker); } }" x-effect="target = {{ $archivePercent }}">
+                                <div class="rms-zip-status-glow"></div>
+                                <div style="position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px;">
+                                    <div style="display:flex;align-items:center;gap:11px;min-width:0;">
+                                        <span class="rms-zip-status-icon"><span></span></span>
+                                        <div style="min-width:0;">
+                                            <strong style="display:block;color:#26352d;font-size:13px;font-weight:850;">{{ $archive->status === 'queued' ? 'Menunggu worker' : ($archiveFinalizing ? 'Finalisasi ZIP' : 'Sedang membuat ZIP') }}</strong>
+                                            <small style="display:block;margin-top:3px;color:#78877e;font-size:10px;">{{ $archive->status === 'queued' ? 'Job sudah masuk antrean dan menunggu worker.' : ($archiveFinalizing ? 'Semua foto selesai diproses. Worker sedang menyelesaikan file ZIP.' : 'Worker sedang memproses gambar dan menyusun arsip.') }}</small>
+                                        </div>
+                                    </div>
+                                    <span class="rms-zip-status-badge {{ $archiveProgressTone }}">{{ $archive->status === 'queued' ? 'QUEUED' : ($archiveFinalizing ? 'FINALIZING' : 'PROCESSING') }}</span>
+                                </div>
+                                <div style="position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:8px;">
+                                    <div><strong class="rms-zip-progress-number {{ $archiveProgressTone }}" x-text="Math.round(shown) + '%'">{{ $archivePercent }}%</strong><small style="display:block;margin-top:5px;color:#87938b;font-size:10px;">{{ $archiveFinalizing ? 'Finalisasi arsip' : 'Progress pemrosesan' }}</small></div>
+                                    <div style="text-align:right;"><strong style="display:block;color:#303d34;font-size:13px;font-weight:850;font-variant-numeric:tabular-nums;">{{ number_format($archive->processed_images) }} <span style="color:#9aa69e;font-weight:600;">/ {{ number_format($archive->total_images) }}</span></strong><small style="display:block;margin-top:4px;color:#87938b;font-size:10px;">foto diproses</small></div>
+                                </div>
+                                <div class="rms-zip-progress-track {{ $archiveProgressTone }}"><div class="rms-zip-progress-fill" x-bind:style="'width:' + shown + '%;'" style="width:0%;"></div></div>
+                                <div style="position:relative;display:flex;justify-content:space-between;gap:8px;margin-top:12px;">
+                                    <span class="rms-zip-step is-done"><i>✓</i> Antrean dibuat</span>
+                                    <span class="rms-zip-step {{ $archiveFinalizing ? 'is-done' : ($archive->status === 'processing' ? 'is-current' : '') }}"><i>{{ $archiveFinalizing ? '✓' : ($archive->status === 'processing' ? '•' : '2') }}</i> Proses gambar</span>
+                                    <span class="rms-zip-step {{ $archiveFinalizing ? 'is-current' : '' }}"><i>{{ $archiveFinalizing ? '•' : '3' }}</i> {{ $archiveFinalizing ? 'Finalisasi ZIP' : 'ZIP siap' }}</span>
+                                </div>
+                                <div style="position:relative;display:flex;align-items:center;gap:7px;margin-top:14px;padding-top:12px;border-top:1px solid #e6eee8;color:#78877e;font-size:10px;">
+                                    <span class="rms-zip-live-dot"></span> Progress bergerak bertahap mengikuti pembaruan worker. Proses tetap berjalan meskipun modal ditutup.
+                                </div>
+                                </div>
+                            @elseif($archive && $archive->status === 'completed')
+                                <div class="rms-zip-complete-head">
+                                    <span class="rms-zip-complete-icon">✓</span>
+                                    <div style="flex:1;min-width:0;"><strong>ZIP berhasil dibuat!</strong><small>{{ number_format($archive->processed_images) }} dari {{ number_format($archive->total_images) }} foto berhasil dimasukkan.</small></div>
+                                    <span class="rms-zip-status-badge is-complete">COMPLETED</span>
+                                </div>
+                                <div class="rms-zip-progress-track is-complete"><div class="rms-zip-progress-fill" style="width:100%;"></div></div>
+                                <div class="rms-zip-complete-actions">
+                                    <a href="{{ route('history-downloads.download', $archive) }}" class="rms-zip-download-link"><span>↓</span> Unduh ZIP</a>
+                                    <button type="button" class="rms-zip-delete-button" x-on:click="askConfirm('archive-delete', {{ $archive->id }}, 'Hapus arsip ZIP?', 'File ZIP ini akan dihapus permanen dari server dan tidak dapat diunduh lagi.')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4.5h6V7M7 7l.8 12a1.8 1.8 0 0 0 1.8 1.6h4.8a1.8 1.8 0 0 0 1.8-1.6L17 7M10 11v5M14 11v5"/></svg>Hapus file</button>
+                                </div>
+                            @elseif($archive && $archive->status === 'failed')
+                                <div class="rms-zip-failed-head"><span>!</span><strong>ZIP gagal dibuat</strong></div>
+                                <p style="margin:9px 0 0;color:#8c6666;font-size:11px;line-height:1.6;">{{ $archive->error_message ?: 'Terjadi kesalahan saat memproses gambar. Silakan coba lagi.' }}</p>
+                                <button type="button" x-on:click="askConfirm('archive-delete', {{ $archive->id }}, 'Hapus riwayat bulk download?', 'Catatan proses gagal ini akan dihapus permanen.')" style="display:inline-flex;align-items:center;justify-content:center;min-width:112px;min-height:42px;margin-top:12px;padding:0 15px;border:1px solid #f3caca;border-radius:10px;background:linear-gradient(180deg,#fffafa,#fff1f1);color:#b42318;font-size:11px;font-weight:850;cursor:pointer;box-shadow:0 3px 9px rgba(180,35,24,.06);">Hapus riwayat</button>
+                            @else
+                                <div style="display:flex;align-items:center;gap:11px;">
+                                    <span class="rms-zip-idle-icon">ZIP</span>
+                                    <div><strong style="display:block;color:#39443d;font-size:12px;font-weight:800;">Siap membuat arsip</strong><small style="display:block;margin-top:3px;color:#87938b;font-size:10px;">Progress, status antrean, dan hasil unduhan akan tampil di sini.</small></div>
+                                </div>
+                            @endif
+                            </div>
+                        @empty
+                            <div class="rms-history-download-async-status" style="margin:0 0 15px;padding:16px;border:1px dashed #dce6df;border-radius:16px;background:#fbfdfb;color:#718078;font-size:11px;text-align:center;">Belum ada riwayat bulk download. Arsip yang selesai dibuat akan tersimpan di sini.</div>
+                        @endforelse
+                        </div>
                         <div class="rms-history-download-dialog-actions" style="display:flex;gap:10px;padding-top:16px;border-top:1px solid #eceef2;">
                             <button type="button" class="rms-history-download-cancel" style="display:inline-flex;align-items:center;justify-content:center;min-height:49px;flex:1 1 35%;padding:0 17px;border:1px solid #e7e9ef;border-radius:12px;background:#fff;color:#535b69;font-size:12px;font-weight:750;cursor:pointer;" x-on:click="downloadPanelOpen = false">Batal</button>
                             <button type="button" class="rms-history-download-button rms-history-download-confirm" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:49px;flex:1 1 65%;padding:0 15px;border:0;border-radius:12px;background:linear-gradient(135deg,#159653,#087d43);color:#fff;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 7px 18px rgba(21,148,81,.2);"
                                 wire:click="downloadFilteredHistory"
-                                x-on:click="downloadPanelOpen = false"
                                 wire:loading.attr="disabled"
                                 wire:target="downloadFilteredHistory"
-                                @disabled($this->historyDownloadImageCount < 1)>
+                                @disabled($this->historyDownloadImageCount < 1 || ($this->latestHistoryDownloadArchive && in_array($this->latestHistoryDownloadArchive->status, ['queued', 'processing'], true)))>
                                 <span class="rms-history-download-button-icon" wire:loading.remove wire:target="downloadFilteredHistory">↓</span>
                                 <span class="rms-history-download-spinner" wire:loading wire:target="downloadFilteredHistory"></span>
-                                <span wire:loading.remove wire:target="downloadFilteredHistory">Download ZIP</span>
-                                <span wire:loading wire:target="downloadFilteredHistory">Menyiapkan ZIP...</span>
+                                <span wire:loading.remove wire:target="downloadFilteredHistory">{{ $this->latestHistoryDownloadArchive && in_array($this->latestHistoryDownloadArchive->status, ['queued', 'processing'], true) ? 'ZIP sedang diproses' : 'Buat ZIP' }}</span>
+                                <span wire:loading wire:target="downloadFilteredHistory">Memulai proses...</span>
                                 <b>{{ $this->historyDownloadImageCount }} foto</b>
                             </button>
                         </div>
-                        <p class="rms-history-download-dialog-footnote" style="margin:13px 0 0;text-align:center;color:#9aa1ad;font-size:10px;line-height:1.5;">ZIP akan dibuat dari hasil yang tampil sesuai filter saat ini.</p>
+                        <p class="rms-history-download-dialog-footnote" style="margin:13px 0 0;text-align:center;color:#9aa1ad;font-size:10px;line-height:1.5;">{{ count($selectedGenerationIds) > 0 ? "ZIP hanya berisi generation yang dipilih." : "ZIP akan dibuat dari hasil yang tampil sesuai filter saat ini." }}</p>
                     </section>
                 </div>
                 </template>
@@ -2691,7 +2760,11 @@ new class extends Component
 
                     <article wire:key="generation-history-{{ $generation->id }}" class="rms-generator-history-item rms-generation-card status-{{ $status }}">
                         <div class="rms-generation-card-head">
-                            <div class="rms-history-item-meta"><span>{{ optional($generation->created_at)->format('d M Y · H:i') }}</span><small>#{{ $generation->id }}</small></div>
+                            <label class="rms-generation-select-control" title="Pilih generation #{{ $generation->id }}">
+                                <input type="checkbox" wire:click="toggleGenerationSelection({{ $generation->id }})" @checked(in_array((int) $generation->id, array_map('intval', $selectedGenerationIds), true))>
+                                <span></span>
+                            </label>
+                            <div class="rms-history-item-meta"><span>{{ optional($generation->created_at)->format('d M Y · H:i') }}</span><small>#{{ $generation->id }}</small>@if(data_get($meta, 'request_channel') === 'api')<small class="rms-generation-source-badge">API</small>@endif</div>
                             <span class="rms-history-status {{ $status }}" title="Status generation: {{ $statusLabel }}">
                                 <i class="rms-status-dot" aria-hidden="true"></i>
                                 <span class="rms-status-label">{{ $statusLabel }}</span>
@@ -2724,63 +2797,44 @@ new class extends Component
                             </button>
                         @elseif(in_array($status, ['queued','processing']))
                             <div class="rms-generation-processing-visual rms-generation-processing-visual-v3" style="aspect-ratio: {{ $ratio }}">
-                                @if($hero)
-                                    <img class="rms-processing-source-image" src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($hero->image_path) }}" alt="Processing preview" loading="lazy">
-                                    <div class="rms-processing-image-wash"></div>
-                                @else
-                                    <div class="rms-processing-visual-core">
-                                        <div class="rms-processing-grid"></div>
-                                        <div class="rms-processing-scan"></div>
-                                        <div class="rms-processing-orbit orbit-one"></div>
-                                        <div class="rms-processing-orbit orbit-two"></div>
-                                        <div class="rms-processing-orbit orbit-three"></div>
-                                        <div class="rms-processing-core-ring">
-                                            <svg class="rms-processing-spin-svg" wire:ignore viewBox="0 0 120 120" aria-hidden="true">
-    <defs>
-        <filter id="rmsDotGlow" x="-150%" y="-150%" width="400%" height="400%">
-            <feGaussianBlur stdDeviation="2.8" result="blur"/>
-            <feMerge>
-                <feMergeNode in="blur"/>
-                <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-        </filter>
-    </defs>
-    <!-- Four compact markers; each has its own speed and glow. -->
-    <circle class="rms-orbit-dot dot-one" cx="60" cy="10" r="5.2" fill="#ef233c" filter="url(#rmsDotGlow)">
-        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="3.20s" repeatCount="indefinite"/>
-    </circle>
-    <circle class="rms-orbit-dot dot-two" cx="60" cy="18" r="4.7" fill="#ef233c" filter="url(#rmsDotGlow)">
-        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="4.05s" repeatCount="indefinite"/>
-    </circle>
-    <circle class="rms-orbit-dot dot-three" cx="60" cy="26" r="4.2" fill="#ef233c" filter="url(#rmsDotGlow)">
-        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="2.72s" repeatCount="indefinite"/>
-    </circle>
-    <circle class="rms-orbit-dot dot-four" cx="60" cy="34" r="3.8" fill="#ef233c" filter="url(#rmsDotGlow)">
-        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="4.70s" repeatCount="indefinite"/>
-    </circle>
-</svg>
-                                            <span class="rms-processing-core-glow"></span>
-                                            <b>{{ $progress }}%</b>
-                                            <small>{{ $status === 'queued' ? 'QUEUE' : 'GENERATING' }}</small>
-                                        </div>
+                                {{-- Clean animated loader: no product image behind the particles. --}}
+                                <div class="rms-processing-visual-core" aria-hidden="true">
+                                    <div class="rms-processing-grid"></div>
+                                    <div class="rms-processing-scan"></div>
+                                    <div class="rms-processing-orbit orbit-one"></div>
+                                    <div class="rms-processing-orbit orbit-two"></div>
+                                    <div class="rms-processing-orbit orbit-three"></div>
+                                    <span class="rms-processing-particle particle-one"></span>
+                                    <span class="rms-processing-particle particle-two"></span>
+                                    <span class="rms-processing-particle particle-three"></span>
+                                    <span class="rms-processing-particle particle-four"></span>
+                                    <div class="rms-processing-core-ring">
+                                        <svg class="rms-processing-spin-svg" wire:ignore viewBox="0 0 120 120">
+                                            <defs>
+                                                <filter id="rmsDotGlow" x="-150%" y="-150%" width="400%" height="400%">
+                                                    <feGaussianBlur stdDeviation="2.8" result="blur"/>
+                                                    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                                                </filter>
+                                            </defs>
+                                            <circle cx="60" cy="10" r="5.2" fill="#ef233c" filter="url(#rmsDotGlow)">
+                                                <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="3.2s" repeatCount="indefinite"/>
+                                            </circle>
+                                            <circle cx="60" cy="20" r="4.2" fill="#ef233c" filter="url(#rmsDotGlow)">
+                                                <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="-360 60 60" dur="4.1s" repeatCount="indefinite"/>
+                                            </circle>
+                                        </svg>
+                                        <span class="rms-processing-core-glow"></span>
+                                        <b>{{ $progress }}%</b>
+                                        <small>{{ $status === 'queued' ? 'QUEUE' : 'GENERATING' }}</small>
                                     </div>
-                                @endif
-
+                                </div>
+                                {{-- Keep the processing canvas clean: product photos are inputs, not background artwork. --}}
                                 <div class="rms-processing-topline">
                                     <span class="rms-processing-live-dot"></span>
                                     <strong>{{ $status === 'queued' ? 'QUEUED' : 'PROCESSING' }}</strong>
                                     <small>{{ $status === 'queued' ? 'Menunggu worker' : 'AI sedang membuat visual' }}</small>
                                 </div>
 
-                                <div class="rms-processing-visual-badge">
-                                    <i></i>
-                                    <span>{{ $status === 'queued' ? 'Menunggu worker' : 'Sedang diproses' }}</span>
-                                    <b>{{ $status === 'queued' ? 'READY' : 'LIVE' }}</b>
-                                </div>
-
-                                <div class="rms-processing-stage-label">
-                                    <span>{{ $stage }}</span>
-                                </div>
                             </div>
                             <div class="rms-generation-eta rms-generation-eta-v3">
     <span class="rms-generation-eta-clock">◷</span>
@@ -8340,8 +8394,8 @@ body > .rms-history-download-modal::-webkit-scrollbar,
 }
 
 /* Download modal centering fix: body-teleported overlays must remain a flex viewport layer. */
-body > .rms-history-download-modal,
-.rms-history-download-modal{
+body > .rms-history-download-modal:not([style*="display: none"]),
+.rms-history-download-modal:not([style*="display: none"]){
  position:fixed!important;
  inset:0!important;
  z-index:2147483647!important;
@@ -8606,4 +8660,272 @@ body > .rms-history-download-modal{position:fixed!important;inset:0!important;z-
     .rms-generator-upload-box .rms-upload-complete{left:11px;bottom:11px;min-height:27px;padding:5px 9px}
 }
 
+</style>
+<style>
+.rms-generation-source-badge{display:inline-flex!important;align-items:center;justify-content:center;padding:3px 7px;border:1px solid #dbeafe;border-radius:999px;background:#eff6ff;color:#2563eb!important;font-size:8px!important;font-weight:850;letter-spacing:.08em;line-height:1!important}
+</style>
+
+<style>
+/* V19 — keep the animated particle core visible over uploaded product previews */
+.rms-generation-processing-visual-v3 .rms-processing-visual-core{z-index:4;pointer-events:none;background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.30),rgba(255,255,255,.06) 38%,transparent 66%)}
+.rms-generation-processing-visual-v3 .rms-processing-source-image{opacity:.30;filter:saturate(.78) blur(.2px)}
+.rms-generation-processing-visual-v3 .rms-processing-image-wash{z-index:1;opacity:.48}
+.rms-generation-processing-visual-v3 .rms-processing-particle{display:block!important;visibility:visible!important;opacity:.85;z-index:5}
+.rms-generation-processing-visual-v3 .rms-processing-orbit{z-index:2}
+.rms-generation-processing-visual-v3 .rms-processing-core-ring{z-index:6}
+.rms-generation-processing-visual-v3 .rms-processing-topline{z-index:10}
+.rms-generation-processing-visual-v3 .rms-processing-visual-badge,.rms-generation-processing-visual-v3 .rms-processing-stage-label{z-index:10}
+@media(max-width:760px){.rms-generation-processing-visual-v3 .rms-processing-core-ring{width:88px;height:88px}}
+</style>
+
+
+<style>
+/* V21 — single-status, centered premium processing loader for history cards */
+.rms-generator-history-grid .rms-generation-processing-visual-v3{
+    position:relative!important;display:block!important;min-height:300px!important;
+    padding:0!important;overflow:hidden!important;border:1px solid #e7e9ef!important;
+    border-radius:16px!important;
+    background:
+      radial-gradient(ellipse at 50% 54%,rgba(239,35,60,.105),transparent 34%),
+      radial-gradient(ellipse at 50% 100%,rgba(148,163,184,.10),transparent 58%),
+      linear-gradient(145deg,#fff 0%,#f8f9fb 54%,#f2f4f7 100%)!important;
+    box-shadow:inset 0 1px 0 #fff,0 8px 24px rgba(25,35,55,.035)!important;
+}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-topline{
+    position:absolute!important;z-index:12!important;top:14px!important;left:14px!important;right:14px!important;
+    width:auto!important;max-width:none!important;min-height:38px!important;padding:0 13px!important;
+    display:flex!important;justify-content:flex-start!important;align-items:center!important;gap:9px!important;
+    border:1px solid rgba(226,229,236,.95)!important;border-radius:11px!important;
+    background:rgba(255,255,255,.88)!important;box-shadow:0 5px 16px rgba(20,28,45,.045)!important;
+    backdrop-filter:blur(12px)!important;
+}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-topline strong{font-size:10px!important;letter-spacing:.08em!important}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-topline small{font-size:10px!important}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-visual-core{
+    position:absolute!important;inset:48px 0 0!important;z-index:4!important;
+    display:grid!important;place-items:center!important;width:auto!important;height:auto!important;
+    min-height:0!important;margin:0!important;flex:none!important;overflow:hidden!important;
+}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-core-ring{
+    width:100px!important;height:100px!important;min-width:100px!important;min-height:100px!important;
+    flex:0 0 100px!important;border-color:rgba(239,35,60,.20)!important;
+    background:rgba(255,255,255,.86)!important;
+    box-shadow:0 0 0 9px rgba(239,35,60,.035),0 15px 38px rgba(239,35,60,.10),inset 0 0 0 5px rgba(239,35,60,.025)!important;
+}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-core-ring b{font-size:27px!important}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-core-ring small{font-size:7px!important;letter-spacing:.16em!important}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-orbit.orbit-one{width:126px!important;height:126px!important}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-orbit.orbit-two{width:174px!important;height:174px!important}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-orbit.orbit-three{width:222px!important;height:222px!important}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-particle{display:block!important;visibility:visible!important;opacity:.9!important}
+.rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-scan{left:12%!important;right:12%!important}
+@media(max-width:760px){
+ .rms-generator-history-grid .rms-generation-processing-visual-v3{min-height:270px!important}
+ .rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-topline{top:11px!important;left:11px!important;right:11px!important;min-height:35px!important}
+ .rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-visual-core{inset:42px 0 0!important}
+ .rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-core-ring{width:88px!important;height:88px!important;min-width:88px!important;min-height:88px!important;flex-basis:88px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-grid,
+ .rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-scan,
+ .rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-orbit,
+ .rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-particle,
+ .rms-generator-history-grid .rms-generation-processing-visual-v3 .rms-processing-core-ring{animation:none!important}
+}
+</style>
+
+
+<style>
+/* V4 — Isolate the premium search field from legacy toolbar span/input rules */
+.rms-generator-history-mobile-safe .rms-history-search.rms-history-search-premium{
+    position:relative!important;display:flex!important;flex-direction:row!important;
+    align-items:center!important;justify-content:flex-start!important;gap:11px!important;
+    width:100%!important;min-width:0!important;height:54px!important;min-height:54px!important;
+    padding:0 14px!important;box-sizing:border-box!important;overflow:hidden!important;
+    border:1px solid #e1e7ed!important;border-radius:15px!important;
+    background:linear-gradient(180deg,#fff 0%,#fbfcfd 100%)!important;
+    box-shadow:0 3px 12px rgba(20,35,50,.035)!important;
+}
+.rms-generator-history-mobile-safe .rms-history-search.rms-history-search-premium:focus-within{
+    border-color:#9bcbb0!important;background:#fff!important;
+    box-shadow:0 0 0 4px rgba(21,150,83,.085),0 6px 18px rgba(20,35,50,.045)!important;
+}
+.rms-generator-history-mobile-safe .rms-history-search-premium > .rms-history-search-icon{
+    position:static!important;inset:auto!important;transform:none!important;z-index:auto!important;
+    display:grid!important;place-items:center!important;flex:0 0 20px!important;
+    width:20px!important;height:20px!important;margin:0!important;padding:0!important;
+    color:#8491a0!important;pointer-events:none!important;font-size:initial!important;
+}
+.rms-generator-history-mobile-safe .rms-history-search-premium > .rms-history-search-icon svg{
+    display:block!important;width:18px!important;height:18px!important;max-width:none!important;
+}
+.rms-generator-history-mobile-safe .rms-history-search-premium > input{
+    display:block!important;position:static!important;flex:1 1 auto!important;
+    width:0!important;min-width:0!important;max-width:none!important;height:100%!important;
+    margin:0!important;padding:0!important;border:0!important;border-radius:0!important;
+    background:transparent!important;box-shadow:none!important;outline:none!important;
+    color:#253044!important;font-size:13px!important;font-weight:550!important;
+    line-height:normal!important;letter-spacing:normal!important;
+}
+.rms-generator-history-mobile-safe .rms-history-search-premium > input::placeholder{
+    color:#9aa5b3!important;font-weight:450!important;opacity:1!important;
+}
+.rms-generator-history-mobile-safe .rms-history-search-premium > .rms-history-search-hint{
+    position:static!important;inset:auto!important;transform:none!important;z-index:auto!important;
+    flex:0 0 auto!important;margin:0!important;padding:5px 8px!important;
+    border:1px solid #e8edf2!important;border-radius:7px!important;background:#f8fafb!important;
+    color:#98a2af!important;font-size:9px!important;line-height:1!important;
+}
+.rms-generator-history-mobile-safe .rms-history-search-premium > .rms-history-search-clear{
+    position:static!important;inset:auto!important;transform:none!important;z-index:auto!important;
+    display:grid!important;place-items:center!important;flex:0 0 29px!important;
+    width:29px!important;height:29px!important;margin:0!important;padding:0!important;
+    border:0!important;border-radius:9px!important;background:#f0f3f6!important;
+    color:#687789!important;font-size:19px!important;line-height:1!important;
+}
+@media(max-width:640px){
+    .rms-generator-history-mobile-safe .rms-history-search.rms-history-search-premium{
+        height:48px!important;min-height:48px!important;padding:0 11px!important;gap:9px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-search-premium > input{font-size:12px!important}
+    .rms-generator-history-mobile-safe .rms-history-search-premium > .rms-history-search-hint{display:none!important}
+}
+</style>
+
+
+<style>
+/* V5 — Premium selected generation cards + single search clear control */
+.rms-generator-history-mobile-safe .rms-history-search-premium > input[type="search"]::-webkit-search-cancel-button,
+.rms-generator-history-mobile-safe .rms-history-search-premium > input[type="search"]::-webkit-search-decoration{
+    -webkit-appearance:none!important;appearance:none!important;display:none!important;
+}
+.rms-generator-history-mobile-safe .rms-generation-card{
+    position:relative;isolation:isolate;overflow:hidden;
+    transition:border-color .28s ease,box-shadow .32s ease,transform .32s cubic-bezier(.2,.8,.2,1),background .3s ease;
+}
+.rms-generator-history-mobile-safe .rms-generation-card::before{
+    content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:inherit;
+    opacity:0;background:linear-gradient(125deg,rgba(16,185,129,.13),rgba(59,130,246,.10),rgba(139,92,246,.10),rgba(16,185,129,.13));
+    background-size:260% 260%;transition:opacity .3s ease;
+}
+.rms-generator-history-mobile-safe .rms-generation-card:has(.rms-generation-select-control input:checked){
+    border-color:rgba(16,156,94,.58)!important;
+    background:linear-gradient(145deg,#f0fff7 0%,#f5faff 52%,#fbf7ff 100%)!important;
+    box-shadow:0 0 0 3px rgba(16,156,94,.09),0 12px 30px rgba(16,120,75,.10),inset 0 1px 0 rgba(255,255,255,.9)!important;
+    transform:translateY(-2px);
+}
+.rms-generator-history-mobile-safe .rms-generation-card:has(.rms-generation-select-control input:checked)::before{
+    opacity:1;animation:rms-selected-gradient-flow 6s ease-in-out infinite;
+}
+.rms-generator-history-mobile-safe .rms-generation-card:has(.rms-generation-select-control input:checked) .rms-generation-card-head{
+    position:relative;z-index:1;
+}
+.rms-generator-history-mobile-safe .rms-generation-select-control input:checked + span{
+    border-color:#11965a!important;background:linear-gradient(135deg,#16a765,#087c4b)!important;
+    box-shadow:0 0 0 4px rgba(22,167,101,.13),0 3px 9px rgba(8,124,75,.2)!important;
+}
+.rms-generator-history-mobile-safe .rms-generation-select-control input:checked + span::after{
+    color:#fff!important;filter:drop-shadow(0 1px 1px rgba(0,0,0,.15));
+}
+@keyframes rms-selected-gradient-flow{
+    0%,100%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+}
+@media(prefers-reduced-motion:reduce){
+    .rms-generator-history-mobile-safe .rms-generation-card,
+    .rms-generator-history-mobile-safe .rms-generation-card::before{animation:none!important;transition:none!important}
+}
+</style>
+
+
+<style>
+/* V7 — Align selection, generation metadata and status into a balanced card header */
+.rms-generator-history-mobile-safe .rms-generation-card .rms-generation-card-head{
+    display:grid!important;
+    grid-template-columns:26px minmax(0,1fr) auto!important;
+    align-items:center!important;
+    column-gap:10px!important;
+    row-gap:0!important;
+    min-height:32px!important;
+    margin:0 0 12px!important;
+}
+.rms-generator-history-mobile-safe .rms-generation-card .rms-generation-select-control{
+    display:grid!important;
+    place-items:center!important;
+    width:26px!important;height:30px!important;
+    min-width:26px!important;flex:none!important;
+    margin:0!important;padding:0!important;
+}
+.rms-generator-history-mobile-safe .rms-generation-card .rms-generation-select-control span{
+    width:19px!important;height:19px!important;
+    box-sizing:border-box!important;
+}
+.rms-generator-history-mobile-safe .rms-generation-card .rms-history-item-meta{
+    display:flex!important;align-items:center!important;justify-content:flex-start!important;
+    flex-wrap:nowrap!important;gap:7px!important;
+    min-width:0!important;overflow:hidden!important;
+    white-space:nowrap!important;
+}
+.rms-generator-history-mobile-safe .rms-generation-card .rms-history-item-meta > span,
+.rms-generator-history-mobile-safe .rms-generation-card .rms-history-item-meta > small{
+    display:inline-flex!important;align-items:center!important;
+    flex:0 0 auto!important;min-width:0!important;
+    margin:0!important;line-height:1.2!important;
+}
+.rms-generator-history-mobile-safe .rms-generation-card .rms-history-item-meta > span{
+    overflow:hidden!important;text-overflow:ellipsis!important;
+}
+.rms-generator-history-mobile-safe .rms-generation-card .rms-history-item-meta .rms-generation-source-badge{
+    padding:3px 6px!important;border-radius:6px!important;
+    background:#eff6ff!important;color:#3478d5!important;
+    font-size:8px!important;font-weight:850!important;
+}
+.rms-generator-history-mobile-safe .rms-generation-card .rms-history-status{
+    justify-self:end!important;align-self:center!important;
+    min-height:29px!important;height:29px!important;
+    box-sizing:border-box!important;
+    padding:0 9px!important;gap:5px!important;
+}
+.rms-generator-history-mobile-safe .rms-generation-card .rms-history-status .rms-status-check{
+    width:13px!important;height:13px!important;flex-basis:13px!important;
+}
+.rms-generator-history-mobile-safe .rms-generation-card:has(.rms-generation-select-control input:checked) .rms-generation-card-head{
+    margin-bottom:12px!important;
+}
+@media(max-width:420px){
+    .rms-generator-history-mobile-safe .rms-generation-card .rms-generation-card-head{
+        grid-template-columns:24px minmax(0,1fr) auto!important;column-gap:7px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-generation-card .rms-history-item-meta{gap:5px!important}
+    .rms-generator-history-mobile-safe .rms-generation-card .rms-history-item-meta > span,
+    .rms-generator-history-mobile-safe .rms-generation-card .rms-history-item-meta > small{font-size:8px!important}
+    .rms-generator-history-mobile-safe .rms-generation-card .rms-history-status{min-height:27px!important;height:27px!important;padding:0 7px!important;font-size:7px!important}
+}
+@media(prefers-reduced-motion:reduce){
+    .rms-generator-history-mobile-safe .rms-generation-card .rms-generation-card-head{transition:none!important}
+}
+</style>
+
+
+<style>
+/* V8 — Prevent the generator workspace from replaying its page-entry fade
+   after every Livewire morph/update. Keep local hover and control transitions. */
+.rms-generator-page .rms-generator-workspace-animated .rms-generator-stepbar,
+.rms-generator-page .rms-generator-workspace-animated .rms-generator-columns,
+.rms-generator-page .rms-generator-workspace-animated .rms-generator-columns > section:first-child,
+.rms-generator-page .rms-generator-workspace-animated .rms-generator-columns > section:nth-child(2){
+    animation:none!important;
+    opacity:1!important;
+    transform:none!important;
+}
+/* Livewire updates should not animate the history region as if it were opening. */
+.rms-generator-history-mobile-safe .rms-generator-history-content{
+    animation:none!important;
+}
+@media(prefers-reduced-motion:reduce){
+    .rms-generator-page .rms-generator-workspace-animated *,
+    .rms-generator-history-mobile-safe *{
+        scroll-behavior:auto!important;
+    }
+}
 </style>

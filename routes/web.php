@@ -142,6 +142,12 @@ Route::middleware('auth')->group(function () {
         'destroy',
     ])->name('dashboard.activity-logs.destroy');
 
+    Route::get('/history-downloads/{archive}/download', \App\Http\Controllers\HistoryDownloadArchiveController::class)
+        ->name('history-downloads.download');
+
+    Route::delete('/history-downloads/{archive}', \App\Http\Controllers\HistoryDownloadArchiveDeleteController::class)
+        ->name('history-downloads.destroy');
+
     // Generated image download / compression endpoint.
     Route::get('/generated-images/{generatedImage}/download', GeneratedImageDownloadController::class)
         ->name('generated-images.download');

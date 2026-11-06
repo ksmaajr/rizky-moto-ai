@@ -33,7 +33,7 @@ class ActivityLogService
             $metadata['http_status'] = $httpStatus;
         }
 
-        $userId = Auth::id();
+        $userId = Auth::id() ?? (isset($metadata['user_id']) ? (int) $metadata['user_id'] : null);
 
         // Queue/worker context: Auth::id() is normally null.
         // Resolve the owner from the Generation so generator activity logs

@@ -2,7 +2,7 @@
     <div class="rms-settings-page-head">
         <div>
             <span class="section-kicker">SYSTEM / SETTINGS</span>
-            <h1 x-text="$wire.activeTab === 'provider' ? 'AI Provider Configuration' : 'General Settings'"></h1>
+            <h1 x-text="$wire.activeTab === 'provider' ? 'AI Provider Configuration' : ($wire.activeTab === 'api-keys' ? 'API Key Management' : ($wire.activeTab === 'activity' ? 'Activity Log' : 'General Settings'))"></h1>
             <p x-text="$wire.activeTab === 'provider'
                 ? 'Kelola provider AI, credential, failover, dan readiness untuk Product Generator.'
                 : 'Kelola preferensi dasar workspace internal Rizky Moto Shop.'"></p>
@@ -50,6 +50,20 @@
                 <span>
                     <strong>AI Provider</strong>
                     <small>Engine &amp; credentials</small>
+                </span>
+                <i class="rms-settings-tab-status"></i>
+            </button>
+
+            <button
+                type="button"
+                class="rms-settings-tab"
+                :class="{ 'is-active': $wire.activeTab === 'api-keys' }"
+                wire:click="selectTab('api-keys')"
+            >
+                <span class="rms-settings-tab-icon rms-settings-ai" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="15" r="4"/><path d="m11 12 8-8 2 2-2 2 2 2-3 3-2-2-3 3"/></svg></span>
+                <span>
+                    <strong>API Keys</strong>
+                    <small>External API access</small>
                 </span>
                 <i class="rms-settings-tab-status"></i>
             </button>
@@ -260,7 +274,7 @@
                     </div>
                 </div>
             @else
-                @if (in_array($activeTab, ['provider', 'activity'], true))
+                @if (in_array($activeTab, ['provider', 'activity', 'api-keys'], true))
 
                 <div
                     class="rms-settings-panel rms-settings-panel-enter"
@@ -1371,6 +1385,8 @@
                             </div>
                             </section>
 
+                    @elseif ($activeTab === 'api-keys')
+                        <livewire:dashboard.settings.api-keys />
                     @endif
 
                     {{-- ACTIVITY LOG PAGE --}}
@@ -1780,8 +1796,7 @@
                             <div class="rms-server-foot"><span><i></i> Metrics refresh automatically every 3 seconds while this tab is open.</span><button type="button" wire:click="refreshServerMetrics" wire:loading.attr="disabled">↻ Refresh now</button></div>
                         </div>
 
-                    @else
-                        {{-- FOOTER --}}
+                    @elseif ($activeTab === 'provider')
                         <div class="rms-settings-panel-footer rms-openai-footer-upgraded rms-vg-footer">
                             <span><i></i> AI provider configuration is server-managed</span>
                             <strong>Encrypted credentials · Automatic failover ready</strong>

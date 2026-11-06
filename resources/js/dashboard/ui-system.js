@@ -300,7 +300,8 @@
                         syncMobileScrollLock();
                     }
 
-                    refreshContentAnimation();
+                    // Do not replay page-entry animations after ordinary Livewire updates.
+                    // Livewire morphs should update only the changed DOM without fading the workspace.
                 });
             });
         }
