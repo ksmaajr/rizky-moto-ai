@@ -8836,3 +8836,72 @@ body > .rms-history-download-modal{position:fixed!important;inset:0!important;z-
     .rms-generator-history-mobile-safe .rms-generation-card::before{animation:none!important;transition:none!important}
 }
 </style>
+
+
+<style>
+/* V7 — Align selection, generation metadata and status into a balanced card header */
+.rms-generator-history-mobile-safe .rms-generation-card .rms-generation-card-head{
+    display:grid!important;
+    grid-template-columns:26px minmax(0,1fr) auto!important;
+    align-items:center!important;
+    column-gap:10px!important;
+    row-gap:0!important;
+    min-height:32px!important;
+    margin:0 0 12px!important;
+}
+.rms-generator-history-mobile-safe .rms-generation-card .rms-generation-select-control{
+    display:grid!important;
+    place-items:center!important;
+    width:26px!important;height:30px!important;
+    min-width:26px!important;flex:none!important;
+    margin:0!important;padding:0!important;
+}
+.rms-generator-history-mobile-safe .rms-generation-card .rms-generation-select-control span{
+    width:19px!important;height:19px!important;
+    box-sizing:border-box!important;
+}
+.rms-generator-history-mobile-safe .rms-generation-card .rms-history-item-meta{
+    display:flex!important;align-items:center!important;justify-content:flex-start!important;
+    flex-wrap:nowrap!important;gap:7px!important;
+    min-width:0!important;overflow:hidden!important;
+    white-space:nowrap!important;
+}
+.rms-generator-history-mobile-safe .rms-generation-card .rms-history-item-meta > span,
+.rms-generator-history-mobile-safe .rms-generation-card .rms-history-item-meta > small{
+    display:inline-flex!important;align-items:center!important;
+    flex:0 0 auto!important;min-width:0!important;
+    margin:0!important;line-height:1.2!important;
+}
+.rms-generator-history-mobile-safe .rms-generation-card .rms-history-item-meta > span{
+    overflow:hidden!important;text-overflow:ellipsis!important;
+}
+.rms-generator-history-mobile-safe .rms-generation-card .rms-history-item-meta .rms-generation-source-badge{
+    padding:3px 6px!important;border-radius:6px!important;
+    background:#eff6ff!important;color:#3478d5!important;
+    font-size:8px!important;font-weight:850!important;
+}
+.rms-generator-history-mobile-safe .rms-generation-card .rms-history-status{
+    justify-self:end!important;align-self:center!important;
+    min-height:29px!important;height:29px!important;
+    box-sizing:border-box!important;
+    padding:0 9px!important;gap:5px!important;
+}
+.rms-generator-history-mobile-safe .rms-generation-card .rms-history-status .rms-status-check{
+    width:13px!important;height:13px!important;flex-basis:13px!important;
+}
+.rms-generator-history-mobile-safe .rms-generation-card:has(.rms-generation-select-control input:checked) .rms-generation-card-head{
+    margin-bottom:12px!important;
+}
+@media(max-width:420px){
+    .rms-generator-history-mobile-safe .rms-generation-card .rms-generation-card-head{
+        grid-template-columns:24px minmax(0,1fr) auto!important;column-gap:7px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-generation-card .rms-history-item-meta{gap:5px!important}
+    .rms-generator-history-mobile-safe .rms-generation-card .rms-history-item-meta > span,
+    .rms-generator-history-mobile-safe .rms-generation-card .rms-history-item-meta > small{font-size:8px!important}
+    .rms-generator-history-mobile-safe .rms-generation-card .rms-history-status{min-height:27px!important;height:27px!important;padding:0 7px!important;font-size:7px!important}
+}
+@media(prefers-reduced-motion:reduce){
+    .rms-generator-history-mobile-safe .rms-generation-card .rms-generation-card-head{transition:none!important}
+}
+</style>
