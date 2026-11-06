@@ -2,7 +2,7 @@
 
 use App\Models\Store;
 use App\Models\Template;
-use App\Models\Generation;
+use App\Models\Generation;\nuse App\Models\GeneratedImage;
 use Livewire\Component;
 use Livewire\Attributes\On;
 use Livewire\WithFileUploads;
@@ -243,7 +243,7 @@ new class extends Component
 
     public function downloadFilteredHistory(): void
     {
-        if (! class_exists(\\ZipArchive::class) || ! function_exists('imagecreatefromstring') || ! function_exists('imagejpeg')) {
+        if (! class_exists(\ZipArchive::class) || ! function_exists('imagecreatefromstring') || ! function_exists('imagejpeg')) {
             $this->dispatch('toast', type: 'error', title: 'ZIP tidak tersedia', message: 'Aktifkan ekstensi PHP ZIP dan GD pada server.');
             return;
         }
@@ -285,7 +285,7 @@ new class extends Component
             $name = 'rizky-moto-history-' . now()->format('Ymd-His');
         }
 
-        $archive = \\App\\Models\\HistoryDownloadArchive::query()->create([
+        $archive = \App\Models\HistoryDownloadArchive::query()->create([
             'user_id' => auth()->id(),
             'generation_ids' => $generationIds,
             'status' => 'queued',
@@ -294,14 +294,14 @@ new class extends Component
             'file_name' => $name . '.zip',
         ]);
 
-        \\App\\Jobs\\BuildHistoryDownloadArchiveJob::dispatch($archive->id)->onQueue('default');
+        \App\Jobs\BuildHistoryDownloadArchiveJob::dispatch($archive->id)->onQueue('default');
 
         $this->dispatch('toast', type: 'success', title: 'ZIP sedang disiapkan', message: $totalImages . ' foto diproses di background. Kamu bisa tetap menggunakan dashboard.');
     }
 
-    public function getLatestHistoryDownloadArchiveProperty(): ?\\App\\Models\\HistoryDownloadArchive
+    public function getLatestHistoryDownloadArchiveProperty(): ?\App\Models\HistoryDownloadArchive
     {
-        return \\App\\Models\\HistoryDownloadArchive::query()
+        return \App\Models\HistoryDownloadArchive::query()
             ->where('user_id', auth()->id())
             ->latest('id')
             ->first();
