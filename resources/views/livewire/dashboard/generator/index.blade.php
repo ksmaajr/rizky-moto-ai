@@ -259,9 +259,7 @@ new class extends Component
             $query->orderBy('created_at', 'desc')->orderBy('id', 'desc');
         }
 
-        // Keep the same safety limit as the previous bulk-download flow.
-        $totalMatching = (clone $query)->count();
-        if ($totalMatching > 500) {
+        if ((clone $query)->count() > 500) {
             $this->dispatch('toast', type: 'warning', title: 'Terlalu banyak hasil', message: 'ZIP dibatasi maksimal 500 generation sekali unduh. Persempit filter terlebih dahulu.');
             return;
         }
@@ -280,19 +278,32 @@ new class extends Component
 
         $name = trim((string) $this->historyZipName);
         $name = preg_replace('/\.zip$/i', '', $name) ?? '';
-        $name = preg_replace('~[\\\\/:*?"<>|]+~u', '', $name) ?? '';
+        $name = str_replace(['\\', '/', ':', '*', '?', '"', '<', '>', '|'], '', $name);
         $name = mb_substr(trim($name, " .\t\n\r\0\x0B"), 0, 100);
         if ($name === '') {
             $name = 'rizky-moto-history-' . now()->format('Ymd-His');
         }
 
-        $archive = \App\Models\HistoryDownloadArchive::query()->create([
-            'user_id' => auth()->id(),
-            'generation_ids' => $generationIds,
-            'status' => 'queued',
-            'total_images' => $totalImages,
-            'processed_images' => 0,
-            'file_name' => $name . '.zip',
+        $archive = \Illuminate\Support\Facades\DB::transaction(function () use ($generationIds, $totalImages, $name): ?\App\Models\HistoryDownloadArchive {
+            \Illuminate\Support\Facades\DB::table('users')->where('id', auth()->id())->lockForUpdate()->first();
+
+            $activeArchive = \App\Models\HistoryDownloadArchive::query()
+                ->where('user_id', auth()->id())
+                ->whereIn('status', ['queued', 'processing'])
+                ->lockForUpdate()
+                ->first();
+
+            if ($activeArchive) {
+                return null;
+            }
+
+            return \App\Models\HistoryDownloadArchive::query()->create([
+                'user_id' => auth()->id(),
+                'generation_ids' => $generationIds,
+                'status' => 'queued',
+                'total_images' => $totalImages,
+                'processed_images' => 0,
+                'file_name' => $name . '.zip',
             ]);
         });
 
