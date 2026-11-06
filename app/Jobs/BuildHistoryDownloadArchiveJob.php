@@ -37,7 +37,7 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
             return;
         }
 
-        $archive->update(['status' => 'processing', 'processed_images' => 0]);
+        $archive->update(['status' => 'processing', 'processed_images' => 0]);\n        app(ActivityLogService::class)->log('history_bulk_download', 'download', 'processing', 'Bulk download sedang diproses', $archive->file_name, ['user_id' => $archive->user_id, 'archive_id' => $archive->id, 'total_images' => $archive->total_images]);
 
         $localDisk = Storage::disk('local');
         $publicDisk = Storage::disk('public');
