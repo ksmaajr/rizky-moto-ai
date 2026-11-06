@@ -408,6 +408,24 @@ class extends Component
 
 
 
+    public function getVercelGatewayStatusProperty(): array
+    {
+        $pool = app(\App\Services\VercelGatewayKeyPool::class);
+        $userId = auth()->id();
+        $activeKeys = $pool->activeCount($userId);
+        $available = $pool->hasAvailableKey($userId);
+
+        return [
+            'state' => $available ? 'connected' : 'not_configured',
+            'label' => $available ? 'Connected' : 'Not configured',
+            'subtitle' => $available
+                ? ($activeKeys > 0 ? "{$activeKeys} active API key(s)" : 'Gateway credential available')
+                : 'Vercel AI Gateway credential unavailable',
+            'active_keys' => $activeKeys,
+        ];
+    }
+
+
     public function getOpenAiStatusProperty(): array
 
     {
@@ -2144,10 +2162,10 @@ public function getUserInitialsProperty(): string
                 <div class="worker-api-footer">
                     <div class="worker-api-footer-status">
                         <div class="worker-api-state">
-                            <i class="worker-footer-dot {{ $this->openAiStatus['state'] === 'connected' ? 'is-online' : '' }}"></i>
+                            <i class="worker-footer-dot {{ $this->vercelGatewayStatus['state'] === 'connected' ? 'is-online' : '' }}"></i>
                             <span>
-                                <small>API STATUS</small>
-                                <strong>{{ $this->openAiStatus['label'] }}</strong>
+                                <small>VERCEL AI GATEWAY</small>
+                                <strong>{{ $this->vercelGatewayStatus['label'] }}</strong>
                             </span>
                         </div>
                         <div class="worker-api-state worker-api-state-vercel">
