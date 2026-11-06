@@ -145,7 +145,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/history-downloads/{archive}/download', \App\Http\Controllers\HistoryDownloadArchiveController::class)
         ->name('history-downloads.download');
 
-    Route::delete('/history-downloads/{archive}', \\App\\Http\\Controllers\\HistoryDownloadArchiveDeleteController::class)
+    Route::delete('/history-downloads/{archive}', \App\Http\Controllers\HistoryDownloadArchiveDeleteController::class)
         ->name('history-downloads.destroy');
 
     // Generated image download / compression endpoint.
