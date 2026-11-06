@@ -356,6 +356,33 @@ new class extends Component
             ->get();
     }
 
+    public function deleteHistoryDownloadArchive(int $archiveId): void
+    {
+        $archive = \App\Models\HistoryDownloadArchive::query()
+            ->where('user_id', auth()->id())
+            ->findOrFail($archiveId);
+
+        if (in_array($archive->status, ['queued', 'processing'], true)) {
+            $this->dispatch('toast', type: 'warning', title: 'Arsip sedang diproses', message: 'Tunggu sampai proses ZIP selesai sebelum menghapusnya.');
+            return;
+        }
+
+        if ($archive->file_path && \Illuminate\Support\Facades\Storage::disk('local')->exists($archive->file_path)) {
+            \Illuminate\Support\Facades\Storage::disk('local')->delete($archive->file_path);
+        }
+
+        app(\App\Services\ActivityLogService::class)->log(
+            'history_bulk_download_delete',
+            'download',
+            'success',
+            'Arsip bulk download dihapus',
+            $archive->file_name ?: ('Arsip #' . $archive->id),
+            ['user_id' => auth()->id(), 'archive_id' => $archive->id]
+        );
+
+        $archive->delete();
+        $this->dispatch('toast', type: 'success', title: 'Arsip dihapus', message: 'Riwayat dan file ZIP berhasil dihapus dari server.');
+    }
     public function loadMoreHistory(): void
     {
         $this->recentHistoryLimit += 12;
@@ -2254,7 +2281,7 @@ new class extends Component
 .rms-zip-step{display:flex;align-items:center;gap:5px;color:#a0aaa3;font-size:9px;font-weight:700;white-space:nowrap}.rms-zip-step i{display:grid;place-items:center;width:17px;height:17px;border:1px solid #dce5de;border-radius:50%;font-size:9px;font-style:normal}.rms-zip-step.is-done{color:#16834a}.rms-zip-step.is-done i{border-color:#ccebd6;background:#e6f7ec}.rms-zip-step.is-current{color:#16834a}.rms-zip-step.is-current i{border-color:#bfe7cd;background:#e8f8ee;animation:rmsZipPulse 1.3s ease-in-out infinite}
 .rms-zip-live-dot{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#20b765;box-shadow:0 0 0 0 rgba(32,183,101,.35);animation:rmsZipLive 1.6s ease-out infinite}
 .rms-zip-complete-head{display:flex;align-items:center;gap:11px;margin-bottom:15px}.rms-zip-complete-icon{display:grid;place-items:center;width:40px;height:40px;flex:0 0 40px;border-radius:13px;background:#e5f8ec;color:#128448;font-size:21px;font-weight:900;animation:rmsZipSuccess .55s cubic-bezier(.2,.8,.2,1) both}.rms-zip-complete-head strong{display:block;color:#16834a;font-size:13px;font-weight:900}.rms-zip-complete-head small{display:block;margin-top:4px;color:#78877e;font-size:10px}.rms-zip-status-badge.is-complete{border-color:#ccebd6;background:#e8f8ee}
-.rms-zip-download-link{display:flex;align-items:center;justify-content:center;gap:8px;min-height:42px;margin-top:13px;padding:0 14px;border-radius:11px;background:linear-gradient(110deg,#159653,#087d43);color:#fff;font-size:11px;font-weight:850;text-decoration:none;box-shadow:0 6px 16px rgba(21,150,83,.17);transition:transform .2s,box-shadow .2s}.rms-zip-download-link:hover{transform:translateY(-2px);box-shadow:0 9px 20px rgba(21,150,83,.24)}.rms-zip-download-link span{font-size:18px}
+.rms-history-download-archive-list{max-height:min(42vh,420px);min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 7px 3px 2px;margin:0 -3px 14px;scrollbar-width:thin;scrollbar-color:#cbd9cf transparent}.rms-history-download-archive-list::-webkit-scrollbar{width:6px}.rms-history-download-archive-list::-webkit-scrollbar-track{background:transparent}.rms-history-download-archive-list::-webkit-scrollbar-thumb{background:#cbd9cf;border-radius:99px}.rms-zip-download-link{display:flex;align-items:center;justify-content:center;gap:8px;min-height:42px;margin-top:13px;padding:0 14px;border-radius:11px;background:linear-gradient(110deg,#159653,#087d43);color:#fff;font-size:11px;font-weight:850;text-decoration:none;box-shadow:0 6px 16px rgba(21,150,83,.17);transition:transform .2s,box-shadow .2s}.rms-zip-download-link:hover{transform:translateY(-2px);box-shadow:0 9px 20px rgba(21,150,83,.24)}.rms-zip-download-link span{font-size:18px}
 .rms-zip-failed-head{display:flex;align-items:center;gap:9px;color:#b42318;font-size:13px}.rms-zip-failed-head span{display:grid;place-items:center;width:27px;height:27px;border-radius:9px;background:#fff0ef;font-weight:900}.rms-zip-idle-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:13px;background:#edf5ef;color:#16834a;font-size:10px;font-weight:900;letter-spacing:.04em}
 @keyframes rmsZipSpin{to{transform:rotate(360deg)}}@keyframes rmsZipPulse{50%{transform:scale(.72);opacity:.55}}@keyframes rmsZipLive{70%{box-shadow:0 0 0 7px rgba(32,183,101,0)}}@keyframes rmsZipShimmer{to{background-position:-200% 0}}@keyframes rmsZipSweep{to{transform:translateX(100%)}}@keyframes rmsZipGlow{to{opacity:.45;transform:translateX(8%)}}@keyframes rmsZipCardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes rmsZipSuccess{0%{transform:scale(.65) rotate(-12deg);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
 @media(prefers-reduced-motion:reduce){.rms-history-download-async-status,.rms-zip-status-glow,.rms-zip-status-icon:before,.rms-zip-status-icon span,.rms-zip-progress-fill,.rms-zip-progress-fill:after,.rms-zip-live-dot,.rms-zip-complete-icon{animation:none!important;transition:none!important}}
@@ -2319,7 +2346,7 @@ new class extends Component
                 this.confirmId = null;
                 document.body.classList.remove('rms-confirm-lock');
             },
-            runConfirm() {
+            async runConfirm() {
                 if (!this.confirmAction || !this.confirmId) {
                     this.closeConfirm();
                     return;
@@ -2337,7 +2364,11 @@ new class extends Component
                 } else if (action === 'retry') {
                     $wire.retryGeneration(id);
                 } else if (action === 'archive-delete') {
-                    document.getElementById('historyArchiveDeleteForm-' + id)?.submit();
+                    try {
+                        await $wire.deleteHistoryDownloadArchive(id);
+                    } catch (error) {
+                        console.error('Bulk archive delete failed', error);
+                    }
                 }
             }
         }"
@@ -2538,6 +2569,7 @@ new class extends Component
                             $archives = $this->historyDownloadArchives;
 
                         @endphp
+                        <div class="rms-history-download-archive-list" aria-label="Riwayat bulk download">
                         @forelse($archives as $archive)
                             @php
                                 $archivePercent = min(100, (int) round(($archive->processed_images / max(1, $archive->total_images)) * 100));
@@ -2582,20 +2614,12 @@ new class extends Component
                                 <div class="rms-zip-progress-track is-complete"><div class="rms-zip-progress-fill" style="width:100%;"></div></div>
                                 <div style="display:flex;gap:9px;flex-wrap:wrap;">
                                     <a href="{{ route('history-downloads.download', $archive) }}" class="rms-zip-download-link" style="flex:1;"><span>↓</span> Unduh ZIP</a>
-                                    <form id="historyArchiveDeleteForm-{{ $archive->id }}" method="POST" action="{{ route('history-downloads.destroy', $archive) }}">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="button" x-on:click="askConfirm('archive-delete', {{ $archive->id }}, 'Hapus arsip ZIP?', 'File ZIP ini akan dihapus permanen dari server dan tidak dapat diunduh lagi.')" style="display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:112px;min-height:44px;padding:0 16px;border:1px solid #f3caca;border-radius:11px;background:linear-gradient(180deg,#fffafa,#fff1f1);color:#b42318;font-size:11px;font-weight:850;cursor:pointer;box-shadow:0 3px 9px rgba(180,35,24,.06);transition:transform .18s,background .18s;">Hapus file</button>
-                                    </form>
+                                    <button type="button" x-on:click="askConfirm('archive-delete', {{ $archive->id }}, 'Hapus arsip ZIP?', 'File ZIP ini akan dihapus permanen dari server dan tidak dapat diunduh lagi.')" style="display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:112px;min-height:44px;padding:0 16px;border:1px solid #f3caca;border-radius:11px;background:linear-gradient(180deg,#fffafa,#fff1f1);color:#b42318;font-size:11px;font-weight:850;cursor:pointer;box-shadow:0 3px 9px rgba(180,35,24,.06);transition:transform .18s,background .18s;">Hapus file</button>
                                 </div>
                             @elseif($archive && $archive->status === 'failed')
                                 <div class="rms-zip-failed-head"><span>!</span><strong>ZIP gagal dibuat</strong></div>
                                 <p style="margin:9px 0 0;color:#8c6666;font-size:11px;line-height:1.6;">{{ $archive->error_message ?: 'Terjadi kesalahan saat memproses gambar. Silakan coba lagi.' }}</p>
-                                <form id="historyArchiveDeleteForm-{{ $archive->id }}" method="POST" action="{{ route('history-downloads.destroy', $archive) }}" style="margin-top:12px;">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="button" x-on:click="askConfirm('archive-delete', {{ $archive->id }}, 'Hapus riwayat bulk download?', 'Catatan proses gagal ini akan dihapus permanen.')" style="display:inline-flex;align-items:center;justify-content:center;min-width:112px;min-height:42px;padding:0 15px;border:1px solid #f3caca;border-radius:10px;background:linear-gradient(180deg,#fffafa,#fff1f1);color:#b42318;font-size:11px;font-weight:850;cursor:pointer;box-shadow:0 3px 9px rgba(180,35,24,.06);">Hapus riwayat</button>
-                                </form>
+                                <button type="button" x-on:click="askConfirm('archive-delete', {{ $archive->id }}, 'Hapus riwayat bulk download?', 'Catatan proses gagal ini akan dihapus permanen.')" style="display:inline-flex;align-items:center;justify-content:center;min-width:112px;min-height:42px;margin-top:12px;padding:0 15px;border:1px solid #f3caca;border-radius:10px;background:linear-gradient(180deg,#fffafa,#fff1f1);color:#b42318;font-size:11px;font-weight:850;cursor:pointer;box-shadow:0 3px 9px rgba(180,35,24,.06);">Hapus riwayat</button>
                             @else
                                 <div style="display:flex;align-items:center;gap:11px;">
                                     <span class="rms-zip-idle-icon">ZIP</span>
@@ -2606,6 +2630,7 @@ new class extends Component
                         @empty
                             <div class="rms-history-download-async-status" style="margin:0 0 15px;padding:16px;border:1px dashed #dce6df;border-radius:16px;background:#fbfdfb;color:#718078;font-size:11px;text-align:center;">Belum ada riwayat bulk download. Arsip yang selesai dibuat akan tersimpan di sini.</div>
                         @endforelse
+                        </div>
                         <div class="rms-history-download-dialog-actions" style="display:flex;gap:10px;padding-top:16px;border-top:1px solid #eceef2;">
                             <button type="button" class="rms-history-download-cancel" style="display:inline-flex;align-items:center;justify-content:center;min-height:49px;flex:1 1 35%;padding:0 17px;border:1px solid #e7e9ef;border-radius:12px;background:#fff;color:#535b69;font-size:12px;font-weight:750;cursor:pointer;" x-on:click="downloadPanelOpen = false">Batal</button>
                             <button type="button" class="rms-history-download-button rms-history-download-confirm" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:49px;flex:1 1 65%;padding:0 15px;border:0;border-radius:12px;background:linear-gradient(135deg,#159653,#087d43);color:#fff;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 7px 18px rgba(21,148,81,.2);"
