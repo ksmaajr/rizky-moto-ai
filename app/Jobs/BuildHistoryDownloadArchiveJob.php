@@ -102,7 +102,8 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
                         &$added,
                         &$processed,
                         &$temporaryFiles,
-                        $archive
+                        $archive,
+                        $tempDirectory
                     ): void {
                         foreach ($images as $image) {
                             $sourcePath = $image->image_path;
@@ -126,7 +127,7 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
                                     . ($index > 1 ? ' (' . $index . ')' : '')
                                     . '.' . $this->safeExtension($extension);
                             } else {
-                                $compressedPath = tempnam(storage_path('app/' . 'history-downloads'), 'img-');
+                                $compressedPath = tempnam($tempDirectory, 'img-');
                                 if ($compressedPath === false) {
                                     throw new \RuntimeException('Tidak dapat membuat file sementara untuk kompresi.');
                                 }
