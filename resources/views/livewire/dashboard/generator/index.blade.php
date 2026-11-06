@@ -347,6 +347,15 @@ new class extends Component
             ->first();
     }
 
+    public function getHistoryDownloadArchivesProperty()
+    {
+        return \App\Models\HistoryDownloadArchive::query()
+            ->where('user_id', auth()->id())
+            ->latest('id')
+            ->limit(30)
+            ->get();
+    }
+
     public function loadMoreHistory(): void
     {
         $this->recentHistoryLimit += 12;
@@ -2526,11 +2535,19 @@ new class extends Component
                             <div class="rms-history-download-empty">Tidak ada foto yang bisa diunduh dari hasil filter saat ini.</div>
                         @endif
                         @php
-                            $archive = $this->latestHistoryDownloadArchive;
-                            $archivePercent = $archive ? min(100, (int) round(($archive->processed_images / max(1, $archive->total_images)) * 100)) : 0;
-                            $archiveActive = $archive && in_array($archive->status, ['queued', 'processing'], true);
+                            $archives = $this->historyDownloadArchives;
+
                         @endphp
-                        <div wire:poll.2s.visible class="rms-history-download-async-status" style="position:relative;margin:0 0 15px;padding:16px;border:1px solid #e2e9e5;border-radius:16px;background:linear-gradient(145deg,#fbfefc,#f5faf7);overflow:hidden;">
+                        @forelse($archives as $archive)
+                            @php
+                                $archivePercent = min(100, (int) round(($archive->processed_images / max(1, $archive->total_images)) * 100));
+                                $archiveActive = in_array($archive->status, ['queued', 'processing'], true);
+                            @endphp
+                            <div wire:poll.2s.visible wire:key="history-archive-{{ $archive->id }}" class="rms-history-download-async-status" style="position:relative;margin:0 0 12px;padding:16px;border:1px solid #e2e9e5;border-radius:16px;background:linear-gradient(145deg,#fbfefc,#f5faf7);overflow:hidden;">
+                                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #e8eee9;">
+                                    <div style="min-width:0;"><strong style="display:block;color:#344139;font-size:11px;font-weight:850;overflow-wrap:anywhere;">{{ $archive->file_name ?: 'Bulk download ZIP' }}</strong><small style="display:block;margin-top:3px;color:#89958d;font-size:10px;">{{ $archive->created_at?->timezone(config('app.timezone'))->format('d M Y, H:i') }} WIB · #{{ $archive->id }}</small></div>
+                                    <span style="flex:0 0 auto;padding:5px 8px;border-radius:8px;background:#eef4f0;color:#65756a;font-size:9px;font-weight:850;">{{ strtoupper($archive->status) }}</span>
+                                </div>
                             @if($archiveActive)
                                 <div class="rms-zip-status-glow"></div>
                                 <div style="position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px;">
@@ -2568,7 +2585,7 @@ new class extends Component
                                     <form id="historyArchiveDeleteForm-{{ $archive->id }}" method="POST" action="{{ route('history-downloads.destroy', $archive) }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="button" x-on:click="askConfirm('archive-delete', {{ $archive->id }}, 'Hapus arsip ZIP?', 'File ZIP ini akan dihapus permanen dari server dan tidak dapat diunduh lagi.')" style="min-height:42px;padding:0 13px;border:1px solid #f2d8d8;border-radius:11px;background:#fff7f7;color:#b42318;font-size:11px;font-weight:800;cursor:pointer;">Hapus file</button>
+                                        <button type="button" x-on:click="askConfirm('archive-delete', {{ $archive->id }}, 'Hapus arsip ZIP?', 'File ZIP ini akan dihapus permanen dari server dan tidak dapat diunduh lagi.')" style="display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:112px;min-height:44px;padding:0 16px;border:1px solid #f3caca;border-radius:11px;background:linear-gradient(180deg,#fffafa,#fff1f1);color:#b42318;font-size:11px;font-weight:850;cursor:pointer;box-shadow:0 3px 9px rgba(180,35,24,.06);transition:transform .18s,background .18s;">Hapus file</button>
                                     </form>
                                 </div>
                             @elseif($archive && $archive->status === 'failed')
@@ -2577,7 +2594,7 @@ new class extends Component
                                 <form id="historyArchiveDeleteForm-{{ $archive->id }}" method="POST" action="{{ route('history-downloads.destroy', $archive) }}" style="margin-top:12px;">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="button" x-on:click="askConfirm('archive-delete', {{ $archive->id }}, 'Hapus riwayat bulk download?', 'Catatan proses gagal ini akan dihapus permanen.')" style="min-height:35px;padding:0 12px;border:1px solid #f2d8d8;border-radius:9px;background:#fff7f7;color:#b42318;font-size:10px;font-weight:800;cursor:pointer;">Hapus riwayat</button>
+                                    <button type="button" x-on:click="askConfirm('archive-delete', {{ $archive->id }}, 'Hapus riwayat bulk download?', 'Catatan proses gagal ini akan dihapus permanen.')" style="display:inline-flex;align-items:center;justify-content:center;min-width:112px;min-height:42px;padding:0 15px;border:1px solid #f3caca;border-radius:10px;background:linear-gradient(180deg,#fffafa,#fff1f1);color:#b42318;font-size:11px;font-weight:850;cursor:pointer;box-shadow:0 3px 9px rgba(180,35,24,.06);">Hapus riwayat</button>
                                 </form>
                             @else
                                 <div style="display:flex;align-items:center;gap:11px;">
@@ -2585,7 +2602,10 @@ new class extends Component
                                     <div><strong style="display:block;color:#39443d;font-size:12px;font-weight:800;">Siap membuat arsip</strong><small style="display:block;margin-top:3px;color:#87938b;font-size:10px;">Progress, status antrean, dan hasil unduhan akan tampil di sini.</small></div>
                                 </div>
                             @endif
-                        </div>
+                            </div>
+                        @empty
+                            <div class="rms-history-download-async-status" style="margin:0 0 15px;padding:16px;border:1px dashed #dce6df;border-radius:16px;background:#fbfdfb;color:#718078;font-size:11px;text-align:center;">Belum ada riwayat bulk download. Arsip yang selesai dibuat akan tersimpan di sini.</div>
+                        @endforelse
                         <div class="rms-history-download-dialog-actions" style="display:flex;gap:10px;padding-top:16px;border-top:1px solid #eceef2;">
                             <button type="button" class="rms-history-download-cancel" style="display:inline-flex;align-items:center;justify-content:center;min-height:49px;flex:1 1 35%;padding:0 17px;border:1px solid #e7e9ef;border-radius:12px;background:#fff;color:#535b69;font-size:12px;font-weight:750;cursor:pointer;" x-on:click="downloadPanelOpen = false">Batal</button>
                             <button type="button" class="rms-history-download-button rms-history-download-confirm" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:49px;flex:1 1 65%;padding:0 15px;border:0;border-radius:12px;background:linear-gradient(135deg,#159653,#087d43);color:#fff;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 7px 18px rgba(21,148,81,.2);"
