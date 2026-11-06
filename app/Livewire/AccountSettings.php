@@ -51,7 +51,7 @@ class AccountSettings extends Component {
         }
         $user->save();
 
-        Flux::toast(variant: 'success', text: 'Informasi profil berhasil diperbarui.');
+        $this->notify('success', 'Profil diperbarui', 'Nama dan alamat email berhasil disimpan.');
     }
 
     public function uploadProfilePhoto(): void
@@ -69,7 +69,7 @@ class AccountSettings extends Component {
         $newPath = $validated['profilePhoto']->storePublicly('profile-photos', 'public');
 
         if (! $newPath) {
-            Flux::toast(variant: 'danger', text: 'Foto profil gagal diunggah. Silakan coba lagi.');
+            $this->notify('error', 'Upload gagal', 'Foto profil tidak berhasil disimpan. Silakan coba lagi.');
             return;
         }
 
@@ -82,7 +82,7 @@ class AccountSettings extends Component {
         $this->reset('profilePhoto');
         unset($this->profilePhotoUrl);
 
-        Flux::toast(variant: 'success', text: 'Foto profil berhasil diperbarui.');
+        $this->notify('success', 'Foto profil diperbarui', 'Foto profil baru sudah aktif di akun Anda.');
     }
 
     public function confirmDeleteProfilePhoto(): void
@@ -102,7 +102,7 @@ class AccountSettings extends Component {
 
         if (! $path) {
             $this->showDeletePhotoConfirm = false;
-            Flux::toast(variant: 'info', text: 'Belum ada foto profil untuk dihapus.');
+            $this->notify('info', 'Belum ada foto', 'Akun ini belum memiliki foto profil tersimpan.');
             return;
         }
 
@@ -112,7 +112,7 @@ class AccountSettings extends Component {
         $this->showDeletePhotoConfirm = false;
         unset($this->profilePhotoUrl);
 
-        Flux::toast(variant: 'success', text: 'Foto profil berhasil dihapus.');
+        $this->notify('success', 'Foto profil dihapus', 'Avatar akun sekarang menggunakan inisial nama.');
     }
 
     public function updatePassword(): void
@@ -130,7 +130,12 @@ class AccountSettings extends Component {
         Auth::user()->update(['password' => $validated['password']]);
         $this->reset('current_password', 'password', 'password_confirmation');
 
-        Flux::toast(variant: 'success', text: 'Password berhasil diperbarui.');
+        $this->notify('success', 'Password diperbarui', 'Password akun berhasil diganti.');
+    }
+
+    private function notify(string $type, string $title, string $message): void
+    {
+        $this->dispatch('toast', type: $type, title: $title, message: $message, duration: 4500);
     }
 
     public function resendVerificationNotification(): void
@@ -142,6 +147,6 @@ class AccountSettings extends Component {
 
         $user->sendEmailVerificationNotification();
         Session::flash('status', 'verification-link-sent');
-        Flux::toast(variant: 'success', text: 'Email verifikasi berhasil dikirim ulang.');
+        $this->notify('success', 'Email dikirim', 'Tautan verifikasi sudah dikirim ulang.');
     }
 }
