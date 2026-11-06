@@ -241,8 +241,9 @@ new class extends Component
 
     public function getHistoryDownloadImageCountProperty(): int
     {
-        $query = (clone $this->historyQuery())
-            ->when($this->selectedGenerationIds !== [], fn ($q) => $q->whereIn('id', array_map('intval', $this->selectedGenerationIds)))
+        $query = ($this->selectedGenerationIds !== []
+                ? Generation::query()->where('user_id', auth()->id())->whereIn('id', array_map('intval', $this->selectedGenerationIds))
+                : clone $this->historyQuery())
             ->whereHas('generatedImages', fn ($images) => $images
                 ->whereNotNull('image_path')
                 ->where('image_path', '<>', ''));
@@ -279,8 +280,9 @@ new class extends Component
             return;
         }
 
-        $query = (clone $this->historyQuery())
-            ->when($this->selectedGenerationIds !== [], fn ($q) => $q->whereIn('id', array_map('intval', $this->selectedGenerationIds)))
+        $query = ($this->selectedGenerationIds !== []
+                ? Generation::query()->where('user_id', auth()->id())->whereIn('id', array_map('intval', $this->selectedGenerationIds))
+                : clone $this->historyQuery())
             ->whereHas('generatedImages', fn ($images) => $images
                 ->whereNotNull('image_path')
                 ->where('image_path', '<>', ''));
@@ -2451,7 +2453,7 @@ new class extends Component
                 <div class="rms-history-toolbar">
                 <div class="rms-history-search rms-history-search-premium">
                     <span class="rms-history-search-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.2 4.2"/></svg></span>
-                    <input type="search" wire:model.live.debounce.350ms="historySearch" placeholder="Cari judul generation, Vario, ID, store, template..." aria-label="Cari hasil generation">
+                    <input type="search" wire:model.live.debounce.350ms="historySearch" placeholder="Cari judul produk, Vario, ID, store, template..." aria-label="Cari hasil generation">
                     @if(trim($historySearch) !== '')
                         <button type="button" class="rms-history-search-clear" wire:click="$set('historySearch','')" aria-label="Hapus pencarian">×</button>
                     @else
@@ -2601,7 +2603,7 @@ new class extends Component
                         </div>
                         <span class="rms-history-download-dialog-eyebrow" style="display:flex;align-items:center;gap:7px;margin-bottom:9px;color:#16834a;font-size:10px;font-weight:850;letter-spacing:.12em;"><i style="width:7px;height:7px;border-radius:50%;background:#20b765;box-shadow:0 0 0 4px #e4f8eb;display:inline-block;"></i> EXPORT GENERATIONS</span>
                         <h3 id="rms-history-download-title" style="margin:0 0 9px;font-size:25px;font-weight:850;letter-spacing:-.045em;line-height:1.2;color:#20232b;">Download hasil generation</h3>
-                        <p class="rms-history-download-dialog-description" style="margin:0 0 21px;color:#7d8492;font-size:13px;line-height:1.65;">Semua hasil yang sesuai dengan filter Recent History akan dikemas dalam satu file ZIP.</p>
+                        <p class="rms-history-download-dialog-description" style="margin:0 0 21px;color:#7d8492;font-size:13px;line-height:1.65;">{{ count($selectedGenerationIds) > 0 ? "Generation yang kamu pilih akan dikemas dalam satu file ZIP." : "Semua hasil yang sesuai dengan filter Recent History akan dikemas dalam satu file ZIP." }}</p>
                         <div class="rms-history-download-summary-card" style="display:flex;align-items:center;gap:12px;min-width:0;padding:14px;border:1px solid #e5e9ef;border-radius:15px;background:rgba(255,255,255,.9);">
                             <div class="rms-history-download-summary-card-icon" aria-hidden="true" style="display:grid;place-items:center;width:40px;height:40px;flex:0 0 40px;border-radius:12px;background:#f2f4f7;color:#596474;font-size:23px;">▤</div>
                             <div class="rms-history-download-summary-card-copy" style="display:flex;flex:1 1 auto;flex-direction:column;gap:4px;min-width:0;">
@@ -2714,7 +2716,7 @@ new class extends Component
                                 <b>{{ $this->historyDownloadImageCount }} foto</b>
                             </button>
                         </div>
-                        <p class="rms-history-download-dialog-footnote" style="margin:13px 0 0;text-align:center;color:#9aa1ad;font-size:10px;line-height:1.5;">ZIP akan dibuat dari hasil yang tampil sesuai filter saat ini.</p>
+                        <p class="rms-history-download-dialog-footnote" style="margin:13px 0 0;text-align:center;color:#9aa1ad;font-size:10px;line-height:1.5;">{{ count($selectedGenerationIds) > 0 ? "ZIP hanya berisi generation yang dipilih." : "ZIP akan dibuat dari hasil yang tampil sesuai filter saat ini." }}</p>
                     </section>
                 </div>
                 </template>
