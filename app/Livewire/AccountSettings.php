@@ -144,4 +144,4 @@ class AccountSettings extends Component {
         Session::flash('status', 'verification-link-sent');
         Flux::toast(variant: 'success', text: 'Email verifikasi berhasil dikirim ulang.');
     }
-
+}
