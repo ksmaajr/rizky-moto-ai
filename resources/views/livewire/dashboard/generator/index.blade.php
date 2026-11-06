@@ -2327,6 +2327,8 @@ new class extends Component
                     $wire.cancelGeneration(id);
                 } else if (action === 'retry') {
                     $wire.retryGeneration(id);
+                } else if (action === 'archive-delete') {
+                    document.getElementById('historyArchiveDeleteForm-' + id)?.submit();
                 }
             }
         }"
@@ -2563,19 +2565,19 @@ new class extends Component
                                 <div class="rms-zip-progress-track is-complete"><div class="rms-zip-progress-fill" style="width:100%;"></div></div>
                                 <div style="display:flex;gap:9px;flex-wrap:wrap;">
                                     <a href="{{ route('history-downloads.download', $archive) }}" class="rms-zip-download-link" style="flex:1;"><span>↓</span> Unduh ZIP</a>
-                                    <form method="POST" action="{{ route('history-downloads.destroy', $archive) }}" onsubmit="return confirm('Hapus arsip ZIP ini dari server?')">
+                                    <form id="historyArchiveDeleteForm-{{ $archive->id }}" method="POST" action="{{ route('history-downloads.destroy', $archive) }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" style="min-height:42px;padding:0 13px;border:1px solid #f2d8d8;border-radius:11px;background:#fff7f7;color:#b42318;font-size:11px;font-weight:800;cursor:pointer;">Hapus file</button>
+                                        <button type="button" x-on:click="askConfirm('archive-delete', {{ $archive->id }}, 'Hapus arsip ZIP?', 'File ZIP ini akan dihapus permanen dari server dan tidak dapat diunduh lagi.')" style="min-height:42px;padding:0 13px;border:1px solid #f2d8d8;border-radius:11px;background:#fff7f7;color:#b42318;font-size:11px;font-weight:800;cursor:pointer;">Hapus file</button>
                                     </form>
                                 </div>
                             @elseif($archive && $archive->status === 'failed')
                                 <div class="rms-zip-failed-head"><span>!</span><strong>ZIP gagal dibuat</strong></div>
                                 <p style="margin:9px 0 0;color:#8c6666;font-size:11px;line-height:1.6;">{{ $archive->error_message ?: 'Terjadi kesalahan saat memproses gambar. Silakan coba lagi.' }}</p>
-                                <form method="POST" action="{{ route('history-downloads.destroy', $archive) }}" style="margin-top:12px;" onsubmit="return confirm('Hapus catatan bulk download ini?')">
+                                <form id="historyArchiveDeleteForm-{{ $archive->id }}" method="POST" action="{{ route('history-downloads.destroy', $archive) }}" style="margin-top:12px;">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" style="min-height:35px;padding:0 12px;border:1px solid #f2d8d8;border-radius:9px;background:#fff7f7;color:#b42318;font-size:10px;font-weight:800;cursor:pointer;">Hapus riwayat</button>
+                                    <button type="button" x-on:click="askConfirm('archive-delete', {{ $archive->id }}, 'Hapus riwayat bulk download?', 'Catatan proses gagal ini akan dihapus permanen.')" style="min-height:35px;padding:0 12px;border:1px solid #f2d8d8;border-radius:9px;background:#fff7f7;color:#b42318;font-size:10px;font-weight:800;cursor:pointer;">Hapus riwayat</button>
                                 </form>
                             @else
                                 <div style="display:flex;align-items:center;gap:11px;">
