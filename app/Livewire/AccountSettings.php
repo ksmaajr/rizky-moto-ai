@@ -85,6 +85,12 @@ class AccountSettings extends Component {
         $this->notify('success', 'Foto profil diperbarui', 'Foto profil baru sudah aktif di akun Anda.');
     }
 
+    public function clearSelectedProfilePhoto(): void
+    {
+        $this->reset('profilePhoto');
+        $this->resetValidation('profilePhoto');
+    }
+
     public function confirmDeleteProfilePhoto(): void
     {
         $this->showDeletePhotoConfirm = true;
