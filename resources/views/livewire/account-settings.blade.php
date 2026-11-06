@@ -57,10 +57,10 @@
         @media(prefers-reduced-motion:reduce){.account-settings-page,.as-card,.as-confirm-modal,.as-modal-backdrop{animation:none!important;transition:none!important}.as-button:after{display:none}}
     </style>
 
-    <a href="{{ route('dashboard') }}" wire:navigate class="as-back">
+    <button type="button" wire:click="$dispatch('account-settings-back')" class="as-back" style="border:0;background:transparent;cursor:pointer">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/><path d="M9 12h12"/></svg>
         Kembali ke Dashboard
-    </a>
+    </button>
 
     <header class="as-hero">
         <div><div class="as-kicker">ACCOUNT CENTER</div><h1 class="as-title">Pengaturan Akun</h1><p class="as-subtitle">Kelola foto, identitas, dan keamanan akun Rizky Moto Shop AI Anda.</p></div>
