@@ -1,5 +1,10 @@
 <div class="account-settings-page">
     <style>
+        .account-settings-page{position:relative;isolation:isolate;max-width:1320px;padding:clamp(18px,2.4vw,32px) clamp(14px,2vw,26px) 58px}
+        .account-settings-page:before{position:absolute;z-index:-2;content:"";inset:-34px -24px -45px;border-radius:34px;background:radial-gradient(ellipse at 12% 8%,rgba(59,130,246,.075),transparent 28%),radial-gradient(ellipse at 88% 15%,rgba(34,197,94,.11),transparent 30%),radial-gradient(ellipse at 55% 90%,rgba(99,102,241,.055),transparent 32%),linear-gradient(145deg,#f8fafc 0%,#f1f5f9 48%,#f8fafc 100%)}
+        .account-settings-page:after{position:absolute;z-index:-1;pointer-events:none;content:"";inset:-34px -24px -45px;border-radius:34px;opacity:.34;background-image:radial-gradient(rgba(100,116,139,.28) .7px,transparent .7px);background-size:19px 19px;mask-image:linear-gradient(120deg,#000,transparent 70%)}
+        .as-canvas{position:relative;isolation:isolate;padding:clamp(14px,2vw,24px);border:1px solid rgba(255,255,255,.88);border-radius:28px;background:rgba(255,255,255,.48);box-shadow:0 20px 65px rgba(15,23,42,.045),inset 0 1px 0 rgba(255,255,255,.95);backdrop-filter:blur(12px)}
+        .as-canvas:before{position:absolute;z-index:-1;content:"";inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.6),rgba(248,250,252,.24));pointer-events:none}
         .account-settings-page{--as-ink:#18181b;--as-muted:#71717a;--as-line:#e8e8ed;--as-green:#16a34a;max-width:1120px;margin:0 auto;padding:clamp(22px,4vw,48px) clamp(16px,3vw,34px) 64px;color:var(--as-ink);font-family:Inter,Arial,sans-serif;animation:as-page-in .55s cubic-bezier(.2,.75,.25,1) both}
         .account-settings-page *{box-sizing:border-box}
         @keyframes as-page-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
@@ -93,6 +98,7 @@
 
     </style>
 
+    <div class="as-canvas">
     <button type="button" wire:click="$dispatch('account-settings-back')" class="as-back" style="border:0;background:transparent;cursor:pointer">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/><path d="M9 12h12"/></svg>
         Kembali ke Dashboard
@@ -133,9 +139,16 @@
                             </label>
                             <input id="profile-photo-upload" class="as-file-input" type="file" accept="image/jpeg,image/png,image/webp" wire:model="profilePhoto">
                             @if ($this->profilePhotoUrl)
-                                <button type="button" class="as-button-secondary as-button-danger" wire:click="confirmDeleteProfilePhoto">
+                                <button type="button" class="as-button-secondary as-button-danger" wire:click="confirmDeleteProfilePhoto" wire:loading.attr="disabled" wire:target="deleteProfilePhoto">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/></svg>
-                                    Hapus Foto
+                                    Hapus Foto Profil
+                                </button>
+                            @elseif ($profilePhoto)
+                                <button type="button" class="as-button-secondary as-button-danger" wire:click="clearSelectedProfilePhoto">Batalkan Pilihan</button>
+                            @else
+                                <button type="button" class="as-button-secondary as-button-danger" disabled title="Belum ada foto profil tersimpan">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/></svg>
+                                    Hapus Foto Profil
                                 </button>
                             @endif
                         </div>
@@ -189,4 +202,5 @@
             </section>
         </div>
     @endif
+    </div>
 </div>
