@@ -280,7 +280,7 @@ new class extends Component
 
         $name = trim((string) $this->historyZipName);
         $name = preg_replace('/\.zip$/i', '', $name) ?? '';
-        $name = preg_replace('/[\\\/:*?"<>|]+/u', '', $name) ?? '';
+        $name = preg_replace('~[\\\\/:*?"<>|]+~u', '', $name) ?? '';
         $name = mb_substr(trim($name, " .\t\n\r\0\x0B"), 0, 100);
         if ($name === '') {
             $name = 'rizky-moto-history-' . now()->format('Ymd-His');
