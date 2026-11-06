@@ -9,7 +9,6 @@ use Livewire\Attributes\On;
 
 use App\Models\Store;
 use App\Services\QueueWorkerManager;
-use App\Services\AgentKitWorkerManager;
 
 
 
@@ -71,20 +70,6 @@ class extends Component
         'pid' => null,
         'queue' => 'database',
         'started_at' => null,
-    ];
-
-    public array $agentWorkerStatus = [
-        'running' => false,
-        'healthy' => false,
-        'running_count' => 0,
-        'worker_count' => 0,
-        'target_workers' => 3,
-        'workers' => [],
-        'pid' => null,
-        'queue' => 'agentkit',
-        'started_at' => null,
-        'credential_count' => 0,
-        'active_credential_count' => 0,
     ];
 
 // Legacy OpenAI connection logs kept for the existing settings activity UI.
@@ -1325,7 +1310,7 @@ class extends Component
                 'healthy' => (bool) ($status['healthy'] ?? false),
                 'running_count' => (int) ($status['running_count'] ?? 0),
                 'worker_count' => (int) ($status['worker_count'] ?? 0),
-                'target_workers' => (int) ($status['target_workers'] ?? 3),
+                'target_workers' => (int) ($status['target_workers'] ?? 5),
                 'workers' => $status['workers'] ?? [],
                 'pid' => $status['pid'] ?? null,
                 'queue' => (string) ($status['queue'] ?? config('queue.default', 'database')),
@@ -1339,7 +1324,7 @@ class extends Component
                 'healthy' => false,
                 'running_count' => 0,
                 'worker_count' => 0,
-                'target_workers' => 3,
+                'target_workers' => 5,
                 'workers' => [],
                 'pid' => null,
                 'queue' => (string) config('queue.default', 'database'),
@@ -1347,112 +1332,6 @@ class extends Component
             ];
         }
 
-        $this->refreshAgentWorkerStatus();
-    }
-
-    public function refreshAgentWorkerStatus(): void
-    {
-        try {
-            $this->assertWorkerControlAccess();
-
-            $status = app(AgentKitWorkerManager::class)->status();
-
-            $this->agentWorkerStatus = [
-                'running' => (bool) ($status['running'] ?? false),
-                'healthy' => (bool) ($status['healthy'] ?? false),
-                'running_count' => (int) ($status['running_count'] ?? 0),
-                'worker_count' => (int) ($status['worker_count'] ?? 0),
-                'target_workers' => (int) ($status['target_workers'] ?? 3),
-                'workers' => $status['workers'] ?? [],
-                'pid' => $status['pid'] ?? null,
-                'queue' => (string) ($status['queue'] ?? config('services.agent_ai.queue', 'agentkit')),
-                'started_at' => $status['started_at'] ?? null,
-                'credential_count' => (int) ($this->agentAiCredentialCount ?? 0),
-                'active_credential_count' => (int) ($this->agentAiActiveCredentialCount ?? 0),
-            ];
-        } catch (\Throwable $e) {
-            report($e);
-
-            $this->agentWorkerStatus = [
-                'running' => false,
-                'healthy' => false,
-                'running_count' => 0,
-                'worker_count' => 0,
-                'target_workers' => 3,
-                'workers' => [],
-                'pid' => null,
-                'queue' => (string) config('services.agent_ai.queue', 'agentkit'),
-                'started_at' => null,
-                'credential_count' => (int) ($this->agentAiCredentialCount ?? 0),
-                'active_credential_count' => (int) ($this->agentAiActiveCredentialCount ?? 0),
-            ];
-        }
-    }
-
-    public function startAgentKitWorker(): void
-    {
-        try {
-            $this->assertWorkerControlAccess();
-
-            $result = app(AgentKitWorkerManager::class)->start();
-            $this->refreshAgentWorkerStatus();
-
-            $this->dispatch(
-                'toast',
-                type: ($result['success'] ?? false) ? 'success' : 'info',
-                title: ($result['success'] ?? false) ? 'AgentKit worker berhasil dijalankan' : 'AgentKit worker sudah berjalan',
-                message: (string) ($result['message'] ?? 'AgentKit worker siap digunakan.'),
-            );
-        } catch (\Throwable $e) {
-            report($e);
-            $this->refreshAgentWorkerStatus();
-
-            $this->dispatch('toast', type: 'error', title: 'AgentKit worker gagal dijalankan', message: $e->getMessage());
-        }
-    }
-
-    public function stopAgentKitWorker(): void
-    {
-        try {
-            $this->assertWorkerControlAccess();
-
-            $result = app(AgentKitWorkerManager::class)->stop();
-            $this->refreshAgentWorkerStatus();
-
-            $this->dispatch(
-                'toast',
-                type: ($result['success'] ?? false) ? 'success' : 'info',
-                title: ($result['success'] ?? false) ? 'AgentKit worker stopped' : 'AgentKit worker sudah berhenti',
-                message: (string) ($result['message'] ?? 'AgentKit worker tidak aktif.'),
-            );
-        } catch (\Throwable $e) {
-            report($e);
-            $this->refreshAgentWorkerStatus();
-
-            $this->dispatch('toast', type: 'error', title: 'AgentKit worker gagal dihentikan', message: $e->getMessage());
-        }
-    }
-
-    public function restartAgentKitWorker(): void
-    {
-        try {
-            $this->assertWorkerControlAccess();
-
-            $result = app(AgentKitWorkerManager::class)->restart();
-            $this->refreshAgentWorkerStatus();
-
-            $this->dispatch(
-                'toast',
-                type: ($result['success'] ?? false) ? 'success' : 'error',
-                title: ($result['success'] ?? false) ? 'AgentKit worker restarted' : 'Restart AgentKit worker gagal',
-                message: (string) ($result['message'] ?? 'AgentKit worker sudah direstart.'),
-            );
-        } catch (\Throwable $e) {
-            report($e);
-            $this->refreshAgentWorkerStatus();
-
-            $this->dispatch('toast', type: 'error', title: 'AgentKit worker gagal direstart', message: $e->getMessage());
-        }
     }
 
     public function startQueueWorker(): void
@@ -2125,14 +2004,13 @@ public function getUserInitialsProperty(): string
             </div>
         </div>
 
-        {{-- AI ENGINE / QUEUE + AGENTKIT WORKER STATUS --}}
+        {{-- VERCEL GENERATION QUEUE WORKER STATUS --}}
         <div
             class="sidebar-api worker-widget-shell"
             :class="workerOpen ? 'is-open' : 'is-collapsed'"
             x-data="{
                 workerOpen: true,
                 queueOpen: true,
-                agentOpen: true,
                 workerAction: '',
                 init() {
                     try {
@@ -2140,17 +2018,12 @@ public function getUserInitialsProperty(): string
                         if (saved !== null) this.workerOpen = saved === '1';
                         const queueSaved = window.localStorage.getItem('rms-queue-worker-open');
                         if (queueSaved !== null) this.queueOpen = queueSaved === '1';
-                        const agentSaved = window.localStorage.getItem('rms-agent-worker-open');
-                        if (agentSaved !== null) this.agentOpen = agentSaved === '1';
                     } catch (_) {}
                     this.$watch('workerOpen', value => {
                         try { window.localStorage.setItem('rms-worker-widget-open', value ? '1' : '0'); } catch (_) {}
                     });
                     this.$watch('queueOpen', value => {
                         try { window.localStorage.setItem('rms-queue-worker-open', value ? '1' : '0'); } catch (_) {}
-                    });
-                    this.$watch('agentOpen', value => {
-                        try { window.localStorage.setItem('rms-agent-worker-open', value ? '1' : '0'); } catch (_) {}
                     });
                 },
                 run(action, endpoint) {
@@ -2173,9 +2046,9 @@ public function getUserInitialsProperty(): string
                     <span class="worker-widget-mini-icon">AI</span>
                     <span class="worker-widget-mini-copy">
                         <strong>AI Engine</strong>
-                        <small>{{ $this->workerStatus['running_count'] + $this->agentWorkerStatus['running_count'] }}/{{ $this->workerStatus['target_workers'] + $this->agentWorkerStatus['target_workers'] }} workers active</small>
+                        <small>{{ $this->workerStatus['running_count'] }}/{{ $this->workerStatus['target_workers'] }} Vercel workers active</small>
                     </span>
-                    <span class="worker-widget-mini-state {{ ($this->workerStatus['running'] || $this->agentWorkerStatus['running']) ? 'is-running' : 'is-stopped' }}"></span>
+                    <span class="worker-widget-mini-state {{ $this->workerStatus['running'] ? 'is-running' : 'is-stopped' }}"></span>
                     <span class="worker-widget-chevron" aria-hidden="true"></span>
                 </button>
             </div>
@@ -2191,7 +2064,7 @@ public function getUserInitialsProperty(): string
                     </div>
 
                     <div class="worker-widget-top-actions">
-                        <span class="api-live-dot {{ ($this->workerStatus['running'] || $this->agentWorkerStatus['running']) ? 'worker-live' : 'worker-offline' }}" aria-hidden="true"></span>
+                        <span class="api-live-dot {{ $this->workerStatus['running'] ? 'worker-live' : 'worker-offline' }}" aria-hidden="true"></span>
                         <button type="button" class="worker-collapse" @click="workerOpen = false" aria-label="Hide AI Engine status">
                             <span class="collapse-chevron" aria-hidden="true"></span>
                         </button>
@@ -2268,82 +2141,6 @@ public function getUserInitialsProperty(): string
                     </div>
                 </section>
 
-                {{-- AGENTKIT WORKERS --}}
-                <section class="worker-engine-section worker-engine-agent" :class="{ 'is-open': agentOpen }">
-                    <button type="button" class="worker-engine-toggle" @click="agentOpen = !agentOpen" :aria-expanded="agentOpen">
-                        <span class="worker-engine-toggle-left">
-                            <span class="worker-engine-dot {{ $this->agentWorkerStatus['healthy'] ? 'is-agent-live' : ($this->agentAiActiveCredentialCount > 0 ? 'is-agent-ready' : 'is-off') }}"></span>
-                            <span class="worker-engine-copy">
-                                <strong>AgentKit Workers</strong>
-                                <small>{{ $this->agentWorkerStatus['running_count'] }}/{{ $this->agentWorkerStatus['target_workers'] }} proses aktif</small>
-                            </span>
-                        </span>
-                        <span class="worker-engine-state">
-                            <b>{{ $this->agentWorkerStatus['healthy'] ? 'ON' : ($this->agentAiActiveCredentialCount > 0 ? 'READY' : 'OFF') }}</b>
-                            <i class="worker-section-chevron"></i>
-                        </span>
-                    </button>
-
-                    <div class="worker-engine-body" x-show="agentOpen" x-cloak x-transition:enter="transition ease-out duration-180" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-120" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-                        <div class="worker-fleet-summary">
-                            <span><small>QUEUE</small><strong>{{ $this->agentWorkerStatus['queue'] }}</strong></span>
-                            <span><small>CREDENTIALS</small><strong>{{ $this->agentAiActiveCredentialCount }}/{{ $this->agentAiCredentialCount }}</strong></span>
-                        </div>
-
-                        <div class="worker-fleet-list">
-                            @php
-                                $agentRows = $this->agentWorkerStatus['workers'] ?? [];
-                                $agentTargetWorkers = max(1, (int) ($this->agentWorkerStatus['target_workers'] ?? 3));
-                            @endphp
-                            @for ($agentIndex = 0; $agentIndex < $agentTargetWorkers; $agentIndex++)
-                                @php
-                                    $agentWorker = $agentRows[$agentIndex] ?? [];
-                                    $agentId = $agentWorker['id'] ?? ($agentIndex + 1);
-                                    $agentRunning = (bool) ($agentWorker['running'] ?? false);
-                                    $agentPid = $agentWorker['pid'] ?? null;
-                                @endphp
-                                <div class="worker-fleet-row worker-agent-row {{ $agentRunning ? 'is-running' : 'is-stopped' }}">
-                                    <div class="worker-fleet-indicator"></div>
-                                    <div class="worker-fleet-copy">
-                                        <strong>A{{ $agentId }}</strong>
-                                        <span>{{ $agentRunning ? 'Running' : 'Stopped' }}</span>
-                                    </div>
-                                    <code>{{ $agentPid ?: '—' }}</code>
-                                </div>
-                            @endfor
-                        </div>
-
-                        <div class="worker-agent-note">
-                            <span>✦</span>
-                            <div>
-                                <strong>Shared credential pool</strong>
-                                <small>Semua worker dapat memakai credential sehat yang sama. Rate limit atau auth error akan memicu cooldown / failover.</small>
-                            </div>
-                        </div>
-
-                        <div class="worker-actions">
-                            @if ($this->agentWorkerStatus['running'])
-                                <button type="button" class="worker-action worker-action-restart" @click="run('agent-restart','/dashboard/agentkit-workers/restart')" :disabled="!!workerAction">
-                                    <span x-show="workerAction !== 'agent-restart'">↻</span>
-                                    <span x-show="workerAction === 'agent-restart'" class="worker-spinner" x-cloak>◌</span>
-                                    Restart
-                                </button>
-                                <button type="button" class="worker-action worker-action-stop" @click="run('agent-stop','/dashboard/agentkit-workers/stop')" :disabled="!!workerAction">
-                                    <span x-show="workerAction !== 'agent-stop'">■</span>
-                                    <span x-show="workerAction === 'agent-stop'" class="worker-spinner" x-cloak>◌</span>
-                                    Stop
-                                </button>
-                            @else
-                                <button type="button" class="worker-action worker-action-start worker-action-full" @click="run('agent-start','/dashboard/agentkit-workers/start')" :disabled="!!workerAction">
-                                    <span x-show="workerAction !== 'agent-start'">▶</span>
-                                    <span x-show="workerAction === 'agent-start'" class="worker-spinner" x-cloak>◌</span>
-                                    Start Agent Workers
-                                </button>
-                            @endif
-                        </div>
-                    </div>
-                </section>
-
                 <div class="worker-api-footer">
                     <button type="button" class="worker-refresh" wire:click="refreshWorkerStatus" wire:loading.attr="disabled" wire:target="refreshWorkerStatus" title="Refresh worker status" aria-label="Refresh worker status">
                         <span wire:loading.remove wire:target="refreshWorkerStatus">↻</span>
@@ -2356,7 +2153,7 @@ public function getUserInitialsProperty(): string
                     </span>
 
                     <span class="worker-step">
-                        {{ ($this->workerStatus['running'] || $this->agentWorkerStatus['running']) ? 'ENGINE READY' : 'ENGINE PAUSED' }}
+                        {{ $this->workerStatus['running'] ? 'VERCEL READY' : 'VERCEL PAUSED' }}
                     </span>
                 </div>
             </div>
