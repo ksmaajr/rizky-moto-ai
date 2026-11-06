@@ -8791,3 +8791,48 @@ body > .rms-history-download-modal{position:fixed!important;inset:0!important;z-
     .rms-generator-history-mobile-safe .rms-history-search-premium > .rms-history-search-hint{display:none!important}
 }
 </style>
+
+
+<style>
+/* V5 — Premium selected generation cards + single search clear control */
+.rms-generator-history-mobile-safe .rms-history-search-premium > input[type="search"]::-webkit-search-cancel-button,
+.rms-generator-history-mobile-safe .rms-history-search-premium > input[type="search"]::-webkit-search-decoration{
+    -webkit-appearance:none!important;appearance:none!important;display:none!important;
+}
+.rms-generator-history-mobile-safe .rms-generation-card{
+    position:relative;isolation:isolate;overflow:hidden;
+    transition:border-color .28s ease,box-shadow .32s ease,transform .32s cubic-bezier(.2,.8,.2,1),background .3s ease;
+}
+.rms-generator-history-mobile-safe .rms-generation-card::before{
+    content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:inherit;
+    opacity:0;background:linear-gradient(125deg,rgba(16,185,129,.13),rgba(59,130,246,.10),rgba(139,92,246,.10),rgba(16,185,129,.13));
+    background-size:260% 260%;transition:opacity .3s ease;
+}
+.rms-generator-history-mobile-safe .rms-generation-card:has(.rms-generation-select-control input:checked){
+    border-color:rgba(16,156,94,.58)!important;
+    background:linear-gradient(145deg,#f0fff7 0%,#f5faff 52%,#fbf7ff 100%)!important;
+    box-shadow:0 0 0 3px rgba(16,156,94,.09),0 12px 30px rgba(16,120,75,.10),inset 0 1px 0 rgba(255,255,255,.9)!important;
+    transform:translateY(-2px);
+}
+.rms-generator-history-mobile-safe .rms-generation-card:has(.rms-generation-select-control input:checked)::before{
+    opacity:1;animation:rms-selected-gradient-flow 6s ease-in-out infinite;
+}
+.rms-generator-history-mobile-safe .rms-generation-card:has(.rms-generation-select-control input:checked) .rms-generation-card-head{
+    position:relative;z-index:1;
+}
+.rms-generator-history-mobile-safe .rms-generation-select-control input:checked + span{
+    border-color:#11965a!important;background:linear-gradient(135deg,#16a765,#087c4b)!important;
+    box-shadow:0 0 0 4px rgba(22,167,101,.13),0 3px 9px rgba(8,124,75,.2)!important;
+}
+.rms-generator-history-mobile-safe .rms-generation-select-control input:checked + span::after{
+    color:#fff!important;filter:drop-shadow(0 1px 1px rgba(0,0,0,.15));
+}
+@keyframes rms-selected-gradient-flow{
+    0%,100%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+}
+@media(prefers-reduced-motion:reduce){
+    .rms-generator-history-mobile-safe .rms-generation-card,
+    .rms-generator-history-mobile-safe .rms-generation-card::before{animation:none!important;transition:none!important}
+}
+</style>
