@@ -22,6 +22,7 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
     public int $tries = 1;
 
     private const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+    private const MAX_ARCHIVE_IMAGES = 2000;
 
     public function __construct(public int $archiveId)
     {
@@ -62,6 +63,7 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
 
             $added = 0;
             $processed = 0;
+            $targetImages = min(self::MAX_ARCHIVE_IMAGES, max(0, (int) $archive->total_images));
             $ids = array_values(array_filter(array_map('intval', $archive->generation_ids ?? [])));
             if ($ids === []) {
                 throw new \RuntimeException('Daftar generation untuk ZIP kosong.');
@@ -102,9 +104,14 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
                         &$processed,
                         &$temporaryFiles,
                         $archive,
-                        $tempDirectory
-                    ): void {
+                        $tempDirectory,
+                        $targetImages
+                    ): bool {
                         foreach ($images as $image) {
+                            if ($processed >= $targetImages) {
+                                return false;
+                            }
+
                             $source = $image->image_path;
                             if (! is_string($source) || $source === '' || ! $publicDisk->exists($source)) {
                                 continue;
@@ -141,17 +148,23 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
 
                             $added++;
                             $processed++;
-                            if ($processed % 5 === 0 || $processed === $archive->total_images) {
+                            if ($processed % 5 === 0 || $processed === $targetImages) {
                                 $archive->update(['processed_images' => $processed]);
                             }
 
                             unset($zipPath, $entryName, $sourcePath);
                             gc_collect_cycles();
                         }
+
+                        return $processed < $targetImages;
                     }, 'id');
 
                 unset($generation);
                 gc_collect_cycles();
+
+                if ($processed >= $targetImages) {
+                    break;
+                }
             }
 
             if ($added === 0) {
