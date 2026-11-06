@@ -2420,9 +2420,11 @@ public function getUserInitialsProperty(): string
                     >
 
                         <span class="profile-avatar">
-
-                            {{ $this->userInitials }}
-
+                            @if ($this->user?->profile_photo_path)
+                                <img src="{{ \\Illuminate\\Support\\Facades\\Storage::disk('public')->url($this->user->profile_photo_path) }}" alt="Foto profil" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">
+                            @else
+                                {{ $this->userInitials }}
+                            @endif
                         </span>
 
 
@@ -2484,9 +2486,11 @@ public function getUserInitialsProperty(): string
                         <div class="profile-dropdown-header">
 
                             <div class="profile-dropdown-avatar">
-
-                                {{ $this->userInitials }}
-
+                                @if ($this->user?->profile_photo_path)
+                                    <img src="{{ \\Illuminate\\Support\\Facades\\Storage::disk('public')->url($this->user->profile_photo_path) }}" alt="Foto profil" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">
+                                @else
+                                    {{ $this->userInitials }}
+                                @endif
                             </div>
 
 
@@ -2517,9 +2521,11 @@ public function getUserInitialsProperty(): string
 
 
 
-                        <button
+                        <a
 
-                            type="button"
+                            href="{{ route('profile.edit') }}"
+
+                            wire:navigate
 
                             class="profile-dropdown-item"
 
@@ -2559,7 +2565,7 @@ public function getUserInitialsProperty(): string
 
                             </span>
 
-                        </button>
+                        </a>
 
 
 
