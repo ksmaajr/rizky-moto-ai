@@ -31,10 +31,6 @@ Route::middleware('auth')->group(function () {
         ->whereIn('action', ['start', 'stop', 'restart'])
         ->name('dashboard.queue-workers.action');
 
-    Route::post('/dashboard/agentkit-workers/{action}', \App\Http\Controllers\AgentKitWorkerActionController::class)
-        ->whereIn('action', ['start', 'stop', 'restart'])
-        ->name('dashboard.agentkit-workers.action');
-
     Route::get('/dashboard/server-monitoring/metrics', function () {
         $read = static fn (string $path): string => is_readable($path) ? (string) file_get_contents($path) : '';
         $mem = [];
