@@ -19,13 +19,13 @@ class QueueWorkerManager
     private const TIMEOUT = 1800;
     private const MAX_JOBS = 100;
     private const MAX_TIME = 3600;
-    private const MAX_WORKERS = 3;
+    private const MAX_WORKERS = 5;
 
     public function workerCount(): int
     {
         return max(1, min(
             self::MAX_WORKERS,
-            (int) env('QUEUE_WORKER_COUNT', 3)
+            (int) env('QUEUE_WORKER_COUNT', 5)
         ));
     }
 
