@@ -2042,10 +2042,10 @@ public function getUserInitialsProperty(): string
             }"
         >
             <div class="worker-widget-collapsed">
-                <button type="button" class="worker-widget-mini" @click="workerOpen = true" aria-label="Show AI Engine status">
-                    <span class="worker-widget-mini-icon">AI</span>
+                <button type="button" class="worker-widget-mini" @click="workerOpen = true" aria-label="Show Vercel worker status">
+                    <span class="worker-widget-mini-icon">V</span>
                     <span class="worker-widget-mini-copy">
-                        <strong>AI Engine</strong>
+                        <strong>Vercel Workers</strong>
                         <small>{{ $this->workerStatus['running_count'] }}/{{ $this->workerStatus['target_workers'] }} Vercel workers active</small>
                     </span>
                     <span class="worker-widget-mini-state {{ $this->workerStatus['running'] ? 'is-running' : 'is-stopped' }}"></span>
@@ -2056,16 +2056,16 @@ public function getUserInitialsProperty(): string
             <div class="api-status-card worker-status-card worker-widget-expanded">
                 <div class="api-status-top">
                     <div class="api-brand">
-                        <span class="api-mark">AI</span>
+                        <span class="api-mark">V</span>
                         <div>
-                            <div class="api-title">AI Engine</div>
-                            <div class="api-subtitle">Creative generation</div>
+                            <div class="api-title">Vercel Generation</div>
+                            <div class="api-subtitle">Vercel AI Gateway · Image queue</div>
                         </div>
                     </div>
 
                     <div class="worker-widget-top-actions">
                         <span class="api-live-dot {{ $this->workerStatus['running'] ? 'worker-live' : 'worker-offline' }}" aria-hidden="true"></span>
-                        <button type="button" class="worker-collapse" @click="workerOpen = false" aria-label="Hide AI Engine status">
+                        <button type="button" class="worker-collapse" @click="workerOpen = false" aria-label="Hide Vercel worker status">
                             <span class="collapse-chevron" aria-hidden="true"></span>
                         </button>
                     </div>
@@ -2079,7 +2079,7 @@ public function getUserInitialsProperty(): string
                         <span class="worker-engine-toggle-left">
                             <span class="worker-engine-dot {{ $this->workerStatus['healthy'] ? 'is-live' : 'is-off' }}"></span>
                             <span class="worker-engine-copy">
-                                <strong>Queue Workers</strong>
+                                <strong>Vercel Workers</strong>
                                 <small>{{ $this->workerStatus['running_count'] }}/{{ $this->workerStatus['target_workers'] }} proses aktif</small>
                             </span>
                         </span>
