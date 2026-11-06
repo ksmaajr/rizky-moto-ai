@@ -16,7 +16,7 @@ class QueueWorkerManager
 
     private const SLEEP = 2;
     private const TRIES = 3;
-    private const TIMEOUT = 300;
+    private const TIMEOUT = 1800;
     private const MAX_JOBS = 100;
     private const MAX_TIME = 3600;
     private const MAX_WORKERS = 3;
