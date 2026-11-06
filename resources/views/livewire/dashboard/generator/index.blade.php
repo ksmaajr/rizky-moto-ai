@@ -2,7 +2,8 @@
 
 use App\Models\Store;
 use App\Models\Template;
-use App\Models\Generation;\nuse App\Models\GeneratedImage;
+use App\Models\Generation;
+use App\Models\GeneratedImage;
 use Livewire\Component;
 use Livewire\Attributes\On;
 use Livewire\WithFileUploads;
