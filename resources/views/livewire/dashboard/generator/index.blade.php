@@ -127,13 +127,13 @@ new class extends Component
                     $inner->whereHas('store', fn ($store) => $store->whereRaw('LOWER(name) LIKE ?', [$keyword]))
                         ->orWhereHas('template', fn ($template) => $template->whereRaw('LOWER(name) LIKE ?', [$keyword]))
                         ->orWhereRaw('CAST(id AS CHAR) LIKE ?', [$keyword])
-                        ->orWhereRaw('LOWER(COALESCE(model, "")) LIKE ?', [$keyword])
-                        ->orWhereRaw('LOWER(COALESCE(error_message, "")) LIKE ?', [$keyword])
-                        ->orWhereRaw('LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.provider")), "")) LIKE ?', [$keyword])
-                        ->orWhereRaw('LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.gateway_key_name")), "")) LIKE ?', [$keyword])
-                        ->orWhereRaw('LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.gateway_key_source")), "")) LIKE ?', [$keyword])
-                        ->orWhereRaw('LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.final_title")), "")) LIKE ?', [$keyword])
-                        ->orWhereRaw('LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.custom_title")), "")) LIKE ?', [$keyword]);
+                        ->orWhereRaw("LOWER(COALESCE(model, '')) LIKE ?", [$keyword])
+                        ->orWhereRaw("LOWER(COALESCE(error_message, '')) LIKE ?", [$keyword])
+                        ->orWhereRaw("LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.provider')), '')) LIKE ?", [$keyword])
+                        ->orWhereRaw("LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.gateway_key_name')), '')) LIKE ?", [$keyword])
+                        ->orWhereRaw("LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.gateway_key_source')), '')) LIKE ?", [$keyword])
+                        ->orWhereRaw("LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.final_title')), '')) LIKE ?", [$keyword])
+                        ->orWhereRaw("LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.custom_title')), '')) LIKE ?", [$keyword]);
                 });
             });
     }
