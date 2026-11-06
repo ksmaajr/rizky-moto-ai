@@ -2467,7 +2467,9 @@ new class extends Component
                             <div class="rms-history-download-empty">Tidak ada foto yang bisa diunduh dari hasil filter saat ini.</div>
                         @endif
                         <div wire:poll.3s.visible class="rms-history-download-async-status" style="margin:0 0 15px;padding:13px 14px;border:1px solid #e4e9ef;border-radius:13px;background:#f8fafc;">
-                            @php($archive = $this->latestHistoryDownloadArchive)
+                            @php
+                                $archive = $this->latestHistoryDownloadArchive;
+                            @endphp
                             @if($archive && in_array($archive->status, ['queued', 'processing'], true))
                                 <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px;">
                                     <strong style="font-size:12px;color:#303642;">{{ $archive->status === 'queued' ? 'Menunggu worker...' : 'Membuat ZIP...' }}</strong>
