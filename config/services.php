@@ -43,9 +43,6 @@ return [
         // Maximum credential-pool attempts for a single generation (provider clamps to 1..5).
         'credential_retry_attempts' => (int) env('AGENT_AI_CREDENTIAL_RETRY_ATTEMPTS', 3),
         'queue' => env('AGENT_AI_QUEUE', 'agentkit'),
-        'worker_count' => (int) env('AGENT_AI_WORKER_COUNT', 3),
-        'worker_driver' => env('AGENT_AI_WORKER_DRIVER', PHP_OS_FAMILY === 'Windows' ? 'local' : 'supervisor'),
-        'worker_supervisor_program' => env('AGENT_AI_WORKER_SUPERVISOR_PROGRAM', 'rizky-moto-ai-agent'),
     ],
 
     'slack' => [
