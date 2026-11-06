@@ -2493,6 +2493,39 @@ new class extends Component
             </div>
 
                         <div
+            @php($historyArchive = $this->latestHistoryDownloadArchive)
+            @if($historyArchive)
+                <div class="rms-history-archive-status" @if(in_array($historyArchive->status, ['queued', 'processing'], true)) wire:poll.3s.visible @endif style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:0 0 16px;padding:15px 18px;border:1px solid #e5eaf0;border-radius:15px;background:#fff;">
+                    <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+                        <span style="display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#ecfdf3;color:#159653;font-size:18px;">↓</span>
+                        <div style="min-width:0;">
+                            <strong style="display:block;color:#202733;font-size:13px;">{{ $historyArchive->file_name ?: 'Recent History ZIP' }}</strong>
+                            <small style="display:block;margin-top:3px;color:#778191;font-size:11px;">
+                                @if($historyArchive->status === 'queued')
+                                    Menunggu worker queue...
+                                @elseif($historyArchive->status === 'processing')
+                                    Memproses {{ number_format($historyArchive->processed_images) }} dari {{ number_format($historyArchive->total_images) }} foto
+                                @elseif($historyArchive->status === 'completed')
+                                    ZIP selesai · {{ number_format($historyArchive->processed_images) }} foto siap diunduh
+                                @else
+                                    Gagal membuat ZIP: {{ $historyArchive->error_message ?: 'Terjadi kesalahan.' }}
+                                @endif
+                            </small>
+                            @if(in_array($historyArchive->status, ['queued', 'processing'], true))
+                                <div style="width:min(320px,65vw);height:5px;margin-top:8px;overflow:hidden;border-radius:99px;background:#edf0f3;">
+                                    <span style="display:block;width:{{ $historyArchive->total_images > 0 ? min(100, (int) floor($historyArchive->processed_images / $historyArchive->total_images * 100)) : 4 }}%;height:100%;border-radius:99px;background:#16a05a;transition:width .25s;"></span>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                    @if($historyArchive->status === 'completed')
+                        <a href="{{ route('history-downloads.download', $historyArchive) }}" style="display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 16px;border-radius:10px;background:#159653;color:#fff;font-size:12px;font-weight:800;text-decoration:none;">Download ZIP</a>
+                    @elseif($historyArchive->status === 'failed')
+                        <span style="color:#dc3545;font-size:11px;font-weight:700;">Periksa log server</span>
+                    @endif
+                </div>
+            @endif
+
                 class="rms-generator-history-list rms-generator-history-grid"
                 @if($this->hasActiveGenerations)
                     wire:poll.4s.visible
