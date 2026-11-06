@@ -93,7 +93,8 @@ new class extends Component
     {
         return Generation::query()
             ->where('user_id', auth()->id())
-            ->with(['store', 'template', 'generatedImages'])
+            ->with(['store', 'template'])
+            ->withCount('generatedImages')
             ->when($this->historyStatus !== 'all', function ($q) {
                 if ($this->historyStatus === 'completed') {
                     $q->whereIn('status', ['completed', 'success', 'succeeded']);
@@ -148,6 +149,17 @@ new class extends Component
         }
 
         return $query
+            // History cards only need one preview image. Archive downloads explicitly
+            // eager-load the complete relation in downloadFilteredHistory().
+            ->with(['generatedImages' => function ($images): void {
+                $images->select([
+                    'id', 'generation_id', 'image_path', 'image_url', 'format',
+                    'width', 'height', 'metadata', 'is_primary',
+                ])
+                    ->orderByDesc('is_primary')
+                    ->orderBy('id')
+                    ->limit(1);
+            }])
             ->limit($this->recentHistoryLimit)
             ->get();
     }
@@ -2675,8 +2687,7 @@ new class extends Component
                             'queued' => 'Queued', 'processing' => 'Processing', 'completed' => 'Completed',
                             'failed' => 'Failed', 'cancelled' => 'Cancelled', default => ucfirst($status),
                         };
-                        $images = $generation->generatedImages->take(4);
-                        $hero = $images->first();
+                        $hero = $generation->generatedImages->first();
                         $ratio = $hero && $hero->width && $hero->height
                             ? ((int) $hero->width . ' / ' . (int) $hero->height)
                             : str_replace(':', ' / ', $generation->aspect_ratio ?: '1:1');
@@ -2725,7 +2736,7 @@ new class extends Component
                         @elseif(in_array($status, ['queued','processing']))
                             <div class="rms-generation-processing-visual rms-generation-processing-visual-v3" style="aspect-ratio: {{ $ratio }}">
                                 @if($hero)
-                                    <img class="rms-processing-source-image" src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($hero->image_path) }}" alt="Processing preview" loading="lazy">
+                                    <img class="rms-processing-source-image" src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url(data_get($hero->metadata, 'thumbnail_path') ?: $hero->image_path) }}" alt="Processing preview" loading="lazy" decoding="async" fetchpriority="low">
                                     <div class="rms-processing-image-wash"></div>
                                 @else
                                     <div class="rms-processing-visual-core">
@@ -2846,7 +2857,7 @@ new class extends Component
                                     @endif
                                 </small>
                             </div>
-                            <span>{{ $generation->generatedImages->count() }} image{{ $generation->generatedImages->count() === 1 ? '' : 's' }}</span>
+                            <span>{{ (int) $generation->generated_images_count }} image{{ (int) $generation->generated_images_count === 1 ? '' : 's' }}</span>
                         </div>
 
                         <div class="rms-generation-card-meta">
