@@ -2550,10 +2550,22 @@ new class extends Component
                                     <span class="rms-zip-status-badge is-complete">COMPLETED</span>
                                 </div>
                                 <div class="rms-zip-progress-track is-complete"><div class="rms-zip-progress-fill" style="width:100%;"></div></div>
-                                <a href="{{ route('history-downloads.download', $archive) }}" class="rms-zip-download-link"><span>↓</span> Unduh {{ $archive->file_name ?: 'hasil-generation.zip' }}</a>
+                                <div style="display:flex;gap:9px;flex-wrap:wrap;">
+                                    <a href="{{ route('history-downloads.download', $archive) }}" class="rms-zip-download-link" style="flex:1;"><span>↓</span> Unduh ZIP</a>
+                                    <form method="POST" action="{{ route('history-downloads.destroy', $archive) }}" onsubmit="return confirm('Hapus arsip ZIP ini dari server?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" style="min-height:42px;padding:0 13px;border:1px solid #f2d8d8;border-radius:11px;background:#fff7f7;color:#b42318;font-size:11px;font-weight:800;cursor:pointer;">Hapus file</button>
+                                    </form>
+                                </div>
                             @elseif($archive && $archive->status === 'failed')
                                 <div class="rms-zip-failed-head"><span>!</span><strong>ZIP gagal dibuat</strong></div>
                                 <p style="margin:9px 0 0;color:#8c6666;font-size:11px;line-height:1.6;">{{ $archive->error_message ?: 'Terjadi kesalahan saat memproses gambar. Silakan coba lagi.' }}</p>
+                                <form method="POST" action="{{ route('history-downloads.destroy', $archive) }}" style="margin-top:12px;" onsubmit="return confirm('Hapus catatan bulk download ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" style="min-height:35px;padding:0 12px;border:1px solid #f2d8d8;border-radius:9px;background:#fff7f7;color:#b42318;font-size:10px;font-weight:800;cursor:pointer;">Hapus riwayat</button>
+                                </form>
                             @else
                                 <div style="display:flex;align-items:center;gap:11px;">
                                     <span class="rms-zip-idle-icon">ZIP</span>
