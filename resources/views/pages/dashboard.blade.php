@@ -2421,7 +2421,7 @@ public function getUserInitialsProperty(): string
 
                         <span class="profile-avatar">
                             @if ($this->user?->profile_photo_path)
-                                <img src="{{ \\Illuminate\\Support\\Facades\\Storage::disk('public')->url($this->user->profile_photo_path) }}" alt="Foto profil" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">
+                                <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($this->user->profile_photo_path) }}" alt="Foto profil" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">
                             @else
                                 {{ $this->userInitials }}
                             @endif
@@ -2487,7 +2487,7 @@ public function getUserInitialsProperty(): string
 
                             <div class="profile-dropdown-avatar">
                                 @if ($this->user?->profile_photo_path)
-                                    <img src="{{ \\Illuminate\\Support\\Facades\\Storage::disk('public')->url($this->user->profile_photo_path) }}" alt="Foto profil" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">
+                                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($this->user->profile_photo_path) }}" alt="Foto profil" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">
                                 @else
                                     {{ $this->userInitials }}
                                 @endif
