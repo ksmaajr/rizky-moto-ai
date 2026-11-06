@@ -293,9 +293,37 @@ new class extends Component
             'total_images' => $totalImages,
             'processed_images' => 0,
             'file_name' => $name . '.zip',
-        ]);
+            ]);
+        });
 
-        \App\Jobs\BuildHistoryDownloadArchiveJob::dispatch($archive->id)->onQueue('default');
+        if (! $archive) {
+            $this->dispatch('toast', type: 'warning', title: 'Bulk download sedang berjalan', message: 'Selesaikan atau tunggu proses ZIP yang aktif sebelum membuat bulk download baru.');
+            return;
+        }
+
+        try {
+            \App\Jobs\BuildHistoryDownloadArchiveJob::dispatch($archive->id)->onQueue('default');
+            app(\App\Services\ActivityLogService::class)->log(
+                'history_bulk_download',
+                'download',
+                'info',
+                'Bulk download masuk antrean',
+                $archive->file_name,
+                ['user_id' => auth()->id(), 'archive_id' => $archive->id, 'total_images' => $totalImages]
+            );
+        } catch (\Throwable $exception) {
+            $archive->update(['status' => 'failed', 'error_message' => mb_substr($exception->getMessage(), 0, 2000)]);
+            app(\App\Services\ActivityLogService::class)->log(
+                'history_bulk_download',
+                'download',
+                'error',
+                'Bulk download gagal masuk antrean',
+                $exception->getMessage(),
+                ['user_id' => auth()->id(), 'archive_id' => $archive->id, 'total_images' => $totalImages]
+            );
+            $this->dispatch('toast', type: 'error', title: 'Gagal memasukkan antrean', message: 'Periksa queue worker dan activity log.');
+            return;
+        }
 
         $this->dispatch('toast', type: 'success', title: 'ZIP sedang disiapkan', message: $totalImages . ' foto diproses di background. Modal ini akan menampilkan progresnya.');
     }
