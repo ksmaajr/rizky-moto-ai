@@ -16,7 +16,7 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $timeout = 300;
+    public int $timeout = 1800;
     public int $tries = 1;
 
     private const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
@@ -239,7 +239,7 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
 
     private function safeSegment(string $value, string $fallback): string
     {
-        $value = str_replace(['\\\\', '/', ':', '*', '?', '"', '<', '>', '|'], '', $value);
+        $value = str_replace(['\\', '/', ':', '*', '?', '"', '<', '>', '|'], '', $value);
         $value = trim($value, " .\t\n\r\0\x0B");
 
         return mb_substr($value !== '' ? $value : $fallback, 0, 120);
