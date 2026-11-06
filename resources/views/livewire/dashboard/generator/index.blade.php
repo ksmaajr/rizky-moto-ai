@@ -254,14 +254,14 @@ new class extends Component
             $query->orderBy('created_at', 'desc')->orderBy('id', 'desc');
         }
 
-        // Keep the displayed count aligned with the 500-generation archive safety limit.
-        $ids = $query->limit(500)->pluck('id');
+        // Count actual image files, capped at 2,000 per ZIP. A generation may contain multiple images.
+        $ids = $query->limit(2000)->pluck('id');
 
         if ($ids->isEmpty()) {
             return 0;
         }
 
-        return Generation::query()
+        $count = Generation::query()
             ->where('user_id', auth()->id())
             ->whereIn('id', $ids)
             ->withCount([
@@ -271,6 +271,8 @@ new class extends Component
             ])
             ->get(['id'])
             ->sum('downloadable_images_count');
+
+        return min(2000, (int) $count);
     }
 
     public function downloadFilteredHistory(): void
@@ -293,22 +295,23 @@ new class extends Component
             $query->orderBy('created_at', 'desc')->orderBy('id', 'desc');
         }
 
-        if ((clone $query)->count() > 500) {
-            $this->dispatch('toast', type: 'warning', title: 'Terlalu banyak hasil', message: 'ZIP dibatasi maksimal 500 generation sekali unduh. Persempit filter terlebih dahulu.');
-            return;
-        }
-
-        $generationIds = $query->limit(500)->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
+        // Keep the selected generation list bounded while enforcing the real limit by image count.
+        $generationIds = $query->limit(2000)->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
         if ($generationIds === []) {
             $this->dispatch('toast', type: 'warning', title: 'Belum ada foto', message: 'Tidak ada foto hasil sesuai filter aktif.');
             return;
         }
 
-        $totalImages = \App\Models\GeneratedImage::query()
+        $totalImages = min(2000, (int) \App\Models\GeneratedImage::query()
             ->whereIn('generation_id', $generationIds)
             ->whereNotNull('image_path')
             ->where('image_path', '<>', '')
-            ->count();
+            ->count());
+
+        if ($totalImages < 1) {
+            $this->dispatch('toast', type: 'warning', title: 'Belum ada foto', message: 'Tidak ada file gambar yang tersedia untuk diunduh.');
+            return;
+        }
 
         $name = trim((string) $this->historyZipName);
         $name = preg_replace('/\.zip$/i', '', $name) ?? '';
