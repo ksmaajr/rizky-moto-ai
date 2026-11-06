@@ -11,6 +11,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Storage;
 use ZipArchive;
+use Throwable;
 
 class BuildHistoryDownloadArchiveJob implements ShouldQueue
 {
@@ -46,6 +47,9 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
         $tempDirectory = $localDisk->path($directory);
         $relativePath = $directory . '/history-' . $archive->id . '-' . uniqid('', true) . '.zip';
         $absolutePath = $localDisk->path($relativePath);
+        // Persist the in-progress path so Laravel's failed() hook can remove it
+        // if the worker is terminated by timeout or an out-of-memory condition.
+        $archive->update(['file_path' => $relativePath]);
         $zip = new ZipArchive();
         $temporaryFiles = [];
 
@@ -198,6 +202,33 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
                 ['user_id' => $archive->user_id, 'archive_id' => $archive->id, 'processed_images' => (int) $archive->fresh()->processed_images]
             );
         }
+    }
+
+    public function failed(?Throwable $exception): void
+    {
+        $archive = HistoryDownloadArchive::query()->find($this->archiveId);
+        if (! $archive) {
+            return;
+        }
+
+        if ($archive->file_path && Storage::disk('local')->exists($archive->file_path)) {
+            Storage::disk('local')->delete($archive->file_path);
+        }
+
+        $archive->update([
+            'status' => 'failed',
+            'file_path' => null,
+            'error_message' => mb_substr($exception?->getMessage() ?: 'Worker dihentikan sebelum ZIP selesai dibuat.', 0, 2000),
+        ]);
+
+        app(ActivityLogService::class)->log(
+            'history_bulk_download',
+            'download',
+            'error',
+            'Bulk download dihentikan oleh worker',
+            $exception?->getMessage() ?: 'Worker dihentikan sebelum ZIP selesai dibuat.',
+            ['user_id' => $archive->user_id, 'archive_id' => $archive->id, 'processed_images' => $archive->processed_images]
+        );
     }
 
     private function encodeUnderLimitToFile(string $sourcePath, string $destinationPath): void
