@@ -220,7 +220,9 @@ new #[Title('Pengaturan Akun')] class extends Component {
             <div class="as-card-body">
                 <div class="as-photo-layout">
                     <div class="as-photo-preview">
-                        @if ($this->profilePhotoUrl)
+                        @if ($profilePhoto)
+                            <img src="{{ $profilePhoto->temporaryUrl() }}" alt="Preview foto profil">
+                        @elseif ($this->profilePhotoUrl)
                             <img src="{{ $this->profilePhotoUrl }}" alt="Foto profil">
                         @else
                             {{ \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr(Auth::user()->name, 0, 1)) }}
