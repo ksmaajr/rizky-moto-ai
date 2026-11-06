@@ -2597,6 +2597,7 @@ new class extends Component
                                     <span class="rms-zip-history-badge {{ $archive->status === 'completed' ? 'is-green' : ($archive->status === 'failed' ? 'is-red' : ($archiveProgressTone ?? 'is-blue')) }}">{{ strtoupper($archive->status) }}</span>
                                 </div>
                             @if($archiveActive)
+                                <div x-data="{ shown: 0, target: {{ $archivePercent }}, ticker: null, init() { this.ticker = setInterval(() => { if (this.shown < this.target) this.shown = Math.min(this.target, this.shown + 1); }, 160); }, destroy() { if (this.ticker) clearInterval(this.ticker); } }" x-effect="target = {{ $archivePercent }}">
                                 <div class="rms-zip-status-glow"></div>
                                 <div style="position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px;">
                                     <div style="display:flex;align-items:center;gap:11px;min-width:0;">
@@ -2609,17 +2610,18 @@ new class extends Component
                                     <span class="rms-zip-status-badge {{ $archiveProgressTone }}">{{ $archive->status === 'queued' ? 'QUEUED' : ($archiveFinalizing ? 'FINALIZING' : 'PROCESSING') }}</span>
                                 </div>
                                 <div style="position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:8px;">
-                                    <div><strong class="rms-zip-progress-number {{ $archiveProgressTone }}">{{ $archivePercent }}%</strong><small style="display:block;margin-top:5px;color:#87938b;font-size:10px;">{{ $archiveFinalizing ? 'Finalisasi arsip' : 'Progress pemrosesan' }}</small></div>
+                                    <div><strong class="rms-zip-progress-number {{ $archiveProgressTone }}" x-text="Math.round(shown) + '%'">{{ $archivePercent }}%</strong><small style="display:block;margin-top:5px;color:#87938b;font-size:10px;">{{ $archiveFinalizing ? 'Finalisasi arsip' : 'Progress pemrosesan' }}</small></div>
                                     <div style="text-align:right;"><strong style="display:block;color:#303d34;font-size:13px;font-weight:850;font-variant-numeric:tabular-nums;">{{ number_format($archive->processed_images) }} <span style="color:#9aa69e;font-weight:600;">/ {{ number_format($archive->total_images) }}</span></strong><small style="display:block;margin-top:4px;color:#87938b;font-size:10px;">foto diproses</small></div>
                                 </div>
-                                <div class="rms-zip-progress-track {{ $archiveProgressTone }}"><div class="rms-zip-progress-fill" style="width:{{ $archivePercent }}%;"></div></div>
+                                <div class="rms-zip-progress-track {{ $archiveProgressTone }}"><div class="rms-zip-progress-fill" x-bind:style="'width:' + shown + '%;'" style="width:0%;"></div></div>
                                 <div style="position:relative;display:flex;justify-content:space-between;gap:8px;margin-top:12px;">
                                     <span class="rms-zip-step is-done"><i>✓</i> Antrean dibuat</span>
                                     <span class="rms-zip-step {{ $archiveFinalizing ? 'is-done' : ($archive->status === 'processing' ? 'is-current' : '') }}"><i>{{ $archiveFinalizing ? '✓' : ($archive->status === 'processing' ? '•' : '2') }}</i> Proses gambar</span>
                                     <span class="rms-zip-step {{ $archiveFinalizing ? 'is-current' : '' }}"><i>{{ $archiveFinalizing ? '•' : '3' }}</i> {{ $archiveFinalizing ? 'Finalisasi ZIP' : 'ZIP siap' }}</span>
                                 </div>
                                 <div style="position:relative;display:flex;align-items:center;gap:7px;margin-top:14px;padding-top:12px;border-top:1px solid #e6eee8;color:#78877e;font-size:10px;">
-                                    <span class="rms-zip-live-dot"></span> Status diperbarui otomatis setiap 2 detik. Proses tetap berjalan meskipun modal ditutup.
+                                    <span class="rms-zip-live-dot"></span> Progress bergerak bertahap mengikuti pembaruan worker. Proses tetap berjalan meskipun modal ditutup.
+                                </div>
                                 </div>
                             @elseif($archive && $archive->status === 'completed')
                                 <div class="rms-zip-complete-head">
