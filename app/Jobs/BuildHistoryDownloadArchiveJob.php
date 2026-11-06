@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Jobs;
+namespace App\\Jobs;
 
-use App\Models\Generation;
-use App\Models\HistoryDownloadArchive;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Storage;
+use App\\Models\\Generation;
+use App\\Models\\HistoryDownloadArchive;
+use Illuminate\\Bus\\Queueable;
+use Illuminate\\Contracts\\Queue\\ShouldQueue;
+use Illuminate\\Foundation\\Bus\\Dispatchable;
+use Illuminate\\Queue\\InteractsWithQueue;
+use Illuminate\\Queue\\SerializesModels;
+use Illuminate\\Support\\Facades\\Storage;
 use ZipArchive;
 
 class BuildHistoryDownloadArchiveJob implements ShouldQueue
@@ -51,14 +51,14 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
 
         try {
             if ($zip->open($absolutePath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-                throw new \RuntimeException('ZIP tidak dapat dibuat.');
+                throw new \\RuntimeException('ZIP tidak dapat dibuat.');
             }
 
             $added = 0;
             $processed = 0;
             $ids = array_values(array_filter(array_map('intval', $archive->generation_ids ?? [])));
             if ($ids === []) {
-                throw new \RuntimeException('Daftar generation untuk ZIP kosong.');
+                throw new \\RuntimeException('Daftar generation untuk ZIP kosong.');
             }
 
             $generations = Generation::query()
@@ -119,7 +119,7 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
                             } else {
                                 $compressedPath = tempnam($tempDirectory, 'img-');
                                 if ($compressedPath === false) {
-                                    throw new \RuntimeException('File sementara kompresi tidak dapat dibuat.');
+                                    throw new \\RuntimeException('File sementara kompresi tidak dapat dibuat.');
                                 }
 
                                 $temporaryFiles[] = $compressedPath;
@@ -130,7 +130,7 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
                             }
 
                             if (! $zip->addFile($zipPath, $entryName)) {
-                                throw new \RuntimeException('Gagal menambahkan gambar ke ZIP: ' . basename($sourcePath));
+                                throw new \\RuntimeException('Gagal menambahkan gambar ke ZIP: ' . basename($sourcePath));
                             }
 
                             $added++;
@@ -149,11 +149,11 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
             }
 
             if ($added === 0) {
-                throw new \RuntimeException('Tidak ada gambar yang dapat dimasukkan ke ZIP.');
+                throw new \\RuntimeException('Tidak ada gambar yang dapat dimasukkan ke ZIP.');
             }
 
             if (! $zip->close()) {
-                throw new \RuntimeException('ZIP gagal diselesaikan.');
+                throw new \\RuntimeException('ZIP gagal diselesaikan.');
             }
 
             $this->deleteTemporaryFiles($temporaryFiles);
@@ -163,10 +163,10 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
                 'file_path' => $relativePath,
                 'error_message' => null,
             ]);
-        } catch (\Throwable $exception) {
+        } catch (\\Throwable $exception) {
             try {
                 $zip->close();
-            } catch (\Throwable) {
+            } catch (\\Throwable) {
                 // Keep the original exception.
             }
 
@@ -187,13 +187,13 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
     {
         $binary = file_get_contents($sourcePath);
         if ($binary === false) {
-            throw new \RuntimeException('Gambar tidak dapat dibaca.');
+            throw new \\RuntimeException('Gambar tidak dapat dibaca.');
         }
 
         $image = @imagecreatefromstring($binary);
         unset($binary);
-        if (! $image instanceof \GdImage) {
-            throw new \RuntimeException('Format gambar tidak didukung GD: ' . basename($sourcePath));
+        if (! $image instanceof \\GdImage) {
+            throw new \\RuntimeException('Format gambar tidak didukung GD: ' . basename($sourcePath));
         }
 
         try {
@@ -205,8 +205,8 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
 
             for ($attempt = 0; $attempt < 20; $attempt++) {
                 $canvas = imagecreatetruecolor($width, $height);
-                if (! $canvas instanceof \GdImage) {
-                    throw new \RuntimeException('Canvas kompresi gagal dibuat.');
+                if (! $canvas instanceof \\GdImage) {
+                    throw new \\RuntimeException('Canvas kompresi gagal dibuat.');
                 }
 
                 try {
@@ -215,7 +215,7 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
                     imagecopyresampled($canvas, $image, 0, 0, 0, 0, $width, $height, $sourceWidth, $sourceHeight);
                     $quality = max(40, 85 - ($attempt * 7));
                     if (! imagejpeg($canvas, $destinationPath, $quality)) {
-                        throw new \RuntimeException('Gagal mengompres gambar.');
+                        throw new \\RuntimeException('Gagal mengompres gambar.');
                     }
                 } finally {
                     imagedestroy($canvas);
@@ -234,13 +234,13 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
         }
 
         @unlink($destinationPath);
-        throw new \RuntimeException('Gambar tidak dapat dikompresi hingga maksimal 2 MB: ' . basename($sourcePath));
+        throw new \\RuntimeException('Gambar tidak dapat dikompresi hingga maksimal 2 MB: ' . basename($sourcePath));
     }
 
     private function safeSegment(string $value, string $fallback): string
     {
-        $value = preg_replace('/[\\\/:*?"<>|]+/u', '', $value) ?? '';
-        $value = trim($value, " .\t\n\r\0\x0B");
+        $value = preg_replace('/[\\\\\\/:*?"<>|]+/u', '', $value) ?? '';
+        $value = trim($value, " .\\t\\n\\r\\0\\x0B");
 
         return mb_substr($value !== '' ? $value : $fallback, 0, 120);
     }

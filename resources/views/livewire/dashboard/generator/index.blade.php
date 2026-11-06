@@ -2466,7 +2466,7 @@ new class extends Component
                         @if($this->historyDownloadImageCount < 1)
                             <div class="rms-history-download-empty">Tidak ada foto yang bisa diunduh dari hasil filter saat ini.</div>
                         @endif
-                        <div wire:poll.3s class="rms-history-download-async-status" style="margin:0 0 15px;padding:13px 14px;border:1px solid #e4e9ef;border-radius:13px;background:#f8fafc;">
+                        <div wire:poll.3s.visible class="rms-history-download-async-status" style="margin:0 0 15px;padding:13px 14px;border:1px solid #e4e9ef;border-radius:13px;background:#f8fafc;">
                             @php($archive = $this->latestHistoryDownloadArchive)
                             @if($archive && in_array($archive->status, ['queued', 'processing'], true))
                                 <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px;">
@@ -2493,10 +2493,10 @@ new class extends Component
                                 wire:click="downloadFilteredHistory"
                                 wire:loading.attr="disabled"
                                 wire:target="downloadFilteredHistory"
-                                @disabled($this->historyDownloadImageCount < 1)>
+                                @disabled($this->historyDownloadImageCount < 1 || ($this->latestHistoryDownloadArchive && in_array($this->latestHistoryDownloadArchive->status, ['queued', 'processing'], true)))>
                                 <span class="rms-history-download-button-icon" wire:loading.remove wire:target="downloadFilteredHistory">↓</span>
                                 <span class="rms-history-download-spinner" wire:loading wire:target="downloadFilteredHistory"></span>
-                                <span wire:loading.remove wire:target="downloadFilteredHistory">Buat ZIP</span>
+                                <span wire:loading.remove wire:target="downloadFilteredHistory">{{ $this->latestHistoryDownloadArchive && in_array($this->latestHistoryDownloadArchive->status, ['queued', 'processing'], true) ? 'ZIP sedang diproses' : 'Buat ZIP' }}</span>
                                 <span wire:loading wire:target="downloadFilteredHistory">Memulai proses...</span>
                                 <b>{{ $this->historyDownloadImageCount }} foto</b>
                             </button>
