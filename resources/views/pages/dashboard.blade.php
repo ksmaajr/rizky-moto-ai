@@ -65,7 +65,7 @@ class extends Component
         'healthy' => false,
         'running_count' => 0,
         'worker_count' => 0,
-        'target_workers' => 3,
+        'target_workers' => 5,
         'workers' => [],
         'pid' => null,
         'queue' => 'database',
@@ -2098,7 +2098,7 @@ public function getUserInitialsProperty(): string
                         <div class="worker-fleet-list">
                             @php
                                 $workerRows = $this->workerStatus['workers'] ?? [];
-                                $targetWorkers = max(1, (int) ($this->workerStatus['target_workers'] ?? 3));
+                                $targetWorkers = max(1, (int) ($this->workerStatus['target_workers'] ?? 5));
                             @endphp
                             @for ($workerIndex = 0; $workerIndex < $targetWorkers; $workerIndex++)
                                 @php
