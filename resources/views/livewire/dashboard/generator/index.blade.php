@@ -241,19 +241,13 @@ new class extends Component
             ->sum('downloadable_images_count');
     }
 
-    public function downloadFilteredHistory()
+    public function downloadFilteredHistory(): void
     {
-        if (! class_exists(\ZipArchive::class)) {
-            $this->dispatch('toast', type: 'error', title: 'ZIP tidak tersedia', message: 'Ekstensi PHP ZIP belum aktif di server.');
-            return null;
+        if (! class_exists(\\ZipArchive::class) || ! function_exists('imagecreatefromstring') || ! function_exists('imagejpeg')) {
+            $this->dispatch('toast', type: 'error', title: 'ZIP tidak tersedia', message: 'Aktifkan ekstensi PHP ZIP dan GD pada server.');
+            return;
         }
 
-        if (! function_exists('imagecreatefromstring') || ! function_exists('imagejpeg')) {
-            $this->dispatch('toast', type: 'error', title: 'Kompresi gambar tidak tersedia', message: 'Ekstensi PHP GD harus aktif untuk mengoptimalkan foto ke ukuran maksimal 2 MB.');
-            return null;
-        }
-
-        // Reuse Recent History filters, but intentionally ignore the visible-record limit.
         $query = (clone $this->historyQuery())
             ->whereHas('generatedImages', fn ($images) => $images
                 ->whereNotNull('image_path')
@@ -265,213 +259,53 @@ new class extends Component
             $query->orderBy('created_at', 'desc')->orderBy('id', 'desc');
         }
 
-        // Guard against an unexpectedly huge synchronous archive.
+        // Keep the same safety limit as the previous bulk-download flow.
         $totalMatching = (clone $query)->count();
         if ($totalMatching > 500) {
-            $this->dispatch('toast', type: 'warning', title: 'Terlalu banyak hasil', message: 'ZIP dibatasi maksimal 500 generation sekali unduh. Persempit filter tanggal, Store, atau status.');
-            return null;
+            $this->dispatch('toast', type: 'warning', title: 'Terlalu banyak hasil', message: 'ZIP dibatasi maksimal 500 generation sekali unduh. Persempit filter terlebih dahulu.');
+            return;
         }
 
-        $generations = $query->with(['store', 'template', 'generatedImages'])->get();
-
-        if ($generations->isEmpty()) {
-            $this->dispatch('toast', type: 'warning', title: 'Belum ada foto untuk diunduh', message: 'Tidak ada foto hasil yang tersedia sesuai filter aktif.');
-            return null;
+        $generationIds = $query->limit(500)->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
+        if ($generationIds === []) {
+            $this->dispatch('toast', type: 'warning', title: 'Belum ada foto', message: 'Tidak ada foto hasil sesuai filter aktif.');
+            return;
         }
 
-        $tempPath = tempnam(sys_get_temp_dir(), 'rms-history-zip-');
-        if ($tempPath === false) {
-            $this->dispatch('toast', type: 'error', title: 'Gagal menyiapkan ZIP', message: 'Server tidak dapat membuat file sementara.');
-            return null;
+        $totalImages = \\App\\Models\\GeneratedImage::query()
+            ->whereIn('generation_id', $generationIds)
+            ->whereNotNull('image_path')
+            ->where('image_path', '<>', '')
+            ->count();
+
+        $name = trim((string) $this->historyZipName);
+        $name = preg_replace('/\\.zip$/i', '', $name) ?? '';
+        $name = preg_replace('/[\\\\\\/:*?"<>|]+/u', '', $name) ?? '';
+        $name = mb_substr(trim($name, " .\\t\\n\\r\\0\\x0B"), 0, 100);
+        if ($name === '') {
+            $name = 'rizky-moto-history-' . now()->format('Ymd-His');
         }
 
-        $zip = new \ZipArchive();
-        if ($zip->open($tempPath, \ZipArchive::OVERWRITE) !== true) {
-            @unlink($tempPath);
-            $this->dispatch('toast', type: 'error', title: 'Gagal menyiapkan ZIP', message: 'File ZIP tidak dapat dibuka.');
-            return null;
-        }
+        $archive = \\App\\Models\\HistoryDownloadArchive::query()->create([
+            'user_id' => auth()->id(),
+            'generation_ids' => $generationIds,
+            'status' => 'queued',
+            'total_images' => $totalImages,
+            'processed_images' => 0,
+            'file_name' => $name . '.zip',
+        ]);
 
-        $disk = \Illuminate\Support\Facades\Storage::disk('public');
-        $added = 0;
+        \\App\\Jobs\\BuildHistoryDownloadArchiveJob::dispatch($archive->id)->onQueue('default');
 
-        try {
-            foreach ($generations as $generation) {
-                $imageIndex = 0;
-                // Use the Store's actual display name as the ZIP folder (keep spaces).
-                $storeName = trim((string) ($generation->store?->name ?: 'Store'));
-                $safeStore = preg_replace('/[\\\\\\/:*?"<>|]+/u', '', $storeName) ?: 'Store';
-                $safeStore = trim($safeStore, " .\\t\\n\\r\\0\\x0B");
-                if ($safeStore === '') {
-                    $safeStore = 'Store';
-                }
-
-                $generationMetadata = is_array($generation->metadata) ? $generation->metadata : [];
-                $title = trim((string) (
-                    data_get($generationMetadata, 'requested_custom_title')
-                    ?: data_get($generationMetadata, 'custom_title')
-                    ?: data_get($generationMetadata, 'final_title')
-                    ?: data_get($generationMetadata, 'product_title')
-                    ?: data_get($generationMetadata, 'title')
-                    ?: ''
-                ));
-                // Keep the generated title readable: no slug/hyphen conversion.
-                $safeTitle = preg_replace('/[\\\\\\/:*?"<>|]+/u', '', $title);
-                $safeTitle = trim((string) $safeTitle, " .\\t\\n\\r\\0\\x0B");
-                // Repair legacy product titles saved without the leading "B" in BAUT PAPAN.
-                if (preg_match('/^AUT\\s+PAPAN\\s+SPEEDOMETER\\b/i', $safeTitle) === 1) {
-                    $safeTitle = 'B' . $safeTitle;
-                }
-                if ($safeTitle === '') {
-                    $safeTitle = 'Hasil Generation ' . $generation->id;
-                }
-
-                foreach ($generation->generatedImages as $image) {
-                    $path = $image->image_path;
-                    if (! is_string($path) || $path === '' || ! $disk->exists($path)) {
-                        continue;
-                    }
-
-                    $absolute = $disk->path($path);
-                    if (! is_file($absolute) || ! is_readable($absolute)) {
-                        continue;
-                    }
-
-                    $optimized = $this->encodeHistoryImageUnderLimit($absolute, 2 * 1024 * 1024);
-                    $imageIndex++;
-                    $filename = $safeStore . '/' . $safeTitle
-                        . ($imageIndex > 1 ? ' (' . $imageIndex . ')' : '')
-                        . '.jpg';
-
-                    if (! $zip->addFromString($filename, $optimized)) {
-                        throw new \RuntimeException('Gagal menambahkan foto ke dalam ZIP.');
-                    }
-
-                    $added++;
-                }
-            }
-
-            if ($added === 0) {
-                $zip->close();
-                @unlink($tempPath);
-                $this->dispatch('toast', type: 'warning', title: 'Tidak ada file untuk diunduh', message: 'Foto hasil pada riwayat ini tidak ditemukan di penyimpanan.');
-                return null;
-            }
-
-            if (! $zip->close()) {
-                throw new \RuntimeException('File ZIP gagal diselesaikan.');
-            }
-        } catch (\Throwable $exception) {
-            try {
-                $zip->close();
-            } catch (\Throwable) {
-                // Ignore a secondary close failure while cleaning up the failed archive.
-            }
-
-            @unlink($tempPath);
-            report($exception);
-            $this->dispatch('toast', type: 'error', title: 'Gagal membuat ZIP', message: 'Sebagian foto tidak dapat diproses. Coba perkecil hasil dengan filter Store, tanggal, atau status.');
-            return null;
-        }
-
-        $this->dispatch(
-            'toast',
-            type: 'success',
-            title: 'ZIP siap diunduh',
-            message: $added . ' foto sudah dioptimalkan (maks. 2 MB per foto) dan dimasukkan ke ZIP.'
-        );
-
-        $zipBaseName = trim((string) $this->historyZipName);
-        $zipBaseName = preg_replace('/\.zip$/i', '', $zipBaseName) ?? '';
-        $zipBaseName = str_replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], '', $zipBaseName);
-        $zipBaseName = trim($zipBaseName, " .\t\n\r\0\x0B");
-        $zipBaseName = mb_substr($zipBaseName, 0, 100);
-        if ($zipBaseName === '') {
-            $zipBaseName = 'rizky-moto-history-' . now()->format('Ymd-His');
-        }
-
-        return response()->download(
-            $tempPath,
-            $zipBaseName . '.zip',
-            ['Content-Type' => 'application/zip']
-        )->deleteFileAfterSend(true);
+        $this->dispatch('toast', type: 'success', title: 'ZIP sedang disiapkan', message: $totalImages . ' foto diproses di background. Modal ini akan menampilkan progresnya.');
     }
 
-    private function encodeHistoryImageUnderLimit(string $absolutePath, int $maxBytes): string
+    public function getLatestHistoryDownloadArchiveProperty(): ?\\App\\Models\\HistoryDownloadArchive
     {
-        $sourceBinary = file_get_contents($absolutePath);
-        if ($sourceBinary === false) {
-            throw new \RuntimeException('File gambar tidak dapat dibaca.');
-        }
-
-        $sourceImage = @imagecreatefromstring($sourceBinary);
-        unset($sourceBinary);
-
-        if (! $sourceImage instanceof \GdImage) {
-            throw new \RuntimeException('Format gambar tidak dapat diproses oleh GD.');
-        }
-
-        $sourceWidth = imagesx($sourceImage);
-        $sourceHeight = imagesy($sourceImage);
-        $currentWidth = $sourceWidth;
-        $currentHeight = $sourceHeight;
-        $quality = 85;
-        $result = null;
-
-        try {
-            for ($attempt = 0; $attempt < 24; $attempt++) {
-                $canvas = imagecreatetruecolor($currentWidth, $currentHeight);
-                if (! $canvas instanceof \GdImage) {
-                    throw new \RuntimeException('Canvas kompresi gambar gagal dibuat.');
-                }
-
-                $white = imagecolorallocate($canvas, 255, 255, 255);
-                imagefill($canvas, 0, 0, $white);
-                imagecopyresampled(
-                    $canvas,
-                    $sourceImage,
-                    0,
-                    0,
-                    0,
-                    0,
-                    $currentWidth,
-                    $currentHeight,
-                    $sourceWidth,
-                    $sourceHeight
-                );
-
-                ob_start();
-                imagejpeg($canvas, null, $quality);
-                $binary = ob_get_clean();
-                imagedestroy($canvas);
-
-                if (is_string($binary) && strlen($binary) <= $maxBytes) {
-                    $result = $binary;
-                    break;
-                }
-
-                if ($quality > 42) {
-                    $quality = max(40, $quality - 7);
-                    continue;
-                }
-
-                if ($currentWidth <= 320 || $currentHeight <= 320) {
-                    break;
-                }
-
-                $currentWidth = max(320, (int) floor($currentWidth * 0.88));
-                $currentHeight = max(320, (int) floor($currentHeight * 0.88));
-                $quality = 78;
-            }
-        } finally {
-            imagedestroy($sourceImage);
-        }
-
-        if (! is_string($result) || strlen($result) > $maxBytes) {
-            throw new \RuntimeException('Foto tidak dapat dikompresi hingga di bawah 2 MB.');
-        }
-
-        return $result;
+        return \\App\\Models\\HistoryDownloadArchive::query()
+            ->where('user_id', auth()->id())
+            ->latest('id')
+            ->first();
     }
 
     public function loadMoreHistory(): void
@@ -2632,18 +2466,38 @@ new class extends Component
                         @if($this->historyDownloadImageCount < 1)
                             <div class="rms-history-download-empty">Tidak ada foto yang bisa diunduh dari hasil filter saat ini.</div>
                         @endif
+                        <div wire:poll.3s class="rms-history-download-async-status" style="margin:0 0 15px;padding:13px 14px;border:1px solid #e4e9ef;border-radius:13px;background:#f8fafc;">
+                            @php($archive = $this->latestHistoryDownloadArchive)
+                            @if($archive && in_array($archive->status, ['queued', 'processing'], true))
+                                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px;">
+                                    <strong style="font-size:12px;color:#303642;">{{ $archive->status === 'queued' ? 'Menunggu worker...' : 'Membuat ZIP...' }}</strong>
+                                    <span style="font-size:11px;font-weight:800;color:#16834a;">{{ min(100, (int) round(($archive->processed_images / max(1, $archive->total_images)) * 100)) }}%</span>
+                                </div>
+                                <div style="height:7px;overflow:hidden;border-radius:99px;background:#e7ecef;">
+                                    <div style="height:100%;width:{{ min(100, (int) round(($archive->processed_images / max(1, $archive->total_images)) * 100)) }}%;border-radius:99px;background:linear-gradient(90deg,#159653,#28b66a);transition:width .25s ease;"></div>
+                                </div>
+                                <small style="display:block;margin-top:8px;color:#7d8492;font-size:10px;">{{ number_format($archive->processed_images) }} dari {{ number_format($archive->total_images) }} foto diproses. Kamu bisa menutup modal, proses tetap berjalan.</small>
+                            @elseif($archive && $archive->status === 'completed')
+                                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                                    <div><strong style="display:block;font-size:12px;color:#16834a;">ZIP selesai dibuat</strong><small style="color:#7d8492;font-size:10px;">{{ number_format($archive->processed_images) }} foto berhasil dimasukkan.</small></div>
+                                    <a href="{{ route('history-downloads.download', $archive) }}" style="display:inline-flex;align-items:center;justify-content:center;min-height:37px;padding:0 13px;border-radius:10px;background:#159653;color:#fff;font-size:11px;font-weight:800;text-decoration:none;">Unduh ZIP</a>
+                                </div>
+                            @elseif($archive && $archive->status === 'failed')
+                                <strong style="display:block;font-size:12px;color:#b42318;">ZIP gagal dibuat</strong>
+                                <small style="display:block;margin-top:5px;color:#7d8492;font-size:10px;">{{ $archive->error_message ?: 'Terjadi kesalahan saat memproses gambar. Silakan coba lagi.' }}</small>
+                            @endif
+                        </div>
                         <div class="rms-history-download-dialog-actions" style="display:flex;gap:10px;padding-top:16px;border-top:1px solid #eceef2;">
                             <button type="button" class="rms-history-download-cancel" style="display:inline-flex;align-items:center;justify-content:center;min-height:49px;flex:1 1 35%;padding:0 17px;border:1px solid #e7e9ef;border-radius:12px;background:#fff;color:#535b69;font-size:12px;font-weight:750;cursor:pointer;" x-on:click="downloadPanelOpen = false">Batal</button>
                             <button type="button" class="rms-history-download-button rms-history-download-confirm" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:49px;flex:1 1 65%;padding:0 15px;border:0;border-radius:12px;background:linear-gradient(135deg,#159653,#087d43);color:#fff;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 7px 18px rgba(21,148,81,.2);"
                                 wire:click="downloadFilteredHistory"
-                                x-on:click="downloadPanelOpen = false"
                                 wire:loading.attr="disabled"
                                 wire:target="downloadFilteredHistory"
                                 @disabled($this->historyDownloadImageCount < 1)>
                                 <span class="rms-history-download-button-icon" wire:loading.remove wire:target="downloadFilteredHistory">↓</span>
                                 <span class="rms-history-download-spinner" wire:loading wire:target="downloadFilteredHistory"></span>
-                                <span wire:loading.remove wire:target="downloadFilteredHistory">Download ZIP</span>
-                                <span wire:loading wire:target="downloadFilteredHistory">Menyiapkan ZIP...</span>
+                                <span wire:loading.remove wire:target="downloadFilteredHistory">Buat ZIP</span>
+                                <span wire:loading wire:target="downloadFilteredHistory">Memulai proses...</span>
                                 <b>{{ $this->historyDownloadImageCount }} foto</b>
                             </button>
                         </div>
