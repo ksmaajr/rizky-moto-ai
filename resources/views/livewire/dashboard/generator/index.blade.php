@@ -8905,3 +8905,27 @@ body > .rms-history-download-modal{position:fixed!important;inset:0!important;z-
     .rms-generator-history-mobile-safe .rms-generation-card .rms-generation-card-head{transition:none!important}
 }
 </style>
+
+
+<style>
+/* V8 — Prevent the generator workspace from replaying its page-entry fade
+   after every Livewire morph/update. Keep local hover and control transitions. */
+.rms-generator-page .rms-generator-workspace-animated .rms-generator-stepbar,
+.rms-generator-page .rms-generator-workspace-animated .rms-generator-columns,
+.rms-generator-page .rms-generator-workspace-animated .rms-generator-columns > section:first-child,
+.rms-generator-page .rms-generator-workspace-animated .rms-generator-columns > section:nth-child(2){
+    animation:none!important;
+    opacity:1!important;
+    transform:none!important;
+}
+/* Livewire updates should not animate the history region as if it were opening. */
+.rms-generator-history-mobile-safe .rms-generator-history-content{
+    animation:none!important;
+}
+@media(prefers-reduced-motion:reduce){
+    .rms-generator-page .rms-generator-workspace-animated *,
+    .rms-generator-history-mobile-safe *{
+        scroll-behavior:auto!important;
+    }
+}
+</style>
