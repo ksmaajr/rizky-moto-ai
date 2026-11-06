@@ -239,7 +239,7 @@ class BuildHistoryDownloadArchiveJob implements ShouldQueue
 
     private function safeSegment(string $value, string $fallback): string
     {
-        $value = preg_replace('/[\\\/:*?"<>|]+/u', '', $value) ?? '';
+        $value = str_replace(['\\\\', '/', ':', '*', '?', '"', '<', '>', '|'], '', $value);
         $value = trim($value, " .\t\n\r\0\x0B");
 
         return mb_substr($value !== '' ? $value : $fallback, 0, 120);
