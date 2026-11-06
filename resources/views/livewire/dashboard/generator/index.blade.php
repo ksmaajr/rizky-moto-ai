@@ -367,22 +367,32 @@ new class extends Component
             return;
         }
 
-        if ($archive->file_path && \Illuminate\Support\Facades\Storage::disk('local')->exists($archive->file_path)) {
-            \Illuminate\Support\Facades\Storage::disk('local')->delete($archive->file_path);
+        $disk = \Illuminate\Support\Facades\Storage::disk('local');
+        if ($archive->file_path && $disk->exists($archive->file_path)) {
+            $deleted = $disk->delete($archive->file_path);
+            clearstatcache();
+
+            if (! $deleted || $disk->exists($archive->file_path)) {
+                throw new \RuntimeException('File ZIP gagal dihapus dari storage server.');
+            }
         }
+
+        $archiveName = $archive->file_name ?: ('Arsip #' . $archive->id);
+        $archiveIdForLog = $archive->id;
+        $archive->delete();
 
         app(\App\Services\ActivityLogService::class)->log(
             'history_bulk_download_delete',
             'download',
             'success',
             'Arsip bulk download dihapus',
-            $archive->file_name ?: ('Arsip #' . $archive->id),
-            ['user_id' => auth()->id(), 'archive_id' => $archive->id]
+            $archiveName,
+            ['user_id' => auth()->id(), 'archive_id' => $archiveIdForLog, 'file_deleted_from_storage' => true]
         );
 
-        $archive->delete();
-        $this->dispatch('toast', type: 'success', title: 'Arsip dihapus', message: 'Riwayat dan file ZIP berhasil dihapus dari server.');
+        $this->dispatch('toast', type: 'success', title: 'Arsip dihapus', message: 'File ZIP dari server dan riwayatnya berhasil dihapus.');
     }
+
     public function loadMoreHistory(): void
     {
         $this->recentHistoryLimit += 12;
