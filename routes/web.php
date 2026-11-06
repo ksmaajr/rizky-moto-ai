@@ -18,9 +18,12 @@ Route::redirect('/dashboard', '/')->name('dashboard.legacy');
 
 Route::middleware('auth')->group(function () {
 
-    // Account settings pages.
+    // Profile settings must remain accessible to authenticated users,
+    // including users whose email address has not been verified yet.
+    Route::livewire('/settings/profile', 'pages::settings.profile')->name('profile.edit');
+
+    // Sensitive account settings keep their additional verification guards.
     Route::middleware('verified')->group(function () {
-        Route::livewire('/settings/profile', 'pages::settings.profile')->name('profile.edit');
         Route::livewire('/settings/security', 'pages::settings.security')
             ->middleware('password.confirm')
             ->name('security.edit');
