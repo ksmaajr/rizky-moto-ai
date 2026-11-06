@@ -1083,8 +1083,13 @@ class OpenAiImageService
 
                 $filename = 'generation-' . $generation->id . '-' . ($index + 1) . '-' . uniqid() . '.png';
                 $path = 'generations/output/' . now()->format('Y/m') . '/' . $filename;
-                Storage::disk('public')->put($path, $binary);
+                if (! Storage::disk('public')->put($path, $binary)) {
+                    throw new RuntimeException('Gagal menyimpan hasil gambar ke storage.');
+                }
                 [$width, $height] = $this->imageDimensions(Storage::disk('public')->path($path));
+                // Keep the original PNG for preview/download, but serve a small WebP
+                // thumbnail in Recent History just like the synchronous generation path.
+                $thumbnailPath = $this->createHistoryThumbnail($path, $binary);
 
                 GeneratedImage::query()->create([
                     'generation_id' => $generation->id,
@@ -1095,6 +1100,7 @@ class OpenAiImageService
                     'width' => $width,
                     'height' => $height,
                     'metadata' => [
+                        'thumbnail_path' => $thumbnailPath,
                         'openai_index' => $index,
                         'title_source' => $titleSource,
                         'final_title' => $customTitle,
