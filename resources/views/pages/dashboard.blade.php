@@ -1479,6 +1479,11 @@ public function getUserInitialsProperty(): string
 
 
 
+    public function openProfileSettings(): void
+    {
+        $this->activeSection = 'settings-profile';
+    }
+
     public function openDashboard(): void
     {
         $this->pendingStoreSearch = '';
@@ -2521,11 +2526,11 @@ public function getUserInitialsProperty(): string
 
 
 
-                        <a
+                        <button
 
-                            href="{{ route('profile.edit') }}"
+                            type="button"
 
-                            wire:navigate
+                            wire:click="openProfileSettings"
 
                             class="profile-dropdown-item"
 
@@ -2565,7 +2570,7 @@ public function getUserInitialsProperty(): string
 
                             </span>
 
-                        </a>
+                        </button>
 
 
 
@@ -3386,6 +3391,15 @@ public function getUserInitialsProperty(): string
                 </div>
 
 
+
+            @elseif ($activeSection === 'settings-profile')
+
+                <div
+                    class="workspace-section-shell rms-content-enter"
+                    wire:key="workspace-profile-settings"
+                >
+                    <livewire:account-settings wire:key="embedded-account-settings" />
+                </div>
 
             @elseif (in_array($activeSection, ['settings-general', 'settings-openai'], true))
 
