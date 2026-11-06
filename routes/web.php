@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityLogFeedController;
-use App\Http\Controllers\GeneratedImageDownloadController;
+use App\Http\Controllers\GeneratedImageDownloadController;\nuse App\Http\Controllers\HistoryDownloadArchiveController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
