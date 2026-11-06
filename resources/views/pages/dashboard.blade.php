@@ -1484,6 +1484,12 @@ public function getUserInitialsProperty(): string
         $this->activeSection = 'settings-profile';
     }
 
+    #[On('account-settings-back')]
+    public function closeProfileSettings(): void
+    {
+        $this->activeSection = 'dashboard';
+    }
+
     public function openDashboard(): void
     {
         $this->pendingStoreSearch = '';
