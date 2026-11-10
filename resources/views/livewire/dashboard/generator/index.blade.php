@@ -2434,6 +2434,7 @@ new class extends Component
         wire:key="generation-history"
         x-data="{
             recentOpen: window.innerWidth > 760,
+            datePickerOpen: false,
             confirmOpen: false,
             confirmTitle: '',
             confirmMessage: '',
@@ -2603,39 +2604,13 @@ new class extends Component
                         </div>
                     </div>
 
-                    <div class="rms-history-filter rms-history-date-filter" x-data="{ open:false }">
-                        <button type="button" class="rms-history-date-trigger" x-on:click="open=!open" :class="{ 'is-open': open }" :aria-expanded="open.toString()">
+                    <div class="rms-history-filter rms-history-date-filter">
+                        <button type="button" class="rms-history-date-trigger" x-on:click="datePickerOpen=!datePickerOpen" :class="{ 'is-open': datePickerOpen }" :aria-expanded="datePickerOpen.toString()">
                             <span>Date &amp; Time</span>
                             <b>{{ $historyDateRange === 'custom' ? 'Custom Range' : match($historyDateRange) { 'today' => 'Today', '7d' => 'Last 7 Days', '30d' => 'Last 30 Days', default => 'All Time' } }}</b>
                             <i>⌄</i>
                         </button>
-                        <template x-teleport="body">
-                            <div class="rms-history-date-overlay" x-show="open" x-cloak x-transition.opacity x-on:click.self="open=false">
-                                <div class="rms-history-date-popover" x-show="open" x-cloak x-transition:enter="rms-date-enter" x-transition:enter-start="rms-date-enter-start" x-transition:enter-end="rms-date-enter-end" x-transition:leave="rms-date-leave" x-transition:leave-start="rms-date-leave-start" x-transition:leave-end="rms-date-leave-end" x-data="rmsHistoryDatePicker(@js($historyStartAt), @js($historyEndAt))" x-init="init()">
-                            <div class="rms-date-popover-head">
-                                <div><span class="rms-date-eyebrow">HISTORY TIMELINE</span><strong>Filter tanggal &amp; waktu</strong><small>Pilih rentang khusus atau gunakan preset cepat</small></div>
-                                <span class="rms-date-live-dot"></span>
-                            </div>
-                            <div class="rms-date-presets">
-                                @foreach(['15m'=>'15 menit','30m'=>'30 menit','1h'=>'1 jam','3h'=>'3 jam','6h'=>'6 jam','12h'=>'12 jam','24h'=>'24 jam'] as $preset => $label)
-                                    <button type="button" x-on:click="$wire.setHistoryTimePreset('{{ $preset }}').then(() => { startAt=$wire.historyStartAt; endAt=$wire.historyEndAt; }); open=false">{{ $label }}</button>
-                                @endforeach
-                            </div>
-                            <div class="rms-date-range-tabs">
-                                <button type="button" :class="{ 'active': activeField === 'start' }" x-on:click="activeField='start'"><small>MULAI</small><strong x-text="formatValue(startAt) || 'Pilih tanggal'"></strong><span x-text="formatTime(startAt) || '--:--'"></span></button>
-                                <button type="button" :class="{ 'active': activeField === 'end' }" x-on:click="activeField='end'"><small>SELESAI</small><strong x-text="formatValue(endAt) || 'Pilih tanggal'"></strong><span x-text="formatTime(endAt) || '--:--'"></span></button>
-                            </div>
-                            <div class="rms-date-calendar">
-                                <div class="rms-date-calendar-head">
-                                    <button type="button" x-on:click="changeMonth(-1)" aria-label="Bulan sebelumnya">‹</button>
-                                    <strong x-text="monthLabel"></strong>
-                                    <button type="button" x-on:click="changeMonth(1)" aria-label="Bulan berikutnya">›</button>
-                                </div>
-                                <div class="rms-date-weekdays"><template x-for="day in weekdays" :key="day"><span x-text="day"></span></template></div>
-                                <div class="rms-date-days">
-                                    <template x-for="day in calendarDays" :key="day.key">
-                                        <button type="button" :disabled="!day.date" :class="{ 'muted': !day.currentMonth, 'selected': isSelected(day.date), 'today': day.isToday }" x-on:click="chooseDate(day.date)" x-text="day.label"></button>
-                                    </template>
+
                                 </div>
                             </div>
                             <div class="rms-date-time-control">
@@ -3190,6 +3165,33 @@ new class extends Component
             @endif
             </div>
         </div>
+                        <template x-teleport="body">
+                            <div class="rms-history-date-overlay" x-show="datePickerOpen" x-cloak x-transition.opacity x-on:click.self="datePickerOpen=false">
+                                <div class="rms-history-date-popover" x-show="datePickerOpen" x-cloak x-transition:enter="rms-date-enter" x-transition:enter-start="rms-date-enter-start" x-transition:enter-end="rms-date-enter-end" x-transition:leave="rms-date-leave" x-transition:leave-start="rms-date-leave-start" x-transition:leave-end="rms-date-leave-end" x-data="rmsHistoryDatePicker(@js($historyStartAt), @js($historyEndAt))" x-init="init()">
+                            <div class="rms-date-popover-head">
+                                <div><span class="rms-date-eyebrow">HISTORY TIMELINE</span><strong>Filter tanggal &amp; waktu</strong><small>Pilih rentang khusus atau gunakan preset cepat</small></div>
+                                <span class="rms-date-live-dot"></span>
+                            </div>
+                            <div class="rms-date-presets">
+                                @foreach(['15m'=>'15 menit','30m'=>'30 menit','1h'=>'1 jam','3h'=>'3 jam','6h'=>'6 jam','12h'=>'12 jam','24h'=>'24 jam'] as $preset => $label)
+                                    <button type="button" x-on:click="$wire.setHistoryTimePreset('{{ $preset }}').then(() => { startAt=$wire.historyStartAt; endAt=$wire.historyEndAt; }); open=false">{{ $label }}</button>
+                                @endforeach
+                            </div>
+                            <div class="rms-date-range-tabs">
+                                <button type="button" :class="{ 'active': activeField === 'start' }" x-on:click="activeField='start'"><small>MULAI</small><strong x-text="formatValue(startAt) || 'Pilih tanggal'"></strong><span x-text="formatTime(startAt) || '--:--'"></span></button>
+                                <button type="button" :class="{ 'active': activeField === 'end' }" x-on:click="activeField='end'"><small>SELESAI</small><strong x-text="formatValue(endAt) || 'Pilih tanggal'"></strong><span x-text="formatTime(endAt) || '--:--'"></span></button>
+                            </div>
+                            <div class="rms-date-calendar">
+                                <div class="rms-date-calendar-head">
+                                    <button type="button" x-on:click="changeMonth(-1)" aria-label="Bulan sebelumnya">‹</button>
+                                    <strong x-text="monthLabel"></strong>
+                                    <button type="button" x-on:click="changeMonth(1)" aria-label="Bulan berikutnya">›</button>
+                                </div>
+                                <div class="rms-date-weekdays"><template x-for="day in weekdays" :key="day"><span x-text="day"></span></template></div>
+                                <div class="rms-date-days">
+                                    <template x-for="day in calendarDays" :key="day.key">
+                                        <button type="button" :disabled="!day.date" :class="{ 'muted': !day.currentMonth, 'selected': isSelected(day.date), 'today': day.isToday }" x-on:click="chooseDate(day.date)" x-text="day.label"></button>
+                                    </template>
         <style>
 /* Bulk generation-history cleanup drawer */
 body.rms-bulk-delete-lock{overflow:hidden}
