@@ -3410,7 +3410,8 @@ body.rms-bulk-delete-lock{overflow:hidden}
             box-sizing:border-box;
             margin-top:18px;
             margin-bottom:28px;
-            isolation:isolate;
+            isolation:auto!important;
+            z-index:1200!important;
         }
 
         .rms-generator-history-mobile-safe .rms-generator-history-grid{
@@ -9103,7 +9104,7 @@ window.rmsHistoryDatePicker = function (initialStart, initialEnd) {
 
 <style>
 /* Date & Time filter — native disclosure with the same control language as sibling filters. */
-.rms-history-date-filter{position:relative!important;display:block!important;flex:0 0 auto!important;overflow:visible!important;z-index:130!important}
+.rms-history-date-filter{position:relative!important;display:block!important;flex:0 0 auto!important;overflow:visible!important;z-index:99999!important}
 .rms-history-date-filter>.rms-history-date-trigger{box-sizing:border-box!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;width:100%!important;min-width:190px!important;min-height:54px!important;padding:10px 14px!important;border:1px solid #dfe4ec!important;border-radius:14px!important;background:#fff!important;color:#4b5563!important;list-style:none!important;cursor:pointer!important}
 .rms-history-date-filter>.rms-history-date-trigger::-webkit-details-marker{display:none!important}
 .rms-history-date-filter>.rms-history-date-trigger::marker{content:""!important}
@@ -9112,7 +9113,7 @@ window.rmsHistoryDatePicker = function (initialStart, initialEnd) {
 .rms-history-date-filter>.rms-history-date-trigger>i{font-style:normal!important;color:#8993a3!important;transition:transform .18s ease!important}
 .rms-history-date-filter[open]>.rms-history-date-trigger{border-color:#cfd7e3!important;box-shadow:0 0 0 3px rgba(226,232,240,.45)!important}
 .rms-history-date-filter[open]>.rms-history-date-trigger>i{transform:rotate(180deg)!important}
-.rms-history-date-filter>.rms-history-date-popover{box-sizing:border-box!important;position:absolute!important;top:calc(100% + 10px)!important;left:0!important;right:auto!important;z-index:99999!important;display:block!important;width:420px!important;min-width:min(420px,calc(100vw - 32px))!important;max-width:calc(100vw - 32px)!important;max-height:min(78vh,720px)!important;overflow-y:auto!important;overscroll-behavior:contain!important;border:1px solid #e5eaf1!important;border-radius:20px!important;background:#fff!important;box-shadow:0 22px 65px rgba(15,23,42,.2)!important;padding:18px!important}
+.rms-history-date-filter>.rms-history-date-popover{box-sizing:border-box!important;position:absolute!important;top:calc(100% + 10px)!important;left:auto!important;right:0!important;z-index:100000!important;display:block!important;width:420px!important;min-width:min(420px,calc(100vw - 32px))!important;max-width:calc(100vw - 32px)!important;max-height:min(78vh,720px)!important;overflow-y:auto!important;overscroll-behavior:contain!important;border:1px solid #e5eaf1!important;border-radius:20px!important;background:#fff!important;box-shadow:0 22px 65px rgba(15,23,42,.2)!important;padding:18px!important}
 .rms-history-date-filter>.rms-history-date-popover .rms-date-popover-actions{position:sticky!important;bottom:-18px!important;z-index:2!important;padding:12px 0 2px!important;background:linear-gradient(to bottom,rgba(255,255,255,.9),#fff 22%)!important}
 .rms-history-date-filter>.rms-history-date-popover .rms-date-apply{min-width:0!important}
 @media(max-width:760px){.rms-history-date-filter>.rms-history-date-popover{position:fixed!important;left:12px!important;right:12px!important;top:auto!important;bottom:12px!important;width:auto!important;min-width:0!important;max-width:none!important;max-height:82vh!important}}
