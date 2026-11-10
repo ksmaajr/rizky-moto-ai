@@ -9144,3 +9144,28 @@ window.rmsHistoryDatePicker = function (initialStart, initialEnd) {
     z-index:1000003!important;
 }
 </style>
+
+<style>
+/* Date & Time trigger must occupy the exact same grid cell as the other history filters. */
+.rms-generator-history-mobile-safe .rms-history-filter-group > .rms-history-date-filter{
+    display:block!important;
+    flex:initial!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    box-sizing:border-box!important;
+}
+.rms-generator-history-mobile-safe .rms-history-date-filter > .rms-history-date-trigger{
+    display:grid!important;
+    grid-template-columns:auto minmax(0,1fr) 12px!important;
+    align-items:center!important;
+    justify-content:initial!important;
+    gap:8px!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    min-height:54px!important;
+    box-sizing:border-box!important;
+    padding:10px 12px!important;
+}
+</style>
