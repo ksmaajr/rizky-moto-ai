@@ -2431,6 +2431,7 @@ new class extends Component
 
     <section
         class="rms-generator-history rms-generator-history-bottom rms-generator-history-mobile-safe"
+        :class="{ 'rms-history-date-open': datePickerOpen }"
         wire:key="generation-history"
         x-data="{
             recentOpen: window.innerWidth > 760,
@@ -3142,7 +3143,7 @@ new class extends Component
             @endif
             </div>
         </div>
-                        <template x-teleport="body">
+
                             <div class="rms-history-date-overlay" x-show="datePickerOpen" x-cloak x-transition.opacity x-on:click.self="datePickerOpen=false">
                                 <div class="rms-history-date-popover" x-show="datePickerOpen" x-cloak x-transition:enter="rms-date-enter" x-transition:enter-start="rms-date-enter-start" x-transition:enter-end="rms-date-enter-end" x-transition:leave="rms-date-leave" x-transition:leave-start="rms-date-leave-start" x-transition:leave-end="rms-date-leave-end" x-data="rmsHistoryDatePicker(@js($historyStartAt), @js($historyEndAt))" x-init="init()">
                             <div class="rms-date-popover-head">
@@ -3168,7 +3169,7 @@ new class extends Component
                                 <div class="rms-date-days">
                                     <template x-for="day in calendarDays" :key="day.key">
                                         <button type="button" :disabled="!day.date" :class="{ 'muted': !day.currentMonth, 'selected': isSelected(day.date), 'today': day.isToday }" x-on:click="chooseDate(day.date)" x-text="day.label"></button>
-                                    </template>
+            
                                 </div>
                             </div>
                             <div class="rms-date-time-control">
@@ -9077,7 +9078,7 @@ body > .rms-history-download-modal{position:fixed!important;inset:0!important;z-
 
 <style>
 /* Premium custom date & time picker — native browser picker intentionally avoided. */
-.rms-history-date-filter{position:relative!important}
+.rms-generator-history.rms-history-date-open{position:relative!important;z-index:2147483000!important;isolation:auto!important;transform:none!important;filter:none!important;contain:none!important}.rms-history-date-filter{position:relative!important}
 .rms-history-date-trigger{min-width:184px!important}
 .rms-history-date-overlay{position:fixed!important;inset:0!important;z-index:999999!important;display:grid!important;place-items:center!important;padding:16px!important;background:rgba(15,23,42,.28);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}.rms-history-date-popover{position:relative!important;z-index:1!important;width:min(390px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow-y:auto;overscroll-behavior:contain;padding:18px;border:1px solid rgba(226,232,240,.95);border-radius:22px;background:linear-gradient(155deg,#fff 0%,#fbfcfe 100%);box-shadow:0 24px 70px rgba(15,23,42,.22),0 4px 14px rgba(15,23,42,.06);color:#1f2937;transform-origin:center;scrollbar-width:none;-ms-overflow-style:none}.rms-history-date-popover::-webkit-scrollbar{display:none}
 .rms-date-enter{transition:opacity .22s ease,transform .28s cubic-bezier(.2,.8,.2,1)}.rms-date-enter-start{opacity:0;transform:translateY(-6px) scale(.98)}.rms-date-enter-end{opacity:1;transform:translateY(0) scale(1)}.rms-date-leave{transition:opacity .15s ease,transform .17s ease}.rms-date-leave-start{opacity:1;transform:translateY(0) scale(1)}.rms-date-leave-end{opacity:0;transform:translateY(-4px) scale(.985)}
