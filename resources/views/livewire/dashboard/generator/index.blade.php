@@ -9221,3 +9221,30 @@ window.rmsHistoryDatePicker = function (initialStart, initialEnd) {
     }
 }
 </style>
+
+<style>
+/* Desktop: keep the horizontal filter rail visible without creating a scroll clipping context.
+   This lets every sibling dropdown menu escape below the rail instead of being cut off. */
+@media(min-width:761px){
+    .rms-generator-history-mobile-safe .rms-history-filter-group{
+        overflow:visible!important;
+        flex-wrap:nowrap!important;
+        scrollbar-width:none!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-filter-group > .rms-history-filter,
+    .rms-generator-history-mobile-safe .rms-history-filter-group > .rms-history-date-filter{
+        min-width:0!important;
+    }
+}
+/* Small screens retain horizontal swipe; dropdown menus are promoted above the rail. */
+@media(max-width:760px){
+    .rms-generator-history-mobile-safe .rms-history-filter-group{
+        overflow-x:auto!important;
+        overflow-y:hidden!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-filter-menu{
+        position:fixed!important;
+        z-index:1000100!important;
+    }
+}
+</style>
