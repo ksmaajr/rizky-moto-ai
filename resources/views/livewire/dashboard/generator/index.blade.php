@@ -9169,3 +9169,55 @@ window.rmsHistoryDatePicker = function (initialStart, initialEnd) {
     padding:10px 12px!important;
 }
 </style>
+
+<style>
+/* One continuous horizontal rail: never wrap any history filter onto a second row. */
+.rms-generator-history-mobile-safe .rms-history-filter-group{
+    display:flex!important;
+    flex-flow:row nowrap!important;
+    align-items:stretch!important;
+    gap:10px!important;
+    width:100%!important;
+    min-width:0!important;
+    overflow-x:auto!important;
+    overflow-y:visible!important;
+    padding:0 0 7px!important;
+    scrollbar-width:thin!important;
+    -webkit-overflow-scrolling:touch!important;
+}
+.rms-generator-history-mobile-safe .rms-history-filter-group > .rms-history-filter{
+    display:block!important;
+    flex:1 1 0!important;
+    width:auto!important;
+    min-width:150px!important;
+    max-width:none!important;
+    box-sizing:border-box!important;
+}
+.rms-generator-history-mobile-safe .rms-history-filter-group > .rms-history-date-filter{
+    flex:1 1 0!important;
+    width:auto!important;
+    min-width:150px!important;
+    max-width:none!important;
+}
+.rms-generator-history-mobile-safe .rms-history-filter-group > .rms-history-filter > button,
+.rms-generator-history-mobile-safe .rms-history-filter-group > .rms-history-date-filter > .rms-history-date-trigger{
+    width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+}
+@media(max-width:760px){
+    .rms-generator-history-mobile-safe .rms-history-filter-group{
+        overflow-x:auto!important;
+        overflow-y:hidden!important;
+        scrollbar-width:none!important;
+        padding-bottom:5px!important;
+    }
+    .rms-generator-history-mobile-safe .rms-history-filter-group::-webkit-scrollbar{display:none!important}
+    .rms-generator-history-mobile-safe .rms-history-filter-group > .rms-history-filter,
+    .rms-generator-history-mobile-safe .rms-history-filter-group > .rms-history-date-filter{
+        flex:0 0 154px!important;
+        width:154px!important;
+        min-width:154px!important;
+    }
+}
+</style>
