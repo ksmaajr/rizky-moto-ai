@@ -9118,3 +9118,29 @@ window.rmsHistoryDatePicker = function (initialStart, initialEnd) {
 .rms-history-date-filter>.rms-history-date-popover .rms-date-apply{min-width:0!important}
 @media(max-width:760px){.rms-history-date-filter>.rms-history-date-popover{position:fixed!important;left:12px!important;right:12px!important;top:auto!important;bottom:12px!important;width:auto!important;min-width:0!important;max-width:none!important;max-height:82vh!important}}
 </style>
+
+
+<style>
+/* Keep the date picker above the complete history panel, including the empty state.
+   A child's z-index cannot escape an ancestor stacking/overflow context, so elevate
+   the history section and its toolbar only while the native details disclosure is open. */
+.rms-generator-history:has(.rms-history-date-filter[open]){
+    position:relative!important;
+    z-index:1000000!important;
+    overflow:visible!important;
+}
+.rms-generator-history:has(.rms-history-date-filter[open]) .rms-generator-history-content,
+.rms-generator-history:has(.rms-history-date-filter[open]) .rms-history-toolbar,
+.rms-generator-history:has(.rms-history-date-filter[open]) .rms-history-filter-group{
+    position:relative!important;
+    z-index:1000001!important;
+    overflow:visible!important;
+}
+.rms-generator-history:has(.rms-history-date-filter[open]) .rms-history-date-filter{
+    position:relative!important;
+    z-index:1000002!important;
+}
+.rms-generator-history:has(.rms-history-date-filter[open]) .rms-history-date-popover{
+    z-index:1000003!important;
+}
+</style>
