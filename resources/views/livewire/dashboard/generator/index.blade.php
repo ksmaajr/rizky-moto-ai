@@ -1685,7 +1685,7 @@ new class extends Component
                                 </button>
                                 <div class="rms-custom-select-menu" x-show="open" x-transition.opacity.scale.origin.top style="display:none">
                                     @forelse($this->availableModels as $openAiModel)
-                                        <button type="button" class="{{ $model === $openAiModel['id'] ? 'selected' : '' }}" wire:click="selectModel('{{ addslashes($openAiModel['id']) }}')" x-on:click="open=false">
+                                        <button type="button" class="{{ $model === $openAiModel['id'] ? 'selected' : '' }}" wire:click="selectModel('{{ addslashes($openAiModel['id']) }}')" >
                                             <span class="rms-option-model">AI</span>
                                             <span>
                                                 <strong>{{ $openAiModel['id'] }}</strong>
@@ -2648,7 +2648,7 @@ new class extends Component
                             <div class="rms-date-popover-actions">
                                 <button type="button" class="rms-date-clear" x-on:click="clearActive()">Reset pilihan</button>
                                 <button type="button" class="rms-date-today" x-on:click="chooseToday()">Hari ini</button>
-                                <button type="button" class="rms-date-apply" x-on:click="sync().then(() => $wire.applyHistoryDateTimeFilter())">Terapkan rentang</button>
+                                <button type="button" class="rms-date-apply" x-on:click="apply()">Terapkan rentang</button>
                             </div>
                             <div class="rms-date-quick-ranges">
                                 @foreach(['all'=>'Semua waktu','today'=>'Hari ini','7d'=>'7 hari','30d'=>'30 hari'] as $value => $label)
@@ -9095,15 +9095,25 @@ window.rmsHistoryDatePicker = function (initialStart, initialEnd) {
         chooseToday(){const d=new Date(),p=this.parts;this.setValue(d,p.hour,p.minute);this.viewDate=new Date(d.getFullYear(),d.getMonth(),1);},
         adjustTime(type,delta){const p=this.parts;let h=p.hour,m=p.minute;if(type==='hour')h=(h+delta+24)%24;else{let total=h*60+m+delta;total=(total+1440)%1440;h=Math.floor(total/60);m=total%60;}const d=new Date(p.year,p.month,p.day);this.setValue(d,h,m);},
         clearActive(){if(this.activeField==='start')this.startAt='';else this.endAt='';},
-        async sync(){await Promise.all([this.$wire.set('historyStartAt',this.startAt),this.$wire.set('historyEndAt',this.endAt)]);}
+        async sync(){await this.$wire.set('historyStartAt',this.startAt);await this.$wire.set('historyEndAt',this.endAt);}, async apply(){await this.sync();await this.$wire.applyHistoryDateTimeFilter();}
     };
 };
 </script>
 
-/* Native date filter disclosure: preserve its open state through Livewire morphs. */
-.rms-history-date-filter{position:relative!important;overflow:visible!important}
-.rms-history-date-filter>.rms-history-date-trigger{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;list-style:none!important;cursor:pointer!important}
+
+<style>
+/* Date & Time filter — native disclosure with the same control language as sibling filters. */
+.rms-history-date-filter{position:relative!important;display:block!important;flex:0 0 auto!important;overflow:visible!important;z-index:130!important}
+.rms-history-date-filter>.rms-history-date-trigger{box-sizing:border-box!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;width:100%!important;min-width:190px!important;min-height:54px!important;padding:10px 14px!important;border:1px solid #dfe4ec!important;border-radius:14px!important;background:#fff!important;color:#4b5563!important;list-style:none!important;cursor:pointer!important}
 .rms-history-date-filter>.rms-history-date-trigger::-webkit-details-marker{display:none!important}
+.rms-history-date-filter>.rms-history-date-trigger::marker{content:""!important}
+.rms-history-date-filter>.rms-history-date-trigger>span{font-size:10px!important;font-weight:800!important;letter-spacing:.07em!important;text-transform:uppercase!important;color:#929baa!important;white-space:nowrap!important}
+.rms-history-date-filter>.rms-history-date-trigger>b{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:12px!important;font-weight:800!important;color:#202938!important}
+.rms-history-date-filter>.rms-history-date-trigger>i{font-style:normal!important;color:#8993a3!important;transition:transform .18s ease!important}
+.rms-history-date-filter[open]>.rms-history-date-trigger{border-color:#cfd7e3!important;box-shadow:0 0 0 3px rgba(226,232,240,.45)!important}
 .rms-history-date-filter[open]>.rms-history-date-trigger>i{transform:rotate(180deg)!important}
-.rms-history-date-filter>.rms-history-date-popover{position:absolute!important;top:calc(100% + 10px)!important;left:0!important;right:auto!important;z-index:9999!important;display:block!important;min-width:min(420px,calc(100vw - 32px))!important;max-width:min(420px,calc(100vw - 32px))!important;max-height:min(76vh,720px)!important;overflow-y:auto!important;overscroll-behavior:contain!important;border:1px solid #e5eaf1!important;border-radius:20px!important;background:#fff!important;box-shadow:0 22px 65px rgba(15,23,42,.2)!important;padding:18px!important}
+.rms-history-date-filter>.rms-history-date-popover{box-sizing:border-box!important;position:absolute!important;top:calc(100% + 10px)!important;left:0!important;right:auto!important;z-index:99999!important;display:block!important;width:420px!important;min-width:min(420px,calc(100vw - 32px))!important;max-width:calc(100vw - 32px)!important;max-height:min(78vh,720px)!important;overflow-y:auto!important;overscroll-behavior:contain!important;border:1px solid #e5eaf1!important;border-radius:20px!important;background:#fff!important;box-shadow:0 22px 65px rgba(15,23,42,.2)!important;padding:18px!important}
+.rms-history-date-filter>.rms-history-date-popover .rms-date-popover-actions{position:sticky!important;bottom:-18px!important;z-index:2!important;padding:12px 0 2px!important;background:linear-gradient(to bottom,rgba(255,255,255,.9),#fff 22%)!important}
+.rms-history-date-filter>.rms-history-date-popover .rms-date-apply{min-width:0!important}
 @media(max-width:760px){.rms-history-date-filter>.rms-history-date-popover{position:fixed!important;left:12px!important;right:12px!important;top:auto!important;bottom:12px!important;width:auto!important;min-width:0!important;max-width:none!important;max-height:82vh!important}}
+</style>
