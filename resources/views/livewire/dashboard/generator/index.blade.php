@@ -2606,13 +2606,13 @@ new class extends Component
                     </div>
 
                     <div class="rms-history-filter rms-history-date-filter" x-on:click.outside="datePickerOpen=false" x-on:keydown.escape.window="datePickerOpen=false">
-                        <button type="button" class="rms-history-date-trigger" x-on:click="datePickerOpen=!datePickerOpen" :class="{ 'is-open': datePickerOpen }" :aria-expanded="datePickerOpen.toString()">
+                        <button type="button" class="rms-history-date-trigger" x-on:click.stop="datePickerOpen=!datePickerOpen" :class="{ 'is-open': datePickerOpen }" :aria-expanded="datePickerOpen.toString()">
                             <span>Date &amp; Time</span>
                             <b>{{ $historyDateRange === 'custom' ? 'Custom Range' : match($historyDateRange) { 'today' => 'Today', '7d' => 'Last 7 Days', '30d' => 'Last 30 Days', default => 'All Time' } }}</b>
                             <i>⌄</i>
                         </button>
 
-                        <div class="rms-history-date-popover" x-show="datePickerOpen" x-cloak x-transition.opacity x-transition:enter="rms-date-enter" x-transition:enter-start="rms-date-enter-start" x-transition:enter-end="rms-date-enter-end" x-transition:leave="rms-date-leave" x-transition:leave-start="rms-date-leave-start" x-transition:leave-end="rms-date-leave-end" x-data="rmsHistoryDatePicker(@js($historyStartAt), @js($historyEndAt))" x-init="init()">
+                        <div class="rms-history-date-popover" x-on:click.stop x-show="datePickerOpen" x-cloak x-transition.opacity x-transition:enter="rms-date-enter" x-transition:enter-start="rms-date-enter-start" x-transition:enter-end="rms-date-enter-end" x-transition:leave="rms-date-leave" x-transition:leave-start="rms-date-leave-start" x-transition:leave-end="rms-date-leave-end" x-data="rmsHistoryDatePicker(@js($historyStartAt), @js($historyEndAt))" x-init="init()">
                             <div class="rms-date-popover-head">
                                 <div><span class="rms-date-eyebrow">HISTORY TIMELINE</span><strong>Filter tanggal &amp; waktu</strong><small>Pilih rentang khusus atau gunakan preset cepat</small></div>
                                 <span class="rms-date-live-dot"></span>
