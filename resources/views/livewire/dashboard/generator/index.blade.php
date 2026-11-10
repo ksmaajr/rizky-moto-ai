@@ -2605,7 +2605,7 @@ new class extends Component
                         </div>
                     </div>
 
-                    <div class="rms-history-filter rms-history-date-filter">
+                    <div class="rms-history-filter rms-history-date-filter" x-on:click.outside="datePickerOpen=false" x-on:keydown.escape.window="datePickerOpen=false">
                         <button type="button" class="rms-history-date-trigger" x-on:click="datePickerOpen=!datePickerOpen" :class="{ 'is-open': datePickerOpen }" :aria-expanded="datePickerOpen.toString()">
                             <span>Date &amp; Time</span>
                             <b>{{ $historyDateRange === 'custom' ? 'Custom Range' : match($historyDateRange) { 'today' => 'Today', '7d' => 'Last 7 Days', '30d' => 'Last 30 Days', default => 'All Time' } }}</b>
@@ -3144,9 +3144,7 @@ new class extends Component
             </div>
         </div>
 
-                        <template x-teleport="body">
-                            <div class="rms-history-date-overlay" x-show="datePickerOpen" x-cloak x-transition.opacity x-on:click.self="datePickerOpen=false">
-                                <div class="rms-history-date-popover" x-transition:enter="rms-date-enter" x-transition:enter-start="rms-date-enter-start" x-transition:enter-end="rms-date-enter-end" x-transition:leave="rms-date-leave" x-transition:leave-start="rms-date-leave-start" x-transition:leave-end="rms-date-leave-end" x-data="rmsHistoryDatePicker(@js($historyStartAt), @js($historyEndAt))" x-init="init()">
+                        <div class="rms-history-date-popover" x-show="datePickerOpen" x-cloak x-transition.opacity x-transition:enter="rms-date-enter" x-transition:enter-start="rms-date-enter-start" x-transition:enter-end="rms-date-enter-end" x-transition:leave="rms-date-leave" x-transition:leave-start="rms-date-leave-start" x-transition:leave-end="rms-date-leave-end" x-data="rmsHistoryDatePicker(@js($historyStartAt), @js($historyEndAt))" x-init="init()">
                             <div class="rms-date-popover-head">
                                 <div><span class="rms-date-eyebrow">HISTORY TIMELINE</span><strong>Filter tanggal &amp; waktu</strong><small>Pilih rentang khusus atau gunakan preset cepat</small></div>
                                 <span class="rms-date-live-dot"></span>
@@ -3191,9 +3189,7 @@ new class extends Component
                                     <button type="button" class="{{ $historyDateRange === $value ? 'active' : '' }}" wire:click="setHistoryDateRange('{{ $value }}')" x-on:click="datePickerOpen=false">{{ $label }}</button>
                                 @endforeach
                                     </div>
-                                </div>
                             </div>
-                        </template>
 
         <style>
 /* Bulk generation-history cleanup drawer */
