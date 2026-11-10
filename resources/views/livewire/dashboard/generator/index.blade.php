@@ -9248,3 +9248,37 @@ window.rmsHistoryDatePicker = function (initialStart, initialEnd) {
     }
 }
 </style>
+
+<style>
+/* Smooth, lightweight entrance for the Date & Time picker.
+   Keep its established position, dimensions, stacking and interaction unchanged. */
+@keyframes rmsHistoryDatePickerEnter{
+    from{
+        opacity:0;
+        transform:translate3d(0,-9px,0) scale(.985);
+        filter:blur(2px);
+    }
+    to{
+        opacity:1;
+        transform:translate3d(0,0,0) scale(1);
+        filter:blur(0);
+    }
+}
+.rms-history-date-filter[open] > .rms-history-date-popover{
+    transform-origin:top right!important;
+    animation:rmsHistoryDatePickerEnter .24s cubic-bezier(.2,.75,.25,1) both!important;
+    will-change:opacity,transform;
+}
+@media(max-width:760px){
+    .rms-history-date-filter[open] > .rms-history-date-popover{
+        transform-origin:bottom center!important;
+    }
+}
+@media(prefers-reduced-motion:reduce){
+    .rms-history-date-filter[open] > .rms-history-date-popover{
+        animation:none!important;
+        filter:none!important;
+        will-change:auto!important;
+    }
+}
+</style>
