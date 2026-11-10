@@ -9108,7 +9108,7 @@ window.rmsHistoryDatePicker = function (initialStart, initialEnd) {
         chooseToday(){const d=new Date(),p=this.parts;this.setValue(d,p.hour,p.minute);this.viewDate=new Date(d.getFullYear(),d.getMonth(),1);},
         adjustTime(type,delta){const p=this.parts;let h=p.hour,m=p.minute;if(type==='hour')h=(h+delta+24)%24;else{let total=h*60+m+delta;total=(total+1440)%1440;h=Math.floor(total/60);m=total%60;}const d=new Date(p.year,p.month,p.day);this.setValue(d,h,m);},
         clearActive(){if(this.activeField==='start')this.startAt='';else this.endAt='';},
-        sync(){this.$wire.set('historyStartAt',this.startAt);this.$wire.set('historyEndAt',this.endAt);}
+        async sync(){await Promise.all([this.$wire.set('historyStartAt',this.startAt),this.$wire.set('historyEndAt',this.endAt)]);}
     };
 };
 </script>
