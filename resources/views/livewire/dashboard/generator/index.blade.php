@@ -2603,21 +2603,21 @@ new class extends Component
                         </div>
                     </div>
 
-                    <div class="rms-history-filter rms-history-date-filter" x-data="{ open: false }" x-on:keydown.escape.window="open=false">
-                        <button type="button" class="rms-history-date-trigger" x-on:click.stop="open=!open" :class="{ 'is-open': open }" :aria-expanded="open.toString()">
+                    <details class="rms-history-filter rms-history-date-filter" wire:ignore.self>
+                        <summary class="rms-history-date-trigger">
                             <span>Date &amp; Time</span>
                             <b>{{ $historyDateRange === 'custom' ? 'Custom Range' : match($historyDateRange) { 'today' => 'Today', '7d' => 'Last 7 Days', '30d' => 'Last 30 Days', default => 'All Time' } }}</b>
                             <i>⌄</i>
-                        </button>
+                        </summary>
 
-                        <div class="rms-history-date-popover" x-on:click.stop x-show="open" x-cloak x-transition.opacity x-transition:enter="rms-date-enter" x-transition:enter-start="rms-date-enter-start" x-transition:enter-end="rms-date-enter-end" x-transition:leave="rms-date-leave" x-transition:leave-start="rms-date-leave-start" x-transition:leave-end="rms-date-leave-end" x-data="rmsHistoryDatePicker(@js($historyStartAt), @js($historyEndAt))" x-init="init()">
+                        <div class="rms-history-date-popover" x-data="rmsHistoryDatePicker(@js($historyStartAt), @js($historyEndAt))" x-init="init()">
                             <div class="rms-date-popover-head">
                                 <div><span class="rms-date-eyebrow">HISTORY TIMELINE</span><strong>Filter tanggal &amp; waktu</strong><small>Pilih rentang khusus atau gunakan preset cepat</small></div>
                                 <span class="rms-date-live-dot"></span>
-                            </div>
+                            </details>
                             <div class="rms-date-presets">
                                 @foreach(['15m'=>'15 menit','30m'=>'30 menit','1h'=>'1 jam','3h'=>'3 jam','6h'=>'6 jam','12h'=>'12 jam','24h'=>'24 jam'] as $preset => $label)
-                                    <button type="button" x-on:click="$wire.setHistoryTimePreset('{{ $preset }}').then(() => { startAt=$wire.historyStartAt; endAt=$wire.historyEndAt; }); open=false">{{ $label }}</button>
+                                    <button type="button" x-on:click="$wire.setHistoryTimePreset('{{ $preset }}').then(() => { startAt=$wire.historyStartAt; endAt=$wire.historyEndAt; });">{{ $label }}</button>
                                 @endforeach
                             </div>
                             <div class="rms-date-range-tabs">
