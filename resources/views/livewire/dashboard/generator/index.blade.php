@@ -3146,7 +3146,7 @@ new class extends Component
 
                         <template x-teleport="body">
                             <div class="rms-history-date-overlay" x-show="datePickerOpen" x-cloak x-transition.opacity x-on:click.self="datePickerOpen=false">
-                                <div class="rms-history-date-popover" x-show="datePickerOpen" x-cloak x-transition:enter="rms-date-enter" x-transition:enter-start="rms-date-enter-start" x-transition:enter-end="rms-date-enter-end" x-transition:leave="rms-date-leave" x-transition:leave-start="rms-date-leave-start" x-transition:leave-end="rms-date-leave-end" x-data="rmsHistoryDatePicker(@js($historyStartAt), @js($historyEndAt))" x-init="init()">
+                                <div class="rms-history-date-popover" x-transition:enter="rms-date-enter" x-transition:enter-start="rms-date-enter-start" x-transition:enter-end="rms-date-enter-end" x-transition:leave="rms-date-leave" x-transition:leave-start="rms-date-leave-start" x-transition:leave-end="rms-date-leave-end" x-data="rmsHistoryDatePicker(@js($historyStartAt), @js($historyEndAt))" x-init="init()">
                             <div class="rms-date-popover-head">
                                 <div><span class="rms-date-eyebrow">HISTORY TIMELINE</span><strong>Filter tanggal &amp; waktu</strong><small>Pilih rentang khusus atau gunakan preset cepat</small></div>
                                 <span class="rms-date-live-dot"></span>
