@@ -3169,7 +3169,7 @@ new class extends Component
                                 <div class="rms-date-days">
                                     <template x-for="day in calendarDays" :key="day.key">
                                         <button type="button" :disabled="!day.date" :class="{ 'muted': !day.currentMonth, 'selected': isSelected(day.date), 'today': day.isToday }" x-on:click="chooseDate(day.date)" x-text="day.label"></button>
-            
+                                    </template>
                                 </div>
                             </div>
                             <div class="rms-date-time-control">
@@ -3192,7 +3192,7 @@ new class extends Component
                                     </div>
                                 </div>
                             </div>
-                        </template>
+                        
         <style>
 /* Bulk generation-history cleanup drawer */
 body.rms-bulk-delete-lock{overflow:hidden}
