@@ -2603,15 +2603,16 @@ new class extends Component
                         </div>
                     </div>
 
-                    <div class="rms-history-filter rms-history-date-filter" x-data="{ open:false }">
+                    <div class="rms-history-filter rms-history-date-filter" x-data="{ open:false }" x-on:click.outside="open=false">
                         <button type="button" class="rms-history-date-trigger" x-on:click="open=!open" :class="{ 'is-open': open }" :aria-expanded="open.toString()">
                             <span>Date &amp; Time</span>
                             <b>{{ $historyDateRange === 'custom' ? 'Custom Range' : match($historyDateRange) { 'today' => 'Today', '7d' => 'Last 7 Days', '30d' => 'Last 30 Days', default => 'All Time' } }}</b>
                             <i>⌄</i>
                         </button>
-                        <template x-teleport="body">
-                            <div class="rms-history-date-overlay" x-show="open" x-cloak x-transition.opacity x-on:click.self="open=false">
-                                <div class="rms-history-date-popover" x-transition:enter="rms-date-enter" x-transition:enter-start="rms-date-enter-start" x-transition:enter-end="rms-date-enter-end" x-transition:leave="rms-date-leave" x-transition:leave-start="rms-date-leave-start" x-transition:leave-end="rms-date-leave-end" x-data="rmsHistoryDatePicker(@js($historyStartAt), @js($historyEndAt))" x-init="init()">
+                        <div class="rms-history-date-popover" x-show="open" x-cloak
+                            x-transition:enter="rms-date-enter" x-transition:enter-start="rms-date-enter-start" x-transition:enter-end="rms-date-enter-end"
+                            x-transition:leave="rms-date-leave" x-transition:leave-start="rms-date-leave-start" x-transition:leave-end="rms-date-leave-end"
+                            x-data="rmsHistoryDatePicker(@js($historyStartAt), @js($historyEndAt))" x-init="init()">
                             <div class="rms-date-popover-head">
                                 <div><span class="rms-date-eyebrow">HISTORY TIMELINE</span><strong>Filter tanggal &amp; waktu</strong><small>Pilih rentang khusus atau gunakan preset cepat</small></div>
                                 <span class="rms-date-live-dot"></span>
@@ -2656,9 +2657,7 @@ new class extends Component
                                     <button type="button" class="{{ $historyDateRange === $value ? 'active' : '' }}" wire:click="setHistoryDateRange('{{ $value }}')" x-on:click="open=false">{{ $label }}</button>
                                 @endforeach
                                 </div>
-                                </div>
-                            </div>
-                        </template>
+                        </div>
                     </div>
 
                     <div class="rms-history-filter" x-data="{ open:false }" x-on:click.outside="open=false">
@@ -9077,7 +9076,7 @@ body > .rms-history-download-modal{position:fixed!important;inset:0!important;z-
 /* Premium custom date & time picker — native browser picker intentionally avoided. */
 .rms-history-date-filter{position:relative!important}
 .rms-history-date-trigger{min-width:184px!important}
-.rms-history-date-overlay{position:fixed!important;inset:0!important;z-index:999999!important;display:grid;place-items:center;padding:16px;background:rgba(15,23,42,.32);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}.rms-history-date-popover{position:relative!important;inset:auto!important;width:min(390px,calc(100vw - 32px));max-height:min(850px,calc(100dvh - 32px));overflow-y:auto;overscroll-behavior:contain;padding:18px;border:1px solid rgba(226,232,240,.95);border-radius:22px;background:linear-gradient(155deg,#fff 0%,#fbfcfe 100%);box-shadow:0 24px 70px rgba(15,23,42,.22),0 4px 14px rgba(15,23,42,.06);color:#1f2937;transform-origin:center}
+.rms-history-date-popover{position:absolute;z-index:99999;top:50%;left:50%;right:auto;width:min(390px,calc(100vw - 30px));max-height:calc(100dvh - 32px);overflow-y:auto;overscroll-behavior:contain;padding:18px;border:1px solid rgba(226,232,240,.95);border-radius:22px;background:linear-gradient(155deg,#fff 0%,#fbfcfe 100%);box-shadow:0 24px 70px rgba(15,23,42,.18),0 4px 14px rgba(15,23,42,.06);color:#1f2937;transform:translate(-50%,-50%);transform-origin:center;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
 .rms-date-enter{transition:opacity .22s ease,transform .28s cubic-bezier(.2,.8,.2,1)}.rms-date-enter-start{opacity:0;transform:translate(-50%,-48%) scale(.97)}.rms-date-enter-end{opacity:1;transform:translate(-50%,-50%) scale(1)}.rms-date-leave{transition:opacity .15s ease,transform .17s ease}.rms-date-leave-start{opacity:1;transform:translate(-50%,-50%) scale(1)}.rms-date-leave-end{opacity:0;transform:translate(-50%,-48%) scale(.985)}
 .rms-date-popover-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:2px 1px 15px;border-bottom:1px solid #edf0f4}.rms-date-popover-head>div{display:grid;gap:4px}.rms-date-eyebrow{color:#e52d43;font-size:9px;font-weight:900;letter-spacing:.15em}.rms-date-popover-head strong{font-size:16px;font-weight:850;letter-spacing:-.035em}.rms-date-popover-head small{color:#8b95a3;font-size:10px}.rms-date-live-dot{width:9px;height:9px;margin:6px 4px 0 0;border-radius:50%;background:#21b66b;box-shadow:0 0 0 5px rgba(33,182,107,.1);animation:rmsDatePulse 2s ease-in-out infinite}@keyframes rmsDatePulse{50%{box-shadow:0 0 0 8px rgba(33,182,107,0)}}
 .rms-date-presets{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:13px 0}.rms-date-presets button,.rms-date-quick-ranges button{min-height:31px;padding:0 7px;border:1px solid #e8edf2;border-radius:9px;background:#fff;color:#596579;font-size:10px;font-weight:750;transition:all .18s ease}.rms-date-presets button:hover,.rms-date-quick-ranges button:hover{border-color:#f3aab4;background:#fff5f6;color:#d9273d;transform:translateY(-1px)}
@@ -9086,7 +9085,7 @@ body > .rms-history-download-modal{position:fixed!important;inset:0!important;z-
 .rms-date-time-control{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid #edf0f4;border-bottom:1px solid #edf0f4}.rms-date-time-control>div:first-child{display:grid;gap:3px}.rms-date-time-control>div:first-child span{color:#667386;font-size:9px;font-weight:900;letter-spacing:.1em}.rms-date-time-control>div:first-child small{color:#a0a8b4;font-size:9px}.rms-date-time-fields{display:flex;align-items:flex-end;gap:7px}.rms-date-time-fields label{display:grid;gap:4px;text-align:center}.rms-date-time-fields label>small{color:#9aa3af;font-size:8px;font-weight:850}.rms-date-time-fields label>div{display:flex;align-items:center;gap:7px;padding:4px 5px;border:1px solid #e7ebf0;border-radius:9px;background:#fff}.rms-date-time-fields button{width:20px;height:22px;border:0;border-radius:6px;background:#f3f5f8;color:#586476;font-size:14px;line-height:1}.rms-date-time-fields button:hover{background:#fff0f2;color:#e52d43}.rms-date-time-fields strong{min-width:18px;color:#263244;font-size:12px;font-variant-numeric:tabular-nums}.rms-date-time-fields>b{padding-bottom:7px;color:#a4acb8}
 .rms-date-popover-actions{display:flex;align-items:center;gap:7px;padding:13px 0 10px}.rms-date-popover-actions button{min-height:36px;padding:0 10px;border-radius:10px;font-size:10px;font-weight:800;transition:all .18s ease}.rms-date-clear{border:1px solid #e8edf2;background:#fff;color:#778294}.rms-date-today{border:1px solid #d8eee1;background:#f1fbf5;color:#16864b}.rms-date-apply{flex:1;border:1px solid #e7253e;background:linear-gradient(120deg,#f12b44,#d91632);color:#fff;box-shadow:0 6px 15px rgba(225,31,57,.16)}.rms-date-popover-actions button:hover{transform:translateY(-1px);filter:brightness(.98)}
 .rms-date-quick-ranges{display:flex;gap:6px;padding-top:10px;border-top:1px solid #edf0f4}.rms-date-quick-ranges button{flex:1}.rms-date-quick-ranges button.active{border-color:#f1a2ad;background:#fff3f5;color:#d91e36}
-@media(max-width:640px){.rms-history-date-overlay{padding:12px}.rms-history-date-popover{width:100%;max-width:420px;max-height:calc(100dvh - 24px);padding:15px;border-radius:20px}.rms-date-enter-start{opacity:0;transform:translateY(12px) scale(.97)}.rms-date-enter-end{opacity:1;transform:translateY(0) scale(1)}.rms-date-leave-start{opacity:1;transform:translateY(0) scale(1)}.rms-date-leave-end{opacity:0;transform:translateY(8px) scale(.985)}.rms-date-days button{height:36px}.rms-date-presets{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:640px){.rms-history-date-popover{position:fixed;top:auto;left:50%;right:auto;bottom:12px;width:calc(100vw - 24px);max-width:420px;transform:translateX(-50%);padding:15px;border-radius:20px;max-height:calc(100dvh - 24px);overflow-y:auto;box-shadow:0 22px 70px rgba(15,23,42,.24)}.rms-date-enter-start{transform:translate(-50%,12px) scale(.97)}.rms-date-enter-end{transform:translate(-50%,0) scale(1)}.rms-date-leave-start{transform:translate(-50%,0) scale(1)}.rms-date-leave-end{transform:translate(-50%,8px) scale(.985)}.rms-date-days button{height:36px}.rms-date-presets{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){.rms-history-date-popover,.rms-history-date-popover *{animation:none!important;transition:none!important}}
 </style>
 <script>
