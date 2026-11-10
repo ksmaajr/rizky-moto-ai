@@ -3151,7 +3151,7 @@ new class extends Component
                             </div>
                             <div class="rms-date-presets">
                                 @foreach(['15m'=>'15 menit','30m'=>'30 menit','1h'=>'1 jam','3h'=>'3 jam','6h'=>'6 jam','12h'=>'12 jam','24h'=>'24 jam'] as $preset => $label)
-                                    <button type="button" x-on:click="$wire.setHistoryTimePreset('{{ $preset }}').then(() => { startAt=$wire.historyStartAt; endAt=$wire.historyEndAt; }); open=false">{{ $label }}</button>
+                                    <button type="button" x-on:click="$wire.setHistoryTimePreset('{{ $preset }}').then(() => { startAt=$wire.historyStartAt; endAt=$wire.historyEndAt; }); datePickerOpen=false">{{ $label }}</button>
                                 @endforeach
                             </div>
                             <div class="rms-date-range-tabs">
