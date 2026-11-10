@@ -2652,7 +2652,7 @@ new class extends Component
                             </div>
                             <div class="rms-date-quick-ranges">
                                 @foreach(['all'=>'Semua waktu','today'=>'Hari ini','7d'=>'7 hari','30d'=>'30 hari'] as $value => $label)
-                                    <button type="button" class="{{ $historyDateRange === $value ? 'active' : '' }}" wire:click="setHistoryDateRange('{{ $value }}')" x-on:click="datePickerOpen=false">{{ $label }}</button>
+                                    <button type="button" class="{{ $historyDateRange === $value ? 'active' : '' }}" wire:click="setHistoryDateRange('{{ $value }}')" x-on:click="open=false">{{ $label }}</button>
                                 @endforeach
                                     </div>
                             </div>
