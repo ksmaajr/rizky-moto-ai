@@ -2431,6 +2431,7 @@ new class extends Component
 
     <section
         class="rms-generator-history rms-generator-history-bottom rms-generator-history-mobile-safe"
+        x-on:click.window="if (!$event.target.closest('.rms-history-date-filter')) datePickerOpen=false"
         :class="{ 'rms-history-date-open': datePickerOpen }"
         wire:key="generation-history"
         x-data="{
@@ -2605,7 +2606,7 @@ new class extends Component
                         </div>
                     </div>
 
-                    <div class="rms-history-filter rms-history-date-filter" x-on:click.outside="datePickerOpen=false" x-on:keydown.escape.window="datePickerOpen=false">
+                    <div class="rms-history-filter rms-history-date-filter" x-on:keydown.escape.window="datePickerOpen=false">
                         <button type="button" class="rms-history-date-trigger" x-on:click.stop="datePickerOpen=!datePickerOpen" :class="{ 'is-open': datePickerOpen }" :aria-expanded="datePickerOpen.toString()">
                             <span>Date &amp; Time</span>
                             <b>{{ $historyDateRange === 'custom' ? 'Custom Range' : match($historyDateRange) { 'today' => 'Today', '7d' => 'Last 7 Days', '30d' => 'Last 30 Days', default => 'All Time' } }}</b>
