@@ -2373,3 +2373,18 @@ body.rms-preview-lock{overflow:hidden}
 .rms-preview-empty{width:min(360px,80%);padding:28px;border:1px dashed rgba(255,255,255,.18);border-radius:18px;text-align:center;color:#fff;background:rgba(255,255,255,.035)}
 .rms-preview-empty span{display:grid;place-items:center;width:44px;height:44px;margin:0 auto 12px;border-radius:12px;background:rgba(255,255,255,.08);font-size:20px}
 .rms-preview-empty strong,.rms-preview-empty small{display:block}.rms-preview-empty strong{font-size:13px}.rms-preview-empty small{margin-top:6px;color:#a6a6ad;font-size:10px;line-height:1.5}
+
+
+/* Advanced generation-history date & time filter */
+.rms-history-date-menu{min-width:290px;max-width:min(340px,calc(100vw - 32px));max-height:min(560px,75vh);padding:10px}
+.rms-history-date-section{display:grid;gap:7px;padding:5px}
+.rms-history-date-section>small{font-size:8px;font-weight:900;letter-spacing:.09em;color:#999ba2}
+.rms-history-time-presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.rms-history-time-presets>button{min-height:32px;padding:6px 7px;border:1px solid #ececef;border-radius:8px;background:#fafafa;color:#55575e;font-size:9px;font-weight:700;cursor:pointer;transition:.18s}
+.rms-history-time-presets>button:hover{border-color:#ffc7ca;background:#fff5f5;color:var(--rms-red)}
+.rms-history-date-section>label{margin-top:3px;color:#777982;font-size:8px;font-weight:800}
+.rms-history-date-section>input{width:100%;min-width:0;height:36px;padding:0 9px;border:1px solid #e3e3e7;border-radius:9px;background:#fff;color:#383940;font:inherit;font-size:10px;outline:0}
+.rms-history-date-section>input:focus{border-color:#f0aeb1;box-shadow:0 0 0 3px rgba(239,37,43,.06)}
+.rms-history-date-apply{width:100%;min-height:36px;margin-top:5px;border:0;border-radius:9px;background:linear-gradient(135deg,#ef252b,#ff6158);color:#fff;font-size:9px;font-weight:900;cursor:pointer}
+.rms-history-date-divider{height:1px;margin:7px 2px;background:#eeeeef}
+@media(max-width:760px){.rms-history-date-menu{position:fixed;left:16px;right:16px;top:auto;min-width:0;max-width:none;max-height:70vh;overflow:auto}}
