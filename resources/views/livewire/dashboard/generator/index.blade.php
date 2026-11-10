@@ -6,6 +6,8 @@ use App\Models\Generation;
 use Livewire\Component;
 use Livewire\Attributes\On;
 use Livewire\WithFileUploads;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Validator;
 
 new class extends Component
 {
@@ -26,6 +28,8 @@ new class extends Component
     public string $historyProvider = 'all';
     public string $historyModel = 'all';
     public string $historyDateRange = 'all';
+    public string $historyStartAt = '';
+    public string $historyEndAt = '';
     public string $historySort = 'newest';
     public string $historyZipName = '';
     public int $recentHistoryLimit = 12;
@@ -108,10 +112,30 @@ new class extends Component
             ->when($this->historyProvider !== 'all', fn ($q) => $q->where('model', 'like', $this->historyProvider . '/%'))
             ->when($this->historyModel !== 'all', fn ($q) => $q->where('model', $this->historyModel))
             ->when($this->historyDateRange !== 'all', function ($q) {
+                if ($this->historyDateRange === 'custom') {
+                    $timezone = config('app.timezone', 'Asia/Jakarta');
+                    $start = $this->historyStartAt !== ''
+                        ? Carbon::createFromFormat('Y-m-d\\TH:i', $this->historyStartAt, $timezone)
+                        : null;
+                    $end = $this->historyEndAt !== ''
+                        ? Carbon::createFromFormat('Y-m-d\\TH:i', $this->historyEndAt, $timezone)
+                        : null;
+
+                    if ($start && $end) {
+                        $q->whereBetween('created_at', [$start, $end]);
+                    } elseif ($start) {
+                        $q->where('created_at', '>=', $start);
+                    } elseif ($end) {
+                        $q->where('created_at', '<=', $end);
+                    }
+
+                    return;
+                }
+
                 match ($this->historyDateRange) {
-                    'today' => $q->where('created_at', '>=', now()->startOfDay()),
-                    '7d' => $q->where('created_at', '>=', now()->subDays(7)->startOfDay()),
-                    '30d' => $q->where('created_at', '>=', now()->subDays(30)->startOfDay()),
+                    'today' => $q->where('created_at', '>=', now(config('app.timezone', 'Asia/Jakarta'))->startOfDay()),
+                    '7d' => $q->where('created_at', '>=', now(config('app.timezone', 'Asia/Jakarta'))->subDays(7)->startOfDay()),
+                    '30d' => $q->where('created_at', '>=', now(config('app.timezone', 'Asia/Jakarta'))->subDays(30)->startOfDay()),
                     default => null,
                 };
             })
@@ -436,6 +460,69 @@ new class extends Component
         $this->recentHistoryLimit += 12;
     }
 
+    public function setHistoryDateRange(string $range): void
+    {
+        if (! in_array($range, ['all', 'today', '7d', '30d'], true)) {
+            return;
+        }
+
+        $this->historyDateRange = $range;
+        $this->historyStartAt = '';
+        $this->historyEndAt = '';
+        $this->recentHistoryLimit = 12;
+    }
+
+    public function setHistoryTimePreset(string $preset): void
+    {
+        $minutes = match ($preset) {
+            '15m' => 15,
+            '30m' => 30,
+            '1h' => 60,
+            '3h' => 180,
+            '6h' => 360,
+            '12h' => 720,
+            '24h' => 1440,
+            default => null,
+        };
+
+        if ($minutes === null) {
+            return;
+        }
+
+        $end = now(config('app.timezone', 'Asia/Jakarta'));
+        $start = $end->copy()->subMinutes($minutes);
+        $this->historyStartAt = $start->format('Y-m-d\\TH:i');
+        $this->historyEndAt = $end->format('Y-m-d\\TH:i');
+        $this->historyDateRange = 'custom';
+        $this->recentHistoryLimit = 12;
+    }
+
+    public function applyHistoryDateTimeFilter(): void
+    {
+        $validator = Validator::make(
+            ['start' => $this->historyStartAt, 'end' => $this->historyEndAt],
+            ['start' => ['nullable', 'date_format:Y-m-d\\TH:i'], 'end' => ['nullable', 'date_format:Y-m-d\\TH:i']]
+        );
+
+        if ($validator->fails() || ($this->historyStartAt === '' && $this->historyEndAt === '')) {
+            $this->dispatch('toast', type: 'error', title: 'Rentang waktu belum valid', message: 'Isi tanggal dan jam mulai atau selesai terlebih dahulu.');
+            return;
+        }
+
+        if ($this->historyStartAt !== '' && $this->historyEndAt !== '') {
+            $start = Carbon::createFromFormat('Y-m-d\\TH:i', $this->historyStartAt, config('app.timezone', 'Asia/Jakarta'));
+            $end = Carbon::createFromFormat('Y-m-d\\TH:i', $this->historyEndAt, config('app.timezone', 'Asia/Jakarta'));
+
+            if ($start->greaterThan($end)) {
+                $this->dispatch('toast', type: 'error', title: 'Rentang waktu tidak valid', message: 'Waktu mulai harus lebih awal dari waktu selesai.');
+                return;
+            }
+        }
+
+        $this->historyDateRange = 'custom';
+        $this->recentHistoryLimit = 12;
+    }
+
     public function clearHistoryFilters(): void
     {
         $this->historyStatus = 'all';
@@ -445,6 +532,8 @@ new class extends Component
         $this->historyProvider = 'all';
         $this->historyModel = 'all';
         $this->historyDateRange = 'all';
+        $this->historyStartAt = '';
+        $this->historyEndAt = '';
         $this->historySort = 'newest';
         $this->recentHistoryLimit = 12;
     }
@@ -2514,12 +2603,60 @@ new class extends Component
                         </div>
                     </div>
 
-                    <div class="rms-history-filter" x-data="{ open:false }" x-on:click.outside="open=false">
-                        <button type="button" x-on:click="open=!open" :class="{ 'is-open': open }"><span>Date</span><b>{{ match($historyDateRange) { 'today' => 'Today', '7d' => 'Last 7 Days', '30d' => 'Last 30 Days', default => 'All Time' } }}</b><i>⌄</i></button>
-                        <div class="rms-history-filter-menu" x-show="open" x-transition.opacity.scale.origin.top.right x-cloak>
-                            @foreach(['all'=>'All Time','today'=>'Today','7d'=>'Last 7 Days','30d'=>'Last 30 Days'] as $value => $label)
-                                <button type="button" class="{{ $historyDateRange === $value ? 'selected' : '' }}" wire:click="$set('historyDateRange','{{ $value }}')" x-on:click="open=false"><span>{{ $label }}</span><i>{{ $historyDateRange === $value ? '✓' : '' }}</i></button>
-                            @endforeach
+                    <div class="rms-history-filter rms-history-date-filter" x-data="{ open:false }" x-on:click.outside="open=false">
+                        <button type="button" class="rms-history-date-trigger" x-on:click="open=!open" :class="{ 'is-open': open }" :aria-expanded="open.toString()">
+                            <span>Date &amp; Time</span>
+                            <b>{{ $historyDateRange === 'custom' ? 'Custom Range' : match($historyDateRange) { 'today' => 'Today', '7d' => 'Last 7 Days', '30d' => 'Last 30 Days', default => 'All Time' } }}</b>
+                            <i>⌄</i>
+                        </button>
+                        <div class="rms-history-date-popover" x-show="open" x-cloak
+                            x-transition:enter="rms-date-enter" x-transition:enter-start="rms-date-enter-start" x-transition:enter-end="rms-date-enter-end"
+                            x-transition:leave="rms-date-leave" x-transition:leave-start="rms-date-leave-start" x-transition:leave-end="rms-date-leave-end"
+                            x-data="rmsHistoryDatePicker(@js($historyStartAt), @js($historyEndAt))" x-init="init()">
+                            <div class="rms-date-popover-head">
+                                <div><span class="rms-date-eyebrow">HISTORY TIMELINE</span><strong>Filter tanggal &amp; waktu</strong><small>Pilih rentang khusus atau gunakan preset cepat</small></div>
+                                <span class="rms-date-live-dot"></span>
+                            </div>
+                            <div class="rms-date-presets">
+                                @foreach(['15m'=>'15 menit','30m'=>'30 menit','1h'=>'1 jam','3h'=>'3 jam','6h'=>'6 jam','12h'=>'12 jam','24h'=>'24 jam'] as $preset => $label)
+                                    <button type="button" wire:click="setHistoryTimePreset('{{ $preset }}')" x-on:click="open=false">{{ $label }}</button>
+                                @endforeach
+                            </div>
+                            <div class="rms-date-range-tabs">
+                                <button type="button" :class="{ 'active': activeField === 'start' }" x-on:click="activeField='start'"><small>MULAI</small><strong x-text="formatValue(startAt) || 'Pilih tanggal'"></strong><span x-text="formatTime(startAt) || '--:--'"></span></button>
+                                <button type="button" :class="{ 'active': activeField === 'end' }" x-on:click="activeField='end'"><small>SELESAI</small><strong x-text="formatValue(endAt) || 'Pilih tanggal'"></strong><span x-text="formatTime(endAt) || '--:--'"></span></button>
+                            </div>
+                            <div class="rms-date-calendar">
+                                <div class="rms-date-calendar-head">
+                                    <button type="button" x-on:click="changeMonth(-1)" aria-label="Bulan sebelumnya">‹</button>
+                                    <strong x-text="monthLabel"></strong>
+                                    <button type="button" x-on:click="changeMonth(1)" aria-label="Bulan berikutnya">›</button>
+                                </div>
+                                <div class="rms-date-weekdays"><template x-for="day in weekdays" :key="day"><span x-text="day"></span></template></div>
+                                <div class="rms-date-days">
+                                    <template x-for="day in calendarDays" :key="day.key">
+                                        <button type="button" :disabled="!day.date" :class="{ 'muted': !day.currentMonth, 'selected': isSelected(day.date), 'today': day.isToday }" x-on:click="chooseDate(day.date)" x-text="day.label"></button>
+                                    </template>
+                                </div>
+                            </div>
+                            <div class="rms-date-time-control">
+                                <div><span>ATUR WAKTU</span><small>Pilih jam dan menit</small></div>
+                                <div class="rms-date-time-fields">
+                                    <label><small>JAM</small><div><button type="button" x-on:click="adjustTime('hour',-1)">−</button><strong x-text="hour"></strong><button type="button" x-on:click="adjustTime('hour',1)">+</button></div></label>
+                                    <b>:</b>
+                                    <label><small>MENIT</small><div><button type="button" x-on:click="adjustTime('minute',-5)">−</button><strong x-text="minute"></strong><button type="button" x-on:click="adjustTime('minute',5)">+</button></div></label>
+                                </div>
+                            </div>
+                            <div class="rms-date-popover-actions">
+                                <button type="button" class="rms-date-clear" x-on:click="clearActive()">Reset pilihan</button>
+                                <button type="button" class="rms-date-today" x-on:click="chooseToday()">Hari ini</button>
+                                <button type="button" class="rms-date-apply" x-on:click="sync(); $wire.applyHistoryDateTimeFilter(); open=false">Terapkan rentang</button>
+                            </div>
+                            <div class="rms-date-quick-ranges">
+                                @foreach(['all'=>'Semua waktu','today'=>'Hari ini','7d'=>'7 hari','30d'=>'30 hari'] as $value => $label)
+                                    <button type="button" class="{{ $historyDateRange === $value ? 'active' : '' }}" wire:click="setHistoryDateRange('{{ $value }}')" x-on:click="open=false">{{ $label }}</button>
+                                @endforeach
+                            </div>
                         </div>
                     </div>
 
@@ -8933,3 +9070,45 @@ body > .rms-history-download-modal{position:fixed!important;inset:0!important;z-
     }
 }
 </style>
+
+
+<style>
+/* Premium custom date & time picker — native browser picker intentionally avoided. */
+.rms-history-date-filter{position:relative!important}
+.rms-history-date-trigger{min-width:184px!important}
+.rms-history-date-popover{position:absolute;z-index:80;top:calc(100% + 12px);right:0;width:min(390px,calc(100vw - 30px));padding:18px;border:1px solid rgba(226,232,240,.95);border-radius:22px;background:linear-gradient(155deg,#fff 0%,#fbfcfe 100%);box-shadow:0 24px 70px rgba(15,23,42,.18),0 4px 14px rgba(15,23,42,.06);color:#1f2937;transform-origin:top right;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.rms-date-enter{transition:opacity .22s ease,transform .28s cubic-bezier(.2,.8,.2,1)}.rms-date-enter-start{opacity:0;transform:translateY(-9px) scale(.97)}.rms-date-enter-end{opacity:1;transform:translateY(0) scale(1)}.rms-date-leave{transition:opacity .15s ease,transform .17s ease}.rms-date-leave-start{opacity:1;transform:translateY(0) scale(1)}.rms-date-leave-end{opacity:0;transform:translateY(-5px) scale(.985)}
+.rms-date-popover-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:2px 1px 15px;border-bottom:1px solid #edf0f4}.rms-date-popover-head>div{display:grid;gap:4px}.rms-date-eyebrow{color:#e52d43;font-size:9px;font-weight:900;letter-spacing:.15em}.rms-date-popover-head strong{font-size:16px;font-weight:850;letter-spacing:-.035em}.rms-date-popover-head small{color:#8b95a3;font-size:10px}.rms-date-live-dot{width:9px;height:9px;margin:6px 4px 0 0;border-radius:50%;background:#21b66b;box-shadow:0 0 0 5px rgba(33,182,107,.1);animation:rmsDatePulse 2s ease-in-out infinite}@keyframes rmsDatePulse{50%{box-shadow:0 0 0 8px rgba(33,182,107,0)}}
+.rms-date-presets{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:13px 0}.rms-date-presets button,.rms-date-quick-ranges button{min-height:31px;padding:0 7px;border:1px solid #e8edf2;border-radius:9px;background:#fff;color:#596579;font-size:10px;font-weight:750;transition:all .18s ease}.rms-date-presets button:hover,.rms-date-quick-ranges button:hover{border-color:#f3aab4;background:#fff5f6;color:#d9273d;transform:translateY(-1px)}
+.rms-date-range-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px}.rms-date-range-tabs button{display:grid;grid-template-columns:1fr auto;gap:4px 8px;min-width:0;padding:10px 11px;border:1px solid #e6eaf0;border-radius:12px;background:#f9fafc;text-align:left;transition:all .2s ease}.rms-date-range-tabs button.active{border-color:#f18a98;background:linear-gradient(145deg,#fff5f6,#fff);box-shadow:0 0 0 3px rgba(239,35,60,.07)}.rms-date-range-tabs small{grid-column:1/-1;color:#98a1ad;font-size:8px;font-weight:900;letter-spacing:.1em}.rms-date-range-tabs strong{overflow:hidden;color:#303949;font-size:11px;text-overflow:ellipsis;white-space:nowrap}.rms-date-range-tabs span{color:#e52d43;font-size:11px;font-weight:850}
+.rms-date-calendar{padding:12px 2px 9px}.rms-date-calendar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.rms-date-calendar-head strong{font-size:12px;font-weight:850}.rms-date-calendar-head button{display:grid;place-items:center;width:28px;height:28px;border:1px solid #e9edf2;border-radius:9px;background:#fff;color:#566174;font-size:19px;transition:all .18s ease}.rms-date-calendar-head button:hover{border-color:#f3aab4;color:#e52d43;transform:scale(1.06)}.rms-date-weekdays,.rms-date-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.rms-date-weekdays{margin-bottom:5px}.rms-date-weekdays span{padding:5px 0;color:#a0a8b4;font-size:9px;font-weight:800;text-align:center}.rms-date-days button{height:34px;border:1px solid transparent;border-radius:9px;background:transparent;color:#384456;font-size:11px;font-weight:650;transition:background .16s ease,color .16s ease,transform .16s ease}.rms-date-days button:hover:not(:disabled){background:#fff0f2;color:#df2a40;transform:scale(1.06)}.rms-date-days button.muted{color:#c2c8d0}.rms-date-days button.today{border-color:#d7e9de;color:#14854b}.rms-date-days button.selected{border-color:#ef233c;background:linear-gradient(145deg,#f12c45,#d91531);color:#fff;box-shadow:0 5px 12px rgba(225,31,57,.2)}.rms-date-days button:disabled{cursor:default}
+.rms-date-time-control{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid #edf0f4;border-bottom:1px solid #edf0f4}.rms-date-time-control>div:first-child{display:grid;gap:3px}.rms-date-time-control>div:first-child span{color:#667386;font-size:9px;font-weight:900;letter-spacing:.1em}.rms-date-time-control>div:first-child small{color:#a0a8b4;font-size:9px}.rms-date-time-fields{display:flex;align-items:flex-end;gap:7px}.rms-date-time-fields label{display:grid;gap:4px;text-align:center}.rms-date-time-fields label>small{color:#9aa3af;font-size:8px;font-weight:850}.rms-date-time-fields label>div{display:flex;align-items:center;gap:7px;padding:4px 5px;border:1px solid #e7ebf0;border-radius:9px;background:#fff}.rms-date-time-fields button{width:20px;height:22px;border:0;border-radius:6px;background:#f3f5f8;color:#586476;font-size:14px;line-height:1}.rms-date-time-fields button:hover{background:#fff0f2;color:#e52d43}.rms-date-time-fields strong{min-width:18px;color:#263244;font-size:12px;font-variant-numeric:tabular-nums}.rms-date-time-fields>b{padding-bottom:7px;color:#a4acb8}
+.rms-date-popover-actions{display:flex;align-items:center;gap:7px;padding:13px 0 10px}.rms-date-popover-actions button{min-height:36px;padding:0 10px;border-radius:10px;font-size:10px;font-weight:800;transition:all .18s ease}.rms-date-clear{border:1px solid #e8edf2;background:#fff;color:#778294}.rms-date-today{border:1px solid #d8eee1;background:#f1fbf5;color:#16864b}.rms-date-apply{flex:1;border:1px solid #e7253e;background:linear-gradient(120deg,#f12b44,#d91632);color:#fff;box-shadow:0 6px 15px rgba(225,31,57,.16)}.rms-date-popover-actions button:hover{transform:translateY(-1px);filter:brightness(.98)}
+.rms-date-quick-ranges{display:flex;gap:6px;padding-top:10px;border-top:1px solid #edf0f4}.rms-date-quick-ranges button{flex:1}.rms-date-quick-ranges button.active{border-color:#f1a2ad;background:#fff3f5;color:#d91e36}
+@media(max-width:640px){.rms-history-date-popover{position:fixed;top:auto;left:50%;right:auto;bottom:12px;width:calc(100vw - 24px);max-width:420px;transform:translateX(-50%);padding:15px;border-radius:20px;max-height:calc(100dvh - 24px);overflow-y:auto;box-shadow:0 22px 70px rgba(15,23,42,.24)}.rms-date-enter-start{transform:translate(-50%,12px) scale(.97)}.rms-date-enter-end{transform:translate(-50%,0) scale(1)}.rms-date-leave-start{transform:translate(-50%,0) scale(1)}.rms-date-leave-end{transform:translate(-50%,8px) scale(.985)}.rms-date-days button{height:36px}.rms-date-presets{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){.rms-history-date-popover,.rms-history-date-popover *{animation:none!important;transition:none!important}}
+</style>
+<script>
+window.rmsHistoryDatePicker = function (initialStart, initialEnd) {
+    return {
+        startAt: initialStart || '', endAt: initialEnd || '', activeField: initialStart ? 'start' : 'start',
+        viewDate: new Date(), weekdays: ['Min','Sen','Sel','Rab','Kam','Jum','Sab'],
+        get activeValue(){ return this.activeField === 'start' ? this.startAt : this.endAt; },
+        get parts(){ const value=this.activeValue; const m=value.match(/^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2})$/); return m ? {year:+m[1],month:+m[2]-1,day:+m[3],hour:+m[4],minute:+m[5]} : {year:this.viewDate.getFullYear(),month:this.viewDate.getMonth(),day:this.viewDate.getDate(),hour:0,minute:0}; },
+        get hour(){ return String(this.parts.hour).padStart(2,'0'); }, get minute(){ return String(this.parts.minute).padStart(2,'0'); },
+        get monthLabel(){ return this.viewDate.toLocaleDateString('id-ID',{month:'long',year:'numeric'}); },
+        get calendarDays(){ const y=this.viewDate.getFullYear(),m=this.viewDate.getMonth(),first=new Date(y,m,1),offset=first.getDay(),count=new Date(y,m+1,0).getDate(),prevCount=new Date(y,m,0).getDate(),today=new Date(); const cells=[]; for(let i=0;i<42;i++){let d=null,current=true,label='';if(i<offset){d=new Date(y,m-1,prevCount-offset+i+1);current=false;}else if(i>=offset+count){d=new Date(y,m+1,i-offset-count+1);current=false;}else{d=new Date(y,m,i-offset+1);}cells.push({date:d,key:y+'-'+m+'-'+i,label:d.getDate(),currentMonth:current,isToday:d.toDateString()===today.toDateString()});}return cells; },
+        init(){ const d=this.parts; this.viewDate=new Date(d.year,d.month,1); },
+        formatValue(v){ if(!v)return ''; const d=new Date(v); return Number.isNaN(d.getTime())?v.slice(0,10):d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); },
+        formatTime(v){ return v && v.length>=16 ? v.slice(11,16) : ''; },
+        isSelected(d){ if(!d||!this.activeValue)return false;const p=this.parts;return d.getFullYear()===p.year&&d.getMonth()===p.month&&d.getDate()===p.day; },
+        changeMonth(delta){this.viewDate=new Date(this.viewDate.getFullYear(),this.viewDate.getMonth()+delta,1);},
+        setValue(date,hour,minute){const value=date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0')+'T'+String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');if(this.activeField==='start')this.startAt=value;else this.endAt=value;},
+        chooseDate(date){if(!date)return;const p=this.parts;this.setValue(date,p.hour,p.minute);},
+        chooseToday(){const d=new Date(),p=this.parts;this.setValue(d,p.hour,p.minute);this.viewDate=new Date(d.getFullYear(),d.getMonth(),1);},
+        adjustTime(type,delta){const p=this.parts;let h=p.hour,m=p.minute;if(type==='hour')h=(h+delta+24)%24;else{let total=h*60+m+delta;total=(total+1440)%1440;h=Math.floor(total/60);m=total%60;}const d=new Date(p.year,p.month,p.day);this.setValue(d,h,m);},
+        clearActive(){if(this.activeField==='start')this.startAt='';else this.endAt='';},
+        sync(){this.$wire.set('historyStartAt',this.startAt);this.$wire.set('historyEndAt',this.endAt);}
+    };
+};
+</script>
