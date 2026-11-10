@@ -1395,7 +1395,7 @@ new class extends Component
                                 </button>
                                 <div class="rms-generator-store-menu" x-show="open" x-transition.opacity.scale.origin.top style="display:none">
                                     <div class="rms-generator-menu-head"><div><span>FILTER STORE</span><small>Menampilkan template dari</small></div><b>{{ $this->stores->count() }}</b></div>
-                                    <button type="button" class="{{ $selectedStoreId === null ? 'selected' : '' }}" wire:click="clearStoreFilter" x-on:click="open=false">
+                                    <button type="button" class="{{ $selectedStoreId === null ? 'selected' : '' }}" wire:click="clearStoreFilter" >
                                         <span class="rms-generator-option-logo"><b>✦</b></span><span><strong>Semua Store</strong><small>Gabungkan semua template aktif</small></span><i>{{ $selectedStoreId === null ? '✓' : '' }}</i>
                                     </button>
                                     @foreach($this->stores as $store)
@@ -2614,7 +2614,7 @@ new class extends Component
                             <div class="rms-date-popover-head">
                                 <div><span class="rms-date-eyebrow">HISTORY TIMELINE</span><strong>Filter tanggal &amp; waktu</strong><small>Pilih rentang khusus atau gunakan preset cepat</small></div>
                                 <span class="rms-date-live-dot"></span>
-                            </details>
+                            </div>
                             <div class="rms-date-presets">
                                 @foreach(['15m'=>'15 menit','30m'=>'30 menit','1h'=>'1 jam','3h'=>'3 jam','6h'=>'6 jam','12h'=>'12 jam','24h'=>'24 jam'] as $preset => $label)
                                     <button type="button" x-on:click="$wire.setHistoryTimePreset('{{ $preset }}').then(() => { startAt=$wire.historyStartAt; endAt=$wire.historyEndAt; });">{{ $label }}</button>
@@ -2657,7 +2657,7 @@ new class extends Component
                                     </div>
                             </div>
 
-                    </div>
+                    </details>
 
                     <div class="rms-history-filter" x-data="{ open:false }" x-on:click.outside="open=false">
                         <button type="button" x-on:click="open=!open" :class="{ 'is-open': open }"><span>Sort</span><b>{{ $historySort === 'oldest' ? 'Oldest' : 'Newest' }}</b><i>⌄</i></button>
