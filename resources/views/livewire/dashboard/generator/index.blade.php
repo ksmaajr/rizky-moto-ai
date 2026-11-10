@@ -2656,6 +2656,7 @@ new class extends Component
                                     <button type="button" class="{{ $historyDateRange === $value ? 'active' : '' }}" wire:click="setHistoryDateRange('{{ $value }}')" x-on:click="open=false">{{ $label }}</button>
                                 @endforeach
                                     </div>
+                                </div>
                             </div>
                         </template>
                     </div>
