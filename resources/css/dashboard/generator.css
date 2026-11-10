@@ -2390,3 +2390,46 @@ body.rms-preview-lock{overflow:hidden}
 .rms-date-quick-ranges{display:flex;gap:6px;padding-top:10px;border-top:1px solid #edf0f4}.rms-date-quick-ranges button{flex:1}.rms-date-quick-ranges button.active{border-color:#f1a2ad;background:#fff3f5;color:#d91e36}
 @media(max-width:640px){.rms-history-date-popover{width:100%;max-width:420px;max-height:calc(100dvh - 24px);padding:15px;border-radius:20px}.rms-date-days button{height:36px}.rms-date-presets{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){.rms-history-date-popover,.rms-history-date-popover *{animation:none!important;transition:none!important}}
+
+
+/* Date & Time behaves like the other history filters: an anchored dropdown,
+   directly below its trigger, never a viewport modal or a body-level teleport. */
+.rms-generator-history-mobile-safe.rms-history-date-open{
+    position:relative!important;
+    z-index:2147483000!important;
+    isolation:isolate!important;
+}
+.rms-generator-history-mobile-safe.rms-history-date-open .rms-history-toolbar,
+.rms-generator-history-mobile-safe.rms-history-date-open .rms-history-filter-group{
+    position:relative!important;
+    z-index:2!important;
+    overflow:visible!important;
+}
+.rms-generator-history-mobile-safe.rms-history-date-open .rms-history-date-filter{
+    position:relative!important;
+    z-index:2147483003!important;
+}
+.rms-history-date-filter .rms-history-date-popover{
+    position:absolute!important;
+    top:calc(100% + 8px)!important;
+    right:0!important;
+    left:auto!important;
+    z-index:2147483004!important;
+    width:min(390px,calc(100vw - 32px))!important;
+    max-width:calc(100vw - 24px)!important;
+    max-height:min(680px,calc(100dvh - 150px))!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain;
+    scrollbar-width:none!important;
+    -ms-overflow-style:none!important;
+    transform-origin:top right!important;
+}
+.rms-history-date-filter .rms-history-date-popover::-webkit-scrollbar{display:none!important}
+@media(max-width:640px){
+    .rms-history-date-filter .rms-history-date-popover{
+        right:0!important;
+        width:min(390px,calc(100vw - 24px))!important;
+        max-height:calc(100dvh - 120px)!important;
+    }
+}
