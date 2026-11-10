@@ -2619,7 +2619,7 @@ new class extends Component
                             </div>
                             <div class="rms-date-presets">
                                 @foreach(['15m'=>'15 menit','30m'=>'30 menit','1h'=>'1 jam','3h'=>'3 jam','6h'=>'6 jam','12h'=>'12 jam','24h'=>'24 jam'] as $preset => $label)
-                                    <button type="button" wire:click="setHistoryTimePreset('{{ $preset }}')" x-on:click="open=false">{{ $label }}</button>
+                                    <button type="button" x-on:click="$wire.setHistoryTimePreset('{{ $preset }}').then(() => { startAt=$wire.historyStartAt; endAt=$wire.historyEndAt; }); open=false">{{ $label }}</button>
                                 @endforeach
                             </div>
                             <div class="rms-date-range-tabs">
@@ -2650,7 +2650,7 @@ new class extends Component
                             <div class="rms-date-popover-actions">
                                 <button type="button" class="rms-date-clear" x-on:click="clearActive()">Reset pilihan</button>
                                 <button type="button" class="rms-date-today" x-on:click="chooseToday()">Hari ini</button>
-                                <button type="button" class="rms-date-apply" x-on:click="sync(); $wire.applyHistoryDateTimeFilter(); open=false">Terapkan rentang</button>
+                                <button type="button" class="rms-date-apply" x-on:click="sync().then(() => $wire.applyHistoryDateTimeFilter()).then(() => open=false)">Terapkan rentang</button>
                             </div>
                             <div class="rms-date-quick-ranges">
                                 @foreach(['all'=>'Semua waktu','today'=>'Hari ini','7d'=>'7 hari','30d'=>'30 hari'] as $value => $label)
@@ -9094,7 +9094,7 @@ window.rmsHistoryDatePicker = function (initialStart, initialEnd) {
         startAt: initialStart || '', endAt: initialEnd || '', activeField: initialStart ? 'start' : 'start',
         viewDate: new Date(), weekdays: ['Min','Sen','Sel','Rab','Kam','Jum','Sab'],
         get activeValue(){ return this.activeField === 'start' ? this.startAt : this.endAt; },
-        get parts(){ const value=this.activeValue; const m=value.match(/^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2})$/); return m ? {year:+m[1],month:+m[2]-1,day:+m[3],hour:+m[4],minute:+m[5]} : {year:this.viewDate.getFullYear(),month:this.viewDate.getMonth(),day:this.viewDate.getDate(),hour:0,minute:0}; },
+        get parts(){ const value=this.activeValue; const m=value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/); return m ? {year:+m[1],month:+m[2]-1,day:+m[3],hour:+m[4],minute:+m[5]} : {year:this.viewDate.getFullYear(),month:this.viewDate.getMonth(),day:this.viewDate.getDate(),hour:0,minute:0}; },
         get hour(){ return String(this.parts.hour).padStart(2,'0'); }, get minute(){ return String(this.parts.minute).padStart(2,'0'); },
         get monthLabel(){ return this.viewDate.toLocaleDateString('id-ID',{month:'long',year:'numeric'}); },
         get calendarDays(){ const y=this.viewDate.getFullYear(),m=this.viewDate.getMonth(),first=new Date(y,m,1),offset=first.getDay(),count=new Date(y,m+1,0).getDate(),prevCount=new Date(y,m,0).getDate(),today=new Date(); const cells=[]; for(let i=0;i<42;i++){let d=null,current=true,label='';if(i<offset){d=new Date(y,m-1,prevCount-offset+i+1);current=false;}else if(i>=offset+count){d=new Date(y,m+1,i-offset-count+1);current=false;}else{d=new Date(y,m,i-offset+1);}cells.push({date:d,key:y+'-'+m+'-'+i,label:d.getDate(),currentMonth:current,isToday:d.toDateString()===today.toDateString()});}return cells; },
