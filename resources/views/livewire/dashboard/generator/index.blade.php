@@ -513,6 +513,18 @@ new class extends Component
         $this->recentHistoryLimit += 12;
     }
 
+    public function setHistoryDateRange(string $range): void
+    {
+        if (! in_array($range, ['all', 'today', '7d', '30d'], true)) {
+            return;
+        }
+
+        $this->historyDateRange = $range;
+        $this->historyStartAt = '';
+        $this->historyEndAt = '';
+        $this->recentHistoryLimit = 12;
+    }
+
     public function setHistoryTimePreset(string $preset): void
     {
         $minutes = match ($preset) {
@@ -2625,7 +2637,7 @@ new class extends Component
                                 <small>QUICK TIME RANGE</small>
                                 <div class="rms-history-time-presets">
                                     @foreach(['15m'=>'15 menit','30m'=>'30 menit','1h'=>'1 jam','3h'=>'3 jam','6h'=>'6 jam','12h'=>'12 jam','24h'=>'24 jam'] as $preset => $label)
-                                        <button type="button" class="{{ $historyDateRange === 'custom' && $historyStartAt !== '' && $historyEndAt !== '' && $preset === '0' ? 'selected' : '' }}" wire:click="setHistoryTimePreset('{{ $preset }}')" x-on:click="open=false">{{ $label }}</button>
+                                        <button type="button" class="{{ $historyDateRange === 'custom' ? 'selected' : '' }}" wire:click="setHistoryTimePreset('{{ $preset }}')" x-on:click="open=false">{{ $label }}</button>
                                     @endforeach
                                 </div>
                             </div>
@@ -2640,7 +2652,7 @@ new class extends Component
                             </div>
                             <div class="rms-history-date-divider"></div>
                             @foreach(['all'=>'All Time','today'=>'Today','7d'=>'Last 7 Days','30d'=>'Last 30 Days'] as $value => $label)
-                                <button type="button" class="{{ $historyDateRange === $value ? 'selected' : '' }}" wire:click="$set('historyDateRange','{{ $value }}'); $set('historyStartAt',''); $set('historyEndAt','')" x-on:click="open=false"><span>{{ $label }}</span><i>{{ $historyDateRange === $value ? '✓' : '' }}</i></button>
+                                <button type="button" class="{{ $historyDateRange === $value ? 'selected' : '' }}" wire:click="setHistoryDateRange('{{ $value }}')" x-on:click="open=false"><span>{{ $label }}</span><i>{{ $historyDateRange === $value ? '✓' : '' }}</i></button>
                             @endforeach
                         </div>
                     </div>
