@@ -9253,29 +9253,50 @@ window.rmsHistoryDatePicker = function (initialStart, initialEnd) {
 /* Smooth, lightweight entrance for the Date & Time picker.
    Keep its established position, dimensions, stacking and interaction unchanged. */
 @keyframes rmsHistoryDatePickerEnter{
-    from{
+    0%{
         opacity:0;
-        transform:translate3d(0,-9px,0) scale(.985);
-        filter:blur(2px);
+        transform:translate3d(0,-14px,0) scale(.965);
+        filter:blur(5px);
+        box-shadow:0 8px 22px rgba(15,23,42,0);
     }
-    to{
+    68%{
+        opacity:1;
+        transform:translate3d(0,2px,0) scale(1.006);
+        filter:blur(0);
+        box-shadow:0 24px 68px rgba(15,23,42,.16);
+    }
+    100%{
         opacity:1;
         transform:translate3d(0,0,0) scale(1);
         filter:blur(0);
+        box-shadow:0 22px 65px rgba(15,23,42,.2);
     }
+}
+@keyframes rmsHistoryDateContentEnter{
+    from{opacity:0;transform:translate3d(0,7px,0)}
+    to{opacity:1;transform:translate3d(0,0,0)}
 }
 .rms-history-date-filter[open] > .rms-history-date-popover{
     transform-origin:top right!important;
-    animation:rmsHistoryDatePickerEnter .24s cubic-bezier(.2,.75,.25,1) both!important;
-    will-change:opacity,transform;
+    animation:rmsHistoryDatePickerEnter .38s cubic-bezier(.16,1,.3,1) both!important;
+    will-change:opacity,transform,filter;
 }
+.rms-history-date-filter[open] > .rms-history-date-popover > *{
+    animation:rmsHistoryDateContentEnter .32s cubic-bezier(.2,.8,.2,1) both;
+}
+.rms-history-date-filter[open] > .rms-history-date-popover > *:nth-child(1){animation-delay:.035s}
+.rms-history-date-filter[open] > .rms-history-date-popover > *:nth-child(2){animation-delay:.065s}
+.rms-history-date-filter[open] > .rms-history-date-popover > *:nth-child(3){animation-delay:.095s}
+.rms-history-date-filter[open] > .rms-history-date-popover > *:nth-child(4){animation-delay:.125s}
+.rms-history-date-filter[open] > .rms-history-date-popover > *:nth-child(5){animation-delay:.155s}
 @media(max-width:760px){
     .rms-history-date-filter[open] > .rms-history-date-popover{
         transform-origin:bottom center!important;
     }
 }
 @media(prefers-reduced-motion:reduce){
-    .rms-history-date-filter[open] > .rms-history-date-popover{
+    .rms-history-date-filter[open] > .rms-history-date-popover,
+    .rms-history-date-filter[open] > .rms-history-date-popover > *{
         animation:none!important;
         filter:none!important;
         will-change:auto!important;
