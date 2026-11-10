@@ -1399,7 +1399,7 @@ new class extends Component
                                         <span class="rms-generator-option-logo"><b>✦</b></span><span><strong>Semua Store</strong><small>Gabungkan semua template aktif</small></span><i>{{ $selectedStoreId === null ? '✓' : '' }}</i>
                                     </button>
                                     @foreach($this->stores as $store)
-                                        <button type="button" class="{{ (int)$selectedStoreId === (int)$store->id ? 'selected' : '' }}" wire:click="selectStore({{ $store->id }})" x-on:click="open=false">
+                                        <button type="button" class="{{ (int)$selectedStoreId === (int)$store->id ? 'selected' : '' }}" wire:click="selectStore({{ $store->id }})" >
                                             <span class="rms-generator-option-logo">
                                                 @if($store->logo_path)
                                                     <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($store->logo_path) }}" alt="">
@@ -9099,3 +9099,11 @@ window.rmsHistoryDatePicker = function (initialStart, initialEnd) {
     };
 };
 </script>
+
+/* Native date filter disclosure: preserve its open state through Livewire morphs. */
+.rms-history-date-filter{position:relative!important;overflow:visible!important}
+.rms-history-date-filter>.rms-history-date-trigger{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;list-style:none!important;cursor:pointer!important}
+.rms-history-date-filter>.rms-history-date-trigger::-webkit-details-marker{display:none!important}
+.rms-history-date-filter[open]>.rms-history-date-trigger>i{transform:rotate(180deg)!important}
+.rms-history-date-filter>.rms-history-date-popover{position:absolute!important;top:calc(100% + 10px)!important;left:0!important;right:auto!important;z-index:9999!important;display:block!important;min-width:min(420px,calc(100vw - 32px))!important;max-width:min(420px,calc(100vw - 32px))!important;max-height:min(76vh,720px)!important;overflow-y:auto!important;overscroll-behavior:contain!important;border:1px solid #e5eaf1!important;border-radius:20px!important;background:#fff!important;box-shadow:0 22px 65px rgba(15,23,42,.2)!important;padding:18px!important}
+@media(max-width:760px){.rms-history-date-filter>.rms-history-date-popover{position:fixed!important;left:12px!important;right:12px!important;top:auto!important;bottom:12px!important;width:auto!important;min-width:0!important;max-width:none!important;max-height:82vh!important}}
