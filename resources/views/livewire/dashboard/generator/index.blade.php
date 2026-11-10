@@ -26,6 +26,8 @@ new class extends Component
     public string $historyProvider = 'all';
     public string $historyModel = 'all';
     public string $historyDateRange = 'all';
+    public string $historyStartAt = '';
+    public string $historyEndAt = '';
     public string $historySort = 'newest';
     public string $historyZipName = '';
     public int $recentHistoryLimit = 12;
@@ -108,6 +110,26 @@ new class extends Component
             ->when($this->historyProvider !== 'all', fn ($q) => $q->where('model', 'like', $this->historyProvider . '/%'))
             ->when($this->historyModel !== 'all', fn ($q) => $q->where('model', $this->historyModel))
             ->when($this->historyDateRange !== 'all', function ($q) {
+                if ($this->historyDateRange === 'custom') {
+                    $timezone = config('app.timezone', 'Asia/Jakarta');
+                    $start = $this->historyStartAt !== ''
+                        ? \\Illuminate\\Support\\Carbon::createFromFormat('Y-m-d\\TH:i', $this->historyStartAt, $timezone)
+                        : null;
+                    $end = $this->historyEndAt !== ''
+                        ? \\Illuminate\\Support\\Carbon::createFromFormat('Y-m-d\\TH:i', $this->historyEndAt, $timezone)
+                        : null;
+
+                    if ($start && $end) {
+                        $q->whereBetween('created_at', [$start, $end]);
+                    } elseif ($start) {
+                        $q->where('created_at', '>=', $start);
+                    } elseif ($end) {
+                        $q->where('created_at', '<=', $end);
+                    }
+
+                    return;
+                }
+
                 match ($this->historyDateRange) {
                     'today' => $q->where('created_at', '>=', now()->startOfDay()),
                     '7d' => $q->where('created_at', '>=', now()->subDays(7)->startOfDay()),
@@ -491,6 +513,58 @@ new class extends Component
         $this->recentHistoryLimit += 12;
     }
 
+    public function setHistoryTimePreset(string $preset): void
+    {
+        $minutes = match ($preset) {
+            '15m' => 15,
+            '30m' => 30,
+            '1h' => 60,
+            '3h' => 180,
+            '6h' => 360,
+            '12h' => 720,
+            '24h' => 1440,
+            default => null,
+        };
+
+        if ($minutes === null) {
+            return;
+        }
+
+        $end = now(config('app.timezone', 'Asia/Jakarta'));
+        $start = $end->copy()->subMinutes($minutes);
+        $this->historyStartAt = $start->format('Y-m-d\\TH:i');
+        $this->historyEndAt = $end->format('Y-m-d\\TH:i');
+        $this->historyDateRange = 'custom';
+        $this->recentHistoryLimit = 12;
+    }
+
+    public function applyHistoryDateTimeFilter(): void
+    {
+        $timezone = config('app.timezone', 'Asia/Jakarta');
+        $validator = \\Illuminate\\Support\\Facades\\Validator::make(
+            ['start' => $this->historyStartAt, 'end' => $this->historyEndAt],
+            ['start' => ['nullable', 'date_format:Y-m-d\\TH:i'], 'end' => ['nullable', 'date_format:Y-m-d\\TH:i']]
+        );
+
+        if ($validator->fails() || ($this->historyStartAt === '' && $this->historyEndAt === '')) {
+            $this->dispatch('toast', type: 'error', title: 'Rentang waktu belum valid', message: 'Isi tanggal dan jam mulai atau selesai terlebih dahulu.');
+            return;
+        }
+
+        if ($this->historyStartAt !== '' && $this->historyEndAt !== '') {
+            $start = \\Illuminate\\Support\\Carbon::createFromFormat('Y-m-d\\TH:i', $this->historyStartAt, $timezone);
+            $end = \\Illuminate\\Support\\Carbon::createFromFormat('Y-m-d\\TH:i', $this->historyEndAt, $timezone);
+
+            if ($start->greaterThan($end)) {
+                $this->dispatch('toast', type: 'error', title: 'Rentang waktu tidak valid', message: 'Waktu mulai harus lebih awal dari waktu selesai.');
+                return;
+            }
+        }
+
+        $this->historyDateRange = 'custom';
+        $this->recentHistoryLimit = 12;
+    }
+
     public function clearHistoryFilters(): void
     {
         $this->historyStatus = 'all';
@@ -500,6 +574,8 @@ new class extends Component
         $this->historyProvider = 'all';
         $this->historyModel = 'all';
         $this->historyDateRange = 'all';
+        $this->historyStartAt = '';
+        $this->historyEndAt = '';
         $this->historySort = 'newest';
         $this->recentHistoryLimit = 12;
     }
@@ -2543,10 +2619,28 @@ new class extends Component
                     </div>
 
                     <div class="rms-history-filter" x-data="{ open:false }" x-on:click.outside="open=false">
-                        <button type="button" x-on:click="open=!open" :class="{ 'is-open': open }"><span>Date</span><b>{{ match($historyDateRange) { 'today' => 'Today', '7d' => 'Last 7 Days', '30d' => 'Last 30 Days', default => 'All Time' } }}</b><i>⌄</i></button>
-                        <div class="rms-history-filter-menu" x-show="open" x-transition.opacity.scale.origin.top.right x-cloak>
+                        <button type="button" x-on:click="open=!open" :class="{ 'is-open': open }"><span>Date & Time</span><b>{{ match($historyDateRange) { 'today' => 'Today', '7d' => 'Last 7 Days', '30d' => 'Last 30 Days', 'custom' => 'Custom Range', default => 'All Time' } }}</b><i>⌄</i></button>
+                        <div class="rms-history-filter-menu rms-history-date-menu" x-show="open" x-transition.opacity.scale.origin.top.right x-cloak>
+                            <div class="rms-history-date-section">
+                                <small>QUICK TIME RANGE</small>
+                                <div class="rms-history-time-presets">
+                                    @foreach(['15m'=>'15 menit','30m'=>'30 menit','1h'=>'1 jam','3h'=>'3 jam','6h'=>'6 jam','12h'=>'12 jam','24h'=>'24 jam'] as $preset => $label)
+                                        <button type="button" class="{{ $historyDateRange === 'custom' && $historyStartAt !== '' && $historyEndAt !== '' && $preset === '0' ? 'selected' : '' }}" wire:click="setHistoryTimePreset('{{ $preset }}')" x-on:click="open=false">{{ $label }}</button>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <div class="rms-history-date-divider"></div>
+                            <div class="rms-history-date-section">
+                                <small>CUSTOM DATE & TIME</small>
+                                <label>Mulai</label>
+                                <input type="datetime-local" wire:model="historyStartAt" />
+                                <label>Selesai</label>
+                                <input type="datetime-local" wire:model="historyEndAt" />
+                                <button type="button" class="rms-history-date-apply" wire:click="applyHistoryDateTimeFilter" x-on:click="open=false">Terapkan rentang waktu</button>
+                            </div>
+                            <div class="rms-history-date-divider"></div>
                             @foreach(['all'=>'All Time','today'=>'Today','7d'=>'Last 7 Days','30d'=>'Last 30 Days'] as $value => $label)
-                                <button type="button" class="{{ $historyDateRange === $value ? 'selected' : '' }}" wire:click="$set('historyDateRange','{{ $value }}')" x-on:click="open=false"><span>{{ $label }}</span><i>{{ $historyDateRange === $value ? '✓' : '' }}</i></button>
+                                <button type="button" class="{{ $historyDateRange === $value ? 'selected' : '' }}" wire:click="$set('historyDateRange','{{ $value }}'); $set('historyStartAt',''); $set('historyEndAt','')" x-on:click="open=false"><span>{{ $label }}</span><i>{{ $historyDateRange === $value ? '✓' : '' }}</i></button>
                             @endforeach
                         </div>
                     </div>
