@@ -1,5 +1,17 @@
 # Deploy simulasi tampilan ke VPS
 
+## Sakelar lewat terminal
+
+Jalankan dari direktori aplikasi sebagai user yang memiliki izin menulis `.env` dan `bootstrap/cache/`:
+
+```sh
+php artisan takeover:on
+php artisan takeover:off
+php artisan takeover:status
+```
+
+Command on/off menyimpan `TAKEOVER_ENABLED` di `.env` dan membangun ulang cache konfigurasi secara otomatis. Status membaca konfigurasi efektif aplikasi. Tidak perlu mengedit `.env` atau menjalankan `config:cache` lagi. Jika menggunakan proses aplikasi persisten seperti Octane, reload proses tersebut setelah perubahan; purge cache HTML CDN jika ada. Tidak ada perubahan database. Bentuk `php artisan takeover on|off|status` juga tersedia.
+
 Halaman fiktif mengikuti susunan putih–pink pada screenshot, dengan ilustrasi produk buatan sendiri. Bukan salinan identik aset/foto referensi. Seluruh tombol nonaktif dan tidak ada tautan judol. Hanya request GET/HEAD `/` dan `/login` yang diganti; dashboard, API, autentikasi, database, dan file asli tidak dihapus.
 
 ## Persiapan VPS
