@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ActivityLogFeedController;
 use App\Http\Controllers\GeneratedImageDownloadController;
+use App\Http\Controllers\HistoryDownloadArchiveController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -141,6 +142,9 @@ Route::middleware('auth')->group(function () {
         ActivityLogFeedController::class,
         'destroy',
     ])->name('dashboard.activity-logs.destroy');
+
+    Route::get('/history-downloads/{archive}/download', HistoryDownloadArchiveController::class)
+        ->name('history-downloads.download');
 
     // Generated image download / compression endpoint.
     Route::get('/generated-images/{generatedImage}/download', GeneratedImageDownloadController::class)
